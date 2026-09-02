@@ -13,6 +13,8 @@ export const RunPhase = {
   Verdict: 'verdict',
   Warned: 'warned',
   Shop: 'shop',
+  // DLR-159 — reachable ONLY from the shop, and returning ONLY to the shop.
+  ManageBuffs: 'manageBuffs',
   Map: 'map',
   // DLR-118 — reachable ONLY from a terminal verdict's `Open the Vault` control.
   Vault: 'vault',
@@ -20,7 +22,8 @@ export const RunPhase = {
 export type RunPhase = (typeof RunPhase)[keyof typeof RunPhase]
 
 /** The screens `App` switches between, as the debug mirror already names them. */
-export type AppScreen = 'start' | 'map' | 'shop' | 'vault' | 'verdict' | 'warCouncil'
+export type AppScreen =
+  'start' | 'map' | 'shop' | 'manageBuffs' | 'vault' | 'verdict' | 'warCouncil'
 
 /** Which screen the app is showing, as a pure function of the two values that decide it.
  *  Extracted from `App.tsx`'s inline ternary chain (DLR-150 — 400-line budget) so the derivation
@@ -31,6 +34,7 @@ export function screenFor(phase: RunPhase, encounterOver: boolean): AppScreen {
   if (!encounterOver) return 'warCouncil'
   if (phase === RunPhase.Map) return 'map'
   if (phase === RunPhase.Shop) return 'shop'
+  if (phase === RunPhase.ManageBuffs) return 'manageBuffs'
   if (phase === RunPhase.Vault) return 'vault'
   return 'verdict'
 }

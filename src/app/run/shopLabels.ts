@@ -35,6 +35,9 @@ export const SHOP_HELD_GROUP_LABEL = 'The cards you are holding'
 /** Points at the thing to do about it — an empty tray saying nothing reads as a broken tray. */
 export const SHOP_HELD_EMPTY = 'Nothing yet — pull the machine.'
 
+/** DLR-159 AC1 — the control that opens the Manage Buffs screen from the shop. */
+export const SHOP_MANAGE_BUFFS_LABEL = 'Manage Buffs'
+
 /** How many cards are held, in words. Mirrors `priceText`'s singular/plural handling rather than
  *  printing a bare numeral, so one card does not read as "1 cards". */
 export function heldCountText(count: number): string {

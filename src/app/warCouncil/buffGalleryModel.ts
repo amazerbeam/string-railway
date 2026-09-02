@@ -13,9 +13,9 @@
  * both. No behaviour changed by the rename — every export below is unchanged.
  */
 import {
+  buffCombineKey,
   BuffCadence,
   BUFF_CADENCE,
-  buffTargetRankOf,
   buffTargetSuitOf,
   BuffTargetSuit,
   BuffTier,
@@ -96,16 +96,11 @@ export function buffRunOf(buff: Buff): BuffRunKind {
 }
 
 /** AC7's "exact ×N" is only true if the collapse key is exact: two cards merge only when they are
- *  the same card in EVERY respect a player could tell apart. */
+ *  the same card in EVERY respect a player could tell apart. DLR-159 moved that composition into
+ *  `src/hunt/buffCombine.ts` — the shop combines on exactly this rule, and two answers to "is this
+ *  the same card" is the drift this delegation exists to prevent. */
 export function buffStackKey(buff: Buff): string {
-  return [
-    buff.kind,
-    buff.tier,
-    buffTargetSuitOf(buff) ?? '',
-    buffTargetRankOf(buff) ?? '',
-    buff.reward.axis,
-    buff.reward.value,
-  ].join('|')
+  return buffCombineKey(buff)
 }
 
 const TIER_RANK: Readonly<Record<BuffTier, number>> = {

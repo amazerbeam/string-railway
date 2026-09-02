@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159
 
 ## Responsibility
 
@@ -117,7 +117,8 @@ hand's damage twice **unexpressible** rather than merely unlikely.
 
 **DLR-150 added `screenFor.ts`, and moved `RunPhase` into it.** `screenFor(phase, encounterOver)` is
 `App.tsx`'s seven-branch screen ternary as a pure, unit-testable function returning
-`AppScreen` (`'start' | 'map' | 'shop' | 'vault' | 'verdict' | 'warCouncil'`), so the render and
+`AppScreen` (`'start' | 'map' | 'shop' | 'manageBuffs' | 'vault' | 'verdict' | 'warCouncil'` since
+DLR-159), so the render and
 `debugState`'s mirror cannot disagree about which screen is up — the property the inline chain's own
 comment already claimed. `RunPhase` moved with it because `screenFor` is the only reader that needs
 the union outside the component; it is deliberately **not** re-exported through `../hunt`, since
@@ -202,7 +203,18 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
     differs only in health and name: a "boss" is a filled block on the map and a bigger health figure,
     with no power, no gimmick and no rule-break. Diarmuid is intended to ignore follow-suit; that is a
     later ticket's, and nothing about it is built.
-  - **No persistence.** A page reload starts a new run; nothing is saved.
+  - **No persistence.** A page reload starts a new run; nothing is saved. That is also why DLR-159's
+    combined cards need no persistence work of their own: `RunState.buffs` and `nextBuffId` are never
+    written to storage, so a produced card survives exactly what the rest of the run survives.
+- **DLR-159 added a seventh screen, and it is the shop's only child** (`RunPhase.ManageBuffs`). It is
+  guarded `encounterOver && phase === RunPhase.ManageBuffs`, exactly like `Shop`, `Map` and `Vault`;
+  it is set only by `ShopPanel`'s `onManageBuffs` and returns only to `RunPhase.Shop`. Making it a
+  phase rather than a flag inside `ShopPanel` is what keeps it visible to `screenFor` — and therefore
+  to `debugState`'s mirror, whose `screen` union was widened in the same pass. Its state lives in
+  `useManageBuffs(run, setRun)`, called unconditionally at the top level as `useShopSlot` is, and
+  returning the panel's whole props object so the new branch costs about eight lines. **`App.tsx`
+  finished this contract at 399 lines against the 400-line budget** — see the reducer note below,
+  which is now overdue rather than approaching.
 - **The driver opens on a start screen and returns to one on a loss** (DLR-85). `App.tsx`'s phase union
   widened from DLR-84's `BetweenPhase` (verdict / warned / shop) to `RunPhase` carrying `Start` and
   `Map` as well, and `handleNewRun` now sets `RunPhase.Start` rather than dropping straight into fight

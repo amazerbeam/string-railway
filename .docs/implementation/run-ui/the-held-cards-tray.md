@@ -35,8 +35,9 @@ same mark the gallery uses.
 > points and a cadence; between fights there is no trick to activate one for. A card rendered as a
 > `<button>` would be an affordance that lies.
 
-`ShopHeld.test.tsx` asserts `queryAllByRole('button')` is empty for exactly that reason. The tray's
-cards are also **not tab stops**, which is what keeps a growing hand of cards from flooding the
+`ShopHeld.test.tsx` asserts that no **card** is a button for exactly that reason — since DLR-159 by
+checking that no `button.wc-buffcard` exists, rather than that the tray holds no button at all. The
+tray's cards are also **not tab stops**, which is what keeps a growing hand of cards from flooding the
 keyboard path of a screen whose real controls number about four — `game-ux`'s threshold of roughly
 five siblings would otherwise be blown by the inventory alone.
 
@@ -45,10 +46,15 @@ Each card carries its full description on its own `aria-label` —
 tray has no hover and no tap, so there is nowhere else for that wording to live. It goes through
 `buffLabels.ts`, the one grammar for describing a buff, never a second phrasing.
 
+> **DLR-159 put one button in this section — in the heading, not on a card.** The tray's heading now
+> carries a `Manage Buffs` control that opens the screen where piles can be combined; see
+> [the Manage Buffs screen](manage-buffs-screen.md). The rule above is unchanged: the control sits
+> beside the count, and no card became an affordance.
+
 ## `heldBuffs.ts` — grouping, and why it is not `buildBuffGallery`
 
 ```ts
-heldBuffStacks(buffs: readonly Buff[]): readonly HeldBuffStack[]   // { buff, count }
+heldBuffStacks(buffs: readonly Buff[]): readonly HeldBuffStack[]   // { buff, count, ids }
 heldBuffCount(buffs: readonly Buff[]): number
 ```
 
@@ -62,6 +68,17 @@ half: group, count, order.
 What it **does** reuse is `buffStackKey`, imported rather than restated. That matters more than it
 looks: it is what guarantees two cards that stack on the felt stack in the shop, and it means there
 is exactly one rule in the codebase for what "the same card" means.
+
+**DLR-159 pushed that rule one layer further down.** `buffStackKey` no longer composes the string
+itself — it is a one-line delegation to `src/hunt/buffCombine.ts`'s `buffCombineKey`, which is now the
+codebase's single statement of card identity, because the shop's combine acts on exactly the same
+rule. The exported name, signature and composed string here are unchanged. See
+[../hunt/combining-cards.md](../hunt/combining-cards.md).
+
+**`HeldBuffStack` also gained a required `ids` field** — every held copy's id, ascending — so the
+Manage Buffs screen can reuse this grouping rather than write a second one. **The tray itself ignores
+it**, and `count` stayed rather than becoming `ids.length`: the tray reads a count and should not have
+to know it is reading a list.
 
 The order is **tier descending, then `buffStackKey` ascending** — a total order, so the same holdings
 always draw the same tray regardless of the order they were won in. Best cards first, because the

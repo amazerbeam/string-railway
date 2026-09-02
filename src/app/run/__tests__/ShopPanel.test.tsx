@@ -86,6 +86,7 @@ const baseProps = {
   /** Empty by default — the tray's own behaviour is covered in `ShopHeld.test.tsx`; here it only
    *  has to be a valid prop. */
   heldBuffs: [] as readonly Buff[],
+  onManageBuffs: vi.fn(),
   onBuy: vi.fn(),
   onLeave: vi.fn(),
   slot: baseSlot,

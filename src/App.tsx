@@ -53,6 +53,8 @@ import { shopRefusalsFor } from './app/run/shopRefusals'
 import { shopPricesFor } from './app/run/shopPrices'
 import RunPathScreen from './app/run/RunPathScreen'
 import { useShopSlot } from './app/run/useShopSlot'
+import { useManageBuffs } from './app/run/useManageBuffs'
+import ManageBuffsPanel from './app/run/ManageBuffsPanel'
 import {
   fightLabel,
   runGoalText,
@@ -106,6 +108,9 @@ function App() {
   // hook called conditionally is a hooks-order violation. Cheap when the shop is not showing —
   // one derivation of a strip, no state churn.
   const { view: slotView, selectMachine, pull } = useShopSlot(run, vault, setRun)
+
+  // DLR-159 — cheap when the screen is not showing: one grouping of the pile, no state of its own.
+  const manageBuffs = useManageBuffs(run, setRun)
 
   const encounterOver = isEncounterResolved(run.encounter)
 
@@ -309,6 +314,7 @@ function App() {
         flaskRefusal={flaskRefusalFor(flaskStockFor(run))}
         onDrinkFlask={handleDrinkFlask}
         heldBuffs={run.buffs}
+        onManageBuffs={() => setPhase(RunPhase.ManageBuffs)}
         nextOpponentName={nextName}
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
         refusals={shopRefusalsFor(stock)}
@@ -316,6 +322,16 @@ function App() {
         onBuy={handleBuy}
         onLeave={leaveForNextFight}
         slot={{ ...slotView, onSelectMachine: selectMachine, onPull: pull }}
+      />
+    )
+  }
+
+  if (encounterOver && phase === RunPhase.ManageBuffs) {
+    return (
+      <ManageBuffsPanel
+        view={manageBuffs.view}
+        onCombine={manageBuffs.combine}
+        onLeave={() => setPhase(RunPhase.Shop)}
       />
     )
   }

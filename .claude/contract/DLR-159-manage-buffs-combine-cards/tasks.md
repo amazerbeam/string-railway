@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-09-01
 
 **Goal:** Give the player a free way, at the shop, to turn two cards that are the same card at the same tier into one card of the next tier up — with the rule in the pure engine tree and a new full-viewport screen that groups the held pile, puts the combinable piles first, and confirms each combine on the pile itself before it destroys anything.
@@ -53,7 +53,7 @@ Started: 2026-09-01
 
 Everything in this phase is DOM-free `src/hunt/` code with no consumer yet, so the phase ends type-checking with the app untouched and the new module fully unit-tested. It goes first because the screen's view model reads its refusal codes, and because the template lookup it needs is a change to a file the Vault also depends on.
 
-### Task 1: Derive a card's template — `src/hunt/buffTemplates.ts`
+### Task 1: Derive a card's template — `src/hunt/buffTemplates.ts` ✓
 
 - Skill: react-frontend
 
@@ -61,7 +61,7 @@ Everything in this phase is DOM-free `src/hunt/` code with no consumer yet, so t
 - Modify: `src/hunt/buffTemplates.ts:143-160`
 - Test: `src/hunt/__tests__/buffTemplates.test.ts`
 
-- [ ] **Step 1: Extract the id grammar out of `makeTemplate` so one expression writes it**
+- [x] **Step 1: Extract the id grammar out of `makeTemplate` so one expression writes it**
 
 Replace the id expression inside `makeTemplate` with a call to a new module-private helper declared directly above it. The format `<kind>[:<param>]:<axis>` is PERSISTED by the Vault (see `ConditionBuffTemplate.id`'s docblock), so it must keep being written in exactly one place.
 
@@ -87,7 +87,7 @@ with:
   const id = templateIdFor(kind, axis, paramLabel)
 ```
 
-- [ ] **Step 2: Add the reverse lookup — card to template**
+- [x] **Step 2: Add the reverse lookup — card to template**
 
 Append below `templateById`:
 
@@ -113,7 +113,7 @@ export function templateForBuff(buff: Buff): BuffTemplate | undefined {
 
 Add `BuffCadence`, `BUFF_CADENCE` and `buffTargetSuitOf` to this file's existing import from `./buffs`.
 
-- [ ] **Step 3: Pin the round-trip over the whole pool**
+- [x] **Step 3: Pin the round-trip over the whole pool**
 
 Append to `src/hunt/__tests__/buffTemplates.test.ts`:
 
@@ -131,12 +131,12 @@ describe('templateIdForBuff', () => {
 })
 ```
 
-- [ ] **Step 4: Run the spec**
+- [x] **Step 4: Run the spec**
 
 Run: `npx vitest run src/hunt/__tests__/buffTemplates.test.ts`
 Expected: exits 0, Vitest reports 0 failed.
 
-### Task 2: The combine rule — `src/hunt/buffCombine.ts`
+### Task 2: The combine rule — `src/hunt/buffCombine.ts` ✓
 
 - Skill: react-frontend
 
@@ -144,7 +144,7 @@ Expected: exits 0, Vitest reports 0 failed.
 - Create: `src/hunt/buffCombine.ts`
 - Test: `src/hunt/__tests__/buffCombine.test.ts`
 
-- [ ] **Step 1: Write the failing spec for AC9's six cases**
+- [x] **Step 1: Write the failing spec for AC9's six cases**
 
 Create `src/hunt/__tests__/buffCombine.test.ts`. It mints its cards through `mintFromTemplate` — never hand-built literals — so a card in a test is the same object a run holds.
 
@@ -263,12 +263,12 @@ describe('the combine rule', () => {
 })
 ```
 
-- [ ] **Step 2: Run the spec and watch it fail for the right reason**
+- [x] **Step 2: Run the spec and watch it fail for the right reason**
 
 Run: `npx vitest run src/hunt/__tests__/buffCombine.test.ts`
 Expected: fails to resolve `buffCombine`'s exports from `../index` — a transform/collection error naming `CombineRefusal`, `buffCombineKey`, `combineBuffs`, `combineRefusalFor` or `nextBuffTierAfter`. No assertion failure yet.
 
-- [ ] **Step 3: Write the module**
+- [x] **Step 3: Write the module**
 
 Create `src/hunt/buffCombine.ts`:
 
@@ -385,7 +385,7 @@ export function combineBuffs(run: RunState, key: string): RunState {
 }
 ```
 
-- [ ] **Step 4: Add the tier-union pin to the spec**
+- [x] **Step 4: Add the tier-union pin to the spec**
 
 Append to `src/hunt/__tests__/buffCombine.test.ts`, so the structural coupling `nextBuffTierAfter` relies on cannot drift silently:
 
@@ -399,7 +399,7 @@ describe('BuffTier and AbilityTier', () => {
 
 Add `AbilityTier` to the spec's import from `../index`.
 
-- [ ] **Step 5: Export the new surface from the module barrel**
+- [x] **Step 5: Export the new surface from the module barrel**
 
 In `src/hunt/index.ts`, add the combine module's exports alongside the existing buff exports, and add `templateIdForBuff` / `templateForBuff` to the `buffTemplates` export block:
 
@@ -407,19 +407,19 @@ In `src/hunt/index.ts`, add the combine module's exports alongside the existing 
 export { CombineRefusal, buffCombineKey, nextBuffTierAfter, combineRefusalFor, combineBuffs } from './buffCombine'
 ```
 
-- [ ] **Step 6: Run the spec and the typecheck**
+- [x] **Step 6: Run the spec and the typecheck**
 
 Run: `npx vitest run src/hunt/__tests__/buffCombine.test.ts src/hunt/__tests__/buffTemplates.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed on both files; `tsc -b` exits 0 with no errors.
 
-### Task 3: Point the felt's stacking rule at the combine key — `src/app/warCouncil/buffGalleryModel.ts`
+### Task 3: Point the felt's stacking rule at the combine key — `src/app/warCouncil/buffGalleryModel.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Modify: `src/app/warCouncil/buffGalleryModel.ts:99-110`
 
-- [ ] **Step 1: Delegate `buffStackKey` rather than composing a second key**
+- [x] **Step 1: Delegate `buffStackKey` rather than composing a second key**
 
 Replace the body of `buffStackKey` — the exported name and signature are UNCHANGED, so its four call sites and `buffGalleryModel.test.ts`'s existing guard need no edit:
 
@@ -435,7 +435,7 @@ export function buffStackKey(buff: Buff): string {
 
 Add `buffCombineKey` to this file's existing import from `'../../hunt'`. Remove the now-unused `buffTargetRankOf` import if nothing else in the file uses it.
 
-- [ ] **Step 2: Run the loadout grid's specs and the typecheck**
+- [x] **Step 2: Run the loadout grid's specs and the typecheck**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/buffGalleryModel.test.ts src/app/warCouncil/__tests__/BuffGallery.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0.
@@ -446,7 +446,7 @@ Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 
 Grouping, ordering, refusal attachment and every word the screen prints, all with no renderer and no React. The phase ends type-checking with the model tested and nothing yet rendering it, which is the point: everything decidable about this screen is decided here rather than inside a component.
 
-### Task 4: Widen the shop tray's stack with its ids — `src/app/run/heldBuffs.ts`
+### Task 4: Widen the shop tray's stack with its ids — `src/app/run/heldBuffs.ts` ✓
 
 - Skill: react-frontend
 
@@ -454,7 +454,7 @@ Grouping, ordering, refusal attachment and every word the screen prints, all wit
 - Modify: `src/app/run/heldBuffs.ts:19-54`
 - Test: `src/app/run/__tests__/heldBuffs.test.ts`
 
-- [ ] **Step 1: Add `ids` to the stack and populate it**
+- [x] **Step 1: Add `ids` to the stack and populate it**
 
 The Manage Buffs model reuses this grouping rather than writing a second one, and a combine has to know which copies it holds. `heldBuffStacks` is the ONLY construction site (audit: 4 annotated sites, 1 construction site), so this is a one-place change.
 
@@ -498,7 +498,7 @@ export function heldBuffStacks(buffs: readonly Buff[]): readonly HeldBuffStack[]
 
 Add `type BuffId` to this file's existing import from `'../../hunt'`.
 
-- [ ] **Step 2: Cover the new field**
+- [x] **Step 2: Cover the new field**
 
 Append to `src/app/run/__tests__/heldBuffs.test.ts`:
 
@@ -510,12 +510,12 @@ it('carries every copy id, ascending, however the pile was ordered', () => {
 })
 ```
 
-- [ ] **Step 3: Run the tray's specs**
+- [x] **Step 3: Run the tray's specs**
 
 Run: `npx vitest run src/app/run/__tests__/heldBuffs.test.ts src/app/run/__tests__/ShopHeld.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 
-### Task 5: The screen's view model — `src/app/run/manageBuffs.ts`
+### Task 5: The screen's view model — `src/app/run/manageBuffs.ts` ✓
 
 - Skill: react-frontend
 
@@ -523,7 +523,7 @@ Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 - Create: `src/app/run/manageBuffs.ts`
 - Test: `src/app/run/__tests__/manageBuffs.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 Create `src/app/run/__tests__/manageBuffs.test.ts`:
 
@@ -598,12 +598,12 @@ describe('manageBuffsView', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/app/run/__tests__/manageBuffs.test.ts`
 Expected: fails to resolve `../manageBuffs` — the module does not exist yet.
 
-- [ ] **Step 3: Write the model**
+- [x] **Step 3: Write the model**
 
 Create `src/app/run/manageBuffs.ts`:
 
@@ -686,12 +686,12 @@ export function manageBuffsView(buffs: readonly Buff[]): ManageBuffsView {
 }
 ```
 
-- [ ] **Step 4: Run the spec and the typecheck**
+- [x] **Step 4: Run the spec and the typecheck**
 
 Run: `npx vitest run src/app/run/__tests__/manageBuffs.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 
-### Task 6: The screen's words — `src/app/run/manageBuffsLabels.ts`
+### Task 6: The screen's words — `src/app/run/manageBuffsLabels.ts` ✓
 
 - Skill: react-frontend
 
@@ -699,7 +699,7 @@ Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 - Create: `src/app/run/manageBuffsLabels.ts`
 - Modify: `src/app/run/shopLabels.ts`
 
-- [ ] **Step 1: Write the copy module**
+- [x] **Step 1: Write the copy module**
 
 Every sentence the screen prints lives here, so `src/hunt/` keeps holding reason codes and no user-facing words — the split `PURCHASE_REFUSAL_MESSAGE` already establishes. Wording per `mockup.html`; all of it is the developer's to retune.
 
@@ -786,7 +786,7 @@ export function combineTileAccessibleName(
 }
 ```
 
-- [ ] **Step 2: Add the shop's entry-control label**
+- [x] **Step 2: Add the shop's entry-control label**
 
 Append to `src/app/run/shopLabels.ts`, beside the other shop control labels:
 
@@ -795,7 +795,7 @@ Append to `src/app/run/shopLabels.ts`, beside the other shop control labels:
 export const SHOP_MANAGE_BUFFS_LABEL = 'Manage Buffs'
 ```
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: `tsc -b` exits 0, no errors.
@@ -806,14 +806,14 @@ Expected: `tsc -b` exits 0, no errors.
 
 The React half: the hook that writes the run, the panel, the tile, the stylesheet, the phase, and the shop's entry control. The phase ends with the screen reachable and usable, its component specs green, and `App.tsx` measured against the 400-line budget.
 
-### Task 7: The hook that owns the run write — `src/app/run/useManageBuffs.ts`
+### Task 7: The hook that owns the run write — `src/app/run/useManageBuffs.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Create: `src/app/run/useManageBuffs.ts`
 
-- [ ] **Step 1: Write the hook**
+- [x] **Step 1: Write the hook**
 
 Shaped like `useShopSlot`: called unconditionally at `App.tsx`'s top level, returning a view plus the callbacks the panel needs, so the panel itself computes nothing about the run.
 
@@ -858,19 +858,19 @@ export function useManageBuffs(
 }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: `tsc -b` exits 0, no errors.
 
-### Task 8: One pile tile — `src/app/run/CombineGroupCard.tsx`
+### Task 8: One pile tile — `src/app/run/CombineGroupCard.tsx` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Create: `src/app/run/CombineGroupCard.tsx`
 
-- [ ] **Step 1: Write the tile**
+- [x] **Step 1: Write the tile**
 
 Layout, gesture and copy per `mockup.html`'s pile tile. It borrows `warCouncilBuffCard.css`'s classes exactly as `HeldBuffCard` does, so a pile here is visibly the same object as the card on the felt, and tier reads as a roman numeral rather than as a hue. A ready pile is a `<button>`; a refused pile is a `<li>` with its reason on its face and no affordance, because a card rendered as a button that cannot act is an affordance that lies.
 
@@ -905,12 +905,12 @@ export interface CombineGroupCardProps {
 
 The component renders, in order: the `MANAGE_BUFFS_JUST_MADE` badge when `justMade`; the card face (reusing `HeldBuffCard`'s tier-numeral, suit-class and payoff structure — extract that face into a shared child if duplicating it would push either file past 400 lines); the strip under the card, which prints `Combine → <numeral>` on a ready pile and `COMBINE_REFUSAL_MESSAGE[refusal]` on a refused one; and, when `armed`, the confirmation face over the tile with `MANAGE_BUFFS_DESTROY_LABEL` + `combineConfirmDestroyText`, `MANAGE_BUFFS_MAKE_LABEL` + `combineConfirmMakeText`, `combineCostText(held)`, and the `Combine` / `Cancel` buttons wired to `onCommit` / `onCancel`. The ready tile's `aria-label` is `combineTileAccessibleName(...)` and its `tabIndex` is `tabStop ? 0 : -1`.
 
-- [ ] **Step 2: Measure the file and typecheck**
+- [x] **Step 2: Measure the file and typecheck**
 
 Run: `(Get-Content src\app\run\CombineGroupCard.tsx).Count; npm run typecheck`
 Expected: the count is under 400; `tsc -b` exits 0.
 
-### Task 9: The screen — `src/app/run/ManageBuffsPanel.tsx` and `manageBuffs.css`
+### Task 9: The screen — `src/app/run/ManageBuffsPanel.tsx` and `manageBuffs.css` ✓
 
 - Skill: react-frontend, game-ux
 
@@ -919,7 +919,7 @@ Expected: the count is under 400; `tsc -b` exits 0.
 - Create: `src/app/run/manageBuffs.css`
 - Test: `src/app/run/__tests__/ManageBuffsPanel.test.tsx`
 
-- [ ] **Step 1: Write the panel**
+- [x] **Step 1: Write the panel**
 
 Layout per `mockup.html`: a three-row full-viewport grid — a status strip on the top edge (title, cards held, piles ready, the free-but-costs-a-card rule, and the back control), the two bands of piles in the middle, and a ledger on the bottom edge carrying the `role="status"` line and the spend note. A band renders only when it holds something, per `game-ux`'s rule against a panel that exists to report nothing.
 
@@ -936,20 +936,20 @@ Two pieces of component-local `useState`, both ephemeral view state that dies wi
 
 `useRovingTabIndex` from `../warCouncil/useRovingTabIndex` runs over the ready piles: one tab stop, arrow keys to move, `Home`/`End` to jump, `Escape` cancelling an armed pile or leaving the screen when nothing is armed. Nothing registers a listener outside React's own `onKeyDown`, so there is no effect and no cleanup in this file.
 
-- [ ] **Step 2: Write the stylesheet**
+- [x] **Step 2: Write the stylesheet**
 
 Port `mockup.html`'s CSS into `src/app/run/manageBuffs.css`, keeping the shell's `100dvh`, `overflow: hidden`, `env(safe-area-inset-*)` padding and `clamp()` bounds, and using no `100vh` and no `100vw` anywhere. The tile bounds reuse the loadout grid's existing `clamp()` figures rather than new numbers — see "Developer decides or observes".
 
-- [ ] **Step 3: Write the component spec**
+- [x] **Step 3: Write the component spec**
 
 Create `src/app/run/__tests__/ManageBuffsPanel.test.tsx`, querying by role and label only. It covers: identical copies rendering as one tile with its count; a ready pile offering a combine and a refused pile carrying `COMBINE_REFUSAL_MESSAGE`'s exact sentence with no button; the first click arming and showing both the destroyed and produced cards plus the `held → held − 1` line; the second click calling `onCombine` with the pile's key; `Escape` cancelling an armed pile without calling `onCombine`; `Escape` with nothing armed calling `onLeave`; arrow keys moving focus across the ready piles; and the produced pile carrying the "Just made" mark with the `role="status"` sentence naming both halves after a commit.
 
-- [ ] **Step 4: Run the spec and measure both files**
+- [x] **Step 4: Run the spec and measure both files**
 
 Run: `npx vitest run src/app/run/__tests__/ManageBuffsPanel.test.tsx; (Get-Content src\app\run\ManageBuffsPanel.tsx).Count; (Get-Content src\app\run\manageBuffs.css).Count; npm run typecheck`
 Expected: Vitest reports 0 failed; both counts are under 400; `tsc -b` exits 0.
 
-### Task 10: The phase — `src/app/screenFor.ts`
+### Task 10: The phase — `src/app/screenFor.ts` ✓
 
 - Skill: react-frontend
 
@@ -957,7 +957,7 @@ Expected: Vitest reports 0 failed; both counts are under 400; `tsc -b` exits 0.
 - Modify: `src/app/screenFor.ts`
 - Test: `src/app/__tests__/screenFor.test.ts`
 
-- [ ] **Step 1: Add the phase, the screen name and the case**
+- [x] **Step 1: Add the phase, the screen name and the case**
 
 ```ts
 export const RunPhase = {
@@ -980,7 +980,7 @@ and, in `screenFor`, directly after the `Shop` line so the shop and its sub-scre
   if (phase === RunPhase.ManageBuffs) return 'manageBuffs'
 ```
 
-- [ ] **Step 2: Cover it**
+- [x] **Step 2: Cover it**
 
 Append to `src/app/__tests__/screenFor.test.ts`:
 
@@ -991,12 +991,12 @@ it('shows the Manage Buffs screen only once the encounter is over', () => {
 })
 ```
 
-- [ ] **Step 3: Run the spec**
+- [x] **Step 3: Run the spec**
 
 Run: `npx vitest run src/app/__tests__/screenFor.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 
-### Task 11: The way in — `src/app/run/ShopPanel.tsx`
+### Task 11: The way in — `src/app/run/ShopPanel.tsx` ✓
 
 - Skill: react-frontend, game-ux
 
@@ -1004,7 +1004,7 @@ Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 - Modify: `src/app/run/ShopPanel.tsx`
 - Test: `src/app/run/__tests__/ShopPanel.manageBuffs.test.tsx`
 
-- [ ] **Step 1: Add the prop and the control**
+- [x] **Step 1: Add the prop and the control**
 
 Add to `ShopPanelProps`:
 
@@ -1015,23 +1015,23 @@ Add to `ShopPanelProps`:
 
 Render the control inside the tray's `ShopHeld` heading area, so the way to act on the held cards sits with the held cards rather than beside the Heal — a button using `SHOP_MANAGE_BUFFS_LABEL`, `type="button"`, calling `onManageBuffs`. Pass `onManageBuffs` down through `ShopHeld`'s props rather than duplicating the tray's heading markup in `ShopPanel`.
 
-- [ ] **Step 2: Cover the entry point**
+- [x] **Step 2: Cover the entry point**
 
 Create `src/app/run/__tests__/ShopPanel.manageBuffs.test.tsx`: rendering the shop with held cards shows a `Manage Buffs` button, and clicking it calls `onManageBuffs` exactly once.
 
-- [ ] **Step 3: Run the shop's specs**
+- [x] **Step 3: Run the shop's specs**
 
 Run: `npx vitest run src/app/run/__tests__/ShopPanel.manageBuffs.test.tsx src/app/run/__tests__/ShopPanel.test.tsx src/app/run/__tests__/ShopHeld.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 
-### Task 12: Wire it into the app — `src/App.tsx`
+### Task 12: Wire it into the app — `src/App.tsx` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Modify: `src/App.tsx`
 
-- [ ] **Step 1: Call the hook unconditionally and render the branch**
+- [x] **Step 1: Call the hook unconditionally and render the branch**
 
 Beside the existing `useShopSlot` call — unconditionally, at the top level, never inside a phase branch, because a hook called conditionally is a hooks-order violation:
 
@@ -1056,12 +1056,14 @@ Add the branch immediately after the `RunPhase.Shop` branch:
 
 and pass `onManageBuffs={() => setPhase(RunPhase.ManageBuffs)}` to the existing `<ShopPanel>`.
 
-- [ ] **Step 2: Measure the file against the 400-line budget**
+- [x] **Step 2: Measure the file against the 400-line budget**
 
 Run: `(Get-Content src\App.tsx).Count`
 Expected: under 400 (it stood at 379 before this contract). **If it is 400 or more, fix it in this task** — extract the phase-branch chain into a small `src/app/run/RunScreens.tsx` or move the Vault branch's props assembly into its own component — rather than reporting it as a finding.
 
-- [ ] **Step 3: Typecheck and run the app-level specs**
+Measured: 399 lines (started this phase at 383, per the phase brief's updated count). Under budget, but with only one line of margin — flagged in the report rather than pre-emptively extracted, since the task's own instruction is to act only at 400+.
+
+- [x] **Step 3: Typecheck and run the app-level specs**
 
 Run: `npm run typecheck; npx vitest run src/__tests__`
 Expected: `tsc -b` exits 0; Vitest reports 0 failed.
@@ -1072,75 +1074,83 @@ Expected: `tsc -b` exits 0; Vitest reports 0 failed.
 
 No production changes. Confirms the cumulative work is clean, the pure-core boundary still holds, and nothing string-bound was left half-renamed.
 
-### Task 13: Confirm the pure-core boundary still holds
+### Task 13: Confirm the pure-core boundary still holds ✓
 
 - Skill: none — verification only, no code is written.
 
 **Files:**
 - Test: (none — greps only)
 
-- [ ] **Step 1: Grep the new engine module for React and DOM references**
+- [x] **Step 1: Grep the new engine module for React and DOM references**
 
 Run: `Get-ChildItem src\hunt -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage|Math\.random"`
 Expected: zero hits.
 
-- [ ] **Step 2: Confirm nothing outside the persistence module touched storage**
+Actual: 12 hits, all docblock prose *stating* that the module never calls `Math.random()` (e.g. `buffCombine.ts:11` — "no React, no DOM, no `Math.random()`"), not a real call to it. Read each — zero real hits.
+
+- [x] **Step 2: Confirm nothing outside the persistence module touched storage**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "\b(localStorage|sessionStorage)\.(getItem|setItem|removeItem|clear)\("`
 Expected: hits only inside `src\persistence\`, exactly as `.claude/rules/save-data-versioning.md` records — this contract adds none.
 
-### Task 14: Confirm no second identity key and no stray tier ladder
+Actual: one hit, `src\persistence\saveStore.ts:162`, inside a docblock explaining why `removeItem` never calls `localStorage.clear()` — the same pre-existing hit `save-data-versioning.md` already documents. No new storage access from this contract.
+
+### Task 14: Confirm no second identity key and no stray tier ladder ✓
 
 - Skill: none — verification only, no code is written.
 
 **Files:**
 - Test: (none — greps only)
 
-- [ ] **Step 1: Confirm the combine key is composed in exactly one place**
+- [x] **Step 1: Confirm the combine key is composed in exactly one place**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "buff.reward.axis,"`
 Expected: one hit, in `src\hunt\buffCombine.ts` — `buffStackKey` delegates rather than composing its own.
 
-- [ ] **Step 2: Confirm no tier ladder was hard-coded on the new screen**
+Actual: exactly one hit, `src\hunt\buffCombine.ts:43`, inside `buffCombineKey`'s array-join. (A broader grep for `buff\.reward\.axis` without the trailing comma turns up more hits — `buffAccrual.ts`, `buffCosts.ts`, `buffTemplates.ts`, `sim/playHand.ts`, `sim/playHandWindows.ts` — but each is a function argument or a `switch` scrutinee reading the axis for an unrelated purpose, not a second identity-key composition. Read and confirmed real.)
+
+- [x] **Step 2: Confirm no tier ladder was hard-coded on the new screen**
 
 Run: `Get-ChildItem src\app\run -Recurse -Include *.ts,*.tsx | Select-String -Pattern "'silver'|'gold'|'bronze'"`
 Expected: hits only where a tier is used as a lookup key on an existing map (`TIER_NUMERAL`, `TIER_CLASS`, `TIER_WORD`) — no expression that steps a tier by hand instead of calling `nextBuffTierAfter`.
 
-### Task 15: Static gates and the full suite
+Actual: three hits, all in `src\app\run\manageBuffsLabels.ts:5-7` — the `bronze:`/`silver:`/`gold:` keys of the `TIER_WORD` lookup map. No hand-stepped tier expression anywhere in `src\app\run`.
+
+### Task 15: Static gates and the full suite ✓
 
 - Skill: none — verification only, no code is written.
 
 **Files:**
 - Test: (none — the whole suite)
 
-- [ ] **Step 1: Warm the transform cache, then typecheck, lint and run everything**
+- [x] **Step 1: Warm the transform cache, then typecheck, lint and run everything**
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm run typecheck; npm run lint; npm test`
 Expected: all exit 0; Vitest reports 0 failed. A single cold-cache `Timeout waiting for worker to respond` on the first `dom` run is infrastructure, not a test failure — re-run before reporting it.
 
-- [ ] **Step 2: Check formatting on this contract's files only**
+- [x] **Step 2: Check formatting on this contract's files only**
 
 Run: `npx prettier --check src/hunt/buffCombine.ts src/hunt/buffTemplates.ts src/hunt/index.ts src/app/run/manageBuffs.ts src/app/run/manageBuffsLabels.ts src/app/run/useManageBuffs.ts src/app/run/ManageBuffsPanel.tsx src/app/run/CombineGroupCard.tsx src/app/run/manageBuffs.css src/app/run/heldBuffs.ts src/app/run/ShopPanel.tsx src/app/run/shopLabels.ts src/app/screenFor.ts src/App.tsx`
 Expected: exits 0. Fix with `npx prettier --write` on the same list — never repo-wide `npm run format`.
 
-- [ ] **Step 3: Measure every file this contract created or grew**
+- [x] **Step 3: Measure every file this contract created or grew**
 
 Run: `Get-ChildItem src\hunt\buffCombine.ts,src\hunt\buffTemplates.ts,src\app\run\manageBuffs.ts,src\app\run\manageBuffsLabels.ts,src\app\run\useManageBuffs.ts,src\app\run\ManageBuffsPanel.tsx,src\app\run\CombineGroupCard.tsx,src\app\run\manageBuffs.css,src\app\run\ShopPanel.tsx,src\App.tsx | ForEach-Object { "$($_.Name) $((Get-Content $_.FullName).Count)" }`
 Expected: every count under 400.
 
-- [ ] **Step 4: Production build**
+- [x] **Step 4: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 16: Update the PR description
+### Task 16: Update the PR description ✓
 
 - Skill: none — a document for the developer, no code.
 
 **Files:**
 - Create: `.claude/contract/DLR-159-manage-buffs-combine-cards/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 - A link to `plan.md` and `mockup.html` in this folder.

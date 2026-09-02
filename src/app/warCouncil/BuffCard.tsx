@@ -1,12 +1,5 @@
 import type { Ref } from 'react'
-import {
-  BuffCadence,
-  BUFF_CADENCE,
-  BuffTargetSuit,
-  BuffTier,
-  buffTargetSuitOf,
-  type BuffId,
-} from '../../hunt'
+import { BuffCadence, BUFF_CADENCE, buffTargetSuitOf, type BuffId } from '../../hunt'
 import {
   buffCadenceWord,
   buffCardAccessibleName,
@@ -18,6 +11,7 @@ import {
 } from './buffLabels'
 import type { BuffStack } from './buffGalleryModel'
 import { SuitMark } from './SuitMark'
+import { SUIT_CLASS, TIER_CLASS, TIER_NUMERAL } from './buffCardVisuals'
 
 interface BuffCardProps {
   readonly stack: BuffStack
@@ -30,28 +24,6 @@ interface BuffCardProps {
    *  caller-supplied wrapping `<span>` — see the component docblock for why a wrapper breaks the
    *  grid layout. */
   readonly ref?: Ref<HTMLElement>
-}
-
-/** AC2 — tier is legible as a ROMAN NUMERAL, independent of colour: a metallic gradient reads as
- *  light-and-dark in greyscale, never as bronze/silver/gold. The tier WORD is deliberately not
- *  rendered here — it is what pushed the condition into the payoff bar on the mockup — so this
- *  numeral, the metal and the tinted face are the only carriers. */
-const TIER_NUMERAL: Readonly<Record<BuffTier, string>> = {
-  [BuffTier.Bronze]: 'I',
-  [BuffTier.Silver]: 'II',
-  [BuffTier.Gold]: 'III',
-}
-
-const TIER_CLASS: Readonly<Record<BuffTier, string>> = {
-  [BuffTier.Bronze]: 'wc-buffcard-bronze',
-  [BuffTier.Silver]: 'wc-buffcard-silver',
-  [BuffTier.Gold]: 'wc-buffcard-gold',
-}
-
-const SUIT_CLASS: Readonly<Record<BuffTargetSuit, string>> = {
-  [BuffTargetSuit.Bells]: 'wc-buffcard-bells',
-  [BuffTargetSuit.Keys]: 'wc-buffcard-keys',
-  [BuffTargetSuit.Moons]: 'wc-buffcard-moons',
 }
 
 /**

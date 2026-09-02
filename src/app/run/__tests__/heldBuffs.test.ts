@@ -57,6 +57,12 @@ describe('heldBuffStacks', () => {
     heldBuffStacks(buffs)
     expect(buffs).toEqual(before)
   })
+
+  it('carries every copy id, ascending, however the pile was ordered', () => {
+    const stacks = heldBuffStacks([mint(0, BuffTier.Bronze, 7), mint(0, BuffTier.Bronze, 2)])
+    expect(stacks[0].ids).toEqual([2, 7])
+    expect(stacks[0].count).toBe(2)
+  })
 })
 
 describe('heldBuffCount', () => {

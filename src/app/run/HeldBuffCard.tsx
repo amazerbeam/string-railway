@@ -1,28 +1,9 @@
-import { BuffTargetSuit, BuffTier, buffTargetSuitOf } from '../../hunt'
+import { buffTargetSuitOf } from '../../hunt'
 import { buffConditionSentence, buffName, buffPayoffFace } from '../warCouncil/buffLabels'
 import { SuitMark } from '../warCouncil/SuitMark'
+import { SUIT_CLASS, TIER_CLASS, TIER_NUMERAL } from '../warCouncil/buffCardVisuals'
 import type { HeldBuffStack } from './heldBuffs'
 import '../warCouncil/warCouncilBuffCard.css'
-
-/** AC2's device, reused: tier is legible as a ROMAN NUMERAL, independent of colour — a metallic
- *  gradient reads as light-and-dark in greyscale, never as bronze/silver/gold. */
-const TIER_NUMERAL: Readonly<Record<BuffTier, string>> = {
-  [BuffTier.Bronze]: 'I',
-  [BuffTier.Silver]: 'II',
-  [BuffTier.Gold]: 'III',
-}
-
-const TIER_CLASS: Readonly<Record<BuffTier, string>> = {
-  [BuffTier.Bronze]: 'wc-buffcard-bronze',
-  [BuffTier.Silver]: 'wc-buffcard-silver',
-  [BuffTier.Gold]: 'wc-buffcard-gold',
-}
-
-const SUIT_CLASS: Readonly<Record<BuffTargetSuit, string>> = {
-  [BuffTargetSuit.Bells]: 'wc-buffcard-bells',
-  [BuffTargetSuit.Keys]: 'wc-buffcard-keys',
-  [BuffTargetSuit.Moons]: 'wc-buffcard-moons',
-}
 
 /**
  * 2026-09-01 — one held card, as the shop's "What you hold" tray draws it.

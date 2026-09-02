@@ -14,7 +14,7 @@ import type { RoundUiState } from './warCouncil/roundUiState'
 
 export interface DebugAppState {
   /** Which top-level surface `App` is rendering — mirrors its own branch order. */
-  screen: 'start' | 'map' | 'shop' | 'vault' | 'verdict' | 'warCouncil'
+  screen: 'start' | 'map' | 'shop' | 'manageBuffs' | 'vault' | 'verdict' | 'warCouncil'
   phase: string
   hand: number
   run: unknown

@@ -3026,6 +3026,45 @@ on screen, so you can see what you are saving for.
 you cannot win one; and **Keepsake** may be unable to fire even when won. Both wait on the ticket that
 finishes the consumable card list.
 
+### Combining two of the same card into one of the next tier — **[settled]** since 2026-09-02
+
+The shop has a second screen, **Manage Buffs**, opened from the row that shows what you are holding
+and returning to the shop. It lays out every buff card you own, with identical copies gathered into
+one counted pile.
+
+**Two cards may be combined when they are the same card in every respect — the same card and the same
+tier.** Two bronze Moon-Feeders combine. A bronze Moon-Feeder and a bronze Bell-Feeder do not, and
+neither do a bronze and a silver copy of the same card.
+
+- **Two bronze copies become one silver copy of that same card. Two silver become one gold.**
+- **A gold cannot be combined any further**, and the screen says so on the card rather than silently
+  offering nothing.
+- **A pile holding only one copy cannot combine**, and says that too.
+- **Combining costs no coins, and there is no limit on how many you may do in one visit.** What it
+  costs is a card: every combine spends two and returns one, and the screen states the count you are
+  going down to before you commit.
+- **Every combine is confirmed before anything is destroyed**, and the confirmation names what is
+  going and what you are getting in the cards' own words, not as "bronze becomes silver".
+- **Nothing splits a card back down a tier.** There is no way to undo a combine.
+
+**Cheat and Timebomb combine on exactly the same rule as any condition card**, and a combined copy is
+stronger in the way that card's own tier already means: a Cheat's tier is how many tricks it lifts
+follow-suit for, and a Timebomb's tier is the damage pair it carries. The card you get is in every
+way the same object the machine could have dealt you — it stacks with one, and it is worth the same.
+
+**Your pile is the binding resource**, so this is a trade rather than a free upgrade. Nothing on the
+screen argues either way about whether a given combine is worth making.
+
+> **This is not a rule the base game has anything to say about.** _The Fox in the Forest_ has no cards
+> you own between deals, so it has nothing to merge.
+
+> **Whether combining is ever the better play is currently doubtful, and known.** At today's reward
+> numbers two bronze damage cards fired on the same trick pay more than the single silver they would
+> become, because a second card fired on a trick earns the Overlap Bonus and one card does not. The
+> reward ladder was deliberately not retuned in the same change. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved). **Whose decision:** the developer's, by
+> playing and then retuning the ladder.
+
 ### The flask — a free heal you carry, refilled by a stage boss — **[settled]**; both its figures are **[provisional]**
 
 Since 2026-08-20 you carry a **flask**. It is on the shop screen but it is **not for sale**: it costs
@@ -3288,6 +3327,14 @@ the mechanics themselves are documented in `../implementation/`.
 > a `RunState` field and a transition in the same breath means exactly that. DLR-158 split it a
 > second time for the same reason: the five fight-boundary carry helpers moved to
 > `src/hunt/runCarry.ts`, a pure move with no rule changed.
+
+> **Where DLR-159 stands, 2026-09-02 — the newest entry here.** **Live and reachable by a player in
+> full**: the rule and its screen landed in one contract, so combining works end to end from the shop.
+> **What has not been judged is how it looks and how it reads.** The contract ran with its browser
+> pass off, so nobody has seen the screen at a real viewport; every word on it — the confirmation, the
+> two refusal sentences, the "Just made" badge, the card-count line — is placeholder copy, and whether
+> two taps on the pile is the right gesture is a feel question only playing settles. **And the reward
+> ladder was deliberately not retuned to match**, which is the tension recorded below.
 
 > **Where DLR-158 stands, 2026-09-02 — the newest entry here.** **Live and reachable by a player in
 > full**: the engine half and the shop screen landed in one contract, so the second tile is on the
@@ -3731,7 +3778,7 @@ the mechanics themselves are documented in `../implementation/`.
 | A refused play does not spend the Cheat                                          | settled                                                                                    | `src/app/warCouncil/commitHandlers.ts` — `commit`'s rejection branch returns before the decrement                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | A Cheat's tier sets how many tricks it lifts follow-suit for (1/2/3)             | settled — since DLR-132                                                                    | `src/hunt/buffCatalog.ts` — `CHEAT_DURATION_TRICKS`; read into `RoundUiState.cheatTricksRemaining` at the spend                                                                                                                                                                                                                                                                          | Developer — the gold row (3 tricks, 7 AP) is reachable and uncosted, see Known tensions                                                                                                                                                                                                                          |
 | Cheats carried fight to fight                                                    | settled                                                                                    | `src/hunt/run.ts` — `RunState.buffs` (a Cheat is a pile member); `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
-| What a run opens holding (20 random bronze cards + 1 bronze Cheat) | settled — the procedure, since DLR-135; the count and the with-repeats draw since DLR-145, 2026-08-25; **provisional** — whether twenty-plus-one is the right shape | `src/hunt/startingPile.ts` — `startingBuffPileFor` / `seedStartingBuffPile` / `startingPileSeedFor` / `openingPileWeightOf`, called once by `startRun` in `src/hunt/run.ts`. `src/hunt/config.ts` — `STARTING_BUFF_COUNT`, **20**. Drawn **with replacement** (`src/hunt/slotWeights.ts` — `weightedDrawWithReplacement`) from `src/hunt/buffTemplates.ts` — `BUFF_TEMPLATES` (**13**), weighted by the **sum** of `templateWeightFor` across both `src/hunt/slotConfig.ts` — `SLOT_MACHINE_IDS`, so no new tuning value exists. Seeded from `RunState.runSeed`, so a seed reproduces its opening hand | **Developer** — whether twenty plus a guaranteed Cheat is the right opening hand, whether the repeats read as a supply or as a bad shuffle, and whether the reel weights it draws through are right; none has been played |
+| What a run opens holding (20 random bronze cards + 1 bronze Cheat) | settled — the procedure, since DLR-135; the count and the with-repeats draw since DLR-145, 2026-08-25; **provisional** — whether twenty-plus-one is the right shape | `src/hunt/startingPile.ts` — `startingBuffPileFor` / `seedStartingBuffPile` / `startingPileSeedFor` / `openingPileWeightOf`, called once by `startRun` in `src/hunt/run.ts`. `src/hunt/config.ts` — `STARTING_BUFF_COUNT`, **20**. Drawn **with replacement** (`src/hunt/slotWeights.ts` — `weightedDrawWithReplacement`) from `src/hunt/buffTemplates.ts` — `BUFF_TEMPLATES` (**16** since DLR-150; 13 when this row was written), weighted by the **sum** of `templateWeightFor` across both `src/hunt/slotConfig.ts` — `SLOT_MACHINE_IDS`, so no new tuning value exists. Seeded from `RunState.runSeed`, so a seed reproduces its opening hand | **Developer** — whether twenty plus a guaranteed Cheat is the right opening hand, whether the repeats read as a supply or as a bad shuffle, and whether the reel weights it draws through are right; none has been played |
 | Cheats a run is guaranteed (1, bronze)                                           | **provisional** — value unchanged, form re-homed 2026-08-24; a floor rather than a count since 2026-08-25 | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **1**; seeded straight into `RunState.buffs` by `startRun` as the pile's final members, no cap on the pile. `src/hunt/startingPile.ts` may draw further Cheats into the same pile, so the held count is `>= 1`                                                                                                                              | **Developer** — whether a run should open holding one at all, now that the reel and the opening draw both supply them. **Still open; DLR-135 did not settle it**                                                                                                                                                 |
 | A Cheat and a Timebomb are reached through the buff panel, not their own rails   | settled — since DLR-114, migrated onto ordinary rows DLR-132, onto cards in a grid DLR-148 | `src/app/warCouncil/BuffGallery.tsx` — both are cards in the roving-tabindex grid's `Press` run, no longer separate widgets; `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen` gates reaching the panel at all | **Developer** — whether the grid reads at a glance where the widened row list did not. Unplayed |
 | The Quarry holds no Cheats                                                       | settled                                                                                    | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
@@ -3820,6 +3867,12 @@ the mechanics themselves are documented in `../implementation/`.
 | The unplayed count is taken at the kill                                          | **settled**                                                                                | `src/app/warCouncil/roundReducer.ts` — `captureUnplayed`, frozen at the resolving transition, not re-read later                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
 | The verdict names what the win paid                                              | **settled**                                                                                | `src/app/run/RunOutcomePanel.tsx` — the `.run-reward` line; wording in `src/app/run/runLabels.ts` — `rewardText`                                                                                                                                                                                                                                                                        | Developer — all of the copy is placeholder                                                                                                                                                                                                                                                                        |
 | Coins carry across the run, and are on screen                                    | settled — since DLR-84                                                                     | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
+| Two of the same card at the same tier combine into one of the next tier | settled — since DLR-159, 2026-09-02 | `src/hunt/buffCombine.ts` — `buffCombineKey` (what "the same card" means), `nextBuffTierAfter` (delegating to `src/hunt/rankTiers.ts` — `nextTierAfter`, so `TIER_LADDER` states tier order once), `combineRefusalFor` and `combineBuffs`, which removes the two lowest-id copies and appends one card minted by `src/hunt/buffTemplates.ts` — `mintFromTemplate` | — |
+| A gold cannot combine, and a lone copy cannot either | settled — since DLR-159 | `src/hunt/buffCombine.ts` — `CombineRefusal.AtMaxTier` / `NoPair` from `combineRefusalFor`, which tests gold **before** the pair count so a lone gold reads as "already at the top"; worded by `src/app/run/manageBuffsLabels.ts` — `COMBINE_REFUSAL_MESSAGE`, total over the two codes | — |
+| Combining is free, and uncapped per visit | settled — since DLR-159 | nothing charges it — no price exists in `src/hunt/buffCombine.ts`, `combineBuffs` never touches `RunState.coins`, and no counter limits it | **Developer** — whether a cost or a cap is wanted once the reward ladder is retuned |
+| A combined card is indistinguishable from a slot-dealt one, which is how Cheat and Timebomb get their ladders | settled — since DLR-159 | `src/hunt/buffCombine.ts` mints through `src/hunt/buffTemplates.ts` — `mintFromTemplate`, reached by `templateForBuff` / `templateIdForBuff`; the activated branch routes to `cheatBuff` / `timebombBuff`, so no code here knows those two cards are special | — |
+| The Manage Buffs screen, reached from the shop and returning to it | settled — since DLR-159 | `src/app/screenFor.ts` — `RunPhase.ManageBuffs` and its `screenFor` case; `src/app/run/ManageBuffsPanel.tsx` and `CombineGroupCard.tsx`, fed by `src/app/run/manageBuffs.ts` — `manageBuffsView` and written by `src/app/run/useManageBuffs.ts`; opened by `src/app/run/ShopHeld.tsx`'s control | **Developer** — every word on it is placeholder copy, and no one has seen it running |
+| A combined card survives whatever the run survives | settled — since DLR-159, **by construction** | nothing persists it: `RunState.buffs` and `nextBuffId` are marked "NEVER persisted" in `src/hunt/run.ts`, and `src/persistence/` — `createSaveStore` has one non-test consumer, `src/vault/vaultStore.ts`. No `SAVE_SCHEMA_VERSION` change was needed | — |
 | The shop offers exactly two items | settled — pared by DLR-116, widened by DLR-122, pared by DLR-145, pared to the heal alone 2026-09-01, widened to the heal plus the maximum-health raise by DLR-158 | `src/hunt/shop.ts` — `SHOP_ITEMS`, now `[Heal, MaxHealth]`; the `ShopItem` union still holds all eight and `priceOf` / `categoryOf` / `refusalFor` / `buyFromShop` stay total over it, so nothing was deleted; rendered by `src/app/run/ShopPanel.tsx`, whose refusal record is built by `src/app/run/shopRefusals.ts` — `shopRefusalsFor`, derived from the union rather than hand-listed | — resolved: DLR-145's AC3 asked for a heal-plus-a-pull shelf while its scope named only the action-point purchase, and 2026-09-01 settled it that way by taking both rank rungs off |
 | The two rank rungs are priced but unsold | **not built** — off the shelf since 2026-09-01, the ladder itself untouched | `src/hunt/shop.ts` — neither `SwanTier` nor `WitchTier` is in `SHOP_ITEMS`; `priceOf`, `categoryOf` and `refusalFor` still answer for both, and `src/hunt/rankTiers.ts` — `steppedTo` still applies a rung a caller buys | **Developer** — the rank ladder's rules are unsettled; the rungs return when they are decided |
 | Action points as a purchase (+5 a hand) | **not built** — off the shelf since DLR-145, with the resource it bought | `src/hunt/apConfig.ts` - `AP_CAPACITY_STEP`; `src/hunt/config.ts` - `AP_CAPACITY_PRICE` (3); still bought by `src/hunt/runTransitions.ts` - `buyFromShop` and summed by `src/hunt/actionPoints.ts` - `apCapacityFor` if a caller asks, but `SHOP_ITEMS` no longer lists it and `src/sim/reachability.ts` - `unshelvedShopItems` pins that | **Developer** — only if action points return |
@@ -4385,6 +4438,16 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
 
 ### Known tensions, recorded not resolved
 
+- **Most combines are arithmetically a downgrade, and the screen ships anyway** (new 2026-09-02,
+  DLR-159). Two bronze damage cards fired on the same trick pay `(1 + 1 + 1) × (1 + 1) = 6` — base
+  damage plus one from each card, times one plus the Overlap Bonus the second card earns. The single
+  silver they combine into pays `(1 + 3) × 1 = 4`, because one card earns no Overlap Bonus. So at
+  today's numbers holding the pair is usually better than combining it, on every card family whose
+  reward is a flat amount. The ticket names this, accepts it, and defers the reward-ladder pass;
+  nothing on the screen compensates for it and nothing in its copy nudges the player either way. It is
+  the single most likely thing to feel wrong in play and it is not a defect. The levers are the tier
+  values themselves and the Overlap Bonus, and neither was touched. **Whose decision:** the
+  developer's, after playing.
 - **The maximum-health raise strictly dominates the heal, and only its price climb stops it**
   (new 2026-09-02, DLR-158). At the placeholder numbers it costs 3 coins to the heal's 1, and it
   does everything the heal does — it fills the bar — plus it raises the ceiling and makes every

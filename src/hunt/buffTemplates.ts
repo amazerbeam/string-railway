@@ -1,8 +1,11 @@
 import {
+  BuffCadence,
+  BUFF_CADENCE,
   BuffKind,
   BuffRewardAxis,
   BuffTargetSuit,
   BuffTier,
+  buffTargetSuitOf,
   type Buff,
   type BuffCondition,
   type BuffId,
@@ -141,13 +144,25 @@ function templatesForTemplateFamily(family: TemplateFamily): readonly ConditionB
   return family.axes.map((axis) => makeTemplate(family.kind, axis, undefined, undefined))
 }
 
+/** The persisted id grammar `<kind>[:<param>]:<axis>`, written ONCE. `makeTemplate` composes an
+ *  id with it and `templateIdForBuff` recomposes the same id from a minted card; a second copy of
+ *  this expression is how the two would silently drift apart. */
+function templateIdFor(
+  kind: BuffKind,
+  axis: string | null,
+  paramLabel: string | undefined,
+): string {
+  const head = paramLabel === undefined ? String(kind) : `${kind}:${paramLabel}`
+  return axis === null ? head : `${head}:${axis}`
+}
+
 function makeTemplate(
   kind: MintableConditionKind,
   axis: MintableRewardAxis,
   target: BuffTarget | undefined,
   paramLabel: string | undefined,
 ): ConditionBuffTemplate {
-  const id = paramLabel === undefined ? `${kind}:${axis}` : `${kind}:${paramLabel}:${axis}`
+  const id = templateIdFor(kind, axis, paramLabel)
   return target === undefined
     ? { form: 'condition', id, kind, axis }
     : { form: 'condition', id, kind, axis, target }
@@ -186,6 +201,25 @@ const TEMPLATES_BY_ID: ReadonlyMap<string, BuffTemplate> = new Map(
  *  `reconcileVault` tests a stale save against. */
 export function templateById(id: string): BuffTemplate | undefined {
   return TEMPLATES_BY_ID.get(id)
+}
+
+/** DLR-159 — which template minted this card, as an id. An ACTIVATED card's id is the bare kind
+ *  (`ACTIVATED_TEMPLATES` above), a condition card's is the `<kind>[:<suit>]:<axis>` grammar
+ *  `templateIdFor` writes for the generator — so this recomposes rather than inventing a format.
+ *  Reads `buff.reward.axis` and `condition.target?.suit`, the only two fields that vary within a
+ *  family. */
+export function templateIdForBuff(buff: Buff): string {
+  if (BUFF_CADENCE[buff.kind] === BuffCadence.Activated)
+    return templateIdFor(buff.kind, null, undefined)
+  const suit = buffTargetSuitOf(buff)
+  return templateIdFor(buff.kind, buff.reward.axis, suit ?? undefined)
+}
+
+/** The template itself, or `undefined` when this build no longer has one — exactly what
+ *  `reconcileVault` already tests a stale id against. A caller must handle `undefined` rather
+ *  than assert: a pruned family is not a programming error. */
+export function templateForBuff(buff: Buff): BuffTemplate | undefined {
+  return templateById(templateIdForBuff(buff))
 }
 
 /** One `Buff` per grant, consecutive ids from `firstId`, mirroring `mintPullAwards`. A grant

@@ -31,4 +31,9 @@ describe('screenFor', () => {
   it('reports verdict when the phase is Warned and the encounter is over', () => {
     expect(screenFor(RunPhase.Warned, true)).toBe('verdict')
   })
+
+  it('shows the Manage Buffs screen only once the encounter is over', () => {
+    expect(screenFor(RunPhase.ManageBuffs, true)).toBe('manageBuffs')
+    expect(screenFor(RunPhase.ManageBuffs, false)).toBe('warCouncil')
+  })
 })

@@ -1,0 +1,359 @@
+/* DLR-159 — the Manage Buffs screen. Ported from this contract's `mockup.html`, with the fake
+   `.card`/`.card-face` markup swapped for the real `.wc-buffcard` classes `CombineGroupCard.tsx`
+   renders — `warCouncilBuffCard.css` (imported there) owns the card's own rules; this sheet owns
+   the shell, the bands, the strip and the confirmation face.
+
+   Tokens are `warCouncil.css`'s own (`--wc-*`), imported transitively through
+   `warCouncilBuffCard.css`, so this screen reads as the same room as the felt and the shop rather
+   than a fourth palette. Every `clamp()` bound is a PLACEHOLDER the developer owns, except the
+   tile width — that one REUSES `warCouncil.css`'s `--wc-buffcard-w` rather than inventing a new
+   number, exactly as `shopHeld.css` already does for the same reason: `.wc-buffcard` takes its
+   width from being a GRID ITEM in the loadout gallery, so dropped into an `<li>` here it would
+   collapse to a zero-width dot without an explicit width. */
+
+/* ---- shell: one full-viewport grid, three rows, never scrolls ---- */
+.mb-shell {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(0.4rem, 1.4vmin, 0.9rem);
+  padding: clamp(0.5rem, 1.8vmin, 1.1rem);
+  padding-top: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-top, 0px));
+  padding-bottom: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-bottom, 0px));
+  padding-left: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-right, 0px));
+  background: var(--wc-felt, #16241f);
+  color: var(--wc-chalk, #e8e4d8);
+  font-family: var(--wc-sans);
+  color-scheme: dark;
+}
+
+/* ---- zone 1: status, pinned to the top edge ---- */
+.mb-status {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(0.8rem, 3vmin, 2rem);
+  padding: 0.2rem clamp(0.4rem, 2vmin, 1rem) 0.5rem;
+  border-bottom: 1px solid #ffffff14;
+}
+.mb-title {
+  font-size: clamp(0.95rem, 2.2vmin, 1.3rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wc-brass);
+  font-weight: 700;
+}
+.mb-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.mb-stat-value {
+  font-size: clamp(1.1rem, 3vmin, 1.7rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.mb-stat-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b4ac9a;
+}
+.mb-rule {
+  margin: 0 0 0 auto;
+  max-width: 34ch;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #cfc8b8;
+}
+.mb-back {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--wc-chalk);
+  background: #ffffff0f;
+  border: 1px solid #ffffff2e;
+  border-radius: 8px;
+  padding: 0.62rem 1rem;
+  min-height: 44px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+@media (hover: hover) {
+  .mb-back:hover {
+    background: #ffffff1c;
+  }
+}
+.mb-back:active {
+  background: #ffffff1c;
+}
+.mb-back:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+/* ---- zone 2: the piles ---- */
+.mb-stage {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1.4vmin, 0.9rem);
+}
+.mb-empty {
+  margin: 0;
+  font-size: clamp(0.7rem, 1.6vmin, 0.85rem);
+  font-style: italic;
+  color: #a49c8b;
+}
+.mb-bandrow {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.3rem;
+  min-height: 0;
+}
+.mb-bandrow-refused {
+  min-height: max-content;
+}
+.mb-bandhead {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a49c8b;
+}
+.mb-bandhead::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ffffff17;
+}
+.mb-bandhead .mb-pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--wc-brass);
+  /* form, not only colour: the refused band's pip is a hollow diamond */
+}
+.mb-bandhead.is-refused .mb-pip {
+  background: none;
+  border: 1px solid #8b8272;
+  transform: rotate(45deg);
+}
+
+.mb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--wc-buffcard-w), 1fr));
+  gap: clamp(0.35rem, 1.1vmin, 0.7rem);
+  align-content: start;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ---- one pile: the card, plus a strip that says what it can do ---- */
+.mb-pile {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 0.25rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.mb-pile:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+li.mb-pile.is-refused {
+  cursor: default;
+  min-width: 0;
+}
+
+.mb-grid .wc-buffcard {
+  width: var(--wc-buffcard-w);
+}
+
+@media (hover: hover) {
+  button.mb-pile:hover .wc-buffcard {
+    transform: translateY(-2px);
+  }
+}
+
+/* tarnish: refused piles read as inert without relying on hue */
+li.mb-pile.is-refused .wc-buffcard {
+  filter: saturate(0.25) brightness(0.82);
+}
+
+/* the strip under the card — the pile's own verdict, always visible, never on hover */
+.mb-strip {
+  font-size: 0.66rem;
+  line-height: 1.25;
+  border-radius: 6px;
+  padding: 4px 6px;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mb-strip.is-ready {
+  background: #3f6b3d40;
+  border: 1px solid #7fb27a80;
+  color: #dcecd8;
+  font-weight: 700;
+}
+.mb-strip.is-refused {
+  background: #ffffff0a;
+  border: 1px dashed #ffffff26;
+  color: #a49c8b;
+}
+.mb-arrow {
+  font-weight: 700;
+}
+
+/* the "just made" mark — a form change (notched ribbon), so it survives greyscale and outlives
+   any animation. Cleared only by the next combine, never by a timer. */
+.mb-new {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  z-index: 3;
+  background: var(--wc-parchment, #e9e1cd);
+  color: #1b1710;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px 2px 5px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 50%, 100% 100%, 0 100%);
+  box-shadow: 0 2px 6px #0009;
+}
+
+/* ---- the armed state: the confirmation lives ON the pile ---- */
+div.mb-pile.is-armed {
+  position: relative;
+}
+.mb-confirm {
+  position: absolute;
+  inset: -6px;
+  z-index: 4;
+  background: linear-gradient(180deg, #23303a 0%, #131b21 100%);
+  border: 1px solid var(--wc-brass-dim, #7d6132);
+  border-radius: 12px;
+  box-shadow: 0 10px 26px #000c;
+  padding: 7px;
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr auto;
+  gap: 4px;
+  font-size: 0.64rem;
+}
+.mb-confirm-lab {
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a49c8b;
+}
+.mb-confirm-lose {
+  color: #edc7c0;
+  line-height: 1.25;
+  text-decoration: line-through;
+}
+.mb-confirm-gain {
+  color: #dcecd8;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.mb-confirm-cost {
+  align-self: end;
+  font-size: 0.62rem;
+  color: #cfc8b8;
+  border-top: 1px solid #ffffff1f;
+  padding-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.mb-confirm-acts {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
+}
+.mb-go,
+.mb-no {
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  min-height: 44px;
+  border-radius: 7px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.mb-go {
+  background: var(--wc-ready-deep, #3f6b3d);
+  color: #eaf6e7;
+  border: 1px solid var(--wc-ready, #7fb27a);
+}
+.mb-no {
+  background: #ffffff0f;
+  color: var(--wc-chalk);
+  border: 1px solid #ffffff2e;
+  padding: 0 8px;
+}
+@media (hover: hover) {
+  .mb-go:hover {
+    background: #4d8149;
+  }
+  .mb-no:hover {
+    background: #ffffff1c;
+  }
+}
+.mb-go:active,
+.mb-no:active {
+  background: #4d8149;
+}
+.mb-go:focus-visible,
+.mb-no:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+/* ---- zone 3: the ledger, pinned to the bottom edge ---- */
+.mb-foot {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.6rem, 2.4vmin, 1.6rem);
+  padding: 0.45rem clamp(0.4rem, 2vmin, 1rem) 0.1rem;
+  border-top: 1px solid #ffffff14;
+  font-size: 0.8rem;
+}
+.mb-log {
+  color: #dcecd8;
+  min-height: 1.2em;
+}
+.mb-log:empty {
+  display: none;
+}
+.mb-spend {
+  margin-left: auto;
+  color: #b4ac9a;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .mb-rule {
+    display: none;
+  }
+}

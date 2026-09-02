@@ -17,7 +17,12 @@ gated by `loadoutDoorOpen` — so every spec that reached the old panel through
   axis and reward value**. Two cards merge only when they are the same card in every respect a
   player could tell apart, which is what makes the `×N` on the face exact — two Bell-Takers that pay
   different amounts are two cards, not one card counted twice. The first copy in pile order is the
-  one a tap acts on (`BuffStack.buff`), so repeated taps spend a stable copy.
+  one a tap acts on (`BuffStack.buff`), so repeated taps spend a stable copy. **Since DLR-159 that
+  composition lives in `src/hunt/buffCombine.ts` as `buffCombineKey`, and `buffStackKey` is a one-line
+  delegation to it** — the shop combines two cards on exactly this rule, and two answers to "is this
+  the same card" is the drift the delegation exists to prevent. The name, the signature and the
+  composed string here are unchanged, and this file's spec still guards them. See
+  [../hunt/combining-cards.md](../hunt/combining-cards.md).
 - **Runs.** `buffRunOf(buff)` is `suit ?? (cadence is Activated ? press : suitless)`. The activated
   test reads `BUFF_CADENCE[buff.kind]` rather than a hard-coded list of the two activated kinds, so
   restoring a cut consumable needs no edit here. `BUFF_RUN_ORDER` fixes the order:
@@ -45,7 +50,14 @@ a **roman numeral** (`I` / `II` / `III`), the cadence word, the `×N` when the s
 one, the card's name, its condition sentence, and the payoff bar pinned to the bottom edge.
 
 **Tier is legible without colour by construction.** A metallic gradient reads as light-and-dark in
-greyscale, never as bronze/silver/gold, so the numeral is the carrier that survives. The tier
+greyscale, never as bronze/silver/gold, so the numeral is the carrier that survives.
+
+> **DLR-159 moved the three lookup tables out of the component.** `TIER_NUMERAL`, `TIER_CLASS` and
+> `SUIT_CLASS` were carried separately by `BuffCard.tsx` here and by `HeldBuffCard.tsx` in the shop
+> tray; the Manage Buffs screen's pile tile would have been the third copy, which is what made the
+> duplication real — a new suit or tier meant three synchronised edits with no compiler check tying
+> them together. They now live once in `buffCardVisuals.ts`, a pure lookup table and **not** a
+> component: all three files still render their own card face. The tier
 *word* is deliberately not rendered — it is what pushed the condition text into the payoff bar on
 the mockup.
 

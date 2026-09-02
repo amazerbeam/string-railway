@@ -28,6 +28,36 @@
   color: var(--wc-chalk-dim);
 }
 
+/* DLR-159 AC1 — opens the Manage Buffs screen. Sits in the tray's own heading, beside the count it
+   acts on, rather than as a second control elsewhere on the shop screen. */
+.shop-held-manage {
+  margin-left: auto;
+  font: inherit;
+  font-size: clamp(0.55rem, 1.3vmin, 0.66rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wc-chalk);
+  background: #ffffff0f;
+  border: 1px solid #ffffff2e;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  min-height: 44px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+@media (hover: hover) {
+  .shop-held-manage:hover {
+    background: #ffffff1c;
+  }
+}
+.shop-held-manage:active {
+  background: #ffffff1c;
+}
+.shop-held-manage:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
 .shop-held-empty {
   margin: 0;
   font-size: clamp(0.64rem, 1.5vmin, 0.78rem);

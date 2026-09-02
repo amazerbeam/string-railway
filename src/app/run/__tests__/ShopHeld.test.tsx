@@ -17,10 +17,10 @@ function mint(templateIndex: number, tier: BuffTier, id: BuffId): Buff {
 // throws outside a `MotionAnchorProvider` (`motionAnchorContext.ts`'s own guard). `ShopPanel.tsx`
 // mounts the real one in production; every render here needs its own, the same collateral fix
 // Phase 3 made for `BuffGallery.test.tsx` and `BuffRidingList`'s own callers.
-function renderShopHeld(buffs: readonly Buff[]) {
+function renderShopHeld(buffs: readonly Buff[], onManageBuffs = () => {}) {
   return render(
     <MotionAnchorProvider>
-      <ShopHeld buffs={buffs} />
+      <ShopHeld buffs={buffs} onManageBuffs={onManageBuffs} />
     </MotionAnchorProvider>,
   )
 }
@@ -59,9 +59,11 @@ describe('ShopHeld — the "what you hold" tray', () => {
     ).toBeTruthy()
   })
 
-  it('renders NO button — nothing here can be activated between fights', () => {
+  it('renders no card as a button — nothing on a card here can be activated between fights', () => {
     renderShopHeld([mint(0, BuffTier.Bronze, 1)])
-    expect(screen.queryAllByRole('button')).toHaveLength(0)
+    // DLR-159 — the tray's OWN "Manage Buffs" control is a legitimate button; the card itself
+    // (a `.wc-buffcard`) must not be one.
+    expect(document.querySelector('button.wc-buffcard')).toBeNull()
   })
 
   it('groups itself under its own accessible label', () => {

@@ -101,6 +101,7 @@ function baseProps(heldBuffs: readonly Buff[] = []) {
     flaskRefusal: null as FlaskRefusal | null,
     onDrinkFlask: vi.fn(),
     heldBuffs,
+    onManageBuffs: vi.fn(),
     onBuy: vi.fn(),
     onLeave: vi.fn(),
     refusals: noRefusals,

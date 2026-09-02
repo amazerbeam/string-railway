@@ -1,4 +1,4 @@
-import { BuffTier, type Buff } from '../../hunt'
+import { BuffTier, type Buff, type BuffId } from '../../hunt'
 import { buffStackKey } from '../warCouncil/buffGalleryModel'
 
 /**
@@ -14,12 +14,15 @@ import { buffStackKey } from '../warCouncil/buffGalleryModel'
  * shop and there is one rule for what "the same card" means.
  */
 
-/** One pile of identical cards, as the shop reads it. No `refusal` and no `ids`: nothing on this
- *  screen can spend a copy, so the id a tap would act on is not a fact the tray needs. */
+/** One pile of identical cards, as the shop reads it. */
 export interface HeldBuffStack {
   /** The copy whose wording and tier the pile is drawn from. */
   readonly buff: Buff
   readonly count: number
+  /** DLR-159 — every held copy's id, ascending. The shop's combine consumes the two lowest, and
+   *  the tray itself ignores this. `count` stays rather than becoming `ids.length`: the tray reads
+   *  a count and should not have to know it is reading a list. */
+  readonly ids: readonly BuffId[]
 }
 
 const TIER_RANK: Readonly<Record<BuffTier, number>> = {
@@ -37,19 +40,23 @@ const TIER_RANK: Readonly<Record<BuffTier, number>> = {
  * Pure: no `Math.random()`, no date, and the input array is never mutated.
  */
 export function heldBuffStacks(buffs: readonly Buff[]): readonly HeldBuffStack[] {
-  const byKey = new Map<string, { buff: Buff; count: number }>()
+  const byKey = new Map<string, { buff: Buff; ids: BuffId[] }>()
   for (const buff of buffs) {
     const key = buffStackKey(buff)
     const existing = byKey.get(key)
-    if (existing === undefined) byKey.set(key, { buff, count: 1 })
-    else existing.count += 1
+    if (existing === undefined) byKey.set(key, { buff, ids: [buff.id] })
+    else existing.ids.push(buff.id)
   }
   return [...byKey.entries()]
     .sort(([keyA, a], [keyB, b]) => {
       const byTier = TIER_RANK[b.buff.tier] - TIER_RANK[a.buff.tier]
       return byTier !== 0 ? byTier : keyA.localeCompare(keyB)
     })
-    .map(([, stack]) => ({ buff: stack.buff, count: stack.count }))
+    .map(([, stack]) => ({
+      buff: stack.buff,
+      count: stack.ids.length,
+      ids: [...stack.ids].sort((a, b) => a - b),
+    }))
 }
 
 /** Total copies held — the figure the tray's heading prints. Counts COPIES, not piles, so two

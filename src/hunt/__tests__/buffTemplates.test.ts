@@ -7,6 +7,8 @@ import {
   conditionThresholdOf,
   mintFromTemplate,
   templateById,
+  templateForBuff,
+  templateIdForBuff,
   templatesForFamily,
 } from '../buffTemplates'
 import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
@@ -127,5 +129,17 @@ describe('conditionThresholdOf', () => {
   it('returns null — a real answer — for a family with no threshold', () => {
     const taker = templatesForFamily(BuffKind.Taker)[0]
     expect(conditionThresholdOf(mintFromTemplate(taker, BuffTier.Bronze, 1))).toBeNull()
+  })
+})
+
+describe('templateIdForBuff', () => {
+  it('round-trips every template in the pool at every tier', () => {
+    for (const template of BUFF_TEMPLATES) {
+      for (const tier of [BuffTier.Bronze, BuffTier.Silver, BuffTier.Gold]) {
+        const minted = mintFromTemplate(template, tier, 1)
+        expect(templateIdForBuff(minted)).toBe(template.id)
+        expect(templateForBuff(minted)).toBe(template)
+      }
+    }
   })
 })

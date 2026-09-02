@@ -269,10 +269,19 @@ const RunPhase = {
   Verdict: 'verdict',
   Warned: 'warned',
   Shop: 'shop',
+  ManageBuffs: 'manageBuffs', // DLR-159 — reachable ONLY from the shop, returning ONLY to the shop
   Map: 'map', // DLR-85
   Vault: 'vault', // DLR-118 — reachable ONLY from a terminal verdict
 } as const
 ```
+
+**DLR-159 added `ManageBuffs` and cost the driver no new state either**, the same argument DLR-118
+made for `Vault`. It is gated `encounterOver && phase === RunPhase.ManageBuffs`, exactly like `Shop`
+and `Map`, and only `ShopPanel`'s `onManageBuffs` sets it. Making it a phase rather than a boolean
+inside `ShopPanel` is also what keeps the screen visible to `screenFor`, and therefore to
+`debugState`'s mirror. Its hook, `useManageBuffs(run, setRun)`, is called unconditionally at the top
+level for the same hooks-order reason `useShopSlot` is, and returns the panel's whole props object so
+the branch stays about eight lines — the file finished the contract at **399** lines.
 
 **A union rather than booleans beside each other, because "in the shop AND warned" is a state that must
 not exist.** It is declared at module scope beside `HUNT` and `NO_TRICKS`, and held in one `useState`.

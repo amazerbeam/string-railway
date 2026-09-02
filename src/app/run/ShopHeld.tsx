@@ -7,6 +7,7 @@ import {
   SHOP_HELD_EMPTY,
   SHOP_HELD_GROUP_LABEL,
   SHOP_HELD_LABEL,
+  SHOP_MANAGE_BUFFS_LABEL,
   heldCountText,
 } from './shopLabels'
 import './shopHeld.css'
@@ -28,7 +29,15 @@ import './shopHeld.css'
  * `stacks.length > 0`) — the very first purchase of a run must still have a destination to fly
  * toward. `ShopPanel.tsx` mounts the `MotionAnchorProvider` this resolves against.
  */
-export default function ShopHeld({ buffs }: { readonly buffs: readonly Buff[] }) {
+export default function ShopHeld({
+  buffs,
+  onManageBuffs,
+}: {
+  readonly buffs: readonly Buff[]
+  /** DLR-159 AC1 — opens the Manage Buffs screen. Lives with the heading of the tray it acts on,
+   *  rather than duplicated as a second block in `ShopPanel`. */
+  readonly onManageBuffs: () => void
+}) {
   const stacks = heldBuffStacks(buffs)
   const trayRef = useMotionAnchor({ kind: PlaceKind.HeldTray })
 
@@ -39,6 +48,9 @@ export default function ShopHeld({ buffs }: { readonly buffs: readonly Buff[] })
         {/* The count renders only when there IS something to count — `game-ux`'s rule against a
             readout that exists to report nothing. */}
         {buffs.length > 0 && <span className="shop-held-count">{heldCountText(buffs.length)}</span>}
+        <button type="button" className="shop-held-manage" onClick={onManageBuffs}>
+          {SHOP_MANAGE_BUFFS_LABEL}
+        </button>
       </h2>
       {stacks.length === 0 ? (
         // Said once, plainly, and it points at the thing to do about it — an empty tray with no

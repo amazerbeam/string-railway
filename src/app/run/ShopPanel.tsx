@@ -74,6 +74,8 @@ interface ShopPanelProps {
    *  way to say what was held, which the developer named as the screen's worst gap: coins and
    *  health were visible and the actual holdings were not. `ShopHeld` owns the grouping. */
   readonly heldBuffs: readonly Buff[]
+  /** DLR-159 AC1 — opens the Manage Buffs screen. */
+  readonly onManageBuffs: () => void
   /** AC10 — the coming opponent's display name, `undefined` while the roster has no entry. Also
    *  names the leave control (AC8, DLR-85). */
   readonly nextOpponentName: string | undefined
@@ -139,6 +141,7 @@ function ShopPanelContent({
   flaskRefusal,
   onDrinkFlask,
   heldBuffs,
+  onManageBuffs,
   nextOpponentName,
   progressText,
   refusals,
@@ -274,7 +277,7 @@ function ShopPanelContent({
       </main>
 
       <footer className="shop-tray">
-        <ShopHeld buffs={heldBuffs} />
+        <ShopHeld buffs={heldBuffs} onManageBuffs={onManageBuffs} />
 
         <div className="shop-buys">
           {SHOP_ITEMS.map(renderItem)}

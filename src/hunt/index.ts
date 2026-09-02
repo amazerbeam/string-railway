@@ -348,8 +348,18 @@ export {
   mintFromTemplate,
   conditionThresholdOf,
   templateById,
+  templateIdForBuff,
+  templateForBuff,
   mintGrants,
 } from './buffTemplates'
+
+export {
+  CombineRefusal,
+  buffCombineKey,
+  nextBuffTierAfter,
+  combineRefusalFor,
+  combineBuffs,
+} from './buffCombine'
 
 export type { SlotMachine, SlotAward, SlotPull, SlotVisitStock } from './slotMachine'
 export {
