@@ -1624,6 +1624,111 @@ which is the line at which throwing a hand beats playing it.
 **Still open.** Whether the Momentum Feeder ships at the same tier ladder as the damage version, and
 whether the carry is shown as a raw figure or as a preview of what the next hand opens with.
 
+### Skull Helmet and Skull Tether — two cards that answer the forced skull
+
+**Developer's idea, worked through 2026-09-02**, out of the first narrated play session
+(`the-hunt-play-session-2026-09-02.md`), whose most-repeated complaint was being trapped by a skull
+with no counterplay: _"I'm forced to lose this hand no matter what I play"_, _"there's nothing I can
+do about that"_, _"I couldn't do anything about it — they played the thing and my whole streak is
+gone."_
+
+#### The problem these answer
+
+The trap is specific and the ruleset already names it as unaddressed. When the Quarry is **void in
+the suit you led**, every card it holds loses the trick, so `chooseCpuCard`'s first branch — the
+lowest legal card that would lose _and_ carries a skull — always has a candidate. It will throw away
+a trick it could have won to hand you a skull. You are leading, so their card comes second and
+decides the outcome, and the skull rank curve does not help because rank is irrelevant to a card
+that is losing anyway. `the-hunt.md` §3 records the void case as one of two the curve deliberately
+does not protect against.
+
+The situation is common. The simulator counts about **25 forced hurts a run**; a Cheat answers
+roughly half of them, the ones an off-suit card would have banked. The other **~13 a run** have no
+answer in the game at all.
+
+Two things make it sting rather than merely cost: it is unavoidable, _and_ it wipes the whole streak.
+
+#### The mechanic
+
+Both cards are ordinary condition buffs, armed for a trick in the normal window, spent when used.
+Their condition is **you took a trick that carried a skull** — the "eat a skull with this card" rule
+that `the-hunt.md` §4 already defines, prices and enforces, and which has simply not been dealt since
+2026-08-25. Turning it on is a row in `TEMPLATE_FAMILIES` plus a type widening; the rule is written.
+
+What is new is the **reward axis**. Neither card pays damage or multiplier — they protect. That is a
+third thing a card can be worth, and it is the first card in the pool that touches the resource runs
+actually die to.
+
+| | **Skull Helmet** | **Skull Tether** |
+| --- | --- | --- |
+| **Bronze** | you eat the skull, take the 1 health, and your **total** survives | as bronze, but your **roll** survives |
+| **Silver** | as bronze, and it also covers a **clean loss**, not only a skull | as bronze, and also covers a clean loss |
+| **Gold** | as silver, and the surviving total **gains 1** | as silver, and the surviving roll **climbs by 1** |
+
+Two rules the pair inherits rather than invents:
+
+- **Nothing insures the health.** You take the 1 either way, on every rung. This holds the line every
+  other protective thing in the game holds — the Timebomb exception, the Swan's rungs and the Blast
+  Guard all spare the streak and never the health.
+- **They do not stack.** Protection is binary — a total either survives or it does not — so a second
+  copy armed on the same trick does nothing.
+
+#### The arithmetic
+
+Carrying a **total of 8 on a roll of 2** when the skull lands, then banking one trick worth 1:
+
+| Armed | After the skull | Next banked trick | Pot |
+| --- | --- | --- | --- |
+| nothing | 0, roll 0 | 1, roll 1 | **1** |
+| Tether (bronze) | 0, roll 2 | 1, roll 3 | **3** |
+| Helmet (bronze) | 8, roll 0 | 9, roll 1 | **9** |
+| both (bronze) | 8, roll 2 | 9, roll 3 | **27** |
+| both (gold) | 9, roll 3 | 10, roll 4 | **40** |
+
+Three consequences fall out of that table and none of them had to be designed:
+
+- **The Helmet is the stronger single card, and it should be.** The roll climbs by exactly 1 a trick;
+  the total climbs by whatever the trick's cards paid. Once buffs are firing, the total is the larger
+  number, so preserving it is worth more. On bare tricks with nothing fired the two are identical
+  (both give 3), so the Helmet never loses — it only pulls ahead.
+- **The golds are deliberately unequal.** The same "+1" buys the Helmet one point of damage and buys
+  the Tether the entire total a second time — at a total of 10, one extra roll is worth 10. Accepted
+  by the developer on the grounds that the Tether's situation is rarer.
+- **Holding both is the point.** The pair recovers what a single both-axes card would have done, and
+  the second card fired also earns the Overlap Bonus the game already pays. That gives the card pool
+  its **first collectible pair** — the first thing in a run to build toward rather than accumulate.
+
+#### Why it is a good card and not just a safety net
+
+The trap is **readable before it springs**. The suit-shape panel already posts how many cards the
+Quarry holds per suit and how many are skulled, and in the session the developer read it correctly
+and out loud — _"he's free now"_ — a full trick before the skull landed. The panel currently tells
+you that you are trapped and offers nothing to do about it. This is the thing to do about it.
+
+That is the precise opposite of Timebomb, which the strategy guide measures as a tax on skill because
+its window opens before either card is laid, so it can never be aimed. These can be.
+
+#### Still open
+
+- **The Quarry's skull play is deterministic**, so a player who has learned the rule is rarely wrong
+  about the prediction. That makes these cards a reliable counter rather than a bet — which may be
+  the better card, but it is not what the idea set out to be. Making the Quarry sometimes hold a
+  skull back would restore the gamble, and is a change to `chooseCpuCard` rather than to these cards.
+- **Whether either should also catch a Timebomb landing on you**, which is the one other thing that
+  wipes a streak and is currently covered only by a Blast Guard that nothing sells.
+- **Whether the golds' +1 is the right size**, given the game's own ladders run 1 / 3 / 5 for damage
+  and 2 / 3 / 5 for multiplier, so +1 is below what a bronze card pays elsewhere.
+- **What the machine's stocking weights should be**, and whether a protective card belongs on the
+  same strip as the damage families at all.
+
+#### The consequence worth noticing elsewhere
+
+**These are the first cards for which combining is the correct play.** Because they do not stack, two
+bronze Helmets on one trick are worth exactly one bronze Helmet, so merging them into a silver is a
+strict gain. Every other family in the game rewards hoarding duplicates, because the Overlap Bonus
+counts cards — which is why the Manage Buffs screen is currently a trap. This pair breaks that on
+purpose, and is the first evidence that the screen can be worth using.
+
 ## Promoted
 
 ### Health replaces the Demand — became `hybrid-design.md` §5 and the opening section, 2026-08-11

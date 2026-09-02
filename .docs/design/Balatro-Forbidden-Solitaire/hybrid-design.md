@@ -1202,6 +1202,39 @@ reading this section states rather than makes.
 
 ## 7. Run length and depth budget
 
+### The target: a run is 30–40 minutes — decided by the developer, 2026-09-02
+
+**A run should be one sitting, and one sitting is 30 to 40 minutes.** That is the figure the
+roster is sized against from now on, and it is a design target rather than a tuning value: the
+number of opponents is derived from it, not chosen alongside it.
+
+**The twenty-five currently configured were never a decision.** They were picked as a goal known to
+be out of reach at the time, as a stand-in — *"I just picked the number 25 out of the air as a goal
+that I knew was unreachable."* Nothing was measured against them and nothing depends on them.
+
+**Measured against the target, the run today is roughly ten times too long.** The first narrated
+play session (`the-hunt-play-session-2026-09-02.md`) covered two fights and a shop visit in 33
+minutes, which is about 16 minutes per fight-plus-shop. Narrating inflates that, but the later
+fights are longer — opponents hold more health — and the shop visit lengthens as income outruns
+prices, so 25 fights is on the order of **six hours**. A Balatro run, the direct comparison, is
+30–40 minutes (`balatro.md` §1.5: eight antes, three blinds each).
+
+**What this makes derivable.** Once a fight-plus-shop is timed against a player who is not narrating
+and knows what they are doing, the roster length is that time divided into the target — and the
+number of stages follows from it, because a stage is wherever a boss sits. Nothing else in the game
+has to change to shorten a run: the run's length is however many names are configured, and adding or
+removing a name adds or removes a fight ([`the-hunt.md` §10](../../game_rules/the-hunt.md)).
+
+**Two consequences worth stating before the roster is cut.** A shorter run makes each opponent's
+health curve and the boss multiplier matter far more per fight, since there are fewer fights to
+spread the climb over. And it sharpens rather than softens §12's depth-budget risk: fewer encounters
+means the pattern has to be worth re-entering, which is an argument about repeatability, not length.
+
+**Still open:** the fight-plus-shop time to divide by, which needs one un-narrated timed session;
+and whether the five-stage shape survives a shorter roster.
+
+---
+
 **The choice: roguelike-repeatable and short.** The discarded branch, in one line: a
 linear-narrative arc was rejected because `balatro.md` §2.4 shows Balatro's slippery slope is only
 tolerable when a run is short and restarting is free — a narrative spine would inherit that same

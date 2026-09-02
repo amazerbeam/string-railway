@@ -1,0 +1,607 @@
+<title>Hunt Session Fixes</title>
+<style>
+  :root {
+    --chamber: #0b1013;
+    --felt: #16302a;
+    --brass: #c9a349;
+    --brass-dim: #6b5a2c;
+    --chalk: #e8e4d8;
+    --chalk-dim: #8d968f;
+    --alarm: #c4503c;
+    --parchment: #ded3ba;
+    --serif: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    /* PLACEHOLDER — the two new tunables the plan adds. Developer's to set. */
+    --resolve-panel-w: 22rem;
+    --resolve-panel-inset: 1.1rem;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--chamber); color: var(--chalk); font-family: var(--sans); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 1.2rem 1rem 4rem; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; margin: 0 0 .2rem; color: var(--brass); }
+  .lede { color: var(--chalk-dim); font-size: .82rem; margin: 0 0 1.2rem; max-width: 62ch; line-height: 1.5; }
+
+  nav.tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+  nav.tabs button {
+    font: inherit; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase;
+    padding: .5rem .8rem; min-height: 44px; border-radius: 7px; cursor: pointer;
+    background: #131b1f; color: var(--chalk-dim); border: 1px solid #26333a;
+  }
+  nav.tabs button[aria-pressed="true"] { background: #1d2a22; color: var(--brass); border-color: var(--brass-dim); }
+  section.pane[hidden] { display: none !important; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: 1.05rem; color: var(--brass); margin: 0 0 .1rem; }
+  .ac { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--chalk-dim); margin: 0 0 .9rem; }
+
+  /* ---------- shared felt stand-in ---------- */
+  .felt {
+    position: relative; border-radius: 12px; min-height: 30rem; overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 30%, #1d3a32 0%, #0f221e 70%);
+    border: 1px solid #22332c; display: grid; grid-template-rows: auto 1fr auto; padding: .8rem;
+  }
+  .band { display: flex; justify-content: space-between; font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: var(--chalk-dim); }
+  .table-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; }
+  .table-line { font-family: var(--serif); font-size: .95rem; margin: 0; }
+  .hand { display: flex; gap: .4rem; justify-content: center; padding-top: .6rem; }
+
+  /* ---------- cards ---------- */
+  .card {
+    width: 3.4rem; aspect-ratio: 2/3; border-radius: 7px; background: var(--parchment); color: #1b1a16;
+    display: flex; flex-direction: column; justify-content: space-between; padding: .25rem .3rem;
+    font-family: var(--serif); font-size: .8rem; border: 1px solid #00000040; position: relative; cursor: pointer;
+  }
+  .card.sm { width: 2.6rem; font-size: .68rem; }
+  .card .suit { font-size: .72rem; align-self: flex-end; }
+  .card.bells { box-shadow: inset 0 0 0 2px #c9873f66; }
+  .card.keys { box-shadow: inset 0 0 0 2px #4f7fa866; }
+  .card.moons { box-shadow: inset 0 0 0 2px #7a6aa866; }
+  .card .skull {
+    position: absolute; inset-inline: 0; bottom: .18rem; text-align: center; font-size: .8rem;
+    color: #6d1d16;
+  }
+  .card.winner { outline: 2px solid var(--brass); outline-offset: 1px; }
+
+  /* ---------- AC11: resolution as a corner PANEL, felt still visible ---------- */
+  .resolve-panel {
+    position: absolute; right: var(--resolve-panel-inset); bottom: var(--resolve-panel-inset);
+    width: var(--resolve-panel-w); max-width: calc(100% - 2 * var(--resolve-panel-inset));
+    background: #0f1518; border: 1px solid var(--brass-dim); border-radius: 11px;
+    box-shadow: 0 16px 40px #000000cc; padding: .7rem .8rem .8rem; z-index: 40;
+  }
+  .resolve-head { font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--chalk-dim); margin: 0 0 .45rem; display: flex; justify-content: space-between; gap: .5rem; }
+  /* AC7 — the decree, on the panel */
+  .decree-chip { color: var(--brass); }
+
+  .resolve-trick { display: flex; gap: .55rem; align-items: flex-start; justify-content: center; margin-bottom: .5rem; }
+  .resolve-trick figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: .18rem; }
+  .resolve-trick figcaption { font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; color: var(--chalk-dim); }
+
+  /* AC2 — the four-outcome word, in the game's own terms, plus why */
+  .outcome { text-align: center; margin: 0 0 .1rem; font-family: var(--serif); font-size: 1rem; color: var(--brass); }
+  .outcome.hurt { color: var(--alarm); }
+  .outcome-why { text-align: center; margin: 0 0 .55rem; font-size: .62rem; color: var(--chalk-dim); }
+
+  /* AC5 — INVERTED hierarchy: the pot is the big figure, the trick is subordinate */
+  .figures { display: flex; align-items: baseline; justify-content: center; gap: .55rem; padding: .45rem 0 .1rem; border-top: 1px solid #1e2a2f; border-bottom: 1px solid #1e2a2f; margin-bottom: .5rem; }
+  .pot-value { font-family: var(--serif); font-size: 2.9rem; line-height: .95; color: var(--brass); font-variant-numeric: tabular-nums; }
+  .pot-key { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; color: var(--chalk-dim); }
+  .sub { font-size: .68rem; color: var(--chalk-dim); font-variant-numeric: tabular-nums; }
+  .sub b { color: var(--chalk); font-weight: 500; font-family: var(--serif); font-size: .95rem; }
+
+  /* AC3 — the breakdown, fired vs armed-and-dead */
+  .rows { display: flex; flex-direction: column; gap: .18rem; margin-bottom: .55rem; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: .5rem; font-size: .64rem; padding: .16rem 0; }
+  .row b { font-weight: 500; }
+  .row small { display: block; color: var(--chalk-dim); font-size: .58rem; }
+  .row .pay { font-family: var(--serif); color: var(--brass); font-size: .8rem; }
+  .row.dead { opacity: .55; }
+  .row.dead b { text-decoration: line-through; }
+  .row.dead .pay { color: var(--chalk-dim); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; }
+
+  .choices { display: flex; gap: .4rem; }
+  .pbtn {
+    flex: 1; font: inherit; text-align: left; cursor: pointer; min-height: 44px;
+    padding: .45rem .55rem; border-radius: 8px; background: #16221d; color: var(--chalk);
+    border: 1px solid var(--brass-dim); display: flex; flex-direction: column; gap: .05rem;
+  }
+  .pbtn.solid { background: #23331f; }
+  .pbtn.dashed { border-style: dashed; }
+  .pbtn b { font-family: var(--serif); font-weight: 400; font-size: .82rem; }
+  .pbtn .fig { font-family: var(--serif); color: var(--brass); font-size: 1.1rem; }
+  .pbtn small { font-size: .55rem; color: var(--chalk-dim); }
+  /* AC6 — lethal, and it reads without colour: a word, not only a hue */
+  .lethal-tag {
+    display: inline-block; margin-top: .18rem; font-size: .53rem; letter-spacing: .13em;
+    text-transform: uppercase; color: #f0d9a0; background: #5d1f14; border: 1px solid #8c3323;
+    border-radius: 3px; padding: .1rem .28rem;
+  }
+
+  /* ---------- AC1 ---------- */
+  .clickzone { position: absolute; inset: 0; }
+  .verdictline { position: absolute; left: 50%; transform: translateX(-50%); bottom: .6rem; font-size: .7rem; color: var(--brass); }
+  /* Developer red-line — a real button, not a hint line pretending to be one. */
+  .carry-btn {
+    font: inherit; font-size: .78rem; font-family: var(--serif); min-height: 44px;
+    padding: .55rem 1.2rem; border-radius: 8px; cursor: pointer;
+    background: #223328; color: var(--brass); border: 1px solid var(--brass);
+    letter-spacing: .02em;
+  }
+  .carry-btn:hover { background: #2b3f31; }
+  /* Developer red-line — the verdict said where the card lands, during the dwell */
+  .well-verdict { text-align: center; }
+  .well-verdict .word { font-family: var(--serif); font-size: 1.35rem; color: var(--brass); margin: 0; }
+  .well-verdict .word.hurt { color: var(--alarm); }
+  .well-verdict .why { font-size: .7rem; color: var(--chalk-dim); margin: .12rem 0 0; }
+
+  /* ---------- AC4 tooltip vs breakdown ---------- */
+  .anchor-zone { position: relative; height: 24rem; border: 1px dashed #26333a; border-radius: 10px; background: #0e1417; }
+  .bd-panel {
+    position: absolute; left: 3rem; bottom: 7.2rem; width: 19rem; background: #0f1518;
+    border: 1px solid var(--brass-dim); border-radius: 9px; padding: .45rem .55rem; z-index: 20;
+  }
+  .bd-panel h4 { margin: 0 0 .3rem; font: 400 .72rem var(--serif); color: var(--brass); }
+  .bd-line { font-size: .62rem; padding: .12rem 0; border-top: 1px solid #1c262b; }
+  .bd-line span { color: var(--chalk-dim); }
+  .tip {
+    position: absolute; width: 12rem; background: #0f1518; border: 1px solid var(--brass-dim);
+    border-radius: 8px; padding: .4rem .5rem; font-size: .62rem; line-height: 1.4; z-index: 90;
+    box-shadow: 0 8px 20px #000000c0; transition: bottom 140ms ease;
+  }
+  .tip b { display: block; color: var(--brass); font: 400 .74rem var(--serif); margin-bottom: .1rem; }
+  .tip.today { left: 2.4rem; bottom: 7.2rem; }        /* collides — today */
+  .tip.fixed { left: 2.4rem; bottom: 15.4rem; }        /* above the panel — the fix */
+  .hand-strip { position: absolute; left: 3rem; bottom: 1.2rem; display: flex; gap: .4rem; }
+
+  /* ---------- AC8 gallery filters ---------- */
+  .chiprow { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: .5rem; }
+  .chip {
+    font: inherit; font-size: .64rem; cursor: pointer; min-height: 44px; padding: .3rem .6rem;
+    border-radius: 6px; background: #131b1f; color: var(--chalk-dim); border: 1px solid #26333a;
+    display: inline-flex; align-items: center; gap: .34rem;
+  }
+  .chip[aria-pressed="true"] { color: var(--brass); border-color: var(--brass-dim); background: #1d2a22; }
+  .chip .n { color: var(--chalk-dim); font-variant-numeric: tabular-nums; }
+  .dot { width: .58rem; height: .58rem; border-radius: 2px; display: inline-block; }
+  .dot.bronze { background: #b0793f; } .dot.silver { background: #b9bec2; } .dot.gold { background: #d8b34a; }
+  .dot.all { background: linear-gradient(135deg, #b0793f 33%, #b9bec2 33% 66%, #d8b34a 66%); }
+  .grid { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .bcard {
+    width: 6.4rem; border-radius: 8px; padding: .4rem; font-size: .6rem; line-height: 1.35;
+    background: #182027; border: 1px solid #2c3941; cursor: pointer; min-height: 5.4rem;
+  }
+  .bcard .tierbar { height: 3px; border-radius: 2px; margin-bottom: .28rem; }
+  .bcard b { display: block; font-family: var(--serif); font-weight: 400; font-size: .68rem; color: var(--chalk); }
+  .bcard span { color: var(--chalk-dim); }
+  .empty { color: var(--chalk-dim); font-size: .68rem; padding: .6rem 0; }
+
+  /* ---------- AC9 pre-fight ---------- */
+  .path { display: flex; gap: .5rem; align-items: center; justify-content: center; margin: .8rem 0; }
+  .stage { width: 3.2rem; height: 3.2rem; border-radius: 50%; display: grid; place-items: center; font-size: .62rem; border: 1px solid #2c3941; background: #141c21; color: var(--chalk-dim); }
+  .stage.done { border-color: var(--brass-dim); color: var(--brass); }
+  .stage.next { border-color: var(--brass); color: var(--brass); box-shadow: 0 0 0 3px #c9a34922; }
+  .tray { border-top: 1px solid #22303a; padding-top: .6rem; margin-top: .6rem; }
+  .tray h3 { margin: 0 0 .4rem; font: 400 .8rem var(--serif); color: var(--brass); }
+
+  /* ---------- AC10 reels ---------- */
+  .reels { display: flex; gap: .5rem; justify-content: center; margin-bottom: .7rem; }
+  .window { width: 7rem; border-radius: 8px; background: #0d1417; border: 1px solid #2c3941; padding: .45rem .4rem; text-align: center; position: relative; }
+  .window.matched { border-color: var(--brass); }
+  .window .glyph { font-size: 1.3rem; }
+  .window .fam { font-family: var(--serif); font-size: .74rem; }
+  .window .axis { font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; color: var(--chalk-dim); }
+  /* AC10 — the tier, stated on the landed window and on each award */
+  .tierbadge {
+    display: inline-block; margin-top: .28rem; font-size: .53rem; letter-spacing: .12em;
+    text-transform: uppercase; padding: .1rem .32rem; border-radius: 3px; color: #16110a;
+  }
+  .tierbadge.gold { background: #d8b34a; } .tierbadge.silver { background: #b9bec2; } .tierbadge.bronze { background: #b0793f; }
+  .awards { list-style: none; margin: 0; padding: 0; font-size: .66rem; display: flex; flex-direction: column; gap: .25rem; }
+  .awards li { display: flex; align-items: center; gap: .4rem; }
+
+  /* ---------- AC12 fox prompt ---------- */
+  .prompt { background: #101a17; border: 1px solid #2a3a33; border-radius: 10px; padding: .7rem; }
+  .prompt .row { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+  .decline { font: inherit; font-size: .68rem; min-height: 44px; padding: .5rem .7rem; border-radius: 7px; background: #16221d; color: var(--chalk); border: 1px solid var(--brass-dim); cursor: pointer; }
+  .cancel { font: inherit; font-size: .68rem; min-height: 44px; padding: .5rem .7rem; border-radius: 7px; background: transparent; color: var(--chalk-dim); border: 1px dashed #3a4a44; cursor: pointer; }
+  .hint { font-size: .62rem; color: var(--chalk-dim); margin: .5rem 0 0; }
+
+  .log { margin-top: .8rem; font-size: .68rem; color: var(--brass); min-height: 1.2rem; }
+  .note { font-size: .68rem; color: var(--chalk-dim); line-height: 1.55; max-width: 66ch; margin: .8rem 0 0; }
+  .note code { color: var(--chalk); background: #16202400; }
+  button:focus-visible, .card:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <h1>DLR-160 — play-session fixes</h1>
+  <p class="lede">Layout and interaction only. Every figure, name and card below is fake placeholder data.
+    Every duration, size and colour is a placeholder for the developer to set. Click through each tab;
+    the log line under each panel says what fired.</p>
+
+  <nav class="tabs" id="tabs">
+    <button aria-pressed="true" data-pane="p1">1 · Carry-on &amp; arming</button>
+    <button aria-pressed="false" data-pane="p2">2 · Resolution panel</button>
+    <button aria-pressed="false" data-pane="p3">4 · Tooltip vs breakdown</button>
+    <button aria-pressed="false" data-pane="p4">8 · Suit filter</button>
+    <button aria-pressed="false" data-pane="p5">9 · Pre-fight review</button>
+    <button aria-pressed="false" data-pane="p6">10 · Reel tiers</button>
+    <button aria-pressed="false" data-pane="p7">12 · Fox cancel</button>
+  </nav>
+
+  <!-- ================= AC1 ================= -->
+  <section class="pane" id="p1">
+    <h2>The felt no longer advances itself — and it says what happened</h2>
+    <p class="ac">AC1 — dismissal cannot advance · AC2 — the verdict, where the card lands</p>
+    <div class="chiprow">
+      <button class="chip" id="stateWell" aria-pressed="true">Cards just landed</button>
+      <button class="chip" id="stateLead" aria-pressed="false">Between tricks — they are about to lead</button>
+    </div>
+    <div class="felt">
+      <div class="band"><span>Trick 3 of 6</span><span>Decree ☾ Moons</span></div>
+      <div class="table-zone">
+        <div class="clickzone" id="feltClick"></div>
+
+        <div id="wellState">
+          <div class="resolve-trick" style="margin-bottom:.4rem">
+            <figure>
+              <div class="card keys">5<span class="suit">✦</span><span class="skull">☠</span></div>
+              <figcaption>They led</figcaption>
+            </figure>
+            <figure>
+              <div class="card keys">2<span class="suit">✦</span></div>
+              <figcaption>You played</figcaption>
+            </figure>
+          </div>
+          <div class="well-verdict">
+            <p class="word">Dodge</p>
+            <p class="why">they took it, and it carried a skull — so it banks, and costs you nothing</p>
+          </div>
+          <div style="display:flex;justify-content:center;padding-top:.7rem">
+            <button class="carry-btn" id="carryOn">Carry on</button>
+          </div>
+        </div>
+
+        <div id="leadState" hidden style="text-align:center">
+          <p class="table-line">They are about to lead.</p>
+          <p class="hint" style="max-width:36ch;margin:.3rem auto .8rem">Apply&nbsp;Buff is live right here — this is
+            the between-tricks window <code>the-hunt.md</code> §4 already grants.</p>
+          <button class="carry-btn" id="letLead">Let them lead</button>
+        </div>
+      </div>
+      <div class="hand">
+        <div class="card bells" tabindex="0">7<span class="suit">◆</span></div>
+        <div class="card keys" tabindex="0">3<span class="suit">✦</span></div>
+        <div class="card moons" tabindex="0">9<span class="suit">☾</span></div>
+        <div class="card keys" tabindex="0">W<span class="suit">✦</span></div>
+      </div>
+    </div>
+    <p class="log" id="log1">Click anywhere on the dark felt — nothing should happen. Only the button advances.</p>
+    <p class="note">Today the well says only <em>"They take the trick. You take 1."</em> — the mechanical half,
+      which is exactly what misleads on a skull trick. It now says which of the four outcomes it was and why,
+      from the same module the resolution panel reads, so the two can never word one trick differently.
+      Both carry-on controls become real buttons; the copy no longer advertises tapping the table.</p>
+  </section>
+
+  <!-- ================= AC2/3/5/6/7/11 ================= -->
+  <section class="pane" id="p2" hidden>
+    <h2>The resolution panel</h2>
+    <p class="ac">AC2 skull &amp; outcome · AC3 dead buffs · AC5 inverted type · AC6 lethal · AC7 trump · AC11 not full-screen</p>
+    <div class="felt">
+      <div class="band"><span>Trick 4 of 6</span><span>Quarry · 12 health</span></div>
+      <div class="table-zone">
+        <p class="table-line" style="color:var(--chalk-dim)">the felt stays visible behind the panel</p>
+        <div class="hand" style="opacity:.4">
+          <div class="card bells">7<span class="suit">◆</span></div>
+          <div class="card keys">3<span class="suit">✦</span></div>
+          <div class="card moons">9<span class="suit">☾</span></div>
+        </div>
+      </div>
+      <div class="hand" style="opacity:.35">
+        <div class="card sm keys">2<span class="suit">✦</span></div>
+        <div class="card sm moons">5<span class="suit">☾</span></div>
+      </div>
+
+      <aside class="resolve-panel" aria-label="Trick resolved">
+        <p class="resolve-head">
+          <span>Trick 4 of 6</span>
+          <!-- AC7 -->
+          <span class="decree-chip">Decree ☾ Moons</span>
+        </p>
+
+        <div class="resolve-trick">
+          <figure>
+            <!-- AC2 — the skull on the card face -->
+            <div class="card keys">5<span class="suit">✦</span><span class="skull">☠</span></div>
+            <figcaption>They led</figcaption>
+          </figure>
+          <figure>
+            <div class="card keys">2<span class="suit">✦</span></div>
+            <figcaption>You played</figcaption>
+          </figure>
+        </div>
+
+        <!-- AC2 — the outcome, in the game's own four-outcome terms -->
+        <p class="outcome">Dodge</p>
+        <p class="outcome-why">they took it, and it carried a skull — so it banks</p>
+
+        <!-- AC5 — the pot is the big figure now; the trick's own contribution is subordinate -->
+        <div class="figures">
+          <div style="text-align:center">
+            <div class="pot-value" id="potFig">12</div>
+            <div class="pot-key">pot · 4 × 3</div>
+          </div>
+          <div class="sub">this trick <b>+1</b></div>
+        </div>
+
+        <!-- AC3 — what paid, and what was armed and did not -->
+        <div class="rows">
+          <div class="row">
+            <span><b>Key-Taker (Blade)</b><small>take a trick with Keys</small></span>
+            <span class="pay">+1</span>
+          </div>
+          <div class="row dead">
+            <span><b>Key-Feeder (Blade)</b><small>needed: lose a trick with Keys</small></span>
+            <span class="pay">did not fire</span>
+          </div>
+          <div class="row dead">
+            <span><b>Sidestep (Momentum)</b><small>needed: dodge a skull</small></span>
+            <span class="pay">did not fire</span>
+          </div>
+        </div>
+
+        <div class="choices">
+          <button class="pbtn solid" id="applyBtn">
+            <b>Apply Damage</b>
+            <span class="fig">12</span>
+            <!-- AC6 — reads without colour: it is a word, not only a red button -->
+            <span class="lethal-tag">Lethal · ends the fight</span>
+          </button>
+          <button class="pbtn dashed" id="rollBtn">
+            <b>Roll over</b>
+            <span class="fig">20+</span>
+            <small>if you take trick 5 · 0 if you do not</small>
+          </button>
+        </div>
+      </aside>
+    </div>
+    <p class="log" id="log2">Click Apply or Roll over. Both should close the panel and leave the felt — and nothing else.</p>
+    <p class="note">The two struck-through rows are the fix for the false bug report: the Key-Feeder was armed,
+      pays only on a trick you lose, and the trick was won — so it correctly paid nothing, and now the panel says so.
+      Panel width and corner inset are the two new tunables; the pot / contribution sizes are three more.</p>
+  </section>
+
+  <!-- ================= AC4 ================= -->
+  <section class="pane" id="p3" hidden>
+    <h2>A rank tooltip never covers the breakdown</h2>
+    <p class="ac">AC4 — the take-it / don't-take-it lines stay readable</p>
+    <p class="note" style="margin-top:0">Both are anchored to the top edge of the hovered card, so today they land on
+      the same line every time. Toggle to see it.</p>
+    <div class="chiprow">
+      <button class="chip" id="tipToday" aria-pressed="true">Today — they collide</button>
+      <button class="chip" id="tipFixed" aria-pressed="false">Fixed — tip clears the panel</button>
+    </div>
+    <div class="anchor-zone">
+      <div class="bd-panel">
+        <h4>Witch of Keys · 2 riding</h4>
+        <div class="bd-line">IF YOU TAKE THIS TRICK <span>· Key-Taker (Blade) +1 damage</span></div>
+        <div class="bd-line">IF YOU DO NOT TAKE THIS TRICK <span>· Key-Feeder (Blade) lose a trick with Keys +3 damage</span></div>
+        <div class="bd-line">If you take it <span>4 damage, 1 multiplier</span></div>
+        <div class="bd-line">If you do not <span>6 damage, 1 multiplier</span></div>
+      </div>
+      <div class="tip today" id="tipBubble">
+        <b>Witch</b>
+        Beats every card of its own suit regardless of rank, and loses to everything else.
+      </div>
+      <div class="hand-strip">
+        <div class="card keys" tabindex="0">W<span class="suit">✦</span></div>
+        <div class="card bells" tabindex="0">7<span class="suit">◆</span></div>
+        <div class="card moons" tabindex="0">9<span class="suit">☾</span></div>
+      </div>
+    </div>
+    <p class="log" id="log3">Toggle the two chips above.</p>
+  </section>
+
+  <!-- ================= AC8 ================= -->
+  <section class="pane" id="p4" hidden>
+    <h2>Filter the pile by suit as well as tier</h2>
+    <p class="ac">AC8 — asked for twice in one session</p>
+    <div class="chiprow" id="tierRow" role="group" aria-label="Filter by tier">
+      <button class="chip" data-tier="all" aria-pressed="true"><span class="dot all"></span>All<span class="n">8</span></button>
+      <button class="chip" data-tier="bronze" aria-pressed="false"><span class="dot bronze"></span>Bronze<span class="n">4</span></button>
+      <button class="chip" data-tier="silver" aria-pressed="false"><span class="dot silver"></span>Silver<span class="n">3</span></button>
+      <button class="chip" data-tier="gold" aria-pressed="false"><span class="dot gold"></span>Gold<span class="n">1</span></button>
+    </div>
+    <div class="chiprow" id="suitRow" role="group" aria-label="Filter by suit">
+      <button class="chip" data-suit="all" aria-pressed="true">All suits<span class="n">8</span></button>
+      <button class="chip" data-suit="bells" aria-pressed="false">◆ Bells<span class="n">3</span></button>
+      <button class="chip" data-suit="keys" aria-pressed="false">✦ Keys<span class="n">3</span></button>
+      <button class="chip" data-suit="moons" aria-pressed="false">☾ Moons<span class="n">1</span></button>
+      <button class="chip" data-suit="press" aria-pressed="false">Press<span class="n">1</span></button>
+    </div>
+    <div class="grid" id="galleryGrid"></div>
+    <p class="log" id="log4">Both filters compose — pick Silver + Keys.</p>
+  </section>
+
+  <!-- ================= AC9 ================= -->
+  <section class="pane" id="p5" hidden>
+    <h2>A look at your cards before the fight starts</h2>
+    <p class="ac">AC9 — between leaving the shop and the first card</p>
+    <div class="felt" style="min-height:26rem">
+      <div class="band"><span>The Hunt</span><span>Fight 3 of 5</span></div>
+      <div class="table-zone" style="justify-content:flex-start;padding-top:.6rem">
+        <p class="table-line">Before you face the Ferryman</p>
+        <div class="path">
+          <div class="stage done">1</div><div class="stage done">2</div>
+          <div class="stage next">3</div><div class="stage">4</div><div class="stage">5</div>
+        </div>
+        <div class="tray" style="width:100%">
+          <h3>What you hold · 5</h3>
+          <div class="grid">
+            <div class="bcard"><div class="tierbar" style="background:#d8b34a"></div><b>Key-Taker</b><span>take a trick with Keys — +2 multiplier</span></div>
+            <div class="bcard"><div class="tierbar" style="background:#b9bec2"></div><b>Bell-Taker</b><span>take a trick with Bells — +2 damage</span></div>
+            <div class="bcard"><div class="tierbar" style="background:#b0793f"></div><b>Key-Feeder</b><span>lose a trick with Keys — +3 damage</span></div>
+            <div class="bcard"><div class="tierbar" style="background:#b0793f"></div><b>Sidestep</b><span>dodge a skull — +1 multiplier</span></div>
+            <div class="bcard"><div class="tierbar" style="background:#b9bec2"></div><b>Timebomb</b><span>press · prime a card in hand</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;padding-top:.6rem">
+        <button class="carry-btn" id="startFight">Face the Ferryman</button>
+      </div>
+    </div>
+    <p class="log" id="log5">Click the button to start the fight.</p>
+  </section>
+
+  <!-- ================= AC10 ================= -->
+  <section class="pane" id="p6" hidden>
+    <h2>The machine says what a win was worth</h2>
+    <p class="ac">AC10 — tier on the landed windows and on each award</p>
+    <div style="background:#101619;border:1px solid #26333a;border-radius:11px;padding:.9rem">
+      <div class="reels" id="reels">
+        <div class="window matched"><div class="glyph">✦</div><div class="fam">Taker</div><div class="axis">Momentum</div><span class="tierbadge silver">Silver</span></div>
+        <div class="window matched"><div class="glyph">✦</div><div class="fam">Taker</div><div class="axis">Momentum</div><span class="tierbadge silver">Silver</span></div>
+        <div class="window"><div class="glyph">◆</div><div class="fam">Feeder</div><div class="axis">Blade</div><span class="tierbadge bronze">Bronze</span></div>
+      </div>
+      <p style="text-align:center;font:400 .8rem var(--serif);color:var(--brass);margin:.2rem 0 .6rem">Two matched — one silver and one bronze</p>
+      <ul class="awards">
+        <li><span class="tierbadge silver">Silver</span> Key-Taker (Momentum) — take a trick with Keys: +2 multiplier.</li>
+        <li><span class="tierbadge bronze">Bronze</span> Bell-Feeder (Blade) — lose a trick with Bells: +2 damage.</li>
+      </ul>
+      <div style="display:flex;justify-content:center;padding-top:.8rem">
+        <button class="carry-btn" id="pullBtn">Pull · 6 coins</button>
+      </div>
+    </div>
+    <p class="log" id="log6">A strip symbol has no tier of its own — the tier is decided by how the reels matched, so it is stated here.</p>
+  </section>
+
+  <!-- ================= AC12 ================= -->
+  <section class="pane" id="p7" hidden>
+    <h2>A way back out of a Fox exchange</h2>
+    <p class="ac">AC12 — cancel before it commits</p>
+    <div class="prompt">
+      <p class="table-line" style="font-size:.82rem">Give a card to become the decree, and take the 5 of Moons back.
+        This changes trump before the trick resolves.</p>
+      <div class="row" style="margin-top:.5rem">
+        <div class="card bells" tabindex="0">7<span class="suit">◆</span></div>
+        <div class="card keys" tabindex="0">3<span class="suit">✦</span></div>
+        <div class="card moons" tabindex="0">9<span class="suit">☾</span></div>
+        <button class="decline" id="declineBtn">Keep the decree</button>
+        <button class="cancel" id="cancelBtn">← Don't play the Fox</button>
+      </div>
+      <p class="hint">Choose one, decline, or back out. <b>Keep the decree</b> still plays the Fox;
+        <b>Don't play the Fox</b> returns it to your hand.</p>
+    </div>
+    <p class="log" id="log7">Try both right-hand controls — they do different things.</p>
+  </section>
+</div>
+
+<script>
+  function log(id, text) { document.getElementById(id).textContent = text }
+
+  // tabs
+  document.getElementById('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return
+    var tabs = this.querySelectorAll('button')
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i] === b
+      tabs[i].setAttribute('aria-pressed', on ? 'true' : 'false')
+      document.getElementById(tabs[i].dataset.pane).hidden = !on
+    }
+  })
+
+  // AC1 — the felt click is a deliberate no-op
+  document.getElementById('feltClick').addEventListener('click', function () {
+    log('log1', 'Nothing happened. That is the fix — a stray click can no longer lay the Quarry’s lead.')
+  })
+  document.getElementById('letLead').addEventListener('click', function () {
+    log('log1', 'Explicit control fired — the Quarry leads. This is the only path that advances.')
+  })
+  document.getElementById('carryOn').addEventListener('click', function () {
+    log('log1', 'Carried on — the well clears. The Quarry’s lead is still NOT laid by this.')
+  })
+  function setFeltState(well) {
+    document.getElementById('wellState').hidden = !well
+    document.getElementById('leadState').hidden = well
+    document.getElementById('stateWell').setAttribute('aria-pressed', well ? 'true' : 'false')
+    document.getElementById('stateLead').setAttribute('aria-pressed', well ? 'false' : 'true')
+    log('log1', well
+      ? 'The cards have landed. The verdict names the outcome and why — this is the beat the dwell holds for.'
+      : 'Between tricks. Nothing is laid until the button is pressed, and Apply Buff is reachable the whole time.')
+  }
+  document.getElementById('stateWell').addEventListener('click', function () { setFeltState(true) })
+  document.getElementById('stateLead').addEventListener('click', function () { setFeltState(false) })
+
+  // AC2..AC11 panel
+  document.getElementById('applyBtn').addEventListener('click', function () {
+    log('log2', 'Apply Damage — 12 dealt, the fight ends. Panel closes; the Quarry’s lead is NOT laid by this.')
+  })
+  document.getElementById('rollBtn').addEventListener('click', function () {
+    log('log2', 'Rolled over — panel closes and the felt is yours, arming window open, no card laid.')
+  })
+
+  // AC4 toggle
+  var bubble = document.getElementById('tipBubble')
+  function setTip(fixed) {
+    bubble.className = 'tip ' + (fixed ? 'fixed' : 'today')
+    document.getElementById('tipToday').setAttribute('aria-pressed', fixed ? 'false' : 'true')
+    document.getElementById('tipFixed').setAttribute('aria-pressed', fixed ? 'true' : 'false')
+    log('log3', fixed
+      ? 'Fixed — the bubble anchors above the panel’s measured top edge, so both lines stay readable.'
+      : 'Today — the bubble sits exactly on the panel, hiding the Key-Feeder line. This is the screenshot in the ticket.')
+  }
+  document.getElementById('tipToday').addEventListener('click', function () { setTip(false) })
+  document.getElementById('tipFixed').addEventListener('click', function () { setTip(true) })
+
+  // AC8 — two composing filters
+  var PILE = [
+    { name: 'Key-Taker', tier: 'gold', suit: 'keys', text: 'take a trick with Keys — +3 multiplier' },
+    { name: 'Key-Taker', tier: 'silver', suit: 'keys', text: 'take a trick with Keys — +2 multiplier' },
+    { name: 'Key-Feeder', tier: 'bronze', suit: 'keys', text: 'lose a trick with Keys — +3 damage' },
+    { name: 'Bell-Taker', tier: 'silver', suit: 'bells', text: 'take a trick with Bells — +2 damage' },
+    { name: 'Bell-Feeder', tier: 'bronze', suit: 'bells', text: 'lose a trick with Bells — +2 damage' },
+    { name: 'Bell-Taker', tier: 'bronze', suit: 'bells', text: 'take a trick with Bells — +1 damage' },
+    { name: 'Moon-Feeder', tier: 'silver', suit: 'moons', text: 'lose a trick with Moons — +2 multiplier' },
+    { name: 'Timebomb', tier: 'bronze', suit: 'press', text: 'press — prime a card in hand' }
+  ]
+  var TIER_COLOR = { bronze: '#b0793f', silver: '#b9bec2', gold: '#d8b34a' }
+  var filter = { tier: 'all', suit: 'all' }
+
+  function renderGallery() {
+    var grid = document.getElementById('galleryGrid')
+    var shown = PILE.filter(function (b) {
+      return (filter.tier === 'all' || b.tier === filter.tier) && (filter.suit === 'all' || b.suit === filter.suit)
+    })
+    grid.innerHTML = shown.length === 0
+      ? '<p class="empty">Nothing held matches both filters.</p>'
+      : shown.map(function (b) {
+          return '<div class="bcard" tabindex="0"><div class="tierbar" style="background:' + TIER_COLOR[b.tier] +
+            '"></div><b>' + b.name + '</b><span>' + b.text + '</span></div>'
+        }).join('')
+    log('log4', 'Showing ' + shown.length + ' of ' + PILE.length + ' — tier: ' + filter.tier + ', suit: ' + filter.suit + '.')
+  }
+  function wireRow(rowId, key, attr) {
+    document.getElementById(rowId).addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return
+      filter[key] = b.dataset[attr]
+      var all = this.querySelectorAll('button')
+      for (var i = 0; i < all.length; i++) all[i].setAttribute('aria-pressed', all[i] === b ? 'true' : 'false')
+      renderGallery()
+    })
+  }
+  wireRow('tierRow', 'tier', 'tier')
+  wireRow('suitRow', 'suit', 'suit')
+  renderGallery()
+
+  // AC9 / AC10 / AC12
+  document.getElementById('startFight').addEventListener('click', function () {
+    log('log5', 'Fight begins. Until this is pressed the run has not advanced past this screen.')
+  })
+  document.getElementById('pullBtn').addEventListener('click', function () {
+    log('log6', 'Pulled — the windows land and each states the tier that pull awarded it.')
+  })
+  document.getElementById('declineBtn').addEventListener('click', function () {
+    log('log7', 'Declined — the Fox IS played, the decree is kept. This was the only exit before.')
+  })
+  document.getElementById('cancelBtn').addEventListener('click', function () {
+    log('log7', 'Cancelled — the Fox goes back to your hand, nothing is committed. This is the new path.')
+  })
+</script>

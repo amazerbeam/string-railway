@@ -1,18 +1,19 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156
+**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156,
+play-tester 2026-09-02
 
 ## Responsibility
 
 Plays complete hands and complete runs of the game **without a browser**, by calling the shipped
 engine and the shipped felt reducer directly, and reports what happened as measurable numbers. It
-exists so the game's tuning can be *measured* rather than reasoned about on paper — every AP cost,
+exists so the game's tuning can be _measured_ rather than reasoned about on paper — every AP cost,
 per-hand cap and price in the V5 buff work was chosen without ever being played.
 
 It is separate from its neighbours because it **decides nothing about the game**. `src/hunt/` and
 `src/warCouncil/` own the rules; `src/app/warCouncil/` owns how a hand is played out; this module
-owns only *who is at the controls* and *what gets counted*. It is a consumer of all three and is
+owns only _who is at the controls_ and _what gets counted_. It is a consumer of all three and is
 imported by none of them.
 
 **DLR-150 kept the simulator on the same seam rather than beside it.** The Feeder carry crosses a
@@ -26,24 +27,30 @@ reachability audit's pool figure moved 13 → 16 with the restored Feeder Moment
 
 ## Key types & exports
 
-| Export                                                                     | Purpose                                                                                  | File                |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------- |
-| `SimPolicy`                                                                | The simulated player: four required pure decision points plus two optional levers, all asked and none trusted blindly | `types.ts`          |
-| `CheatPlay`                                                                | A Cheat to arm and the off-suit card to play with it, named together                     | `types.ts`          |
-| `CardChoice`                                                               | A card plus its Fox/Woodcutter ability choice — `CpuMove`'s shape, so `chooseCpuMove` satisfies it | `types.ts`  |
-| `ShopAction`                                                               | One between-fights action a policy wants: `buy` / `pull` / `flask`                       | `types.ts`          |
-| `HandReport` / `RunReport` / `SimSummary` / `SimOptions`                   | What one hand, one run and one batch measured                                            | `types.ts`          |
-| `RunEnding`                                                                | `Won` / `Lost` / `Stalled` — `Stalled` is a driver bug, deliberately not a game outcome  | `types.ts`          |
-| `baselinePolicy`, `maximalistPolicy`, `POLICIES`, `BASELINE_CASH_AT_MULTIPLIER` | The shipped players, the name registry `--policy` resolves against, and the baseline's one knob. `POLICIES` is `baseline`, `maximalist`, `noBuffs`, `rerollFocused` and `cardAware`; **DLR-145 deleted `apCapacityFocused`**, whose whole purpose was to exercise the AP-capacity lever that ticket removed — left in place it would have spent coins on nothing and quietly distorted every future comparison | `baselinePolicy.ts` |
-| `mintableBuffKinds`, `unreachableBuffKinds`, `unshelvedShopItems`          | Which cards a player can actually obtain, derived from production data alone             | `reachability.ts`   |
-| `playHand`, `HandOutcome`                                                  | Drives one hand through `roundReducer` and returns the felt's own `WarCouncilRoundResult` | `playHand.ts`       |
-| `seedFor`, `runDiscard`, `runCheatPlay`, `runBuffWindow`                   | The four between-tricks helpers `playHand`'s driver loop calls once per open window. **Split out of `playHand.ts` by DLR-145**, which pushed that file past its 400-line budget adding the `spentThisTrick` union; `playHand.ts` keeps the driver loop, which is the part that needs all four in view at once, and re-exports `seedFor` so no importer changed | `playHandWindows.ts` |
-| `withOpeningPile`, `OPENING_PILE_VARIANTS`                                 | The what-if opening-pile injection point `--pile <name>` resolves against. **`OPENING_PILE_VARIANTS` is empty as of DLR-145** — see below | `openingPileVariants.ts` |
-| `playRun`                                                                  | Drives one whole run: hands, `recordEncounter`, the shop visit, `advanceRun`             | `playRun.ts`        |
-| `simulate`                                                                 | The batch loop over N seeded runs                                                        | `simulate.ts`       |
-| `formatSummary`                                                            | Turns a `SimSummary` into the printed report — returns a string, prints nothing          | `report.ts`         |
-| `fixtureRunAfterFirstFight`, `fixtureHandWithPrimedTimebomb`, `fixtureHandWithStackedBuffs` | Deterministic deep states for component specs                           | `fixtures.ts`       |
-| `MAX_ACTIONS_PER_HAND`, `MAX_HANDS_PER_FIGHT`, `MAX_SHOP_ACTIONS_PER_VISIT` | The three caps that make the process terminate                                          | `simConfig.ts`      |
+| Export                                                                                                        | Purpose                                                                                                                                                                                                                                                                                                                                                                               | File                     |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `SimPolicy`                                                                                                   | The simulated player: four required pure decision points plus two optional levers, all asked and none trusted blindly                                                                                                                                                                                                                                                                 | `types.ts`               |
+| `CheatPlay`                                                                                                   | A Cheat to arm and the off-suit card to play with it, named together                                                                                                                                                                                                                                                                                                                  | `types.ts`               |
+| `CardChoice`                                                                                                  | A card plus its Fox/Woodcutter ability choice — `CpuMove`'s shape, so `chooseCpuMove` satisfies it                                                                                                                                                                                                                                                                                    | `types.ts`               |
+| `ShopAction`                                                                                                  | One between-fights action a policy wants: `buy` / `pull` / `flask` / `combine`. **`combine` was added 2026-09-02** — until then `ShopAction` had no member for the Manage Buffs screen, so no measurement this project had ever taken exercised the upgrade path at all                                                                                                               | `types.ts`               |
+| `HandReport` / `RunReport` / `SimSummary` / `SimOptions`                                                      | What one hand, one run and one batch measured — see [what a run records](what-a-run-records.md)                                                                                                                                                                                                                                                                                       | `types.ts`               |
+| `TrickDamageRecord`, `TrickIntentRecord`, `TrickCardRecord`, `HeldBuff`, `TrickOutcomeCounts`, `CheatMoments` | The per-trick trace: the cards played, the read taken before arming, the pile held, the damage terms, and the four outcomes counted by seat                                                                                                                                                                                                                                           | `types.ts`               |
+| `RunEnding`                                                                                                   | `Won` / `Lost` / `Stalled` — `Stalled` is a driver bug, deliberately not a game outcome                                                                                                                                                                                                                                                                                               | `types.ts`               |
+| `baselinePolicy`, `maximalistPolicy`, `noBuffsPolicy`, `rerollFocusedPolicy`, `HEAL_FLOOR_HEALTH`             | The early players and the reroll rule's one knob. **DLR-145 deleted `apCapacityFocused`**, whose whole purpose was to exercise the AP-capacity lever that ticket removed — left in place it would have spent coins on nothing and quietly distorted every future comparison. **`BASELINE_CASH_AT_MULTIPLIER` went with DLR-156's Apply Damage button** and is named nowhere in `src/` | `baselinePolicy.ts`      |
+| `POLICIES`                                                                                                    | The name registry `--policy` resolves against. Now roughly twenty entries: the five early players, the `<prefix>Roll<N>` stopping-rule sweeps, the shop-rule variants, `skilled`, and `skilled`'s one-lever diagnostics                                                                                                                                                               | `policies.ts`            |
+| `skilledPolicy`                                                                                               | The strategy assembled from the rules — see [the skilled strategy](the-skilled-strategy.md). The first policy that wins a run                                                                                                                                                                                                                                                         | `skilledPolicy.ts`       |
+| `chooseSkilledCard`, `cheatEscape`, `trickIntent`, `leadBankOdds`, `quarrySkullOdds`, `deadness`              | The skilled card decisions, held apart from the policy so the driver can use `forcedHurt` / `cheatEscape` as _instrumentation_ without asking the seated policy                                                                                                                                                                                                                       | `skilledCardPlay.ts`     |
+| `survivalistPolicy`, `sharpshooterPolicy`, `survivalistBaselinePolicy`                                        | Shop-order variants — ceiling-first, heal-to-full-then-cards, and the same rule on blind buff play                                                                                                                                                                                                                                                                                    | `survivalistPolicy.ts`   |
+| `withRollTarget`, `rollTargetPolicies`, `ROLL_TARGET_SWEEP`                                                   | Wraps any policy with a fixed roll threshold and builds the `Roll1`..`Roll8` sweep from it                                                                                                                                                                                                                                                                                            | `rollOverPolicy.ts`      |
+| `mintableBuffKinds`, `unreachableBuffKinds`, `unshelvedShopItems`                                             | Which cards a player can actually obtain, derived from production data alone                                                                                                                                                                                                                                                                                                          | `reachability.ts`        |
+| `playHand`, `HandOutcome`                                                                                     | Drives one hand through `roundReducer` and returns the felt's own `WarCouncilRoundResult`                                                                                                                                                                                                                                                                                             | `playHand.ts`            |
+| `seedFor`, `runDiscard`, `runCheatPlay`, `runBuffWindow`                                                      | The four between-tricks helpers `playHand`'s driver loop calls once per open window. **Split out of `playHand.ts` by DLR-145**, which pushed that file past its 400-line budget adding the `spentThisTrick` union; `playHand.ts` keeps the driver loop, which is the part that needs all four in view at once, and re-exports `seedFor` so no importer changed                        | `playHandWindows.ts`     |
+| `withOpeningPile`, `OPENING_PILE_VARIANTS`                                                                    | The what-if opening-pile injection point `--pile <name>` resolves against. **`OPENING_PILE_VARIANTS` is empty as of DLR-145** — see below                                                                                                                                                                                                                                             | `openingPileVariants.ts` |
+| `playRun`                                                                                                     | Drives one whole run: hands, `recordEncounter`, the shop visit, `advanceRun`                                                                                                                                                                                                                                                                                                          | `playRun.ts`             |
+| `simulate`                                                                                                    | The batch loop over N seeded runs                                                                                                                                                                                                                                                                                                                                                     | `simulate.ts`            |
+| `formatSummary`                                                                                               | Turns a `SimSummary` into the printed report — returns a string, prints nothing                                                                                                                                                                                                                                                                                                       | `report.ts`              |
+| `fixtureRunAfterFirstFight`, `fixtureHandWithPrimedTimebomb`, `fixtureHandWithStackedBuffs`                   | Deterministic deep states for component specs                                                                                                                                                                                                                                                                                                                                         | `fixtures.ts`            |
+| `MAX_ACTIONS_PER_HAND`, `MAX_HANDS_PER_FIGHT`, `MAX_SHOP_ACTIONS_PER_VISIT`                                   | The three caps that make the process terminate                                                                                                                                                                                                                                                                                                                                        | `simConfig.ts`           |
 
 The command-line entry is **`scripts/sim.ts`**, deliberately outside `src/`: it is the only file
 that touches `process`, and `src/` is typed with `types: ["vite/client"]` and no `@types/node`.
@@ -104,34 +111,29 @@ dispatches — arm, then commit, the real two-tap interaction; a Quarry-to-lead 
 `CarryOn`; and anything else breaks as `stalled`. At the end it assembles the same
 `WarCouncilRoundResult` `WarCouncilRound.tsx`'s `handleCarryOn` reports upward.
 
-### The two mechanics with their own files
+### The mechanics with their own files
 
 - [The policy seam, the two policies, and why every printed number depends on them](the-policy-seam.md)
-  — `SimPolicy`'s four required methods and two optional levers, why the levers are optional, how
+  — `SimPolicy`'s required methods and optional levers, why the levers are optional, how
   `runDiscard` and `runCheatPlay` drive a multi-step ritual without leaving it half-open, and what
   `baselinePolicy` and `maximalistPolicy` each actually do.
+- [The skilled strategy](the-skilled-strategy.md) — the policy assembled from the rules, the four
+  defects in the earlier policies it fixes, and what each fix is worth. **This is the file that
+  explains why every "0% win rate" on record was measuring a broken player.**
+- [What a run records, and what the report prints](what-a-run-records.md) — the per-trick trace, the
+  cumulative report fields, and the two measurement defects that had capped every earlier figure.
 - [The reachability audit](reachability-audit.md) — which cards the game declares against which a
   player can obtain, why the spec pins today's gaps as passing assertions, and what it measured.
 
 ### What it prints
 
-`formatSummary` groups the batch into outcomes (won / lost / stalled and the win rate), fights
-reached and won, hands per encounter, damage distribution per hand to each side (mean, median, p90,
-max), the economy (coins earned and spent, slot pulls, buffs owned at the end), buff and AP usage
-per hand, and faults. Every division guards its divisor and prints `n/a` on an empty sample rather
-than emitting `NaN`; percentiles read a sorted array by index and never interpolate.
-
-DLR-120 added three figures, and the first of them is the one the tool was ultimately built to
-produce. **`hands played holding NO activatable buff`** counts hands where
-`activatableBuffs(run.buffs)` was empty at the deal — read through the *production* predicate the
-loadout panel itself reads, so the simulator and the felt cannot disagree about what "holds a usable
-buff" means. It converts "the buff system is barely exercised" from an inference off an activations
-average into a direct measurement, and it is what separates a balance failure from an integration
-one. A **`Levers`** section reports mean discards and mean Cheats armed per run, so a policy that
-declares a lever but never actually pulls it is visible rather than assumed.
-
-`Stalled` is reported separately from `Lost` throughout, so a driver bug can never be read as a
-balance finding.
+Moved to [what a run records, and what the report prints](what-a-run-records.md) — the section had
+grown past the point where it belonged inline. In short: `formatSummary` groups a batch into
+outcomes, fights, hands, damage each way, tricks by outcome and seat, the Cheat's four moment
+counts, card supply and pay rates, the pot, the economy, levers and faults. Every division guards its
+divisor and prints `n/a` on an empty sample rather than emitting `NaN`; percentiles read a sorted
+array by index and never interpolate. `Stalled` is reported separately from `Lost` throughout, so a
+driver bug can never be read as a balance finding.
 
 ### The fixtures
 
@@ -140,14 +142,14 @@ coins only arrive once a fight is finished: `fixtureRunAfterFirstFight` (a `RunS
 coins, a health delta and a quick-kill payout), `fixtureHandWithPrimedTimebomb` (a card marked and
 the detonation booked on `encounter.pendingTimebomb`), and `fixtureHandWithStackedBuffs` (two or
 more buffs activated in one trick). Each is deterministic and returns the same value every call, so
-a `.test.tsx` component spec can import one and assert what that state *renders*.
+a `.test.tsx` component spec can import one and assert what that state _renders_.
 
 `fixtureHandWithPrimedTimebomb` buys its charge through `buyFromShop(run, ShopItem.Timebomb)`
 directly. That is legitimate rather than a back door: `buyFromShop` is total over `ShopItem` and
 still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out of the game.
 
 > **Its success test changed shape on DLR-154, 2026-08-31, and the change is the point.** The
-> driver used to wait for *a primed card **and** a booked payment* together. It now waits for a
+> driver used to wait for _a primed card **and** a booked payment_ together. It now waits for a
 > booked payment alone, because a detonation — whether the marked card was played or its two-trick
 > fuse ran out in hand — **lifts the mark in the same transition that books the payment**. The
 > co-occurrence the old test waited for is no longer a reachable state; it was the defect that
@@ -158,7 +160,7 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
 
 - **Purity.** `src/sim/**` was added to `eslint.config.js`'s pure-core override alongside
   `src/warCouncil/**`, `src/hunt/**` and `src/vault/**` — no React import, no DOM global. It was
-  added to the *later* block's `ignores` list in the same change, because ESLint flat config
+  added to the _later_ block's `ignores` list in the same change, because ESLint flat config
   **replaces, never merges** same-key rule options: without that entry the narrower storage-only
   list would silently overwrite the full DOM ban with `npm run lint` still exiting 0. That exact
   regression shipped once, on DLR-106.
@@ -181,41 +183,26 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
 
 ## Deferred / not yet implemented
 
-- **No policy buys the max-health raise, so the simulator cannot say whether it is too strong**
-  (DLR-158). `SHOP_PURCHASE_ORDER` in `baselinePolicy.ts` was deliberately left untouched when
-  `ShopItem.MaxHealth` joined the shelf, so every existing simulation keeps measuring exactly what it
-  measured before — but the usual way of asking "is this item overpowered" is unavailable until
-  someone adds it to that list. That is a measurement decision, not a code one, and nobody has taken
-  it. Note also that a policy which *did* buy it would make the player's health ceiling vary within a
-  run for the first time, which some of this tool's reporting assumes is fixed.
-- **The modelled player applies whenever a pot stands and never pushes** (DLR-156). Neither shipped
-  policy implements `wantsApplyPot`, so the driver's own default answers for both. It is the
-  lowest-variance line the apply-or-roll choice admits and a deliberate floor, **not a claim about
-  optimal play** — and since the roll-over mechanic exists precisely for the push, every damage
-  figure this tool now prints is a lower bound on what the equation can pay. Revisiting it is the
-  developer's, and a policy that times its cash-out is the obvious next one to write.
-- **Two policies exist, and neither is a good card player.** `POLICIES` holds `baseline` and
-  `maximalist` (DLR-120), and both take their cards from `chooseCpuMove` seated on the player. A
-  policy that actually plays well — one that times its cash-out, or reasons about the decree — is a
-  later ticket dropped in behind the same interface; nothing in the driver needs to change to accept
-  one. Every damage figure this tool prints is conditional on that limitation.
 - **No policy can be given a starting buff pile.** `playRun` calls `startRun(PLAYER_START_HEALTH,
-  [], seed)`, and that second argument is DLR-113's `TemplateGrant[]` — already wired, always empty
+[], seed)`, and that second argument is DLR-113's `TemplateGrant[]` — already wired, always empty
   here. Passing grants would measure the game with the buff system live from the first trick, which
   is **the single highest-value measurement still missing** (see
   [the reachability audit](reachability-audit.md)). DLR-120 deliberately did not add the flag: it is
   one step from running the balance pass, which is the developer's.
 - **`Puppeteer`'s window is never opened.** No reducer opens `ConsumableTiming.BeforeOwnCard`, so the
   driver has no window to offer it in even if a template ever mints one.
-- **No balancing was done here, and none should be read out of this module.** DLR-130 shipped the
-  instrument, not the readings. The developer's balance pass is a separate exercise, and the
-  first observation this tool recorded is in `../run-winnability-simulation.md`.
+- **No tuning value has ever been changed by this module, and none should be.** DLR-130 shipped the
+  instrument; the readings it has since produced — including a measured 26.6–32.4% win rate on
+  2026-09-02 — are observations, and every one of them was produced against the game exactly as it
+  stands. Whether a quarter of runs clearing is the right difficulty is the developer's call. The
+  dated record is in [`../run-winnability-simulation.md`](../run-winnability-simulation.md); the
+  strategy behind the figure is in [the skilled strategy](the-skilled-strategy.md).
 - **`OPENING_PILE_VARIANTS` is empty, and the seam is deliberately kept.** DLR-145 deleted both
   named what-if piles: `conditionsOnlyOpeningWeightOf` zeroed exactly the three families (`miser`,
   `keepsake`, `cornered`) that ticket removed from `BUFF_TEMPLATES` outright, and
   `recommendedOpeningWeightOf` compared a template's axis against `apRefund` and `coins` — neither of
   which `MintableRewardAxis` has a member for any more, so the comparison no longer compiles. **The
-  reduced pool *is* the recommendation those variants existed to measure.** `withOpeningPile` and
+  reduced pool _is_ the recommendation those variants existed to measure.** `withOpeningPile` and
   the (now empty) `OPENING_PILE_VARIANTS` map stay, so `SimConfig.openingPileVariant`, `playRun.ts`'s
   lookup and the `--pile` flag need no edit — an unknown `--pile <name>` fails exactly as it always
   did, with no names left to ask for. A future what-if pile is one new entry, not a structural
@@ -225,3 +212,16 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
   batching. `--runs` has a lower bound but no upper one, so a very large batch is simply slow.
 - **The Vault is not simulated.** Starting grants and Vault-adjusted slot odds
   (`drawVaultReelPool`) are out of the loop; the driver calls `drawReelPool` directly.
+- **No policy leads a Fox or a Woodcutter.** Both open an `AbilityChoice` prompt no policy answers,
+  so `leadCandidates` filters them out of every lead and `chooseCard`'s final guard falls back to
+  `chooseCpuMove` when only such a card can follow. Between them they are the deck's two strongest
+  levers — the Fox changes the trump suit outright, the Woodcutter draws and buries — so every figure
+  this tool prints is a floor with respect to them.
+- **36% of tricks get no buff window, and nobody has established whether that is the game or the
+  driver.** `discardWindowOpen` is false once a card is on the table, so on a trick where the Quarry
+  leads before the driver reaches the window, nothing can be armed. It is measurable
+  (`TrickDamageRecord.intent` is `null` on exactly those tricks) and unexplained. If it is the rule,
+  it is a large and invisible constraint on when buffs may be used at all, and it should be settled
+  before anything is tuned against it.
+- **The skilled policy has no lookahead.** Every decision is one trick deep, and `leadWinOdds` scores
+  a card by rank against the deck's span rather than by what the Quarry can still hold.

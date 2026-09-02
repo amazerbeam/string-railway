@@ -16,7 +16,7 @@
 > trick now pays `(BASE_DAMAGE + baseDamageBonus + buffDamage) x buffMult` into a running total that
 > the roll multiplies, a hurt trick pays the Quarry nothing, and the hand boundary no longer cashes.
 > **This ticket did not re-measure the whole-run win rate**, so the 0.0% recorded below still stands
-> unmeasured against the new equation rather than confirmed under it. What DLR-156 *did* fix, found
+> unmeasured against the new equation rather than confirmed under it. What DLR-156 _did_ fix, found
 > in review, is that the simulator could deal the Quarry **zero** pot damage on any seed: with the
 > apply choice wired into `playHand.ts` it now averages **4.45 damage per hand and 1.5 fights won per
 > run**. That is a simulator-reachability figure, not a win-rate one.
@@ -67,14 +67,14 @@ Pass 1 used only two of the run's available tools (Heal, Whetstone). This pass r
 to actually use Cheats, the discard budget, Timebomb, and Blast Guard, wired through their real
 exported functions, and re-ran 150 full runs per configuration:
 
-| Config | What was added | Win rate | Avg fights survived | Best single run | p90 |
-|---|---|---|---|---|---|
-| A | Baseline (Heal + Whetstone only, same as Pass 1) | 0/150 | 1.21 | 8 | 3 |
-| B | + Cheats (spent only when ordinary follow-suit has no winner and an off-suit trump would win) | 0/150 | 1.13 | 5 | 3 |
-| C1 | + Discard, dumping **high**-ranked cards | 0/150 | 0.96 | 8 | 2 |
-| C2 | + Discard, dumping **low**-ranked cards (a re-roll gamble) | 0/150 | 1.35 | 6 | 3 |
-| D | + Timebomb + Blast Guard (marked only when the follow was a predicted loss) | 0/150 | 1.14 | 5 | 3 |
-| E | Full toolkit together (Cheats + Timebomb + Guard + discard-low) | 0/150 | 1.25 | 5 | 3 |
+| Config | What was added                                                                                | Win rate | Avg fights survived | Best single run | p90 |
+| ------ | --------------------------------------------------------------------------------------------- | -------- | ------------------- | --------------- | --- |
+| A      | Baseline (Heal + Whetstone only, same as Pass 1)                                              | 0/150    | 1.21                | 8               | 3   |
+| B      | + Cheats (spent only when ordinary follow-suit has no winner and an off-suit trump would win) | 0/150    | 1.13                | 5               | 3   |
+| C1     | + Discard, dumping **high**-ranked cards                                                      | 0/150    | 0.96                | 8               | 2   |
+| C2     | + Discard, dumping **low**-ranked cards (a re-roll gamble)                                    | 0/150    | 1.35                | 6               | 3   |
+| D      | + Timebomb + Blast Guard (marked only when the follow was a predicted loss)                   | 0/150    | 1.14                | 5               | 3   |
+| E      | Full toolkit together (Cheats + Timebomb + Guard + discard-low)                               | 0/150    | 1.25                | 5               | 3   |
 
 **No configuration produced a single win across 900 runs.** The best single run of the entire
 investigation reached fight 8 of 25 (still stage 2, before the second stage boss).
@@ -133,12 +133,12 @@ win the trick, else play lowest."
 
 **Fight 1 in isolation, 300 trials each, real player.play() calling the same engine functions:**
 
-| | naive (the bug above, as actually run above) | genuinely skull-aware (ducks a visibly-skulled lead) |
-|---|---|---|
-| win rate | 175/300 (58%) | 220/300 (73%) |
-| losses | 125 | 80 |
-| fatal outcome: clean loss / skull-win | 84 / 41 | 65 / 15 |
-| forced — no legal alternative existed | 9/125 | 80/80 |
+|                                       | naive (the bug above, as actually run above) | genuinely skull-aware (ducks a visibly-skulled lead) |
+| ------------------------------------- | -------------------------------------------- | ---------------------------------------------------- |
+| win rate                              | 175/300 (58%)                                | 220/300 (73%)                                        |
+| losses                                | 125                                          | 80                                                   |
+| fatal outcome: clean loss / skull-win | 84 / 41                                      | 65 / 15                                              |
+| forced — no legal alternative existed | 9/125                                        | 80/80                                                |
 
 Skull-awareness alone cuts fight-one losses by 36%, mostly by not walking into a visible `SkullWin`.
 Under skull-aware play, **every** remaining loss was a genuinely forced follow-suit trap with no legal
@@ -147,11 +147,11 @@ alternative in hand — real variance, not a missed decision.
 **Full 25-fight runs, skull-aware player, `RUN_STARTING_CHEATS` at both its old (0) and current (1)
 value, 150 trials each:**
 
-| | 0 starting Cheats | 1 starting Cheat |
-|---|---|---|
-| wins | 0/150 | 0/150 |
-| avg fights survived | 0.75 → ~2 once skull-aware (see below) | 0.80 |
-| died fight 0 | 66 (44%) | 64 (43%) |
+|                     | 0 starting Cheats                      | 1 starting Cheat |
+| ------------------- | -------------------------------------- | ---------------- |
+| wins                | 0/150                                  | 0/150            |
+| avg fights survived | 0.75 → ~2 once skull-aware (see below) | 0.80             |
+| died fight 0        | 66 (44%)                               | 64 (43%)         |
 
 The starting-Cheat comparison above was run with the **naive (bug-present)** strategy on both sides,
 isolating that one variable — it shows a starting Cheat does not measurably move the death rate either
@@ -202,7 +202,7 @@ every batch. **Zero wins in all sixteen hundred.** The per-hand exchange is 2.07
 consistent with this file's own pre-V5 passes (0/120, 0/150).
 
 **The re-framing matters more than the repetition.** DLR-120 added one figure to the report, and it
-changes what the deficit above is a measurement *of*: **between 67% and 71% of all hands were played
+changes what the deficit above is a measurement _of_: **between 67% and 71% of all hands were played
 holding no activatable buff at all.** A run opened, at the time, with four `Unassigned` placeholders
 that `activatableBuffs` filtered out of every offer (no longer true — see the DLR-135 section at the
 foot of this file); the only route to a real card is the free pull at the
@@ -258,7 +258,7 @@ Activations **nearly doubled**. AP spent barely moved, which says the **AP pool 
 supply is now the binding constraint**. Everything else drifted marginally in the player's favour.
 
 **What this changes is what the 0% is evidence of.** The section above argued the 0-win result was an
-*integration* problem before a balance one, and that the balance question could not be answered until
+_integration_ problem before a balance one, and that the balance question could not be answered until
 a living player could reach the acquisition surfaces. **DLR-135 was the last known confound.** The
 player is demonstrably no longer starved of cards, and the win rate still has not moved — so a 0% win
 rate now points at **the numbers** rather than at the supply. That is a finding for the developer's
@@ -268,3 +268,45 @@ threshold, `STARTING_BUFF_COUNT` or `RUN_STARTING_CHEATS` is in DLR-135's diff. 
 
 The single measurement still missing is unchanged: `playRun` still passes an empty `TemplateGrant[]`,
 so the Vault's contribution is still unmeasured.
+
+---
+
+## Answered: the run IS winnable, and nothing was tuned — play-tester, 2026-09-02
+
+**Every "0% win rate" figure above is superseded.** This file's own question — _is a full 25-fight run
+winnable, and if not, why not?_ — now has the answer **yes, about a quarter of the time**, on the
+game exactly as it stands. No health total, price, reward value or curve was changed to get there.
+
+`npm run sim -- --runs 500 --policy skilled`, four independent base seeds:
+
+| Seed  | Win rate | Mean fight reached |
+| ----- | -------- | ------------------ |
+| 1     | 25.8%    | 16.05              |
+| 7     | 27.8%    | 15.87              |
+| 42    | 24.2%    | 16.43              |
+| 99999 | 23.8%    | 16.22              |
+
+**Every zero on record was a measurement of a broken player, not of a rigged game.** Four defects in
+the simulator's own policies, each found and fixed on 2026-09-02:
+
+1. **The card heuristic ignored skulls.** Policies took their card from `chooseCpuMove`, written for
+   the Quarry, whose dodge branch filters its _own_ candidates for a skull — a permanent no-op for
+   the player, who is never dealt one. It therefore tried to win every trick, walking into a third of
+   them the wrong way round.
+2. **Buffs were armed without deciding the trick.** Taker and Feeder of every suit were armed
+   together though exactly one can fire, and on suits the trick would never touch. Arming only on a
+   decided outcome took the share of condition cards that pay from **16.6% to 58%**.
+3. **Cheats were spent as ordinary buffs.** A Cheat's one job is turning a forced hurt into a bank;
+   the player held one at under 1% of the moments it would have helped.
+4. **The plan and the play used different card sets**, so a third of led tricks were played in a
+   different suit from the one the buffs were armed for.
+
+Plus two rationing bugs: the policies budgeted against action points that have been switched off
+since 2026-08-25, and the shop list was hand-written and had gone stale twice.
+
+The full reasoning, with what each rule is worth, is in
+[`../ai-play-tester/strategy-guide.md`](../ai-play-tester/strategy-guide.md).
+
+**This does not make the run easy, and it is not a tuning recommendation.** A quarter of runs clear;
+three quarters still die, mean fight 16. Whether one-in-four is the right difficulty is the
+developer's call — this file only records that the answer to its own question changed.

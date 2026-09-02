@@ -52,6 +52,7 @@ import {
   type RoundState,
 } from '../warCouncil'
 import {
+  apCostFor,
   apCostOf,
   BuffKind,
   flaskRefusalFor,
@@ -60,6 +61,9 @@ import {
   refusalFor,
   shopStockFor,
   ShopItem,
+  SHOP_ITEMS,
+  type ActionPoints,
+  type Buff,
   SLOT_FREE_PULLS_PER_VISIT,
   SLOT_MACHINE_IDS,
   slotPullRefusalFor,
@@ -73,27 +77,58 @@ import type { CardChoice, CheatPlay, ShopAction, SimPolicy } from './types'
 
 /** The fixed order the baseline shops in, tried while each is affordable. `ShopItem.ApCapacity`
  *  dropped with DLR-145 (AP removed entirely) — see that ticket's Phase 2. */
+/**
+ * play-tester (2026-09-02) — DERIVED from `SHOP_ITEMS`, the shelf itself, rather than hand-listed.
+ *
+ * It was hand-listed as `[Heal, SwanTier, WitchTier]` and went stale twice without anything
+ * failing: the two rank rungs left the shelf on 2026-09-01 and the max-health purchase arrived on
+ * 2026-09-02. `refusalFor` stays TOTAL over `ShopItem` — an unshelved item is still priced and
+ * still buyable by a caller — so the baseline went on spending most of its purse on two things no
+ * player could buy while never once buying the one thing they could. Deriving it means the next
+ * shelf change reaches this policy for free.
+ *
+ * Heal leads, which is the baseline's own conservative character (`rerollFocusedPolicy` is the one
+ * that spends on cards); everything else on the shelf follows in shelf order.
+ */
 const SHOP_PURCHASE_ORDER: readonly ShopItem[] = [
   ShopItem.Heal,
-  ShopItem.SwanTier,
-  ShopItem.WitchTier,
+  ...SHOP_ITEMS.filter((item) => item !== ShopItem.Heal),
 ]
 
 function chooseCard(round: RoundState): CardChoice {
   return chooseCpuMove(round, PlayerSide.Player)
 }
 
+/**
+ * play-tester (2026-09-02) — what activating `buff` ACTUALLY costs this policy, through the same
+ * `apCostFor` the engine charges through rather than through `apCostOf`'s raw price table.
+ *
+ * This was `apCostOf` in both policies, and it silently capped every buff figure this simulator has
+ * ever printed. Action points were switched off on 2026-08-25 (`AP_ENABLED = false`), so the engine
+ * charges nothing and refuses nothing — but the policies kept budgeting against `STARTING_AP`'s
+ * pool of 6 at raw prices of 1 to 3, and so stopped arming after three to six cards no matter how
+ * large the pile had grown. Measured on seed 1 the player reached 196 activatable cards, every one
+ * of them reporting `refusal: null`, and still fired six on a trick. The Overlap Bonus pays
+ * `firedCount - 1`, so a self-imposed cap on `firedCount` understates the whole stacking mechanic.
+ *
+ * Reading through `apCostFor` means flipping `AP_ENABLED` back on restores the old rationing with
+ * no edit here — the toggle governs the policy exactly as it governs the engine.
+ */
+function apBudgetCostOf(buff: Buff): ActionPoints {
+  return apCostFor(apCostOf(buff))
+}
+
 function chooseBuffs(ui: RoundUiState): readonly BuffId[] {
   const candidates = offeredBuffs(ui).filter((buff) => loadoutRefusalFor(ui, buff) === null)
   const ordered = [...candidates].sort((a, b) => {
-    const costDiff = apCostOf(a) - apCostOf(b)
+    const costDiff = apBudgetCostOf(a) - apBudgetCostOf(b)
     return costDiff !== 0 ? costDiff : a.id - b.id
   })
 
   const chosen: BuffId[] = []
   let pool = ui.buffActivation.apPool
   for (const buff of ordered) {
-    const cost = apCostOf(buff)
+    const cost = apBudgetCostOf(buff)
     if (pool - cost < 0) continue
     pool -= cost
     chosen.push(buff.id)

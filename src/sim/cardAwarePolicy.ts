@@ -38,10 +38,12 @@ import {
   type RoundState,
 } from '../warCouncil'
 import {
+  apCostFor,
   apCostOf,
   buffTargetRankOf,
   buffTargetSuitOf,
   MAX_CARDS_PER_DISCARD,
+  type ActionPoints,
   type Buff,
   type BuffId,
 } from '../hunt'
@@ -85,8 +87,15 @@ function isPromptFree(card: Card): boolean {
   return card.rank !== CardRank.Fox && card.rank !== CardRank.Woodcutter
 }
 
+/** play-tester (2026-09-02) — through `apCostFor`, not `apCostOf`. See `baselinePolicy.ts`'s
+ *  `apBudgetCostOf` for the full account: with action points off the engine charges nothing, and
+ *  budgeting at raw prices capped this policy's stack at six cards on a 196-card pile. */
+function apBudgetCostOf(buff: Buff): ActionPoints {
+  return apCostFor(apCostOf(buff))
+}
+
 function byApCostThenId(a: Buff, b: Buff): number {
-  const costDiff = apCostOf(a) - apCostOf(b)
+  const costDiff = apBudgetCostOf(a) - apBudgetCostOf(b)
   return costDiff !== 0 ? costDiff : a.id - b.id
 }
 
@@ -125,7 +134,7 @@ function chooseBuffs(ui: RoundUiState): readonly BuffId[] {
   const chosen: BuffId[] = []
   let pool = ui.buffActivation.apPool
   for (const buff of ordered) {
-    const cost = apCostOf(buff)
+    const cost = apBudgetCostOf(buff)
     if (pool - cost < 0) continue
     pool -= cost
     chosen.push(buff.id)

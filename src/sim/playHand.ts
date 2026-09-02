@@ -13,8 +13,10 @@
 import {
   chooseCpuMove,
   currentTurn,
+  isSkulled,
   isTaken,
   PlayerSide,
+  potValue,
   QUARRY_SIDE,
   RoundPhase,
   type AbilityChoice,
@@ -22,6 +24,8 @@ import {
 } from '../warCouncil'
 import {
   activatableBuffs,
+  BuffKind,
+  buffTargetSuitOf,
   DuelSide,
   isEncounterResolved,
   type BuffId,
@@ -40,7 +44,19 @@ import {
 import type { WarCouncilRoundResult } from '../app/warCouncilMount'
 import { MAX_ACTIONS_PER_HAND } from './simConfig'
 import { runBuffWindow, runCheatPlay, runDiscard, seedFor } from './playHandWindows'
-import type { BuffFireOutcome, BuffWindowObservation, HandReport, SimPolicy } from './types'
+// The driver imports these two PURE predicates from the skilled play deliberately, as instrumentation
+// rather than as decision-making: counting how often a Cheat is the right play has to be independent
+// of whether the policy in the seat would have found it, or the count only ever measures the policy.
+import { cheatEscape, forcedHurt, trickIntent } from './skilledCardPlay'
+import type {
+  BuffFireOutcome,
+  BuffWindowObservation,
+  HandReport,
+  HeldBuff,
+  SimPolicy,
+  TrickIntentRecord,
+  TrickDamageRecord,
+} from './types'
 
 export { seedFor } from './playHandWindows'
 
@@ -74,6 +90,30 @@ export function playHand(
   let cheatsArmed = 0
   const buffWindowObservations: BuffWindowObservation[] = []
   const buffFireOutcomes: BuffFireOutcome[] = []
+  const potsApplied: number[] = []
+  const trickDamage: TrickDamageRecord[] = []
+  const outcomes = {
+    cleanWin: 0,
+    dodge: 0,
+    cleanLoss: 0,
+    skullWin: 0,
+    hurtLeading: 0,
+    hurtFollowing: 0,
+  }
+  // Whether the player laid the FIRST card of the trick now resolving. Captured at the moment the
+  // card is committed, because by the resolution the trick holds two cards and the seat is gone.
+  let playerLedThisTrick = false
+  const cheatMoments = { forced: 0, escapable: 0, held: 0, taken: 0 }
+  // The pile as the CURRENT trick's window opened, held until that trick resolves and the record
+  // for it is written. Snapshotted before `runBuffWindow` arms anything, so it is what was
+  // AVAILABLE rather than what survived.
+  // The read and the pile as the CURRENT trick's window opened. BOTH ARE CLEARED as each trick is
+  // recorded: a window does not open for every trick — `discardWindowOpen` is false while a Fox or
+  // Woodcutter prompt is pending — and without the reset the previous trick's read stayed attached
+  // to the next one, which read as the strategy predicting the wrong seat on 27% of tricks when it
+  // had in fact made no prediction at all.
+  let heldAtWindow: readonly HeldBuff[] = []
+  let intentAtWindow: TrickIntentRecord | null = null
   // The buffs activated for the trick currently in flight, resolved once at activation time rather
   // than re-looked-up later — `activatedThisTrick` itself clears the instant the trick resolves
   // (`buffActivation.ts`), so this is the only place that window's active set survives to be
@@ -116,6 +156,12 @@ export function playHand(
     if (ui.resolvedTrick !== null) {
       const fired = ui.resolvedTrick.resolution.firedBuffIds
       const trickWasLoss = !isTaken(ui.resolvedTrick.resolution.outcome)
+      const outcome = ui.resolvedTrick.resolution.outcome
+      outcomes[outcome] += 1
+      if (!isTaken(outcome)) {
+        if (playerLedThisTrick) outcomes.hurtLeading += 1
+        else outcomes.hurtFollowing += 1
+      }
       for (const [id, card] of pendingActive) {
         buffFireOutcomes.push({
           ...card,
@@ -140,6 +186,42 @@ export function playHand(
       // simulator measure something real again; it is deliberately not a claim about optimal play,
       // and the whole point of the roll-over mechanic is the push a never-apply floor cannot see.
       const apply = !hurt && (policy.wantsApplyPot?.(ui) ?? true)
+      const resolved = ui.resolvedTrick.resolution
+      const terms = resolved.trickDamage
+      trickDamage.push({
+        trick: ui.round.tricksPlayed,
+        outcome,
+        intent: intentAtWindow,
+        held: heldAtWindow,
+        cards: ui.resolvedTrick.cards.map((played) => ({
+          side: played.side,
+          suit: played.card.suit,
+          rank: played.card.rank,
+          skulled: isSkulled(ui.round.skulledCards, played.card),
+        })),
+        trumpSuit: ui.round.trumpSuit,
+        playerLed: ui.resolvedTrick.cards[0].side === PlayerSide.Player,
+        base: terms?.base ?? 0,
+        buffDamage: terms?.buffDamage ?? 0,
+        buffMult: terms?.buffMult ?? 0,
+        overlapBonus: terms?.overlapBonus ?? 0,
+        dealt: terms?.dealt ?? 0,
+        total: resolved.total,
+        roll: resolved.roll,
+        potApplied: apply ? potValue(resolved.total, resolved.roll) : null,
+      })
+      // Cleared only AFTER the record is written. A window does not open for every trick —
+      // `discardWindowOpen` is false while a Fox or Woodcutter prompt is pending — and without this
+      // the previous trick's read stayed attached to the next one, which read as the strategy
+      // predicting the wrong seat on 27% of tricks when it had made no prediction at all.
+      intentAtWindow = null
+      heldAtWindow = []
+      if (apply) {
+        // play-tester (2026-09-02) — read BEFORE the dispatch: `ApplyPot` zeroes the streak, so
+        // there is nothing left to compute the pot from once the reducer has run.
+        const cashed = ui.resolvedTrick.resolution
+        potsApplied.push(potValue(cashed.total, cashed.roll))
+      }
       ui = roundReducer(ui, {
         kind: apply ? RoundUiActionKind.ApplyPot : RoundUiActionKind.RollOver,
       })
@@ -166,6 +248,28 @@ export function playHand(
           discardedThisHand = true
         }
       }
+      const read = trickIntent(ui.round)
+      intentAtWindow =
+        read === null
+          ? null
+          : {
+              suit: read.suit,
+              willTake: read.willTake,
+              certain: read.certain,
+              playerLeads: read.playerLeads,
+              skullOdds: read.skullOdds,
+              held: read.held,
+              skulled: read.skulled,
+              plannedSuit: read.plannedCard === null ? null : read.plannedCard.suit,
+              plannedRank: read.plannedCard === null ? null : read.plannedCard.rank,
+            }
+      heldAtWindow = activatableBuffs(ui.buffs).map((buff) => ({
+        kind: buff.kind,
+        tier: buff.tier,
+        axis: buff.reward.axis,
+        value: buff.reward.value,
+        target: buffTargetSuitOf(buff),
+      }))
       const outcome = runBuffWindow(ui, policy)
       ui = outcome.ui
       buffsActivated += outcome.buffsActivated
@@ -193,6 +297,7 @@ export function playHand(
                     axis: buff.reward.axis,
                     tier: buff.tier,
                     rewardValue: buff.reward.value,
+                    target: buffTargetSuitOf(buff),
                   },
                 ] as const,
               ]
@@ -202,13 +307,27 @@ export function playHand(
     }
 
     if (canAct(ui)) {
+      // Counted BEFORE `runCheatPlay`, which `continue`s when it spends one: counting after it
+      // silently drops every moment the Cheat was actually used, which is the half of the question
+      // that says the card works.
+      if (ui.round.currentTrick.length > 0 && forcedHurt(ui.round)) {
+        cheatMoments.forced += 1
+        if (cheatEscape(ui.round) !== null) {
+          cheatMoments.escapable += 1
+          if (activatableBuffs(ui.buffs).some((buff) => buff.kind === BuffKind.Cheat)) {
+            cheatMoments.held += 1
+          }
+        }
+      }
       const cheat = runCheatPlay(ui, policy)
       ui = cheat.ui
       apSpentTotal += cheat.apSpent
       if (cheat.spent) {
         cheatsArmed += 1
+        cheatMoments.taken += 1
         continue
       }
+      playerLedThisTrick = ui.round.currentTrick.length === 0
       const move = policy.chooseCard(ui.round, ui)
       heldChoice = move.choice
       ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: move.card }) // arm
@@ -237,6 +356,12 @@ export function playHand(
       ui.openingEncounter.health[DuelSide.Player] - ui.encounter.health[DuelSide.Player],
     tricksWon: ui.round.tricksWon[PlayerSide.Player],
     tricksPlayed: ui.round.tricksPlayed,
+    potsApplied,
+    trickOutcomes: outcomes,
+    trickDamage,
+    cheatMoments,
+    playerHealthAtStart: ui.openingEncounter.health[DuelSide.Player],
+    maxPlayerHealthAtStart: run.maxPlayerHealth,
     buffsActivated,
     apSpent: apSpentTotal,
     coinsFromBuffs: ui.buffHand.coinsEarned,

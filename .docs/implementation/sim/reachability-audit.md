@@ -7,18 +7,18 @@ code have any path into a player's hands?** It exists because that question kept
 comment, and a comment carried the wrong answer forward through six tickets.
 
 It lives in `src/sim/` rather than in `src/hunt/` because reachability is a property of the **whole
-run** — a card exists *and* some path mints it — and no single module owns both halves. `src/sim/` is
+run** — a card exists _and_ some path mints it — and no single module owns both halves. `src/sim/` is
 the only tree whose subject is the whole run.
 
 ## What it computes
 
 A pure, data-only module: it builds no `RoundState`, drives no reducer, and calls no `rng`.
 
-| Export | Answers |
-|---|---|
-| `mintableBuffKinds()` | every `BuffKind` some production path can put in the buff pile — derived from `BUFF_TEMPLATES` plus whatever `startRun()` actually seeds |
-| `unreachableBuffKinds()` | its complement over `BuffKind`, less `Unassigned` |
-| `unshelvedShopItems()` | every `ShopItem` the game still prices that `SHOP_ITEMS` does not offer |
+| Export                   | Answers                                                                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `mintableBuffKinds()`    | every `BuffKind` some production path can put in the buff pile — derived from `BUFF_TEMPLATES` plus whatever `startRun()` actually seeds |
+| `unreachableBuffKinds()` | its complement over `BuffKind`, less `Unassigned`                                                                                        |
+| `unshelvedShopItems()`   | every `ShopItem` the game still prices that `SHOP_ITEMS` does not offer                                                                  |
 
 Nothing is hand-listed. A family added to `BUFF_TEMPLATES` or an item returned to `SHOP_ITEMS` is
 admitted automatically, with no edit here — which is the property that makes the audit worth
@@ -30,9 +30,9 @@ filters it out of every offer. `reachability.ts`'s own docblocks say exactly tha
 
 **Fourteen of the game's twenty `BuffKind`s cannot be minted at all — up from six.**
 
-| Reachable — 5 kinds | Unreachable — 14 kinds |
-|---|---|
-| Taker, Feeder, Sidestep, **Cheat, Timebomb** | Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, **Shield**, and — since DLR-145 — Mark of the *R*, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered |
+| Reachable — 5 kinds                          | Unreachable — 14 kinds                                                                                                                                                            |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Taker, Feeder, Sidestep, **Cheat, Timebomb** | Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, **Shield**, and — since DLR-145 — Mark of the _R_, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered |
 
 > **DLR-145 widened the unreachable set by eight, and it is deliberate rather than a defect.** The
 > eight new entries are still **fully declared**: they keep their `BuffKind` member, their
@@ -75,7 +75,7 @@ Cheat lived outside `RunState.buffs` entirely, on a deleted `cheats` field.
 > `activatableBuffs(startRun().buffs).length` is now `STARTING_BUFF_COUNT + RUN_STARTING_CHEATS`
 > **and equal to `run.buffs.length`** — nothing is filtered at run start. Both opening-pile specs in
 > `reachability.test.ts` were rewritten to assert **more** than they did: the guaranteed Cheats are
-> pinned as the pile's *final* members (a position claim the count-only original could not make), and
+> pinned as the pile's _final_ members (a position claim the count-only original could not make), and
 > every opening card is asserted activatable against both figures. The count assertion
 > `filter(kind === Cheat).length === RUN_STARTING_CHEATS` had to go — **Cheat is an eligible random
 > draw now**, so a run may legitimately open holding more than one. The `mintableBuffKinds()` /
@@ -86,9 +86,9 @@ Cheat lived outside `RunState.buffs` entirely, on a deleted `cheats` field.
 absent from `BUFF_TEMPLATES` itself (73 = 71 condition + 2 activated at the time; 13 = 11 + 2 since
 DLR-145), so neither a pull nor
 the opening draw can produce one. Filling the pile was never what stood between a player and a Ward;
-filling the *pool* is.
+filling the _pool_ is.
 
-## Why the spec pins the gaps as *passing* assertions
+## Why the spec pins the gaps as _passing_ assertions
 
 `__tests__/reachability.test.ts` asserts that `unreachableBuffKinds()` **contains** `Ward`. That
 reads as an endorsement and is the opposite of one: every such case carries a comment naming the gap,

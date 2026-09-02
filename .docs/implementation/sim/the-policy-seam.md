@@ -2,28 +2,32 @@ Part of [the headless run simulator](README.md).
 
 # The policy seam, the two policies, and why every printed number depends on them
 
-`SimPolicy` (`types.ts`) is *who is at the controls*. It is the only place the simulator decides
+`SimPolicy` (`types.ts`) is _who is at the controls_. It is the only place the simulator decides
 anything, and every figure `npm run sim` prints is conditional on which implementation was passed —
 which is why both shipped policies write their behaviour out in full in their own module docblock
 rather than leaving it to be read off the code.
 
 ## Three required methods, and three optional ones
 
-| Method | Required? | Asked when |
-|---|---|---|
-| `chooseCard(round)` | yes | the driver's `canAct` branch, once per card played |
-| `chooseBuffs(ui)` | yes | each between-tricks window |
-| `nextShopAction(run)` | yes | repeatedly during a shop visit, until it answers `null` |
-| `chooseDiscard(ui)` | **no** | the first between-tricks window of a hand, before the buffs |
-| `wantsCheatPlay(ui)` | **no** | the `canAct` branch, before `chooseCard` |
-| `wantsApplyPot(ui)` | **no** | the resolution screen, and only when it offers a real choice |
+> **A fourth optional lever's contract widened on 2026-09-02.** `nextShopAction` may now answer
+> `combine`, the Manage Buffs upgrade. See [the skilled strategy](the-skilled-strategy.md) for the
+> policies that use these levers well; this file describes the seam and the two earliest players.
+
+| Method                | Required? | Asked when                                                   |
+| --------------------- | --------- | ------------------------------------------------------------ |
+| `chooseCard(round)`   | yes       | the driver's `canAct` branch, once per card played           |
+| `chooseBuffs(ui)`     | yes       | each between-tricks window                                   |
+| `nextShopAction(run)` | yes       | repeatedly during a shop visit, until it answers `null`      |
+| `chooseDiscard(ui)`   | **no**    | the first between-tricks window of a hand, before the buffs  |
+| `wantsCheatPlay(ui)`  | **no**    | the `canAct` branch, before `chooseCard`                     |
+| `wantsApplyPot(ui)`   | **no**    | the resolution screen, and only when it offers a real choice |
 
 `wantsApplyDamage` was required until DLR-156, which deleted the button it answered for.
 **`wantsApplyPot` replaced it and is optional**, for the reason the paragraph below gives.
 
 The two optional methods were added by DLR-120 and are optional **on purpose**. Making either
 required would force `baselinePolicy` to implement a refusal, and that changes what its printed
-figures *mean* while changing none of them: its docblock's claim would go from "this player does not
+figures _mean_ while changing none of them: its docblock's claim would go from "this player does not
 consider discarding" to "this player considers discarding and declines", which are different
 statements about the same numbers. Keeping them optional is what lets the baseline's output stay
 byte-identical to the figures recorded before the seam widened — verified, and it does.
@@ -58,7 +62,7 @@ Both new levers extend that discipline to multi-step rituals, which is the part 
 `runDiscard` (`playHandWindows.ts`, split out of `playHand.ts` by DLR-145) drives the same three-stage interaction a player performs: `TapDiscard`
 opens the selection, one `TapCard` per card toggles it in (capped at `MAX_CARDS_PER_DISCARD`), and a
 second `TapDiscard` commits the swap and spends a budget charge. It re-asks `discardRefusalFor`
-before opening *and* again before committing, because the second call is what catches an empty
+before opening _and_ again before committing, because the second call is what catches an empty
 selection — `DiscardRefusal.EmptySelection` only fires once the selection is open.
 
 Every path that cannot commit dispatches `CancelDiscard` before returning. That matters more than it
@@ -80,7 +84,7 @@ and because a swap changes the hand the buff decision is then made against.
 `runCheatPlay` (`playHandWindows.ts` since DLR-145) dispatched `TapCheat` twice to poise then arm, then `TapCard` twice to
 arm and commit the card the policy named. A `CheatPlay` names the Cheat **and** the card together,
 deliberately: arming a Cheat and then playing a card that was follow-suit-legal anyway spends the
-card for nothing, which would report the Cheat as *harmful* rather than as unexercised.
+card for nothing, which would report the Cheat as _harmful_ rather than as unexercised.
 
 It counted a Cheat as spent by comparing `ui.cheats.length` before and after. That proxy was sound
 rather than convenient: `commitHandlers.ts`'s `commit` reached `removeCheat` only past its `!ok`
@@ -91,7 +95,7 @@ back with `CancelCheat` and any armed card or open prompt was then cleared with 
 
 **Since DLR-132**, the policy opens the loadout (`ToggleLoadout`), finds the row
 (`offeredBuffs(ui).find((b) => b.kind === BuffKind.Cheat)`), taps it twice (`TapBuff` × 2) to spend
-it, then plays the card through the ordinary `TapCard` × 2 commit. The *decision* the policy makes —
+it, then plays the card through the ordinary `TapCard` × 2 commit. The _decision_ the policy makes —
 arm only where lifting follow-suit widens the legal set — is unchanged; only the dispatch mechanism
 moved, because there is no longer a poise-then-cancel Cheat state to race against.
 
@@ -103,10 +107,10 @@ Read `baselinePolicy.ts`'s docblock before reading any number this tool prints. 
 - **Buffs** — activated cheapest-AP-first at every between-tricks window, while the pool would still
   cover the Apply Damage press's AP cost (deleted by DLR-156 with the button). The sort tiebreaks on `buff.id`, which is monotonic and never
   reused, so the ordering is total.
-- **Apply Damage** — pressed when the multiplier reaches `BASELINE_CASH_AT_MULTIPLIER` (3), or on the
+- **Apply Damage** — pressed when the multiplier reached `BASELINE_CASH_AT_MULTIPLIER` (3), or on the
   hand's last window with a non-empty bank. **"The hand's last window" is `HAND_SIZE -
-  tricksPlayed <= 1` since DLR-146**, and the change matters more than it reads: it used to be
-  `hands[Player].length <= 1`, a *proxy* for the same thing that silently stops firing at any hand
+tricksPlayed <= 1` since DLR-146**, and the change matters more than it reads: it used to be
+  `hands[Player].length <= 1`, a _proxy_ for the same thing that silently stops firing at any hand
   floor above 1. Left alone, the reference player would have quietly stopped banking at every hand's
   end — corrupting the very runs the floor was to be judged by. The new expression is identical at a
   floor of `0` (both mean five or six tricks played) and floor-invariant thereafter.
@@ -116,26 +120,32 @@ Read `baselinePolicy.ts`'s docblock before reading any number this tool prints. 
 - **Shop** — free pulls, then Heal → Swan tier → Witch tier while affordable, then the
   flask.
 
-`BASELINE_CASH_AT_MULTIPLIER` is a **policy** parameter, not a game tunable. It deliberately does not
+> **`BASELINE_CASH_AT_MULTIPLIER` no longer exists.** DLR-156 deleted the Apply Damage button it
+> answered for, and the constant went with it — it is named nowhere in `src/` today. The paragraph
+> below is kept because the _distinction_ it draws is still the rule this module lives by, and
+> `BLIND_TRICK_CAP` and `ROLL_TARGET_SWEEP` are the same kind of value. Read it as the pattern, not
+> as a live constant.
+
+`BASELINE_CASH_AT_MULTIPLIER` was a **policy** parameter, not a game tunable. It deliberately did not
 live in `src/hunt/config.ts`, and it is the single knob with the most leverage over the printed
 damage figures.
 
 ## `maximalistPolicy` — the same player, pulling every lever a run actually grants
 
-Added by DLR-120 to answer one question: are the levers the player *does* have the missing
+Added by DLR-120 to answer one question: are the levers the player _does_ have the missing
 ingredient? Its `chooseCard`, `chooseBuffs` and `nextShopAction` are
 `baselinePolicy`'s **by reference** — asserted in `baselinePolicy.test.ts`, not merely described — so
 any difference in the printed figures is attributable to the levers alone and never to card play.
 
 - **Discard** — once per hand, on the first open between-tricks window, the lowest-ranked
-  `MAX_CARDS_PER_DISCARD` cards, while `discardsRemaining > 0`. Discarding at *every* window would
+  `MAX_CARDS_PER_DISCARD` cards, while `discardsRemaining > 0`. Discarding at _every_ window would
   spend the fight's whole `DISCARDS_PER_FIGHT` budget inside hand one, which measures the budget
   rather than exercising the swap. The sort is total on `(rank, suit)` so no tie can resolve
   differently between runs.
 - **Cheat** — the run's one starting Cheat (`RUN_STARTING_CHEATS`), armed **only** where lifting
   follow-suit strictly widens the legal set, then playing the highest-ranked card the widening
   admits. Fox and Woodcutter are excluded, because both open an `AbilityChoice` prompt and the driver
-  answers a prompt from `chooseCpuMove`'s choice for a *different* card.
+  answers a prompt from `chooseCpuMove`'s choice for a _different_ card.
 
 Every threshold in that description is an existing configuration constant read by name. The policy
 introduces no number of its own.

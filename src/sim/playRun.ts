@@ -10,6 +10,8 @@ import { closeHand, FRESH_ENCOUNTER_DECK, type EncounterDeck } from '../warCounc
 import {
   advanceRun,
   buyFromShop,
+  combineBuffs,
+  combineRefusalFor,
   canAdvanceRun,
   createSeededRng,
   drawReelPool,
@@ -32,6 +34,7 @@ import {
   startRun,
   type BuffTemplate,
   type RunState,
+  type ShopItem,
 } from '../hunt'
 import { withOpeningPile } from './openingPileVariants'
 import { playHand } from './playHand'
@@ -42,6 +45,19 @@ interface ShopVisitOutcome {
   readonly run: RunState
   readonly coinsSpent: number
   readonly slotPulls: number
+  /** play-tester (2026-09-02) — the pull share of `coinsSpent`, and the cards those pulls minted.
+   *  Both are measured as the delta the engine actually applied, never re-derived from
+   *  `SLOT_REROLL_PRICE` or from the machine's posted odds — the same discipline `coinsSpent`
+   *  itself already follows. */
+  readonly coinsSpentOnPulls: number
+  readonly buffsAcquired: number
+  /** play-tester (2026-09-02) — the shelf share of `coinsSpent`, per item. A `Map` inside the
+   *  visit and a plain object on the report: accumulating into an object with a `ShopItem` key
+   *  needs a widening cast, and `Map` needs none. */
+  readonly coinsSpentByItem: ReadonlyMap<ShopItem, number>
+  /** play-tester (2026-09-02) — combines committed this visit. Costs no coins, so it is counted
+   *  rather than priced. */
+  readonly combines: number
 }
 
 /**
@@ -56,6 +72,10 @@ function visitShop(run: RunState, policy: SimPolicy): ShopVisitOutcome {
   let live = run
   let coinsSpent = 0
   let slotPulls = 0
+  let coinsSpentOnPulls = 0
+  let buffsAcquired = 0
+  let combines = 0
+  const coinsSpentByItem = new Map<ShopItem, number>()
 
   for (let i = 0; i < MAX_SHOP_ACTIONS_PER_VISIT; i += 1) {
     const action = policy.nextShopAction(live)
@@ -65,7 +85,16 @@ function visitShop(run: RunState, policy: SimPolicy): ShopVisitOutcome {
       if (refusalFor(shopStockFor(live), action.item) !== null) break
       const before = live.coins
       live = buyFromShop(live, action.item)
-      coinsSpent += before - live.coins
+      const charged = before - live.coins
+      coinsSpent += charged
+      coinsSpentByItem.set(action.item, (coinsSpentByItem.get(action.item) ?? 0) + charged)
+      continue
+    }
+
+    if (action.kind === 'combine') {
+      if (combineRefusalFor(live.buffs, action.key) !== null) break
+      live = combineBuffs(live, action.key)
+      combines += 1
       continue
     }
 
@@ -84,12 +113,24 @@ function visitShop(run: RunState, policy: SimPolicy): ShopVisitOutcome {
       createSeededRng(spinSeedFor(stripSeed, live.slotPullsThisVisit)),
     )
     const before = live.coins
+    const buffsBefore = live.buffs.length
     live = pullSlotMachine(live, pull)
-    coinsSpent += before - live.coins
+    const charged = before - live.coins
+    coinsSpent += charged
+    coinsSpentOnPulls += charged
+    buffsAcquired += live.buffs.length - buffsBefore
     slotPulls += 1
   }
 
-  return { run: live, coinsSpent, slotPulls }
+  return {
+    run: live,
+    coinsSpent,
+    slotPulls,
+    coinsSpentOnPulls,
+    buffsAcquired,
+    coinsSpentByItem,
+    combines,
+  }
 }
 
 /** Plays one whole run from `seed`, ending `Won`, `Lost`, or `Stalled` — a driver failure
@@ -113,6 +154,10 @@ export function playRun(
   let coinsEarned = 0
   let coinsSpent = 0
   let slotPulls = 0
+  let coinsSpentOnPulls = 0
+  let buffsAcquired = 0
+  let combines = 0
+  const coinsSpentByItem = new Map<ShopItem, number>()
   let deadCardRefusals = 0
   let fightsWon = 0
   let stalled = false
@@ -156,6 +201,12 @@ export function playRun(
       run = visit.run
       coinsSpent += visit.coinsSpent
       slotPulls += visit.slotPulls
+      coinsSpentOnPulls += visit.coinsSpentOnPulls
+      buffsAcquired += visit.buffsAcquired
+      combines += visit.combines
+      for (const [item, coins] of visit.coinsSpentByItem) {
+        coinsSpentByItem.set(item, (coinsSpentByItem.get(item) ?? 0) + coins)
+      }
       run = advanceRun(run)
       carried = FRESH_ENCOUNTER_DECK
       handsThisFight = 0
@@ -182,6 +233,10 @@ export function playRun(
     coinsEarned,
     coinsSpent,
     slotPulls,
+    combines,
+    buffsAcquired,
+    coinsSpentOnPulls,
+    coinsSpentByItem: Object.fromEntries(coinsSpentByItem),
     buffsOwnedAtEnd: run.buffs.length,
     deadCardRefusals,
   }

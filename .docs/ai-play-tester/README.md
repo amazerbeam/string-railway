@@ -49,3 +49,8 @@ before being trusted, not patched by hand.
 - [`live-playthrough-log.md`](live-playthrough-log.md) — `ai-play-tester`, live browser sessions. A
   running log of judged (not first-legal) playthroughs — what was played, what happened, and any
   pattern worth a developer's attention.
+- [`strategy-guide.md`](strategy-guide.md) — `play-tester`, headless sim. How to play the Hunt well,
+  each clause with what it is worth, implemented as `--policy skilled`. Carries the Timebomb finding
+  (it is 58% of a naive player's damage output and 44% of a correct player's damage taken) and two
+  simulator defects that invalidate the card-play half of every measurement recorded before
+  2026-09-02.

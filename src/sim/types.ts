@@ -26,6 +26,11 @@ export type ShopAction =
   | { readonly kind: 'buy'; readonly item: ShopItem }
   | { readonly kind: 'pull'; readonly machineId: SlotMachineId }
   | { readonly kind: 'flask' }
+  /** play-tester (2026-09-02) — the Manage Buffs screen's combine, keyed by `buffCombineKey`: two
+   *  identical cards at the same tier become one of the next tier. Added because `ShopAction` had
+   *  no member for it, so no measurement this project has ever taken exercised the upgrade path at
+   *  all. Executed defensively like every other action — the driver re-asks `combineRefusalFor`. */
+  | { readonly kind: 'combine'; readonly key: string }
 
 /** A Cheat buff to spend from the pile and the off-suit card to play with it. Named TOGETHER,
  *  deliberately: arming a Cheat and then playing a card that was follow-suit-legal anyway spends
@@ -137,6 +142,120 @@ export interface BuffFireOutcome {
    *  family and every Win pays as before. Recorded so "did this fire carry or pay" is answerable
    *  without re-deriving the skull inversion, which `bank.ts`'s `TAKEN` table states exactly once. */
   readonly trickWasLoss: boolean
+  /** play-tester (2026-09-02) — the SUIT this card's condition is keyed to, or `null` for a family
+   *  that is not suit-parameterised (Sidestep) and for the activated cards. A Taker keyed to Bells
+   *  means nothing in a trace unless the suit actually led is beside it. */
+  readonly target: string | null
+}
+
+/** play-tester (2026-09-02) — the four outcomes of `the-hunt.md` §7, counted, plus where the hurt
+ *  ones happened. `cleanWin` and `dodge` BANK; `cleanLoss` and `skullWin` HURT, and cost exactly 1
+ *  health each. `hurtLeading + hurtFollowing` therefore equals `cleanLoss + skullWin`. */
+export interface TrickOutcomeCounts {
+  readonly cleanWin: number
+  readonly dodge: number
+  readonly cleanLoss: number
+  readonly skullWin: number
+  /** Hurt tricks the player was LEADING into — a bet on an unseen answer. */
+  readonly hurtLeading: number
+  /** Hurt tricks the player was FOLLOWING — the lead was face up, so the outcome was chooseable
+   *  unless no legal card reached it. */
+  readonly hurtFollowing: number
+}
+
+/** play-tester (2026-09-02) — the read taken before the buff window arms anything. */
+export interface TrickIntentRecord {
+  /** The suit expected to decide the trick — chosen when the player leads, predicted from
+   *  `suitShape`'s posted counts when the Quarry does. */
+  readonly suit: string
+  /** Whether the plan was to TAKE the trick (a clean suit) or to LOSE it (a skull-heavy one, where
+   *  a dodge banks). Taker pays only on the first, Feeder and Sidestep only on the second. */
+  readonly willTake: boolean
+  /** False when the Quarry leads: the suit is a prediction, so fewer cards ride on it. */
+  readonly certain: boolean
+  /** Who lays the first card. */
+  readonly playerLeads: boolean
+  /** The share of the Quarry's holding in `suit` that is skulled — the figure `willTake` turns on. */
+  readonly skullOdds: number
+  /** How much of that suit the Quarry holds, and how much of it is skulled. Straight off the
+   *  screen's own readout. */
+  readonly held: number
+  readonly skulled: number
+  /** The card the plan meant to lead — `suit` and `rank` — or `null` when the Quarry leads. */
+  readonly plannedSuit: string | null
+  readonly plannedRank: number | null
+}
+
+/** play-tester (2026-09-02) — one card sitting in the pile, unspent, when a buff window opened. */
+export interface HeldBuff {
+  readonly kind: string
+  readonly tier: string
+  readonly axis: string
+  readonly value: number
+  readonly target: string | null
+}
+
+/** play-tester (2026-09-02) — one card as it was played into a trick. */
+export interface TrickCardRecord {
+  readonly side: string
+  readonly suit: string
+  readonly rank: number
+  /** Skulls are dealt only to the Quarry, so in practice this marks its card — and a skull inverts
+   *  what winning the trick is worth (`the-hunt.md` §7). */
+  readonly skulled: boolean
+}
+
+/** play-tester (2026-09-02) — one trick's damage, broken into the terms that produced it, so
+ *  "what did firing those cards actually buy" is answerable. Mirrors `TrickDamage`
+ *  (`src/warCouncil/streak.ts`), which is the engine's own statement of the equation:
+ *  `dealt = (base + buffDamage) x buffMult`. Join to `BuffFireOutcome` on `trick` /
+ *  `trickOfHand` to see which cards produced these terms. */
+export interface TrickDamageRecord {
+  /** 1-based trick ordinal within the hand. */
+  readonly trick: number
+  readonly outcome: string
+  /** play-tester (2026-09-02) — the two cards, in the engine's load-bearing lead-then-follow order,
+   *  with the lead's skull mark. Without these a trace says which buffs were spent but not what was
+   *  played, and a Taker keyed to Bells only means anything beside the suit actually led. */
+  readonly cards: readonly TrickCardRecord[]
+  /** The suit that was trump as this trick resolved — after any Fox exchange made in it. */
+  readonly trumpSuit: string
+  /** play-tester (2026-09-02) — what the player PREDICTED this trick would be, at the moment the
+   *  buff window opened and before any card was laid. Recorded so a trace shows the reasoning
+   *  behind an arming decision and, when the prediction was wrong, shows that too. `null` when no
+   *  window opened. */
+  readonly intent: TrickIntentRecord | null
+  /** play-tester (2026-09-02) — every activatable card in the pile as this trick's buff window
+   *  opened, BEFORE any of it was armed. `fired` says what was spent; this says what was available,
+   *  and the difference is what the player chose to hold back. Without it a trace cannot
+   *  distinguish "had nothing" from "had plenty and armed none of it". */
+  readonly held: readonly HeldBuff[]
+  /** Whether the player laid the FIRST card. Leading is a bet on an unseen answer; following is a
+   *  decision made with the lead's skull mark face up. */
+  readonly playerLed: boolean
+  /** BASE_DAMAGE plus the run's `baseDamageBonus`. */
+  readonly base: number
+  /** Flat damage from the cards fired on THIS trick. */
+  readonly buffDamage: number
+  /** 1 + Momentum points fired on this trick + the Overlap Bonus. */
+  readonly buffMult: number
+  readonly overlapBonus: number
+  /** `(base + buffDamage) x buffMult` — what this trick added to the streak's total. 0 on a hurt
+   *  trick, which computes none. */
+  readonly dealt: number
+  /** The streak AFTER this trick. `roll` multiplies `total` to make the pot. */
+  readonly total: number
+  readonly roll: number
+  /** The pot dealt to the Quarry at this trick, or `null` if it rolled over. */
+  readonly potApplied: number | null
+}
+
+/** play-tester (2026-09-02) — see `HandReport.cheatMoments`. */
+export interface CheatMoments {
+  readonly forced: number
+  readonly escapable: number
+  readonly held: number
+  readonly taken: number
 }
 
 /** What one hand did. */
@@ -185,6 +304,36 @@ export interface HandReport {
    *  from Feeders that fired on a LOSS, which paid nothing in this hand. UNIT: bonus points,
    *  per axis. */
   readonly feederCarryOut: BuffCarry
+  /** play-tester (2026-09-02) — the player's health and ceiling as this hand OPENED, read off the
+   *  hand's frozen `openingEncounter` and `RunState.maxPlayerHealth`. `damageToPlayer` says what a
+   *  hand cost; these say what it was spent out of, which is the difference between a hand that
+   *  cost 4 of 20 and one that cost 4 of 4. UNIT: health points. */
+  readonly playerHealthAtStart: number
+  readonly maxPlayerHealthAtStart: number
+
+  /** play-tester (2026-09-02) — this hand's tricks by outcome, plus which SEAT the hurt ones were
+   *  taken in. `damageToPlayer` says how much health a hand cost; this says which of the four
+   *  outcomes (`the-hunt.md` §7) cost it, and whether the player was leading blind or following
+   *  with the lead face up. Without the seat split a card-play change cannot be attributed: the
+   *  follow is a decision made with the skull mark visible, the lead is a bet. */
+  readonly trickOutcomes: TrickOutcomeCounts
+  /** play-tester (2026-09-02) — one row per resolved trick, in order. The readable trace of a hand:
+   *  what the cards fired on each trick were worth, and what the streak did with it. */
+  readonly trickDamage: readonly TrickDamageRecord[]
+  /** play-tester (2026-09-02) — the Cheat's whole case, counted. A Cheat lifts follow-suit, so its
+   *  one job is turning a FORCED hurt into a bank: on a skulled lead every legal card would take
+   *  the trick and eat the skull, or on a clean lead none of them wins. `forced` counts the
+   *  situation arising at all, `escapable` counts the subset an off-suit card would actually fix,
+   *  `held` the subset where a Cheat was in the pile, and `taken` what was spent. The gaps between
+   *  those four say whether the card is rare, useless, or simply never owned. */
+  readonly cheatMoments: CheatMoments
+
+  /** play-tester (2026-09-02) — every pot APPLIED this hand, in the order they were dealt, each
+   *  as `potValue(total, roll)` read off the resolution the moment Apply was pressed. `[]` for a
+   *  hand that never cashed. `damageToQuarry` already carries the hand's total, but it cannot
+   *  distinguish one 36-damage cash from six 6-damage ones — which is exactly the question the
+   *  roll-over bet asks. UNIT: damage per applied pot. */
+  readonly potsApplied: readonly number[]
   /** DLR-156 AC8 — the streak this hand OPENED on, seeded from `RunState.streak`. Zero on the
    *  first hand of every fight, because the streak is wiped at the fight boundary. */
   readonly streakIn: StreakState
@@ -211,6 +360,21 @@ export interface RunReport {
   readonly coinsEarned: number
   readonly coinsSpent: number
   readonly slotPulls: number
+  /** play-tester (2026-09-02) — combines COMMITTED this run. Each spends two cards and returns
+   *  one, so the pile shrinks by one per combine. UNIT: combines. */
+  readonly combines: number
+  /** play-tester (2026-09-02) — buff cards MINTED into the pile over the whole run, summed as the
+   *  pile-length delta each slot pull actually produced rather than re-derived from the machine's
+   *  posted odds. `buffsOwnedAtEnd` is what SURVIVED; this is what ARRIVED, and the gap between the
+   *  two is what the player spent. UNIT: cards. */
+  readonly buffsAcquired: number
+  /** play-tester (2026-09-02) — of `coinsSpent`, the share that went into slot pulls. Tracked as
+   *  the charge `pullSlotMachine` actually took, never from a price table. UNIT: coins. */
+  readonly coinsSpentOnPulls: number
+  /** play-tester (2026-09-02) — of `coinsSpent`, the share spent on each shelf item, keyed by
+   *  `ShopItem`. Only items actually bought appear, so an unshelved item is an absent key rather
+   *  than a zero that reads as "offered and declined". UNIT: coins. */
+  readonly coinsSpentByItem: Readonly<Partial<Record<ShopItem, number>>>
   readonly buffsOwnedAtEnd: number
   /** Activations refused `NoEffectYet` — the unreachable-consumable count the brief asks for. */
   readonly deadCardRefusals: number

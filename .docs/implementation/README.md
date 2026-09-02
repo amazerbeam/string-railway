@@ -24,17 +24,17 @@ invariants, Deferred — and links out to one file per mechanic once the module 
 couple worth a standalone answer. A thin module stays a single `README.md`; nothing forces a split
 before it earns one. See the skill's own SKILL.md for the split threshold and per-module template.
 
-| Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --------------------- | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, DLR-154, DLR-156, PT-001, PT-002                                                                                                                                                                   |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159                                                                                                                                                                               |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-157, DLR-159, PT-002                                                                                                     |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, DLR-157, DLR-158, DLR-159, 2026-09-01 (unkeyed)                                                                                                                                                                                                                                                                                                                    |
+| Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, DLR-154, DLR-156, PT-001, PT-002                                                                                                                                                                                                                    |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159                                                                                                                                                                                                                                         |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-157, DLR-159, PT-002                                                                                                                                    |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, DLR-157, DLR-158, DLR-159, 2026-09-01 (unkeyed)                                                                                                                                                                                                                                                                                                                                                        |
 | `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-158, DLR-159, 2026-09-01 (unkeyed), PT-001, PT-002 |
-| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156                                                                                                                                                                                                                                                                                                                                                                                  |
+| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156, play-tester 2026-09-02                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -730,7 +730,6 @@ lesson.
 > `EncounterState.pendingApplyPayout`, the AP cost and the delay constants all went. Applying now
 > deals the pot immediately, on the resolution screen the player chose it on. Kept as the record.
 
-
 **Apply Damage stopped being a free, instant, risk-free cash-out.** Pressing it now costs
 `APPLY_DAMAGE_AP_COST` (3 action points, since moved to 1 — see DLR-141 below) and **queues** the
 payout instead of dealing it — the cash lands `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions
@@ -781,7 +780,6 @@ for the widened refusal predicate.
 
 > **Superseded by DLR-156**, which deleted the queued payout this rule retained a share of.
 > `APPLY_DAMAGE_HIT_RETENTION` and `PayoutOutcome` no longer exist. Kept as the record.
-
 
 **A queued Apply Damage payout is no longer an all-or-nothing gamble against the player's health
 bar.** DLR-109 wiped it entirely on any hit that cost the player health; DLR-141 replaced that with a
@@ -1073,7 +1071,6 @@ sentinel decision, [hunt/buff-pile.md](hunt/buff-pile.md) for the superseded sca
 > **Superseded by DLR-156**, which removed the Apply Damage control and both tunables this
 > section retuned. Kept as the record.
 
-
 **DLR-143 corrected three Apply Damage timing/economy rules in the same pass, because all three share
 the two files that gate and pay the action.** The press's own availability gate changed shape rather
 than merely its value: `ApplyDamageRefusal.TimebombPending` (design decision D6, 2026-08-19) is
@@ -1224,7 +1221,7 @@ following DLR-150's `feederCarry` pattern field for field.
 **The Apply Damage button left the action bar**, with its five refusals, its AP cost and the
 delayed-payout queue behind it. In its place, **every resolved trick hands off to a second
 full-viewport screen** that carries the two played cards across, derives the damage one term at a
-time in a fixed two-row ledger, and asks *apply* (deal the pot, reset both) or *roll over* (keep
+time in a fixed two-row ledger, and asks _apply_ (deal the pot, reset both) or _roll over_ (keep
 both, play on). A hurt trick reaches the same screen with nothing to decide and a single **Onward**
 exit. The played card now flies from the hand to the table, with a landing reachable three ways so a
 backgrounded tab cannot strand it.
@@ -1263,7 +1260,7 @@ run produced an inventory of every card movement in the game — **27** of them,
 at the end of a hand rather than a trick). Nineteen are live and now animate through a single
 primitive, `useCardMotion.move(requests, onAllLanded)`; `useCardFlight` and the `CardFlight`
 interface are gone. Fourteen of them fall out of **one** wiring: a pure differ over consecutive
-`RoundState`s, plus a registry that lets a movement name its source and destination *places* by key
+`RoundState`s, plus a registry that lets a movement name its source and destination _places_ by key
 rather than hand over two live elements — which is the only shape that can animate the six movements
 landing in a slot that does not exist until the state commits. `--wc-flight` moved, unchanged in
 value, out of `warCouncilResolve.css` into a new `warCouncilMotion.css` alongside five siblings, so
@@ -1314,7 +1311,7 @@ mark's geometry and hue, the fizz duration, the priming tint, and all new copy. 
 ## DLR-153, activation you can see and take back (2026-08-27)
 
 **The ticket that made activating a buff legible, and the first one to change what activation
-*means*.** Until now, activating a buff deleted a card from the pile and changed nothing on screen —
+_means_.** Until now, activating a buff deleted a card from the pile and changed nothing on screen —
 and nine of the sixteen live templates are gated on the **suit of the card you end up playing**,
 which the screen never named. Now every legal-to-play card a riding buff could fire on lights up
 with three independent carriers (a halo, a travelling SVG cell, and a numeral badge that survives
@@ -1329,7 +1326,7 @@ its own control to take that buff off the trick.
 The breakdown was open by default the whole time a buff rode; it is now hover-only, because on the
 real felt it covers the played cards and open-by-default made that permanent. Every breakdown row,
 dead ones included, gained the remove control the riding list already had. And the halo's hue moved
-off `--wc-alarm`, the damage colour, onto the mockup's own `#ff3326` — which corrects *which* red
+off `--wc-alarm`, the damage colour, onto the mockup's own `#ff3326` — which corrects _which_ red
 without settling whether red is right at all.
 
 **The rule change: a buff can now come back off the trick.** `the-hunt.md` had recorded activation
@@ -1342,7 +1339,7 @@ spend also arms felt state the transition cannot reach; they still appear in the
 status line saying why and no control. (**Timebomb stopped being one of the four on DLR-154** — the
 set is renamed `REVOCABLE_BUFF_KINDS` and holds it too; the felt-state reversal the engine cannot do
 is the app layer's. Cheat, Ward and Shield are unchanged.) **Activation is still two taps** — the ticket removed the
-card *target*, not the poise.
+card _target_, not the poise.
 
 **No firing rule was copied into the view layer, and that is the whole correctness argument.** Every
 figure comes from DLR-152's `projectBuffBranches`, which is finally consumed. Two pure app-layer
