@@ -28,7 +28,6 @@ import {
   sameCard,
   swanTierFactsFor,
   RoundPhase,
-  trickIsPrimed,
   trickIsSkulled,
   type Card,
   type TrickCard,
@@ -47,7 +46,7 @@ export interface CardDamageBranch {
 }
 
 /** DLR-156 B1 — what winning this trick would be worth TOWARD THE POT. `win.toQuarry` above
- *  stays 0 unless a Timebomb lands on the Quarry this trick (AC5 — only the resolution screen's
+ *  stays 0 on an ordinary trick (AC5 — only the resolution screen's
  *  own Apply choice ever pays immediately), so it alone cannot carry "does this card matter"; a
  *  streak of any size previewed the same flat "no damage" without this. Read straight off
  *  `resolveTrickBank`'s own win-branch `TrickResolution` — no arithmetic of its own, the same
@@ -94,19 +93,15 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
     { side: PlayerSide.Player, card },
   ]
 
-  // The five queue/run facts come from `playOptions` — the SAME assembly both commit call
-  // sites use — with `playCard.ts`'s own `?? 0` / `?? false` defaulting reproduced field for
-  // field, so the preview and the commit cannot read "what is pending" differently.
+  // The run facts come from `playOptions` — the SAME assembly both commit call
+  // sites use — with `playCard.ts`'s own `?? 0` defaulting reproduced field for
+  // field, so the preview and the commit cannot read them differently.
   const options = playOptions(state)
   const finalTrick = state.round.tricksPlayed + 1 === HAND_SIZE
   const remainingHand = state.round.hands[PlayerSide.Player].filter((c) => !sameCard(c, card))
   const shared: Omit<TrickFacts, 'playerWon'> = {
     skullTrick: trickIsSkulled(state.round.skulledCards, visible),
     finalTrick,
-    timebombTrick: trickIsPrimed(state.round.primedCards, visible),
-    timebombToPlayer: options.timebombToPlayer ?? 0,
-    timebombToQuarry: options.timebombToQuarry ?? 0,
-    blastGuarded: options.blastGuarded ?? false,
     baseDamageBonus: options.baseDamageBonus ?? 0,
     // DLR-122 — the Swan ladder, derived exactly as `playCard.ts` derives it, from the same
     // `playOptions` assembly. `visible` already carries the real `side` on every entry, which is

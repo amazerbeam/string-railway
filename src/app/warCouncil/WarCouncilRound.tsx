@@ -63,7 +63,6 @@ export default function WarCouncilRound({
   runLabel,
   coins,
   quarryLabel,
-  blastGuardHeld,
   discardsRemaining,
   baseDamageBonus,
   buffs,
@@ -78,7 +77,6 @@ export default function WarCouncilRound({
     {
       round: initialState,
       encounter,
-      blastGuardHeld,
       discardsRemaining,
       baseDamageBonus,
       buffs,

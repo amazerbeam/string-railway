@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createSeededRng, MAX_CARDS_PER_DISCARD } from '../../hunt'
 import { cardsOfSuit } from '../cardUtils'
 import { dealRound } from '../deal'
@@ -28,7 +28,6 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     trumpSuit: Suit.Bells,
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
-    primedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

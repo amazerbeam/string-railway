@@ -14,17 +14,20 @@ import {
   type BuffCondition,
 } from '../buffs'
 
-describe('BuffKind (DLR-108/DLR-111 finding 1 — widened to 22 members on DLR-161)', () => {
-  it('carries all 22 members, pairwise distinct', () => {
+describe('BuffKind (DLR-161 widened it to 22; DLR-166 deleted one, leaving 21)', () => {
+  it('carries all 21 members, pairwise distinct', () => {
     const values = Object.values(BuffKind)
-    expect(values).toHaveLength(22)
-    expect(new Set(values).size).toBe(22)
+    expect(values).toHaveLength(21)
+    expect(new Set(values).size).toBe(21)
   })
 
-  it('carries the three pre-existing members unchanged', () => {
+  it('carries the two surviving pre-existing members unchanged', () => {
     expect(BuffKind.Unassigned).toBe('unassigned')
     expect(BuffKind.Cheat).toBe('cheat')
-    expect(BuffKind.Timebomb).toBe('timebomb')
+  })
+
+  it('DLR-166 — the deleted activated card is gone from the map, not merely unmintable', () => {
+    expect(Object.values(BuffKind)).not.toContain('timebomb')
   })
 
   it('carries the 11 shipping condition families', () => {
@@ -157,10 +160,9 @@ describe('BUFF_CADENCE — DLR-124 R4’s classification, transcribed', () => {
     expect(BUFF_CADENCE[BuffKind.SkullTether]).toBe(BuffCadence.Event)
   })
 
-  it('classifies Cheat, Timebomb, Shield and the five consumables as activated', () => {
+  it('classifies Cheat, Shield and the five consumables as activated', () => {
     for (const kind of [
       BuffKind.Cheat,
-      BuffKind.Timebomb,
       BuffKind.Ward,
       BuffKind.Puppeteer,
       BuffKind.SecondThoughts,

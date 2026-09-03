@@ -204,7 +204,6 @@ describe('buffFires — one case per condition family (AC5)', () => {
   it('every consumable and activated kind fires on nothing (AC5 negative half)', () => {
     for (const kind of [
       BuffKind.Cheat,
-      BuffKind.Timebomb,
       BuffKind.Ward,
       BuffKind.Puppeteer,
       BuffKind.SecondThoughts,

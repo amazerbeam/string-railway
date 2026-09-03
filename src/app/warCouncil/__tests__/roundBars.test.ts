@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { BuffTier, DuelSide, queueTimebomb, TIMEBOMB_DAMAGE } from '../../../hunt'
+import { DuelSide } from '../../../hunt'
 import {
   baseDamageBonusFixture,
   discardsRemainingFixture,
   encounterFixture,
   maxHealthFixture,
   makeRound,
-  blastGuardHeldFixture,
 } from './roundFixture'
 import { createRoundUiState } from '../roundUiState'
 import { barsForRound } from '../roundBars'
@@ -15,7 +14,6 @@ function seededUi(encounter = encounterFixture) {
   return createRoundUiState({
     round: makeRound(),
     encounter,
-    blastGuardHeld: blastGuardHeldFixture,
     baseDamageBonus: baseDamageBonusFixture,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],
@@ -23,44 +21,22 @@ function seededUi(encounter = encounterFixture) {
 }
 
 describe('barsForRound — the round screen’s assembly, split out of WarCouncilRound.tsx on DLR-101', () => {
-  it('reproduces the pre-DLR-101 row when no Timebomb is booked', () => {
+  it('previews nothing on either bar with no streak standing', () => {
     const ui = seededUi()
     const bars = barsForRound(ui, maxHealthFixture)
     const player = bars.find((v) => v.side === DuelSide.Player)!
     const quarry = bars.find((v) => v.side === DuelSide.Quarry)!
-    expect(player.ticking).toBe(0)
-    expect(quarry.ticking).toBe(0)
     expect(player.pending).toBe(0)
     expect(quarry.pending).toBe(0)
   })
 
-  it('shows the booked hit on the Quarry’s bar when a Timebomb is queued against it, leaving the player untouched', () => {
-    const encounter = queueTimebomb(
-      encounterFixture,
-      DuelSide.Quarry,
-      TIMEBOMB_DAMAGE[BuffTier.Bronze],
-    )
-    const ui = seededUi(encounter)
-    const bars = barsForRound(ui, maxHealthFixture)
+  it('previews a standing streak on the Quarry’s bar only — the player is never at risk from it', () => {
+    const ui = seededUi()
+    const withStreak = { ...ui, round: { ...ui.round, total: 2, roll: 2 } }
+    const bars = barsForRound(withStreak, maxHealthFixture)
     const player = bars.find((v) => v.side === DuelSide.Player)!
     const quarry = bars.find((v) => v.side === DuelSide.Quarry)!
-    expect(quarry.ticking).toBeGreaterThan(0)
-    expect(quarry.ticking).toBe(encounter.pendingTimebomb[DuelSide.Quarry])
-    expect(player.ticking).toBe(0)
-  })
-
-  it('mirrors onto the player’s bar when a Timebomb is queued against them, leaving the Quarry untouched', () => {
-    const encounter = queueTimebomb(
-      encounterFixture,
-      DuelSide.Player,
-      TIMEBOMB_DAMAGE[BuffTier.Bronze],
-    )
-    const ui = seededUi(encounter)
-    const bars = barsForRound(ui, maxHealthFixture)
-    const player = bars.find((v) => v.side === DuelSide.Player)!
-    const quarry = bars.find((v) => v.side === DuelSide.Quarry)!
-    expect(player.ticking).toBeGreaterThan(0)
-    expect(player.ticking).toBe(encounter.pendingTimebomb[DuelSide.Player])
-    expect(quarry.ticking).toBe(0)
+    expect(quarry.pending).toBe(4)
+    expect(player.pending).toBe(0)
   })
 })

@@ -47,7 +47,7 @@ export function tierForSide(
  *
  * Derived HERE rather than in `bank.ts` because it needs to know which SIDE played the Swan, and
  * `bank.ts` deliberately knows nothing about cards or sides — it is handed facts, exactly as it is
- * handed `blastGuarded` and `baseDamageBonus`. The outcome half of AC4 ("not an eaten skull") is
+ * handed `baseDamageBonus`. The outcome half of AC4 ("not an eaten skull") is
  * `bank.ts`'s, because outcomes are its subject; the ownership half is this module's.
  *
  * `swanKeepsBank` implies `swanKeepsMultiplier` — gold is above silver on the ladder, so

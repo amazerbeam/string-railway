@@ -70,7 +70,6 @@ describe('a bought tier is run-permanent (AC2)', () => {
     const recorded = recordEncounter(
       bought,
       won,
-      bought.blastGuardHeld,
       bought.discardsRemaining,
       null,
     )

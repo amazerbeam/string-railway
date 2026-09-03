@@ -14,7 +14,6 @@ import type { WarCouncilRoundResult } from '../warCouncilMount'
 import ActionBar from './ActionBar'
 import { loadoutBarRefusalFor, loadoutDoorOpen } from './buffHandlers'
 import BuffGallery from './BuffGallery'
-import { ridingTimebombId } from './buffRideModel'
 import { useBuffRide } from './buffRideProps'
 import BuffRideZone from './BuffRideZone'
 import FeltRail from './FeltRail'
@@ -40,8 +39,6 @@ import {
   discardStock,
   loadoutOpen,
   offeredBuffs,
-  timebombArmed,
-  timebombLive,
   RoundUiActionKind,
   type ResolutionView,
   type RoundUiAction,
@@ -126,11 +123,8 @@ export default function WarCouncilTable({
 
   // DLR-100 — `handInteractive` keeps the fan tappable during the
   // Quarry-to-lead gap, where `interactive` is false but a selection may still be open or opening.
-  // DLR-154 FIX 1 — `timebombArmed(ui)` joins the OR for the same reason: an armed Timebomb
-  // reinterprets the very next hand-card tap into a prime, and that targeting is reachable in the
-  // same gap. Without this term every hand card rendered `disabled` and untabbable there.
   const discardRefusal = discardRefusalFor(discardStock(ui))
-  const handInteractive = interactive || discardSelecting(ui) || timebombArmed(ui)
+  const handInteractive = interactive || discardSelecting(ui)
 
   useDebugRoundState({
     ui,
@@ -148,7 +142,7 @@ export default function WarCouncilTable({
   const offered = offeredBuffs(ui)
   const loadoutRefusal = loadoutBarRefusalFor(ui)
 
-  // DLR-101 — the whole assembly, including the booked-Timebomb band, lives in `roundBars.ts`.
+  // DLR-101 — the whole assembly lives in `roundBars.ts`.
   const bars = barsForRound(ui, maxHealth)
 
   const shape = suitShape(ui.round.hands[PlayerSide.Cpu], ui.round.skulledCards)
@@ -201,7 +195,7 @@ export default function WarCouncilTable({
   // (`roundReducer.ts`'s own `handleTapCard`, unchanged), so THAT is the tap the flight is wired
   // to: the dispatch that commits the card is deferred to `fly`'s landing callback, so the trick
   // resolves only once the card visibly arrives at the table (`ui-notes.md` §2). Every other tap
-  // — arming a card, cancelling, marking a Timebomb, toggling a discard, or the Fox/Woodcutter
+  // — arming a card, cancelling, toggling a discard, or the Fox/Woodcutter
   // rank's own second tap (which OPENS A PROMPT rather than playing — `roundReducer.ts`'s SAME
   // rank check, mirrored here so a flight is never started for a card that is not about to leave
   // the hand) — dispatches immediately, exactly as before.
@@ -215,7 +209,6 @@ export default function WarCouncilTable({
       sameCard(ui.armed, card) &&
       card.rank !== CardRank.Fox &&
       card.rank !== CardRank.Woodcutter &&
-      !timebombArmed(ui) &&
       !discardSelecting(ui)
     if (!isCommitTap) {
       dispatchClearingAnnouncement({ kind: RoundUiActionKind.TapCard, card })
@@ -230,15 +223,6 @@ export default function WarCouncilTable({
   }
 
   function handleCancel() {
-    // AC13 — Escape while priming must not strand a paid-for card. Routed through
-    // `buffRide.handleRemoveBuff` ITSELF (DLR-154 FIX 3), not a raw `RemoveBuff` dispatch — that
-    // hook is the ONLY place `removedAnnouncement` is set, so dispatching the action directly (as
-    // this used to) reversed the felt but announced nothing to a screen reader.
-    const timebombId = ridingTimebombId(ui)
-    if (timebombId !== null && timebombLive(ui)) {
-      buffRide.handleRemoveBuff(timebombId)
-      return
-    }
     dispatchClearingAnnouncement({ kind: RoundUiActionKind.CancelSelection })
   }
 

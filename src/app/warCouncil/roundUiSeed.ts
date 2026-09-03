@@ -23,7 +23,6 @@ import type { RoundUiState } from './roundUiState'
 export interface RoundUiSeed {
   readonly round: WarCouncilState
   readonly encounter: EncounterState
-  readonly blastGuardHeld: boolean
   readonly baseDamageBonus: number
   readonly discardsRemaining: number
   readonly buffs: readonly Buff[]
@@ -71,11 +70,6 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     encounter: seed.encounter,
     openingEncounter: seed.encounter,
     cheatTricksRemaining: 0,
-    timebombArmedDamage: null,
-    primedTimebombDamage: null,
-    timebombFuseRemaining: 0,
-    timebombBuff: null,
-    blastGuardHeld: seed.blastGuardHeld,
     baseDamageBonus: seed.baseDamageBonus,
     rankTiers: seed.rankTiers ?? ALL_BRONZE,
     unplayedAtResolve: null,

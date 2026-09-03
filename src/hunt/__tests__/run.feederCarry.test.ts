@@ -30,7 +30,7 @@ describe('DLR-150 Phase 3 — RunState.feederCarry and the fight-boundary reset'
     }
 
     // It rides an unresolved encounter into the next hand.
-    const carried = recordEncounter(run, unresolved, false, 3, null, 0, undefined, {
+    const carried = recordEncounter(run, unresolved, 3, null, 0, undefined, {
       multiplierBonus: 2,
       flatDamageBonus: 1,
     })
@@ -38,7 +38,7 @@ describe('DLR-150 Phase 3 — RunState.feederCarry and the fight-boundary reset'
 
     // AC4 — it is empty once the encounter resolves, on a WIN…
     expect(
-      recordEncounter(carried, quarryDown, false, 3, 2, 0, undefined, {
+      recordEncounter(carried, quarryDown, 3, 2, 0, undefined, {
         multiplierBonus: 9,
         flatDamageBonus: 9,
       }).feederCarry,
@@ -46,14 +46,14 @@ describe('DLR-150 Phase 3 — RunState.feederCarry and the fight-boundary reset'
 
     // …and on a LOSS.
     expect(
-      recordEncounter(carried, playerDown, false, 3, null, 0, undefined, {
+      recordEncounter(carried, playerDown, 3, null, 0, undefined, {
         multiplierBonus: 9,
         flatDamageBonus: 9,
       }).feederCarry,
     ).toEqual(EMPTY_BUFF_CARRY)
 
     // A caller that passes nothing keeps what the run held — the 48 existing call sites.
-    expect(recordEncounter(carried, unresolved, false, 3, null).feederCarry).toEqual({
+    expect(recordEncounter(carried, unresolved, 3, null).feederCarry).toEqual({
       multiplierBonus: 2,
       flatDamageBonus: 1,
     })

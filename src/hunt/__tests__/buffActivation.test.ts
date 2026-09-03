@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { apCostOf } from '../buffCosts'
 import { spendAp } from '../actionPoints'
 import { AP_ENABLED, STARTING_AP } from '../apConfig'
-import { cheatBuff, timebombBuff } from '../buffCatalog'
+import { cheatBuff, shieldBuff } from '../buffCatalog'
 import { ACTIVATED_BUFF_CONDITION, BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
 import {
   BuffActivationRefusal,
@@ -65,7 +65,6 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 1,
         apCost: 2,
         alreadyActive: false,
-        timebombLive: false,
       }),
     ).toBeNull()
   })
@@ -78,7 +77,6 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 6,
         apCost: 2,
         alreadyActive: false,
-        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.WindowClosed)
   })
@@ -91,7 +89,6 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 6,
         apCost: 2,
         alreadyActive: true,
-        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.AlreadyActive)
   })
@@ -104,7 +101,6 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 6,
         apCost: 2,
         alreadyActive: false,
-        timebombLive: false,
       }),
     ).toBeNull()
   })
@@ -117,7 +113,6 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 0,
         apCost: 5,
         alreadyActive: false,
-        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.WindowClosed)
   })
@@ -130,7 +125,6 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 0,
         apCost: 5,
         alreadyActive: true,
-        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.NoEffectYet)
   })
@@ -143,7 +137,6 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: STARTING_AP,
         apCost: 1,
         alreadyActive: false,
-        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.NoEffectYet)
   })
@@ -153,20 +146,20 @@ describe('buffActivationStockFor — DLR-126, effectLive comes off the card', ()
   it('reports a Foresight as not live and a Ward as live', () => {
     const state = startBuffActivation()
     expect(
-      buffActivationStockFor(state, foresightBuff(BuffTier.Bronze, 1), true, false).effectLive,
+      buffActivationStockFor(state, foresightBuff(BuffTier.Bronze, 1), true).effectLive,
     ).toBe(false)
     expect(
-      buffActivationStockFor(state, wardBuff(BuffTier.Bronze, 2), true, false).effectLive,
+      buffActivationStockFor(state, wardBuff(BuffTier.Bronze, 2), true).effectLive,
     ).toBe(true)
   })
 
   it('reports every NON-consumable as live — NoEffectYet is about unbuilt consumable surfaces', () => {
     const state = startBuffActivation()
     expect(
-      buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 3), true, false).effectLive,
+      buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 3), true).effectLive,
     ).toBe(true)
     expect(
-      buffActivationStockFor(state, timebombBuff(BuffTier.Bronze, 4), true, false).effectLive,
+      buffActivationStockFor(state, shieldBuff(BuffTier.Bronze, 4), true).effectLive,
     ).toBe(true)
   })
 })
@@ -210,18 +203,18 @@ describe('activateFromPile — DLR-126, an activation that also SPENDS the card'
 describe('activateBuff — AC3, stacking several activations against one pool', () => {
   // DLR-126 — this test used to stack a bronze Foresight then a bronze Ward. Foresight is now
   // refused with `NoEffectYet` (its effect needs a surface no screen provides), so the pair is a
-  // bronze Timebomb then a bronze Ward — two live cards at 2 AP each. DLR-145 AC2 supersedes the
+  // bronze Shield then a bronze Ward — two live cards at 2 AP each. DLR-145 AC2 supersedes the
   // test's original point (stacking exhausts the pool and the next activation is refused
   // InsufficientAp): with AP_ENABLED off the pool never drops, so the SUBJECT becomes that
   // stacking several activations never depletes the pool and a further activation always succeeds.
-  it('stacks a bronze Timebomb then a bronze Ward with the pool untouched, then permits a gold Cheat too', () => {
+  it('stacks a bronze Shield then a bronze Ward with the pool untouched, then permits a gold Cheat too', () => {
     let state: BuffActivationState = startBuffActivation()
     expect(state.apPool).toBe(STARTING_AP)
 
-    const timebomb = timebombBuff(BuffTier.Bronze, 1)
+    const shieldCard = shieldBuff(BuffTier.Bronze, 1)
     const ward = wardBuff(BuffTier.Bronze, 2)
 
-    state = activateBuff(state, timebomb, true)
+    state = activateBuff(state, shieldCard, true)
     expect(state.apPool).toBe(STARTING_AP)
     expect(state.activatedThisTrick).toContain(1)
 
@@ -230,7 +223,7 @@ describe('activateBuff — AC3, stacking several activations against one pool', 
     expect(state.activatedThisTrick).toEqual([1, 2])
 
     const cheat = cheatBuff(BuffTier.Gold, 3)
-    const refusal = buffActivationRefusalFor(buffActivationStockFor(state, cheat, true, false))
+    const refusal = buffActivationRefusalFor(buffActivationStockFor(state, cheat, true))
     expect(refusal).toBeNull()
     state = activateBuff(state, cheat, true)
     expect(state.apPool).toBe(STARTING_AP)
@@ -242,8 +235,8 @@ describe('activateBuff + openBuffWindow — 2026-08-25, PerTrick cadence refills
   it('holds the pool at capacity across activations (DLR-145 AC2 — nothing spends AP any more) and clears activatedThisTrick at every openBuffWindow', () => {
     let state: BuffActivationState = startBuffActivation()
 
-    const timebomb1 = timebombBuff(BuffTier.Bronze, 10)
-    state = activateBuff(state, timebomb1, true)
+    const shield1 = shieldBuff(BuffTier.Bronze, 10)
+    state = activateBuff(state, shield1, true)
     // DLR-145 supersedes this suite's original point (an activation drops the pool below
     // capacity, and openBuffWindow is what restores it): with AP_ENABLED off the pool never
     // drops in the first place. What still holds is that activatedThisTrick clears at the
@@ -254,8 +247,8 @@ describe('activateBuff + openBuffWindow — 2026-08-25, PerTrick cadence refills
     expect(state.apPool).toBe(STARTING_AP)
     expect(state.activatedThisTrick).toEqual([])
 
-    const timebomb2 = timebombBuff(BuffTier.Bronze, 11)
-    state = activateBuff(state, timebomb2, true)
+    const shield2 = shieldBuff(BuffTier.Bronze, 11)
+    state = activateBuff(state, shield2, true)
     expect(state.apPool).toBe(STARTING_AP)
 
     state = openBuffWindow(state)
@@ -297,8 +290,8 @@ describe('activateBuff never mutates its input state', () => {
   it('leaves the original state object untouched', () => {
     const state = startBuffActivation()
     const snapshot = { ...state, activatedThisTrick: [...state.activatedThisTrick] }
-    const timebomb = timebombBuff(BuffTier.Bronze, 20)
-    activateBuff(state, timebomb, true)
+    const shieldCard = shieldBuff(BuffTier.Bronze, 20)
+    activateBuff(state, shieldCard, true)
     expect(state.apPool).toBe(snapshot.apPool)
     expect(state.activatedThisTrick).toEqual(snapshot.activatedThisTrick)
   })
@@ -307,11 +300,11 @@ describe('activateBuff never mutates its input state', () => {
 describe('AP_ENABLED is off (DLR-145) — the pool never actually drops, however the buff is priced', () => {
   it('activating a buff sets the pool to spendAp(before, apCostOf(buff)) — spendAp is a no-op, even though apCostOf itself still returns a nonzero raw price', () => {
     const state = startBuffActivation()
-    const timebomb = timebombBuff(BuffTier.Silver, 30)
-    const next = activateBuff(state, timebomb, true)
-    expect(next.apPool).toBe(spendAp(state.apPool, apCostOf(timebomb)))
+    const shieldCard = shieldBuff(BuffTier.Silver, 30)
+    const next = activateBuff(state, shieldCard, true)
+    expect(next.apPool).toBe(spendAp(state.apPool, apCostOf(shieldCard)))
     expect(AP_ENABLED).toBe(false)
-    expect(apCostOf(timebomb)).toBeGreaterThan(0)
+    expect(apCostOf(shieldCard)).toBeGreaterThan(0)
     expect(next.apPool).toBe(state.apPool)
   })
 })
@@ -348,8 +341,8 @@ describe('spentThisTrick (DLR-145)', () => {
 })
 
 describe('isRevocableBuff — DLR-154 AC5/AC13', () => {
-  it('reports a Timebomb as revocable', () => {
-    expect(isRevocableBuff(timebombBuff(BuffTier.Bronze, 40))).toBe(true)
+  it('reports a Shield as non-revocable', () => {
+    expect(isRevocableBuff(shieldBuff(BuffTier.Bronze, 40))).toBe(false)
   })
 
   it('still reports a Cheat as non-revocable', () => {
@@ -357,22 +350,3 @@ describe('isRevocableBuff — DLR-154 AC5/AC13', () => {
   })
 })
 
-describe('activateBuff/activateFromPile — DLR-154 FIX 5, a REAL timebombLive re-check', () => {
-  it('activateBuff throws naming TimebombLive when a second Timebomb is genuinely live, rather than silently defaulting false', () => {
-    const state = startBuffActivation()
-    const timebomb = timebombBuff(BuffTier.Bronze, 50)
-    expect(() => activateBuff(state, timebomb, true, true)).toThrow(/timebombLive/)
-  })
-
-  it('activateFromPile throws the same way, so a future caller that threads the real fact gets a real guard', () => {
-    const timebomb = timebombBuff(BuffTier.Bronze, 51)
-    expect(() => activateFromPile(startBuffActivation(), [timebomb], timebomb, true, true)).toThrow(
-      /timebombLive/,
-    )
-  })
-
-  it('the defaulted `false` still lets an existing caller compile and succeed unchanged', () => {
-    const timebomb = timebombBuff(BuffTier.Bronze, 52)
-    expect(() => activateBuff(startBuffActivation(), timebomb, true)).not.toThrow()
-  })
-})

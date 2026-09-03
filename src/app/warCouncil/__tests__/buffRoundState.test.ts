@@ -45,7 +45,6 @@ function uiFrom(over: { buffs?: readonly Buff[]; coins?: number } = {}): RoundUi
   return createRoundUiState({
     round: makeRound(),
     encounter: startEncounter(0),
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs: over.buffs ?? [],
@@ -60,9 +59,6 @@ const RESOLUTION: TrickResolution = {
   damageToPlayer: 0,
   total: 1,
   roll: 1,
-  timebombTarget: null,
-  timebombToQuarry: 0,
-  blastGuardSpent: false,
   buffAccrual: null,
   firedBuffIds: [],
 }
@@ -76,7 +72,6 @@ function withResolved(
     cards: [],
     winner: PlayerSide.Player,
     resolution: { ...RESOLUTION, ...over, firedBuffIds },
-    timebombDamage: null,
   }
   return { ...ui, resolvedTrick }
 }

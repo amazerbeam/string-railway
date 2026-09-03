@@ -17,13 +17,12 @@ export type BuffTier = (typeof BuffTier)[keyof typeof BuffTier]
  *
  * DLR-108/DLR-111 finding 1 — the 11 shipping condition families and 5 consumables the authored
  * v1 list needs, appended below the three pre-existing members which are UNCHANGED. `Unassigned`,
- * `Cheat` and `Timebomb` keep their exact string values, so every existing equality check
+ * and `Cheat` keep their exact string values, so every existing equality check
  * (`buffCatalog.ts`, the two test files) still passes with no edit of its own.
  */
 export const BuffKind = {
   Unassigned: 'unassigned',
   Cheat: 'cheat',
-  Timebomb: 'timebomb',
   // 11 shipping condition families (DLR-111 finding 1)
   Taker: 'taker',
   Feeder: 'feeder',
@@ -42,7 +41,7 @@ export const BuffKind = {
   SecondThoughts: 'secondThoughts',
   Foresight: 'foresight',
   Spyglass: 'spyglass',
-  // DLR-110 — design doc §7a puts Shield alongside Cheat and Timebomb as an activated card.
+  // DLR-110 — design doc §7a puts Shield alongside Cheat as an activated card.
   Shield: 'shield',
   // DLR-161 — the two protective condition families. Their reward is neither damage nor
   // multiplier: they keep one of the streak's two figures through a trick that hurt you.
@@ -159,7 +158,7 @@ export interface Buff {
 
 /** DLR-124 R4 — how often a family fires. `Event` families fire once per trick their condition is
  *  true on, `Threshold` families fire once per hand on the first trick their condition becomes
- *  true, `Terminal` fires once at hand end, and `Activated` cards (Cheat, Timebomb, the five
+ *  true, `Terminal` fires once at hand end, and `Activated` cards (Cheat, the five
  *  consumables) fire on player action rather than a condition at all. */
 export const BuffCadence = {
   Event: 'event',
@@ -178,7 +177,6 @@ export type BuffCadence = (typeof BuffCadence)[keyof typeof BuffCadence]
 export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
   [BuffKind.Unassigned]: BuffCadence.Activated,
   [BuffKind.Cheat]: BuffCadence.Activated,
-  [BuffKind.Timebomb]: BuffCadence.Activated,
   [BuffKind.Taker]: BuffCadence.Event,
   [BuffKind.Feeder]: BuffCadence.Event,
   [BuffKind.MarkOfRank]: BuffCadence.Event,
@@ -217,8 +215,8 @@ export const UNASSIGNED_BUFF_REWARD: BuffReward = { axis: BuffRewardAxis.Magnitu
 
 /**
  * DLR-107 — the condition for a buff the PLAYER pulls rather than one that fires on a trigger.
- * Cheat and Timebomb are both activated deliberately, per design doc §1 ("held in the pile and
- * sprung in response to what's actually happening"), so neither has a trigger to describe.
- * Shared by both rather than one per card: there is one thing being said here, not two.
+ * Cheat is activated deliberately, per design doc §1 ("held in the pile and sprung in response to
+ * what's actually happening"), so it has no trigger to describe. Shared by every activated card
+ * rather than one per card: there is one thing being said here, not several.
  */
 export const ACTIVATED_BUFF_CONDITION: BuffCondition = { kind: 'activated' }

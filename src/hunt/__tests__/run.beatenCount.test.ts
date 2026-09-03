@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { advanceRun, beatenCount, recordEncounter, RunOutcome, startRun } from '../run'
-import { NO_PENDING_TIMEBOMB } from '../encounter'
 import { DuelSide } from '../types'
 
 // Split out of `run.test.ts` on DLR-129, which pushed that file to 401 lines — one over the
@@ -21,9 +20,7 @@ describe('beatenCount (DLR-85)', () => {
         ...run.encounter,
         health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
         winner: DuelSide.Player,
-        pendingTimebomb: NO_PENDING_TIMEBOMB,
       },
-      false,
       run.discardsRemaining,
       null,
     )
@@ -39,9 +36,7 @@ describe('beatenCount (DLR-85)', () => {
         ...run.encounter,
         health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
         winner: DuelSide.Player,
-        pendingTimebomb: NO_PENDING_TIMEBOMB,
       },
-      false,
       run.discardsRemaining,
       null,
     )
@@ -57,9 +52,7 @@ describe('beatenCount (DLR-85)', () => {
           ...run.encounter,
           health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
           winner: DuelSide.Player,
-          pendingTimebomb: NO_PENDING_TIMEBOMB,
         },
-        false,
         run.discardsRemaining,
         null,
       )

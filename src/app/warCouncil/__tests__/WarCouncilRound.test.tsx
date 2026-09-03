@@ -14,7 +14,6 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -47,7 +46,7 @@ afterEach(() => vi.useRealTimers())
  * Split further at the same budget (DLR-93): this is the core render/trick-play/hand-completion
  * slice, and the health-bar/purse/shape readouts live in `WarCouncilRound.readouts.test.tsx`. Each
  * mirrors this same `renderRound` helper rather than importing it, following this file's own
- * pre-existing split precedent (`WarCouncilRound.timebomb.test.tsx`).
+ * pre-existing split precedent (`WarCouncilRound.actionBar.test.tsx`).
  *
  * DLR-148 deleted `WarCouncilRound.telegraph.test.tsx` along with the intent telegraph itself —
  * `TrickWell.test.tsx` covers the "Let them lead" copy and control that file used to exercise
@@ -63,7 +62,6 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
-      blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? []}

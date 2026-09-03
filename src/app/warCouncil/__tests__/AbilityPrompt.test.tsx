@@ -20,7 +20,6 @@ function renderPrompt(props: {
   decree: Card
   hand: readonly Card[]
   drawnCard: Card | null
-  primedCards?: readonly Card[]
   onChoose: (choice: AbilityChoice) => void
   onCancel: () => void
 }) {
@@ -118,22 +117,4 @@ describe('AbilityPrompt', () => {
     expect(onChoose).toHaveBeenCalledWith({ kind: 'woodcutterDiscard', discard: drawnCard })
   })
 
-  it('announces a marked hand card offered as a Fox exchange as primed (DLR-90 AC2)', () => {
-    renderFoxPrompt({ primedCards: [card(Suit.Bells, 7)] })
-    expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeDefined()
-  })
-
-  it('announces a marked hand card offered as a Woodcutter discard as primed (DLR-90 AC2)', () => {
-    const onChoose = vi.fn()
-    renderPrompt({
-      card: card(Suit.Bells, 5),
-      decree: DECREE,
-      hand: HAND,
-      drawnCard: null,
-      primedCards: [card(Suit.Keys, 8)],
-      onChoose,
-      onCancel: vi.fn(),
-    })
-    expect(screen.getByRole('button', { name: '8 of Keys, primed' })).toBeDefined()
-  })
 })

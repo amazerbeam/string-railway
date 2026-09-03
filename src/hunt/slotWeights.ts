@@ -37,7 +37,7 @@ export type SlotAxisWeights = Readonly<Record<MintableRewardAxis, number>>
  *  permanent-upgrade lean — weight on the hand-shaped Threshold goals and, via the axis table, on
  *  the coin axis, which DLR-111 names as the one run-permanent reward. AGENT-CHOSEN, unplayed;
  *  see `plan.md` → Risks and `tasks.md` → Developer decides or observes. */
-// DLR-145 — pruned to the 3 surviving condition families plus Cheat and Timebomb. EVERY SURVIVING
+// DLR-145 — pruned to the 3 surviving condition families plus Cheat. EVERY SURVIVING
 // NUMBER IS UNCHANGED from the pre-pruning table; MarkOfRank, Glutton, Hoarder, Unbloodied,
 // DebtCollector, Keepsake, Miser and Cornered simply have no row here any more — their
 // `CONDITION_MODIFIER` price, `buffFires` case and `BUFF_CADENCE` row are untouched. Nobody chose a
@@ -48,12 +48,11 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     [BuffKind.Taker]: 5,
     [BuffKind.Feeder]: 4,
     [BuffKind.Sidestep]: 2,
-    // DLR-132 — NOBODY CHOSE THESE TWO NUMBERS. Both cards are in-hand tactical plays. Only RATIOS
+    // DLR-132 — NOBODY CHOSE THIS NUMBER. The card is an in-hand tactical play. Only RATIOS
     // matter within one machine's table. UNIT: relative weight, >= 0, unitless.
     [BuffKind.Cheat]: 3,
-    [BuffKind.Timebomb]: 3,
     // DLR-161 — NOBODY CHOSE THESE FOUR NUMBERS. Both cards are in-hand tactical plays like
-    // Cheat and Timebomb, and the Helmet is the stronger of the pair by design, so it is
+    // Cheat, and the Helmet is the stronger of the pair by design, so it is
     // weighted no higher than the Tether. Only RATIOS matter within one machine's table.
     // UNIT: relative weight, >= 0, unitless. See `tasks.md` → Developer decides or observes.
     [BuffKind.SkullHelmet]: 3,
@@ -65,7 +64,6 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     [BuffKind.Sidestep]: 1,
     // DLR-132 — see the Skirmisher table's comment above; same nobody-approved status.
     [BuffKind.Cheat]: 1,
-    [BuffKind.Timebomb]: 1,
     // DLR-161 — see the Skirmisher table's comment above; same nobody-approved status.
     [BuffKind.SkullHelmet]: 1,
     [BuffKind.SkullTether]: 1,

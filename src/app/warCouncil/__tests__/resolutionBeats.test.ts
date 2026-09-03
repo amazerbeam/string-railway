@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BuffTier, DuelSide, mintFromTemplate, templateById, type Buff } from '../../../hunt'
+import { BuffTier, mintFromTemplate, templateById, type Buff } from '../../../hunt'
 import { TrickOutcome, type StreakState, type TrickResolution } from '../../../warCouncil'
 import { BeatKind, resolutionBeatsFor } from '../resolutionBeats'
 
@@ -28,9 +28,6 @@ const WORKED_RESOLUTION: TrickResolution = {
   damageToPlayer: 0,
   total: 26, // 12 + 14
   roll: 3,
-  timebombTarget: null,
-  timebombToQuarry: 0,
-  blastGuardSpent: false,
   buffAccrual: null,
   firedBuffIds: [bladeTaker.id, momentumTakerA.id, momentumTakerB.id],
 }
@@ -111,9 +108,6 @@ describe('resolutionBeatsFor — edge shapes', () => {
       damageToPlayer: 2,
       total: 0,
       roll: 0,
-      timebombTarget: DuelSide.Quarry,
-      timebombToQuarry: 0,
-      blastGuardSpent: false,
       buffAccrual: null,
       firedBuffIds: [],
     }
@@ -136,9 +130,6 @@ describe('resolutionBeatsFor — edge shapes', () => {
       // The Helmet kept `total` at 8; `roll` still resets to 0.
       total: 8,
       roll: 0,
-      timebombTarget: DuelSide.Quarry,
-      timebombToQuarry: 0,
-      blastGuardSpent: false,
       buffAccrual: null,
       firedBuffIds: [],
     }
@@ -159,9 +150,6 @@ describe('resolutionBeatsFor — edge shapes', () => {
       // Both the Helmet and the Tether kept their figure.
       total: 8,
       roll: 2,
-      timebombTarget: DuelSide.Quarry,
-      timebombToQuarry: 0,
-      blastGuardSpent: false,
       buffAccrual: null,
       firedBuffIds: [],
     }
@@ -183,9 +171,6 @@ describe('resolutionBeatsFor — edge shapes', () => {
       // difference of -2. The beat must clamp this to 0, never print a negative "pot lost".
       total: 9,
       roll: 2,
-      timebombTarget: DuelSide.Quarry,
-      timebombToQuarry: 0,
-      blastGuardSpent: false,
       buffAccrual: null,
       firedBuffIds: [],
     }
@@ -202,14 +187,11 @@ describe('resolutionBeatsFor — edge shapes', () => {
       trickDamage: null,
       cashOut: 0,
       // The replaced branch's own signature: zero, because neither the ordinary hit nor a
-      // Timebomb fired (`streak.ts`'s `trickHit`/`timebombResets` gate).
+      // gate (`streak.ts`'s `trickHit`).
       damageToPlayer: 0,
       // Untouched — the whole point of the replacement (DLR-90 AC5).
       total: before.total,
       roll: before.roll,
-      timebombTarget: DuelSide.Player,
-      timebombToQuarry: 0,
-      blastGuardSpent: false,
       buffAccrual: null,
       firedBuffIds: [],
     }

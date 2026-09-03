@@ -15,11 +15,10 @@ import {
   RANK_NAME,
   suitShapeRowText,
   SUIT_NAME,
-  timebombFuseText,
   TRICK_OUTCOME_MESSAGE,
 } from '../labels'
 import type { CardDamagePreview } from '../cardDamage'
-import { duelHealthBars, HeartState } from '../duelHealthBars'
+import { HeartState } from '../duelHealthBars'
 
 describe('cardAccessibleName', () => {
   it('names an ability-bearing rank', () => {
@@ -38,54 +37,6 @@ describe('cardAccessibleName', () => {
     expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { skulled: true })).toBe(
       '4 of Bells, skulled',
     )
-  })
-
-  it('names a primed card', () => {
-    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { primed: true })).toBe(
-      '4 of Bells, primed',
-    )
-  })
-
-  it('names a card carrying both marks, skull first', () => {
-    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { skulled: true, primed: true })).toBe(
-      '4 of Bells, skulled, primed',
-    )
-  })
-
-  it('names a named rank with a mark, keeping the rank name before the marks', () => {
-    expect(cardAccessibleName({ suit: Suit.Keys, rank: 3 }, { primed: true })).toBe(
-      '3 of Keys (Fox), primed',
-    )
-  })
-
-  it('names the fuse on a primed card — R4', () => {
-    expect(
-      cardAccessibleName({ suit: Suit.Bells, rank: 5 }, { primed: true, fuseRemaining: 2 }),
-    ).toMatch(/2 tricks/)
-  })
-
-  it('names skull before Timebomb, and leaves an unmarked card alone', () => {
-    expect(
-      cardAccessibleName(
-        { suit: Suit.Bells, rank: 5 },
-        { skulled: true, primed: true, fuseRemaining: 1 },
-      ),
-    ).toMatch(/skulled.*primed/)
-    expect(cardAccessibleName({ suit: Suit.Bells, rank: 5 })).not.toMatch(/primed/)
-  })
-})
-
-describe('timebombFuseText — R4', () => {
-  it('names the tricks remaining when more than one is left', () => {
-    expect(timebombFuseText(2)).toMatch(/2 tricks/)
-  })
-
-  it('singularises the last trick', () => {
-    expect(timebombFuseText(1)).toMatch(/this trick/)
-  })
-
-  it('says it is going off now once the fuse has run out', () => {
-    expect(timebombFuseText(0)).toMatch(/going off now/)
   })
 })
 
@@ -120,7 +71,6 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
     side: DuelSide.Player,
     secure: 20,
     pending: 0,
-    ticking: 0,
     current: 20,
     max: 25,
     hearts: [],
@@ -152,41 +102,11 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
   })
 })
 
-describe('healthBarValueText — DLR-101’s committed-Timebomb clause', () => {
-  const MAX = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 }
-  const CURRENT = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 }
-
-  it('names the ticking figure separately from what the streak still puts at risk', () => {
-    const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 3 }, MAX, {
-      ticking: { [DuelSide.Player]: 4, [DuelSide.Quarry]: 0 },
-    })
-    expect(view.pending).toBe(7)
-    expect(view.ticking).toBe(4)
-    expect(healthBarValueText(view)).toBe('10 of 10. 3 at risk. 4 ticking.')
-  })
-
-  it('is byte-identical to the pre-DLR-101 string when nothing is booked', () => {
-    const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 4 }, MAX)
-    expect(view.ticking).toBe(0)
-    expect(healthBarValueText(view)).toBe('10 of 10. 6 at risk.')
-  })
-
-  it('omits the at-risk clause entirely when the whole pending band is booked', () => {
-    const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 6 }, MAX, {
-      ticking: { [DuelSide.Player]: 4, [DuelSide.Quarry]: 0 },
-    })
-    expect(view.pending).toBe(4)
-    expect(view.ticking).toBe(4)
-    expect(healthBarValueText(view)).toBe('10 of 10. 4 ticking.')
-  })
-})
-
 describe('healthBarValueText — DLR-115’s shield clause', () => {
   const base = {
     side: DuelSide.Player,
     secure: 10,
     pending: 0,
-    ticking: 0,
     current: 10,
     max: 10,
     hearts: [],
@@ -199,7 +119,7 @@ describe('healthBarValueText — DLR-115’s shield clause', () => {
     expect(healthBarValueText(base)).toBe('10 of 10.')
   })
 
-  it('names a standing shield, with no Timebomb claimed, between standing and at-risk', () => {
+  it('names a standing shield between standing and at-risk', () => {
     expect(
       healthBarValueText({
         ...base,
@@ -209,28 +129,17 @@ describe('healthBarValueText — DLR-115’s shield clause', () => {
     ).toBe('10 of 10. 2 shielded.')
   })
 
-  it('names a shield partly claimed by a booked Timebomb, disambiguated with "of them"', () => {
-    expect(
-      healthBarValueText({
-        ...base,
-        shielded: 2,
-        shieldPips: [HeartState.Whole, HeartState.Ticking],
-      }),
-    ).toBe('10 of 10. 2 shielded, 1 of them ticking.')
-  })
-
-  it('states the worst case in full — shield, at-risk, red ticking, and lethal together', () => {
+  it('states the worst case in full — shield, at-risk and lethal together', () => {
     expect(
       healthBarValueText({
         ...base,
         secure: 0,
         pending: 10,
-        ticking: 4,
         lethal: true,
         shielded: 2,
-        shieldPips: [HeartState.Whole, HeartState.Ticking],
+        shieldPips: [HeartState.Whole, HeartState.Whole],
       }),
-    ).toBe('Lethal. 10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking.')
+    ).toBe('Lethal. 10 of 10. 2 shielded. 10 at risk.')
   })
 })
 
@@ -350,7 +259,7 @@ describe('cardDamageGlyphText and cardDamageText — DLR-117, updated DLR-156 B1
     )
   })
 
-  it('names the win branch’s own cross-term (a Timebomb landing on the Quarry or the player even on a win) alongside the pot figure', () => {
+  it('names the win branch’s own cross-terms alongside the pot figure', () => {
     const crossTermPreview: CardDamagePreview = {
       win: { toQuarry: 3, toPlayer: 2, shielded: 0 },
       lose: { toQuarry: 0, toPlayer: 1, shielded: 0 },

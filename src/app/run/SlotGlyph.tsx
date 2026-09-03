@@ -1,5 +1,5 @@
 /**
- * 2026-09-01 — the five drawn marks that are NOT a suit: Sidestep, Cheat, Timebomb, Skull Helmet
+ * 2026-09-01 — the four drawn marks that are NOT a suit: Sidestep, Cheat, Skull Helmet
  * and Skull Tether.
  *
  * Extracted from `SlotReel.tsx` when the strip list became glyph chips (`SlotStripChips.tsx`), so
@@ -10,15 +10,12 @@
  * source of truth for what a suit looks like. Every path is `aria-hidden` and takes its tint from
  * the surrounding `color`, exactly as `SuitMark` does — naming is the call site's job.
  *
- * Timebomb is drawn here rather than reusing `TimebombMark`: that component carries a fuse numeral
- * and takes no `className`, and neither a reel symbol nor a strip chip has a fuse to count down.
- *
  * DLR-161 — Skull Helmet and Skull Tether share ONE colour token (`--wc-guard`, both stylesheets),
  * so the two are told apart by SHAPE, not tint: the Helmet is a dome over a skull (the blow lands,
  * the dome takes it), the Tether is a taut line to an anchor (the roll stays tied on). Each also
  * reads distinctly from Sidestep's three chevrons with colour removed.
  */
-export type SlotGlyphKind = 'sidestep' | 'cheat' | 'timebomb' | 'skullHelmet' | 'skullTether'
+export type SlotGlyphKind = 'sidestep' | 'cheat' | 'skullHelmet' | 'skullTether'
 
 interface SlotGlyphProps {
   readonly kind: SlotGlyphKind
@@ -41,14 +38,6 @@ export default function SlotGlyph({ kind, className }: SlotGlyphProps) {
             <rect x="7.5" y="4" width="10" height="14" rx="1.6" transform="rotate(-14 12.5 11)" />
             <rect x="7.5" y="4" width="10" height="14" rx="1.6" opacity=".55" />
             <path d="M4 20.5h16" opacity=".4" />
-          </>
-        )}
-        {kind === 'timebomb' && (
-          <>
-            <circle cx="11" cy="15" r="6.4" />
-            <path d="M15.6 10.4 18 8" />
-            <path d="M18 8c1.6-1.6 3.2-.6 3 1.1" />
-            <path d="M8.2 12.4a4 4 0 0 1 2.4-1.6" opacity=".45" />
           </>
         )}
         {kind === 'skullHelmet' && (

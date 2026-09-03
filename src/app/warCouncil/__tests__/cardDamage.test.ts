@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyDamage,
-  BuffTier,
   DAMAGE_PER_HIT,
   DuelSide,
   HAND_SIZE,
-  queueTimebomb,
   startEncounter,
   ALL_BRONZE,
   steppedTo,
   TieredRank,
-  TIMEBOMB_DAMAGE,
   type RankTierTable,
 } from '../../../hunt'
 import { CardRank, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
@@ -18,7 +15,6 @@ import { createRoundUiState } from '../roundUiState'
 import { cardDamagePreview } from '../cardDamage'
 import {
   baseDamageBonusFixture,
-  blastGuardHeldFixture,
   card,
   discardsRemainingFixture,
   encounterFixture,
@@ -33,7 +29,6 @@ function seededUi(
   return createRoundUiState({
     round: makeRound(overrides),
     encounter,
-    blastGuardHeld: blastGuardHeldFixture,
     baseDamageBonus: baseDamageBonusFixture,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],
@@ -107,27 +102,6 @@ describe('cardDamagePreview — the hand fan’s per-card win/lose readout, deri
     expect(preview.lose.toQuarry).toBe(0)
   })
 
-  it('shows a Timebomb queued against the player in both branches, since it detonates whichever way the trick goes', () => {
-    const encounter = queueTimebomb(
-      encounterFixture,
-      DuelSide.Player,
-      TIMEBOMB_DAMAGE[BuffTier.Bronze],
-    )
-    const ui = seededUi({}, encounter)
-    const preview = cardDamagePreview(ui, card(Suit.Bells, 2))!
-    // The Timebomb's own figure lands even on the WIN branch, where nothing else would hit the
-    // player; the lose branch carries the same figure plus the ordinary DAMAGE_PER_HIT.
-    expect(preview.win.toPlayer).toBeGreaterThan(0)
-    expect(preview.lose.toPlayer).toBe(preview.win.toPlayer + DAMAGE_PER_HIT)
-  })
-
-  it('costs nothing to lose a primed card cleanly — DLR-90 AC5’s REPLACED clean loss', () => {
-    const leadCard = card(Suit.Bells, 2)
-    const ui = seededUi({ primedCards: [leadCard] })
-    const preview = cardDamagePreview(ui, leadCard)!
-    expect(preview.lose.toPlayer).toBe(0)
-    expect(preview.lose.toQuarry).toBe(0)
-  })
 
   it('returns null once the hand is complete', () => {
     const ui = seededUi({ phase: RoundPhase.Complete })

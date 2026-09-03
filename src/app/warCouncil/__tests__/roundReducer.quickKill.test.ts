@@ -5,7 +5,6 @@ import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiSeed } from '../roundUiState'
 import {
   baseDamageBonusFixture,
-  blastGuardHeldFixture,
   card,
   discardsRemainingFixture,
   makeRound,
@@ -48,7 +47,6 @@ function seedOneTrickKill(): RoundUiSeed {
     // Quarry health of 1, so the SAME figure that would otherwise merely bank is what the
     // player's own Apply then cashes into a kill.
     encounter: { ...lethalEncounter, health: { ...lethalEncounter.health, [DuelSide.Quarry]: 1 } },
-    blastGuardHeld: blastGuardHeldFixture,
     baseDamageBonus: baseDamageBonusFixture,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],

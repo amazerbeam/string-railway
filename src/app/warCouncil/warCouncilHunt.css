@@ -133,13 +133,13 @@
   stroke-width: 2.6;
 }
 
-/* The mined tile takes the Timebomb green and a dark skull. It is still the same card shape at the
+/* The mined tile takes the gain green and a dark skull. It is still the same card shape at the
    same size, so it reads as "this card, marked" rather than as a different kind of object.
    The colour is never the *only* signal — the skull's shape carries it too, so the row still
    parses in greyscale and under any colour-blindness. */
 .wc-shape-card-skulled {
-  background: var(--wc-timebomb, #8fb04e);
-  border-color: var(--wc-timebomb-edge, #5c7a2e);
+  background: var(--wc-gain, #8fb04e);
+  border-color: var(--wc-gain-edge, #5c7a2e);
   color: var(--wc-ink, #191610);
   font-size: 0.95rem;
   line-height: 1;
@@ -162,7 +162,7 @@
    field colour. The alarm hue reinforces; it is never the only signal.
 
    Keyed to the Quarry's side and deliberately unlike the player's own hand lighting: this GROWS
-   where a hand card LIFTS, and takes the alarm red where the hand takes brass and the Timebomb
+   where a hand card LIFTS, and takes the alarm red where the hand takes brass and the gain
    green. TUNING VALUES — the tile size, the ring width, the glow radius and the colour are the
    developer's; these are the mockup's, shipped so there is something to play against. */
 .wc-shape-row-lead {

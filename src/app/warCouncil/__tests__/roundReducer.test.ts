@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   AbilityChoiceKind,
   CardRank,
@@ -46,7 +46,6 @@ function uiFrom(
   return createRoundUiState({
     round,
     encounter,
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs,
@@ -128,13 +127,9 @@ describe('CarryOn commits a pending Quarry lead', () => {
         damageToPlayer: 0,
         total: 1,
         roll: 1,
-        timebombTarget: null,
-        timebombToQuarry: 0,
-        blastGuardSpent: false,
         buffAccrual: null,
         firedBuffIds: [],
       },
-      timebombDamage: null,
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }
     ui = roundReducer(ui, carryOn)

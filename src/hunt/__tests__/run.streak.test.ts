@@ -33,7 +33,7 @@ describe('DLR-156 Phase 3 — RunState.streak and the fight-boundary reset', () 
     }
 
     // It rides an unresolved encounter into the next hand — carries the streak HANDED to it.
-    const carried = recordEncounter(run, unresolved, false, 3, null, 0, undefined, undefined, {
+    const carried = recordEncounter(run, unresolved, 3, null, 0, undefined, undefined, {
       total: 12,
       roll: 2,
     })
@@ -41,7 +41,7 @@ describe('DLR-156 Phase 3 — RunState.streak and the fight-boundary reset', () 
 
     // AC9 — it is EMPTY_STREAK once the encounter resolves, on a WIN…
     expect(
-      recordEncounter(carried, quarryDown, false, 3, 2, 0, undefined, undefined, {
+      recordEncounter(carried, quarryDown, 3, 2, 0, undefined, undefined, {
         total: 99,
         roll: 9,
       }).streak,
@@ -49,14 +49,14 @@ describe('DLR-156 Phase 3 — RunState.streak and the fight-boundary reset', () 
 
     // …and on a LOSS.
     expect(
-      recordEncounter(carried, playerDown, false, 3, null, 0, undefined, undefined, {
+      recordEncounter(carried, playerDown, 3, null, 0, undefined, undefined, {
         total: 99,
         roll: 9,
       }).streak,
     ).toEqual(EMPTY_STREAK)
 
     // A caller that passes nothing keeps what the run held.
-    expect(recordEncounter(carried, unresolved, false, 3, null).streak).toEqual({
+    expect(recordEncounter(carried, unresolved, 3, null).streak).toEqual({
       total: 12,
       roll: 2,
     })

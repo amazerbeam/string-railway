@@ -71,9 +71,6 @@ const bankedResolution: TrickResolution = {
   damageToPlayer: 0,
   total: 14,
   roll: 3,
-  timebombTarget: null,
-  timebombToQuarry: 0,
-  blastGuardSpent: false,
   buffAccrual: null,
   firedBuffIds: [],
 }
@@ -109,9 +106,6 @@ const hurtResolution: TrickResolution = {
   damageToPlayer: 1,
   total: 0,
   roll: 0,
-  timebombTarget: null,
-  timebombToQuarry: 0,
-  blastGuardSpent: false,
   buffAccrual: null,
   firedBuffIds: [],
 }

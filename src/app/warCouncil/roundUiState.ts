@@ -2,8 +2,8 @@
  * The felt's UI state, its seed, its actions, and the pure predicates over it — everything the
  * reducer operates ON, separated from the reducer that operates on it.
  *
- * Split out of `roundReducer.ts` on DLR-90: that file had reached 382 of its 400-line budget
- * before Timebomb's handlers were written. The seam is deliberate rather than arbitrary — this file
+ * Split out of `roundReducer.ts` on DLR-90, once that file neared its 400-line budget.
+ * The seam is deliberate rather than arbitrary — this file
  * is what a COMPONENT imports (the state shape, the action kinds, the predicates it renders from),
  * and `roundReducer.ts` is the transition function nothing but the mount needs. Nothing here
  * decides anything.
@@ -32,7 +32,6 @@ import {
   type Coins,
   type EncounterState,
   type RankTierTable,
-  type TimebombDamage,
 } from '../../hunt'
 import type { BuffHandState } from './buffRoundState'
 import type { ResolutionView } from './resolutionView'
@@ -42,11 +41,6 @@ export interface ResolvedTrick {
   readonly winner: PlayerSide
   /** What the trick did to the bank, the streak and both bars. */
   readonly resolution: TrickResolution
-  /** DLR-132 — the damage pair a Timebomb booked by THIS trick will detonate for, or `null` when
-   *  the trick booked none. Carried on the app-layer `ResolvedTrick` rather than on the engine's
-   *  `TrickResolution`, deliberately: a Timebomb's tier is the spent CARD's, which `src/warCouncil/`
-   *  never sees and must not learn. `commit` is what knows it, and `commit` is what builds this. */
-  readonly timebombDamage: TimebombDamage | null
 }
 
 export interface RoundUiState {
@@ -75,42 +69,6 @@ export interface RoundUiState {
    *  could only ever express bronze. Set by `handleTapBuff` at the spend, to
    *  `cheatDurationTricksOf(buff)`; decremented by `commit` on each successful player commit. */
   readonly cheatTricksRemaining: number
-  /** DLR-132 — the damage pair of a Timebomb that has been PAID FOR and is waiting for a hand card
-   *  to prime, or `null`. Carries the pair rather than a boolean because the figure depends on the
-   *  spent card's tier and nothing downstream can recover it. Set by `handleTapBuff` at the spend;
-   *  cleared to `null` the moment a hand-card tap primes a card (`primeTapped`). */
-  readonly timebombArmedDamage: TimebombDamage | null
-  /** DLR-132 — the damage pair a primed card will detonate for, or `null` when nothing is primed
-   *  this hand. Held for the hand; a second Timebomb primed in the same hand overwrites it
-   *  (`plan.md` → Assumptions — only one tier is remembered per hand). */
-  readonly primedTimebombDamage: TimebombDamage | null
-  /** R3 — trick resolutions left before a primed card detonates in the player's hand. `0` when
-   *  nothing is primed. A COUNT, not a stage, exactly as `cheatTricksRemaining` above is and for
-   *  its reason: the fuse length is a config key (`TIMEBOMB_FUSE_TRICKS`) and a boolean could
-   *  only ever express one value of it. Set by `primeTapped` to `TIMEBOMB_FUSE_TRICKS`;
-   *  decremented by `commit` at each resolution while the card is still held; cleared to `0` by
-   *  the detonation, by the card being played, and by removal.
-   *
-   *  DLR-154 FIX 6 cross-reference: `0` is ALSO what this field reads on a card whose mark has
-   *  simply never been counted down yet from the render layer's point of view — see
-   *  `commitHandlers.ts`'s `liftExpiredMarks`, which is what actually distinguishes "the fuse
-   *  really is spent" from "nobody has told this render site the real count" for the widgets that
-   *  never learned `fuseRemaining` (`PlayingCard.tsx`'s prop is optional for exactly that reason). */
-  readonly timebombFuseRemaining: number
-  /** DLR-154 FIX 2 — the `Buff` behind the currently armed or primed Timebomb, or `null`.
-   *  Persisted OUTSIDE `buffActivation.activatedThisTrick`/`spentThisTrick` deliberately: R3 gives
-   *  a primed card a TWO-TRICK fuse, and `openBuffWindow` clears both of those lists at every
-   *  trick resolution regardless of what a Timebomb is still doing (`buffActivation.ts`'s own
-   *  docblock). Deriving the riding row's `Buff` — or `Escape`'s target id — from either would make
-   *  the row, and its remove control, disappear the moment a second trick resolves with the card
-   *  still held: exactly the stranded-card outcome AC13 exists to prevent. Set by `handleTapBuff`
-   *  at the arm; cleared by `handleRemoveBuff` and by the fuse's own in-hand detonation
-   *  (`commitHandlers.ts`'s `fuseExpired` branch). */
-  readonly timebombBuff: Buff | null
-  /** DLR-91 AC4 — mirrored from the mount's opening prop and flipped to `false` the moment a
-   *  resolved trick reports `blastGuardSpent`. Run state carried for the life of the hand, the
-   *  same contract `blastGuardHeld` and `discardsRemaining` below document. */
-  readonly blastGuardHeld: boolean
   /** DLR-92 AC4 — the base-damage bonus in force for this hand, mirrored from the mount's opening
    *  prop. Read-only for the hand's whole life: no action ever writes it, because a hand cannot
    *  spend or change a Whetstone — only the shop between hands can. */
@@ -131,7 +89,8 @@ export interface RoundUiState {
    *  `openingEncounter` above already documents. */
   readonly unplayedAtResolve: number | null
   /** DLR-100 AC5 — mirrored from the mount's opening prop, decremented on each committed discard.
-   *  Run state carried for the life of the hand — the same contract `blastGuardHeld` documents. */
+   *  Run state carried for the life of the hand: the hand owns it for its whole life and hands the
+   *  survivor back through `WarCouncilRoundResult`. */
   readonly discardsRemaining: number
   /** DLR-100 — the hand's OWN transient: dies on remount, never touches `RunState`. `null` when
    *  the discard rail is closed; an array (possibly empty) while it is open, holding the hand
@@ -139,10 +98,10 @@ export interface RoundUiState {
    *  fields would admit "closed but holding a stale selection". */
   readonly discardSelection: readonly Card[] | null
   /** DLR-114 — the run's owned buff pile at the START of this hand, mirrored from the mount's
-   *  prop. Run state carried for the life of the hand — the same contract `blastGuardHeld`
+   *  prop. Run state carried for the life of the hand — the same contract `discardsRemaining`
    *  documents. NEVER written by an action: a hand spends action points, not cards. DLR-132 —
-   *  Cheat and Timebomb are pile members like every other buff, so this is the only field that
-   *  carries either one into or out of a hand. */
+   *  Cheat is a pile member like every other buff, so this is the only field that
+   *  carries it into or out of a hand. */
   readonly buffs: readonly Buff[]
   /** DLR-114 — the hand's action-point pool AND this trick's activations, as one value.
    *  REPLACES DLR-109's separate `apPool: ActionPoints`, which was a second number claiming to be
@@ -240,27 +199,13 @@ export function cheatArmed(state: RoundUiState): boolean {
   return state.cheatTricksRemaining > 0
 }
 
-/** `true` when the next tapped hand card should be MARKED (primed) rather than played. EXPORTED so
- *  the mount's tappability and the reducer's branch read the SAME predicate — two readings of "is
- *  Timebomb armed" is exactly how a greyed card and a reducer branch drift apart. DLR-132 — armed
- *  now means "paid for and carrying a damage pair", not a two-stage selection. */
-export function timebombArmed(state: RoundUiState): boolean {
-  return state.timebombArmedDamage !== null
-}
-
-/** R3 — the fuse is live and counting. EXPORTED so the mark's numeral and the reducer's expiry
- *  branch read the SAME predicate, the discipline `timebombArmed` above sets. */
-export function timebombFuseLive(state: RoundUiState): boolean {
-  return state.timebombFuseRemaining > 0
-}
-
 /** The felt is waiting on the player's own card — nothing is held, nothing is prompting, the
  *  engine has not faulted, the hand and the fight are both still live, and it is their turn.
  *
  *  EXPORTED and moved here from `roundReducer.ts` on DLR-94, because `WarCouncilRound.tsx` was
  *  recomputing the identical six clauses inline as `interactive`. Two readings of one gate is how
- *  a greyed control and a reducer branch drift apart — the same reason `cheatArmed` and
- *  `timebombArmed` below are exported rather than recomputed in the component. */
+ *  a greyed control and a reducer branch drift apart — the same reason `cheatArmed` above is
+ *  exported rather than recomputed in the component. */
 export function canAct(state: RoundUiState): boolean {
   return (
     state.round.phase !== RoundPhase.Complete &&
@@ -286,8 +231,8 @@ export function offeredBuffs(state: RoundUiState): readonly Buff[] {
   return activatableBuffs(state.buffs)
 }
 
-/** `true` once the mode is open — mirrors `timebombArmed`'s "is a hand-card tap reinterpreted" role,
- *  but for a MULTI-card selection rather than a single armed target. */
+/** `true` once the mode is open — "is a hand-card tap reinterpreted", for a MULTI-card selection
+ *  rather than an ordinary play. */
 export function discardSelecting(state: RoundUiState): boolean {
   return state.discardSelection !== null
 }
@@ -331,12 +276,10 @@ export function discardStock(state: RoundUiState): DiscardStock {
  *  Gating Cheat on `discardWindowOpen` would make its follow-suit break unreachable at the only
  *  trick it could matter, which is a functional regression, not a stricter rule.
  *
- *  2026-08-26 — **Timebomb is NOT that exception, and no longer shares it.** It shipped alongside
- *  Cheat on DLR-132 because both were felt-rail widgets reading `canAct`, but the reasoning above
- *  is Cheat's alone: a Timebomb arms damage onto a card the player has yet to play, so it has no
- *  business being armable AFTER the Quarry has led — that let the player see the lead and then
- *  decide to arm, which is a read the card was never meant to buy. Timebomb now takes the ordinary
- *  between-tricks window like every other row.
+ *  2026-08-26 — the exception is Cheat's ALONE. Every other activated row takes the ordinary
+ *  between-tricks window: a card that arms an effect BEFORE the player commits has no business
+ *  being armable after the Quarry has led, because that would let the player see the lead first —
+ *  a read the card was never meant to buy.
  *
  *  EXPORTED so `handleTapBuff`'s COMMITTING tap threads the SAME window into `activateFromPile` —
  *  `activateBuff` re-checks the window itself and throws on a refusal, so a caller that asked this
@@ -347,27 +290,15 @@ export function buffActivationWindowOpen(state: RoundUiState, buff: Buff): boole
   return buff.kind === BuffKind.Cheat ? canAct(state) : discardWindowOpen(state)
 }
 
-/** R2 — a Timebomb is armed (spent, waiting for a card) or a card is already primed. Either
- *  state means a second Timebomb would strand a card, so the row goes unavailable with its
- *  reason on its face. Derived, never stored — AC6 forbids a second flag. */
-export function timebombLive(state: RoundUiState): boolean {
-  return timebombArmed(state) || state.round.primedCards.length > 0
-}
-
-/** DLR-126 — the stock's remaining four fields are DELEGATED to `buffActivationStockFor` rather
+/** DLR-126 — the stock's remaining fields are DELEGATED to `buffActivationStockFor` rather
  *  than restated here. This function previously built the literal itself, which meant a field
  *  added to `BuffActivationStock` needed the same edit in two places and could be given two
- *  different answers. The felt's only contribution is the window and the Timebomb-live fact;
+ *  different answers. The felt's only contribution is the window;
  *  everything else is `src/hunt/`'s own state to read. */
 export function buffActivationStock(
   state: RoundUiState,
   activation: BuffActivationState,
   buff: Buff,
 ): BuffActivationStock {
-  return buffActivationStockFor(
-    activation,
-    buff,
-    buffActivationWindowOpen(state, buff),
-    timebombLive(state),
-  )
+  return buffActivationStockFor(activation, buff, buffActivationWindowOpen(state, buff))
 }

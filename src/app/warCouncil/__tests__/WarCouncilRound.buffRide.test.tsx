@@ -15,7 +15,6 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -34,7 +33,6 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
-      blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? [bellsTaker]}

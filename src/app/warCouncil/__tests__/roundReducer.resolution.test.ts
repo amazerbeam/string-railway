@@ -41,7 +41,6 @@ function uiFrom(
   return createRoundUiState({
     round,
     encounter,
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs,
@@ -260,9 +259,6 @@ describe('the two actions are TOTAL and GUARDED — never a throw', () => {
         damageToPlayer: 0,
         total: 5,
         roll: 1,
-        timebombTarget: null,
-        timebombToQuarry: 0,
-        blastGuardSpent: false,
         buffAccrual: null,
         firedBuffIds: [],
       },

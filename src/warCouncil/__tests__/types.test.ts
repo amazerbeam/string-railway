@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { currentTurn, PlayerSide, RoundPhase, type RoundState } from '../types'
 
 function baseState(overrides: Partial<RoundState> = {}): RoundState {
@@ -10,7 +10,6 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
-    primedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

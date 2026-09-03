@@ -69,9 +69,9 @@ export const TIER_LADDER: readonly AbilityTier[] = [
  *   - Woodcutter — silver and gold draw 2 or 3 and bury 1, which needs a multi-card choice UI.
  *   - Treasure   — pays coins at a trick, which needs a coin channel out of `src/warCouncil/`
  *                  that does not exist; the card layer cannot learn `RunState`.
- *   - Poison     — queues delayed damage, which collides with Timebomb's own vocabulary
- *                  (`the-hunt.md` §1 records rank 8 has nothing to do with the skull or the
- *                  Timebomb) and needs that collision answered first.
+ *   - Poison     — queues delayed damage, a mechanic the game has no live vocabulary for since
+ *                  the delayed-damage machinery was removed (DLR-166); it needs that question
+ *                  answered first.
  *   - Monarch    — its narrowing is read at five call sites, one of them the Quarry's own move
  *                  choice, and its gold rung needs a new `RoundState` field to survive a trick.
  *
@@ -154,8 +154,8 @@ export function steppedTo(table: RankTierTable, rank: TieredRank): RankTierTable
  * which is deliberately steep for a permanent that never expires"). NOT chosen here.
  *
  * VALUE UNCHOSEN in the sense that matters — never played. Against the rest of the economy:
- * `COINS_PER_ENCOUNTER_WIN` is 10, a slot reroll is 1, Heal / Cheat / Blast Guard are 1, Timebomb
- * is 2, AP capacity is 3, and Whetstone — which `config.ts` calls "the shop's one real splurge" —
+ * `COINS_PER_ENCOUNTER_WIN` is 10, a slot reroll is 1, Heal and Cheat are 1,
+ * AP capacity is 3, and Whetstone — which `config.ts` calls "the shop's one real splurge" —
  * is 4. At 5, one tier STEP now costs half an encounter win rather than a whole one, so a full
  * ladder is a fraction of a single fight's income instead of a whole run's. §7b names two readings
  * it did not rule out: a flat 5 for the whole ladder, or an escalating 5 / 10 / 15. Both are the

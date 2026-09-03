@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { containsCard, isPrimed, sameCard, type Card } from '../../warCouncil'
+import { containsCard, sameCard, type Card } from '../../warCouncil'
 import type { CardDamagePreview } from './cardDamage'
 import type { CardBuffLight } from './buffRideModel'
 import { PlaceKind } from './cardPlacement'
@@ -16,19 +16,7 @@ interface HandFanProps {
   readonly hint: string
   readonly rejected: boolean
   readonly promptOpen: boolean
-  /** DLR-90 AC2 — the marks, so the fan can draw them. Passed rather than derived: this component
-   *  computes nothing about a card's state, exactly as it takes `legal` from the engine rather
-   *  than comparing suits itself. */
-  readonly primedCards: readonly Card[]
-  /** R4 — trick resolutions left on the primed card's fuse. Read from the reducer's own
-   *  `timebombFuseRemaining`, never re-derived here. `0` when nothing is primed. */
-  readonly timebombFuseRemaining: number
-  /** DLR-90 AC2 — a hand-card tap MARKS rather than plays. While true, every held card is a valid
-   *  target INCLUDING one illegal to play: marking is not a move, and the item exists precisely to
-   *  give a card the player expects to lose with a reason to be played. Read from the reducer's own
-   *  `timebombArmed` predicate, never re-derived here. */
-  readonly timebombArmed: boolean
-  /** DLR-100 — the discard selection is open. Mirrors `timebombArmed`'s role: while true, every
+  /** DLR-100 — the discard selection is open. While true, every
    *  held card is a valid tap target, including one illegal to play, because discarding is not a
    *  move. Read from the reducer's own `discardSelecting` predicate, never re-derived here. */
   readonly discardSelecting: boolean
@@ -88,8 +76,8 @@ interface HandFanProps {
  * lifecycle effect of any kind.
  *
  * DLR-117 wraps each card in a `.wc-fan-slot` column so the damage strip can sit beneath the
- * card rather than on its face — all four corners of the face are taken (rank, skull, primed
- * mark, ability pip) and the centre is the suit mark. `useRovingTabIndex`'s `focusIndex` uses
+ * card rather than on its face — the corners of the face are taken (rank, skull, ability pip)
+ * and the centre is the suit mark. `useRovingTabIndex`'s `focusIndex` uses
  * `groupRef.current.querySelectorAll('button')`, a DESCENDANT query, so the extra element
  * leaves the arrow-key order and count exactly as they were; the strip is a `<span>` and
  * never enters that list.
@@ -102,9 +90,6 @@ export default function HandFan({
   hint,
   rejected,
   promptOpen,
-  primedCards,
-  timebombFuseRemaining,
-  timebombArmed,
   discardSelecting,
   discardSelection,
   damageForCard,
@@ -116,13 +101,13 @@ export default function HandFan({
 }: HandFanProps) {
   // Guards against `containsCard(legal, undefined)` — safe today only because `interactive`
   // is always false once `hand.length === 0`, and cheap enough not to rely on that staying true.
-  // While timebombArmed or discardSelecting, every held card is a valid target — including one
+  // While discardSelecting, every held card is a valid target — including one
   // illegal to play — so the `containsCard` term drops out rather than gating focusability a
   // second way.
   const isFocusable = (index: number) =>
     hand[index] !== undefined &&
     interactive &&
-    (timebombArmed || discardSelecting || containsCard(legal, hand[index]))
+    (discardSelecting || containsCard(legal, hand[index]))
 
   const { groupRef, tabStopIndex, handleKeyDown } = useRovingTabIndex(
     hand.length,
@@ -156,10 +141,7 @@ export default function HandFan({
         // thing from "this card is an illegal choice", and the stylesheet suppresses the
         // illegal grey inside it for that reason. Purely presentational: every card is
         // `disabled` either way, so nothing about behaviour or the accessible tree changes.
-        // `wc-is-marking` is the same idea for DLR-90's own mode — presentational only,
-        // changing nothing about behaviour or the accessible tree, so the stylesheet can
-        // distinguish "pick a card to prime" from ordinary play.
-        className={`wc-fan${interactive ? '' : ' wc-is-inert'}${timebombArmed ? ' wc-is-marking' : ''}${discardSelecting ? ' wc-is-discarding' : ''}`}
+        className={`wc-fan${interactive ? '' : ' wc-is-inert'}${discardSelecting ? ' wc-is-discarding' : ''}`}
         role="group"
         aria-label="Your hand"
         // While a Fox/Woodcutter prompt is open, AbilityPrompt renders every remaining hand
@@ -182,7 +164,7 @@ export default function HandFan({
           // made the lit hand unreachable in the one window it exists for. `playable` is what the
           // light, the buff count/estimate, and the hover/focus breakdown target all gate on now;
           // `illegal` still folds in `interactive` for `PlayingCard`'s own tappability, unchanged.
-          const playable = timebombArmed || discardSelecting || containsCard(legal, card)
+          const playable = discardSelecting || containsCard(legal, card)
           const illegal = !interactive || !playable
           const light = buffLightForCard(card)
 
@@ -217,8 +199,6 @@ export default function HandFan({
                 variant="hand"
                 armed={isArmed}
                 illegal={illegal}
-                primed={isPrimed(primedCards, card)}
-                fuseRemaining={timebombFuseRemaining}
                 discardSelected={containsCard(discardSelection, card)}
                 tabIndex={index === tabStopIndex ? 0 : -1}
                 describedBy={damage === null ? undefined : damageId}

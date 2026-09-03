@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ALL_BRONZE, DAMAGE_PER_HIT, steppedTo, TieredRank, type RankTierTable } from '../../hunt'
 import { resolveTrickWinner } from '../resolveTrick'
 import { tierForSide } from '../rankTierRules'
@@ -119,7 +119,6 @@ describe('the ladder through playCard (AC2/AC3/AC6)', () => {
       trumpSuit: Suit.Bells,
       tricksWon: { player: 0, cpu: 0 },
       skulledCards: [],
-      primedCards: [],
       spentPile: [],
       reshuffled: false,
       drawSeed: 0,

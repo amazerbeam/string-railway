@@ -22,7 +22,7 @@ interface ErrorBoundaryState {
 /**
  * DLR-131 — the net under `src/`'s 98 deliberate `throw` sites across 37 files. Those throws are
  * correct and stay exactly as they are: `apCostOf` throws on an unpriced `BuffKind`,
- * `timebombDamageOf` throws rather than returning a plausible small integer, `drawReelPool` throws
+ * `cheatDurationTricksOf` throws rather than returning a plausible small integer, `drawReelPool` throws
  * on an empty strip. This adds the backstop, not a softer floor.
  *
  * **THIS IS THE ONLY CLASS IN `src/` AND IT MUST STAY ONE.** React has no hook equivalent for

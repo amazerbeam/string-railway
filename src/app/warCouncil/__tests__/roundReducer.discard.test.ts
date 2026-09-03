@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   currentTurn,
   DiscardRefusal,
@@ -37,7 +37,6 @@ function uiFrom(
   return createRoundUiState({
     round,
     encounter,
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining,
     buffs: [],
@@ -61,7 +60,7 @@ describe('opening the selection (AC1/AC9)', () => {
     expect(ui.discardSelection).toEqual([])
   })
 
-  it('opening does NOT clear a live Cheat or an armed Timebomb — DLR-132, neither is a transient selection', () => {
+  it('opening does NOT clear a live Cheat — DLR-132, it is not a transient selection', () => {
     const seeded: RoundUiState = {
       ...uiFrom(makeRound()),
       cheatTricksRemaining: 2,

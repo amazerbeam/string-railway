@@ -8,8 +8,6 @@ import {
   buffTargetRankOf,
   buffTargetSuitOf,
   conditionIsWidened,
-  DuelSide,
-  TIMEBOMB_DAMAGE,
   type Buff,
   BuffActivationRefusal,
 } from '../../hunt'
@@ -32,7 +30,6 @@ export const BUFF_FAMILY_WORD: Readonly<Record<BuffKind, string>> = {
   [BuffKind.Miser]: 'Miser',
   [BuffKind.Cornered]: 'Cornered',
   [BuffKind.Cheat]: 'Cheat',
-  [BuffKind.Timebomb]: 'Timebomb',
   [BuffKind.Shield]: 'Shield',
   [BuffKind.Ward]: 'Ward',
   [BuffKind.Puppeteer]: 'Puppeteer',
@@ -62,7 +59,6 @@ export const BUFF_CONDITION_SENTENCE: Readonly<Record<BuffKind, string>> = {
   [BuffKind.Miser]: 'hold enough coins',
   [BuffKind.Cornered]: 'be low on health',
   [BuffKind.Cheat]: 'play any card, ignoring follow-suit',
-  [BuffKind.Timebomb]: 'prime a card in your hand',
   [BuffKind.Shield]: 'raise blue hearts',
   [BuffKind.Ward]: 'absorb the next hit',
   [BuffKind.Puppeteer]: "steer the Quarry's next card",
@@ -93,11 +89,11 @@ export const BUFF_REWARD_SUFFIX: Readonly<Record<BuffRewardAxis, string>> = {
   [BuffRewardAxis.ApRefund]: 'Second Wind',
   [BuffRewardAxis.Multiplier]: 'Momentum',
   [BuffRewardAxis.DurationTricks]: 'Free Rein',
-  [BuffRewardAxis.HeartCount]: 'Blast Guard',
+  [BuffRewardAxis.HeartCount]: 'Bulwark',
   [BuffRewardAxis.CardsRevealed]: 'Sight',
   [BuffRewardAxis.CandidatesEliminated]: 'Sight',
   [BuffRewardAxis.DiscardCharges]: 'Reshape',
-  [BuffRewardAxis.DamageAbsorbed]: 'Blast Guard',
+  [BuffRewardAxis.DamageAbsorbed]: 'Bulwark',
   [BuffRewardAxis.None]: 'No reward',
   [BuffRewardAxis.Protection]: 'Guard',
 }
@@ -194,9 +190,6 @@ export function buffLine(buff: Buff): string {
 export const BUFF_ACTIVATION_REFUSAL_MESSAGE: Readonly<Record<BuffActivationRefusal, string>> = {
   [BuffActivationRefusal.NoEffectYet]: 'Not usable yet.',
   [BuffActivationRefusal.WindowClosed]: 'Not between tricks.',
-  // R2 — PLACEHOLDER copy. Says which card is in the way, not merely that something is: the row
-  // renders this on its own face, so a player who cannot see why is exactly who this is for.
-  [BuffActivationRefusal.TimebombLive]: 'A Timebomb is already live — resolve or remove it first.',
   [BuffActivationRefusal.AlreadyActive]: 'Already active this trick.',
   [BuffActivationRefusal.InsufficientAp]: 'Not enough action points.',
 }
@@ -254,10 +247,10 @@ export function buffCadenceWord(buff: Buff): string {
   return BUFF_EVENT_WORD[buff.kind] ?? BUFF_CADENCE_WORD[BUFF_CADENCE[buff.kind]]
 }
 
-/** AC5 — the Timebomb pays one figure and costs another. `null` for every other card, which is
- *  what makes the split bar a shape rather than a special case in the component. Reads
- *  `TIMEBOMB_DAMAGE[buff.tier]` from `src/hunt` — never a literal — so a retuned ladder cannot
- *  leave the card advertising a figure the engine will not honour. */
+/** AC5 — a card's payoff, split into what it pays and what it can cost. `risk` is `null` for every
+ *  card in the pool today, which is what makes the split bar a SHAPE the component can render
+ *  rather than a special case: a future card that costs the player something fills it in without
+ *  the card's own branch reaching the renderer. */
 export interface BuffPayoff {
   readonly gain: string
   /** Present only where the same figure can land on the player. */
@@ -265,34 +258,17 @@ export interface BuffPayoff {
 }
 
 export function buffPayoff(buff: Buff): BuffPayoff {
-  if (buff.kind !== BuffKind.Timebomb) {
-    return { gain: buffRewardPhrase(buff), risk: null }
-  }
-  const damage = TIMEBOMB_DAMAGE[buff.tier]
-  return {
-    gain: `+${damage[DuelSide.Quarry]} damage`,
-    risk: `−${damage[DuelSide.Player]} to you`,
-  }
+  return { gain: buffRewardPhrase(buff), risk: null }
 }
 
-/** AC10/DLR-148 fix-pass — the FACE-only rendering of `buffPayoff`. `buffPayoff`'s two-word phrasing
- *  ("+4 damage" / "−2 to you") does not fit the split bar's half-width box at the grid's actual
- *  card width (measured: 46px of content in a 33px box at 1440x900, 39px in 33px at 1280x720) —
- *  `warCouncilBuffCard.css`'s `white-space: nowrap; overflow: hidden` then clips it mid-word rather
- *  than wrapping it. The bare, signed numeral is what fits at both viewports; the gain/risk
- *  distinction is carried by the two spans' position and colour (green vs. alarm background), and
- *  the full unabbreviated sentence — AC5's second half — still lives in `buffCardAccessibleName`
- *  via `buffPayoff` above, untouched. Every other card's single-bar reward phrase is unaffected;
- *  only the Timebomb's split case had a fitting problem. */
+/** AC10/DLR-148 fix-pass — the FACE-only rendering of `buffPayoff`. The face has a half-width box
+ *  (measured: 33px at both 1440x900 and 1280x720) and `warCouncilBuffCard.css`'s
+ *  `white-space: nowrap; overflow: hidden` clips an overlong phrase mid-word rather than wrapping
+ *  it, so a card whose payoff does not fit abbreviates HERE while the full unabbreviated sentence
+ *  — AC5's second half — stays in `buffCardAccessibleName` via `buffPayoff` above. No card in
+ *  today's pool needs the abbreviation, so this is currently `buffPayoff` verbatim. */
 export function buffPayoffFace(buff: Buff): BuffPayoff {
-  if (buff.kind !== BuffKind.Timebomb) {
-    return buffPayoff(buff)
-  }
-  const damage = TIMEBOMB_DAMAGE[buff.tier]
-  return {
-    gain: `+${damage[DuelSide.Quarry]}`,
-    risk: `−${damage[DuelSide.Player]}`,
-  }
+  return buffPayoff(buff)
 }
 
 /** The count suffix a stack states — `×N` only when there is more than one copy (AC7 wording, not
@@ -307,8 +283,7 @@ export const BUFF_POISED_HINT_PRESS = 'Tap again to spend'
 
 /** AC5's second half — the accessible name carries the whole sentence, both figures included, and
  *  `buffName(buff)` verbatim so `getByRole('button', { name: /Cheat \(/ })`-style queries in
- *  `WarCouncilRound.actionBar.test.tsx` and `WarCouncilRound.timebomb.test.tsx` keep matching
- *  across the rewrite. */
+ *  `WarCouncilRound.actionBar.test.tsx` keeps matching across the rewrite. */
 export function buffCardAccessibleName(
   stack: BuffStack,
   poised: boolean,

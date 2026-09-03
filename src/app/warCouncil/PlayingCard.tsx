@@ -6,8 +6,7 @@ import CardBuffHalo, { HALO_SATURATION_CEILING } from './CardBuffHalo'
 import { RANK_FACE } from './cardFace'
 import CardFace from './CardFacePanel'
 import { RANK_RULE_TEXT } from './cardRuleText'
-import { cardAccessibleName, timebombFuseText } from './labels'
-import TimebombMark from './TimebombMark'
+import { cardAccessibleName } from './labels'
 import './warCouncilBuffRide.css'
 
 interface PlayingCardProps {
@@ -21,22 +20,9 @@ interface PlayingCardProps {
    *  hand fan never does — skulls are the Quarry's foreknowledge, not the player's own) passes
    *  it explicitly. */
   readonly skulled?: boolean
-  /** DLR-90 AC2 — a card carrying the Timebomb mark. Defaults to `false` so every existing call
-   *  site keeps compiling; a caller that knows the card's state passes it. The SAME rendering path
-   *  as `skulled` — one more conditional `<span>` in one component, not a second component. */
-  readonly primed?: boolean
-  /** R4 — trick resolutions left on this card's fuse. Ignored unless `primed`. Optional, and
-   *  DELIBERATELY UNDEFAULTED (DLR-154 FIX 6, superseding this ticket's earlier default of `0`):
-   *  `HandFan` is the ONE render path that threads the felt's real `timebombFuseRemaining`;
-   *  `TrickWell`, `AbilityPrompt` and `DecreePile` (via `FeltRail`) all render a `primed` card with
-   *  no idea what its real count is. Defaulting those to `0` made every one of them show "going off
-   *  now" on a card that may have 1–2 tricks left — an unknown count and a known-zero count must
-   *  render differently, and `undefined` is what tells `cardAccessibleName`/`TimebombMark`/
-   *  `CardAbilityTip`'s `fuseNote` apart from a caller that actually knows. */
-  readonly fuseRemaining?: number
   /** DLR-100 — a card currently toggled into the open discard selection. Defaults to `false` so
    *  every existing call site keeps compiling; a caller that knows the state passes it. The SAME
-   *  rendering path as `skulled`/`primed` — one more conditional `<span>`, not a second
+   *  rendering path as `skulled` — one more conditional `<span>`, not a second
    *  component. */
   readonly discardSelected?: boolean
   readonly tabIndex?: number
@@ -48,7 +34,7 @@ interface PlayingCardProps {
   readonly describedBy?: string
   /** DLR-153 — how many riding buffs could fire on this card, the higher of its two branches.
    *  `undefined` (the default) means dark: no halo, no cell, no badge. Optional so all 49 other
-   *  construction sites keep compiling, the precedent `primed` / `discardSelected` / `describedBy`
+   *  construction sites keep compiling, the precedent `discardSelected` / `describedBy`
    *  each set. */
   readonly buffCount?: number
   /** DLR-153 — `buffCount` is a CEILING because the Quarry's card is face down. Renders the badge
@@ -75,8 +61,6 @@ export default function PlayingCard({
   illegal = false,
   winner = false,
   skulled = false,
-  primed = false,
-  fuseRemaining,
   discardSelected = false,
   tabIndex,
   describedBy,
@@ -122,22 +106,15 @@ export default function PlayingCard({
     .filter(Boolean)
     .join(' ')
 
-  // FIX 6 — the tip's fuse clause is folded in only once a POSITIVE, KNOWN count exists, the same
-  // gate `cardAccessibleName` below already applies to its own primed clause — an unknown or a
-  // known-zero count renders neither.
-  const knownFuse = fuseRemaining !== undefined && fuseRemaining > 0 ? fuseRemaining : null
   return (
-    <CardAbilityTip
-      card={card}
-      fuseNote={primed && knownFuse !== null ? timebombFuseText(knownFuse) : null}
-    >
+    <CardAbilityTip card={card}>
       <button
         type="button"
         className={className}
         style={cardStyle}
         disabled={condensed || illegal}
         tabIndex={condensed ? -1 : tabIndex}
-        aria-label={cardAccessibleName(card, { skulled, primed, fuseRemaining })}
+        aria-label={cardAccessibleName(card, { skulled })}
         aria-describedby={describedByIds}
         aria-pressed={armed || discardSelected ? true : undefined}
         onClick={() => onTap?.(card)}
@@ -156,7 +133,7 @@ export default function PlayingCard({
             ✕
           </span>
         )}
-        {/* AC12 — a skull REPLACES the art; a Timebomb is ADDED. One bone skull on one dark wash,
+        {/* AC12 — a skull REPLACES the art. One bone skull on one dark wash,
             identical on every rank and suit. */}
         {skulled && (
           <span className="wc-card-skull-face" aria-hidden="true">
@@ -185,10 +162,6 @@ export default function PlayingCard({
           {RANK_RULE_TEXT[card.rank]}
         </span>
       </button>
-      {/* AC4 — OUTSIDE the button, so the mark can overhang the corner. `.wc-card-tip-host` is
-          already `position: relative` and already wraps every render path, so this one placement
-          covers hand, table and pile (AC7). */}
-      {primed && <TimebombMark fuseRemaining={fuseRemaining} />}
     </CardAbilityTip>
   )
 }

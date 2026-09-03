@@ -14,7 +14,6 @@ import {
 } from './shield'
 import { absorbWithWard, wardAbsorptionForTier, type WardAbsorption } from './consumables'
 import type { BuffTier } from './buffs'
-import type { TimebombDamage } from './buffCatalog'
 
 /**
  * AC1 — a fresh encounter, both bars read from DLR-66's configured totals.
@@ -46,7 +45,6 @@ export function startEncounter(
     },
     damageEventsApplied: 0,
     winner: null,
-    pendingTimebomb: NO_PENDING_TIMEBOMB,
     shieldHearts: NO_SHIELD_HEARTS,
     wardAbsorbs: NO_WARD,
   }
@@ -55,13 +53,6 @@ export function startEncounter(
 /** No Ward held. What `startEncounter` seeds — which is what clears a Ward at the encounter
  *  boundary — and what a Ward that took a hit returns to. UNIT: damage. */
 export const NO_WARD: Damage = 0
-
-/** Nothing owed. Shared and only ever spread from, never assigned into — its `IncomingDamage`
- *  type is deeply `readonly`, the same discipline `duelHealthBars.ts`'s `NO_BREAKING` uses. */
-export const NO_PENDING_TIMEBOMB: IncomingDamage = {
-  [DuelSide.Player]: 0,
-  [DuelSide.Quarry]: 0,
-}
 
 /**
  * AC6/AC8 — one damage event applied as it happens, which may fire several times across a
@@ -134,7 +125,6 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
     health,
     damageEventsApplied: encounter.damageEventsApplied + 1,
     winner,
-    pendingTimebomb: encounter.pendingTimebomb,
     shieldHearts: absorption.shieldHeartsRemaining,
     wardAbsorbs: wardAfter,
   }
@@ -146,63 +136,18 @@ export function isEncounterResolved(encounter: EncounterState): boolean {
   return encounter.winner !== null
 }
 
-/** Whether anything is owed. ONE statement, so a queue check and a payment cannot disagree.
- *  Also the predicate D6 (2026-08-19) reserves: Apply Damage must be disabled while Timebomb is
- *  pending. That control does not exist yet — version-4-scope.md §3 — so this has no caller for
- *  that purpose today and is kept deliberately rather than re-derived then. */
-export function hasPendingTimebomb(encounter: EncounterState): boolean {
-  return (
-    encounter.pendingTimebomb[DuelSide.Player] > 0 || encounter.pendingTimebomb[DuelSide.Quarry] > 0
-  )
-}
-
-// DELETED (DLR-132): timebombDamageFor(target: DuelSide): Damage — the flat, tier-blind reader.
-// `TimebombDamage` is now `Readonly<Record<DuelSide, Damage>>` (`buffCatalog.ts`), whose two field
-// names ARE `DuelSide`'s two values, so `damage[target]` does what this function did, WITH the
-// tier the caller's buff was minted at — which is the whole reason the flat version could not
-// survive a tiered Timebomb. Four tickets nominated this collapse; this is the one that lands it.
-
-/**
- * D1/D3 — book Timebomb against one side, to be paid at the resolution of the NEXT TRICK. The
- * amount is now the CALLER's `damage` pair — this module cannot see which buff, and therefore
- * which tier, primed the card that booked it.
- *
- * ACCUMULATES rather than overwrites (D4), so two bookings against one side sum. Returns the
- * encounter UNCHANGED when it is already resolved — a hit must never be carried into a fight that
- * is over. NEVER throws: the reducer calls this during an event handler, and a throw there
- * unmounts the tree.
- */
-export function queueTimebomb(
-  encounter: EncounterState,
-  target: DuelSide,
-  damage: TimebombDamage,
-): EncounterState {
-  if (isEncounterResolved(encounter)) return encounter
-  return {
-    ...encounter,
-    pendingTimebomb: {
-      ...encounter.pendingTimebomb,
-      [target]: encounter.pendingTimebomb[target] + damage[target],
-    },
-  }
-}
-
 /**
  * AC2 — activating Shield SETS the player's blue hearts to `tier`'s count. It does NOT add to
  * hearts already standing, and it sets DOWNWARD too: a bronze Shield after a gold one leaves 1,
  * not 3. Design doc §7a — "they do not stack; re-activating Shield a later hand resets to the
  * tier's count, it doesn't add on top of hearts already there."
  *
- * The contrast with `queueTimebomb` immediately above is deliberate and is the thing to preserve
- * under a later edit: Timebomb ACCUMULATES (D4), Shield RESETS. Two adjacent functions with
- * opposite rules is exactly the pair that gets "made consistent" by mistake.
- *
  * Returns the encounter UNCHANGED when it is already resolved — protection must never be granted
  * in a fight that is over. Never throws for any `BuffTier`: the reducer calls this during an event
  * handler, and a throw there unmounts the tree. `SHIELD_HEARTS` is total over the union, so
  * `shieldHeartsForTier`'s guard is unreachable from here except through a cast — the guard is not
- * dead code, it is the check that makes this guarantee hold. (`queueTimebomb` immediately above
- * throws under no circumstances at all; this one's guarantee is over the type, not absolute.)
+ * dead code, it is the check that makes this guarantee hold. This function's guarantee is over the
+ * type, not absolute.
  */
 export function activateShield(encounter: EncounterState, tier: BuffTier): EncounterState {
   if (isEncounterResolved(encounter)) return encounter
@@ -210,7 +155,7 @@ export function activateShield(encounter: EncounterState, tier: BuffTier): Encou
 }
 
 /** Whether any blue heart is standing. ONE statement, so a rule and a reading cannot disagree —
- *  the discipline `hasPendingTimebomb` sets.
+ *  the discipline `isEncounterResolved` sets.
  *
  *  NO APP-LAYER CALLER TODAY (measured DLR-121). DLR-115's health bar derives its shield pips from
  *  `encounter.shieldHearts` directly in `roundBars.ts`, not through this predicate — an earlier

@@ -43,7 +43,6 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
     trumpSuit: Suit.Bells,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
     skulledCards: [],
-    primedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,
@@ -87,10 +86,6 @@ export const runLabelFixture = 'Fight 1 of 3'
 
 /** A fixed purse for component specs (DLR-84 AC2). */
 export const coinsFixture = 2
-
-/** A fixed Blast Guard reading for component specs (DLR-91 AC4) — unheld, so a spec that does not
- *  exercise the Guard is not accidentally exercising it. */
-export const blastGuardHeldFixture = false
 
 /** A fixed base-damage bonus for component specs (DLR-92 AC4) — zero, so a spec that does not
  *  exercise the buff is not accidentally exercising it. */

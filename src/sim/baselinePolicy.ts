@@ -19,7 +19,7 @@
  * DLR-156 review fix — this replaces the earlier claim that there was nothing left to press; the
  * cash-or-roll choice moved onto the resolution screen and IS pressed now, by the driver's default.
  *
- * NEVER — discards, marks a Timebomb, or arms a Cheat. None is on the shop's shelf
+ * NEVER — discards, or arms a Cheat. Neither is on the shop's shelf
  * (`SHOP_ITEMS`), so a baseline that used them would be measuring cards a player cannot buy.
  *
  * SHOP — takes the free slot pulls first, then buys in the fixed order Heal (only below maximum

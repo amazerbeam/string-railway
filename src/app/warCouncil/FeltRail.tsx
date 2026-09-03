@@ -1,5 +1,4 @@
 import {
-  isPrimed,
   isSkulled,
   PlayerSide,
   type Card,
@@ -22,7 +21,6 @@ export interface FeltRailProps {
   readonly decree: Card
   readonly trumpSuit: Suit
   readonly drawPileCount: number
-  readonly decreePrimed: boolean
   readonly spentCount: number
   readonly reshuffled: boolean
   /** The condensed trick strip — rendered only while the gallery holds the stage. `null` while the
@@ -30,7 +28,6 @@ export interface FeltRailProps {
    *  one place at a time. */
   readonly trick: readonly TrickCard[] | null
   readonly skulledCards: readonly Card[]
-  readonly primedCards: readonly Card[]
   /** Renders in BOTH felt states — under the trick well it would vanish at the exact moment the
    *  player is choosing a buff, which is when the consequence matters most. */
   readonly consequence: TrickConsequenceView | null
@@ -47,12 +44,10 @@ export default function FeltRail({
   decree,
   trumpSuit,
   drawPileCount,
-  decreePrimed,
   spentCount,
   reshuffled,
   trick,
   skulledCards,
-  primedCards,
   consequence,
 }: FeltRailProps) {
   return (
@@ -61,7 +56,6 @@ export default function FeltRail({
         decree={decree}
         trumpSuit={trumpSuit}
         drawPileCount={drawPileCount}
-        primed={decreePrimed}
       />
       <hr className="wc-rail-rule" aria-hidden="true" />
       <div className="wc-rail-trick">
@@ -74,7 +68,6 @@ export default function FeltRail({
                   card={played.card}
                   variant="pile"
                   skulled={isSkulled(skulledCards, played.card)}
-                  primed={isPrimed(primedCards, played.card)}
                 />
               </span>
             ))}

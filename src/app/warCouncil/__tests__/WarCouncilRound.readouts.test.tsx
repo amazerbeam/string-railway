@@ -1,4 +1,4 @@
-﻿/** @vitest-environment jsdom */
+/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
@@ -23,7 +23,6 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -55,7 +54,6 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
-      blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? []}

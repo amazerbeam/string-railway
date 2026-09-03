@@ -38,7 +38,6 @@ export function seedFor(run: RunState, dealt: WarCouncilState): RoundUiSeed {
   return {
     round: dealt,
     encounter: run.encounter,
-    blastGuardHeld: run.blastGuardHeld,
     discardsRemaining: run.discardsRemaining,
     buffs: run.buffs,
     baseDamageBonus: baseDamageBonusFor(run),

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { legalMoves } from '../legalMoves'
 import { PlayerSide, RoundPhase, type Card, type RoundState } from '../types'
 
@@ -14,7 +14,6 @@ function stateWith(
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
-    primedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

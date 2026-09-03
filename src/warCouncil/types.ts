@@ -69,22 +69,6 @@ export interface RoundState {
    *  every state spread thereafter, so a skull cannot appear or vanish mid-hand. A card that
    *  changes hands keeps its skull, which is what `trickIsSkulled` tests against. */
   readonly skulledCards: readonly Card[]
-  /** DLR-90 AC2 — cards the player has marked with Timebomb this hand. Written by `primeCard`
-   *  and carried by every state spread thereafter, exactly as `skulledCards` above is, so a mark
-   *  cannot appear or vanish mid-hand and a card that changes hands keeps it — which is what
-   *  `trickIsPrimed` tests against.
-   *
-   *  A WHOLLY SEPARATE list from `skulledCards`, and nothing whatever to do with
-   *  `CardRank.Poison`: the-hunt.md §1 records that rank 8's name is an ordinary card with no rule
-   *  and no connection to the skull. That is why nothing in this feature is called `poison`.
-   *
-   *  Hand-scoped by construction: `dealRound` rebuilds this, so a mark cannot leak into the next
-   *  hand. The Quarry plays every card it is dealt, so a mark on one of its cards resolves in the
-   *  hand it was made. Since DLR-146 the PLAYER is refilled to `PLAYER_HAND_FLOOR` and can end a
-   *  hand still holding cards, so a mark on a player card may simply expire unplayed — as it
-   *  already could for a card the Woodcutter buries or the Fox exchanges away and never takes
-   *  back. */
-  readonly primedCards: readonly Card[]
   /** DLR-123 AC3 — cards resolved to a trick this ENCOUNTER, face-down and never inspectable
    *  (AC8). Grows by exactly two at each trick's resolution, in `playCard`, and by nothing else;
    *  seeded by `dealRound` from the encounter's carried deck, so it climbs ACROSS the hands of a

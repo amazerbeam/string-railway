@@ -160,7 +160,7 @@ describe('playHand — the optional levers', () => {
     expect(sawQuarryDamage).toBe(true)
   })
 
-  it('a policy that always rolls the pot over (wantsApplyPot: () => false) never deals damage to the Quarry through the POT — `chooseBuffs: () => []` isolates this from a Timebomb detonation, the other route to Quarry damage `incomingFrom` folds in', () => {
+  it('a policy that always rolls the pot over (wantsApplyPot: () => false) never deals damage to the Quarry through the POT — `chooseBuffs: () => []` isolates the pot from every other route to Quarry damage `incomingFrom` folds in', () => {
     const run = startRun(PLAYER_START_HEALTH, [], 42)
     const neverApplies: SimPolicy = {
       ...baselinePolicy,

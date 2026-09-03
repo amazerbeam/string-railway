@@ -1,4 +1,4 @@
-﻿/** @vitest-environment jsdom */
+/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
@@ -13,7 +13,6 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -62,7 +61,6 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         runLabel={runLabelFixture}
         quarryLabel={quarryLabelFixture}
         coins={coinsFixture}
-        blastGuardHeld={blastGuardHeldFixture}
         baseDamageBonus={baseDamageBonusFixture}
         discardsRemaining={discardsRemainingFixture}
         buffs={[]}
@@ -244,7 +242,6 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
         runLabel={runLabelFixture}
         quarryLabel={quarryLabelFixture}
         coins={coinsFixture}
-        blastGuardHeld={blastGuardHeldFixture}
         baseDamageBonus={baseDamageBonusFixture}
         discardsRemaining={discardsRemainingFixture}
         buffs={[]}

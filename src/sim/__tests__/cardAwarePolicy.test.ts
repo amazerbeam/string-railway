@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { FRESH_ENCOUNTER_DECK, legalMoves, PlayerSide, type RoundState } from '../../warCouncil'
 import {
   apCapacityFor,
@@ -28,7 +28,6 @@ function uiFor(run: RunState, handNumber = 1): RoundUiState {
   const seed: RoundUiSeed = {
     round,
     encounter: run.encounter,
-    blastGuardHeld: run.blastGuardHeld,
     discardsRemaining: run.discardsRemaining,
     buffs: run.buffs,
     baseDamageBonus: baseDamageBonusFor(run),

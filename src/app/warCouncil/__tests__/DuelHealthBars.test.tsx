@@ -3,8 +3,6 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   DuelSide,
-  NO_PENDING_TIMEBOMB,
-  NO_SHIELD_HEARTS,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
 } from '../../../hunt'
@@ -116,7 +114,7 @@ describe('DuelHealthBars', () => {
     const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
     const { container } = renderPair(
       current,
-      projectedDepletion(current, 2, 2, NO_PENDING_TIMEBOMB, NO_SHIELD_HEARTS),
+      projectedDepletion(current, 2, 2),
     )
     const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
     expect(quarry?.querySelectorAll('[data-state="atRisk"]')).toHaveLength(4)
@@ -125,25 +123,6 @@ describe('DuelHealthBars', () => {
     )
   })
 
-  it('renders booked Timebomb as ticking hearts and names the figure to a screen reader (DLR-101)', () => {
-    const quarryMax = quarryHealthForEncounter(0)
-    const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
-    const projected = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax - 4 }
-    const { container } = render(
-      <DuelHealthBars
-        bars={duelHealthBars(current, projected, MAX, {
-          ticking: { [DuelSide.Player]: 0, [DuelSide.Quarry]: 4 },
-        })}
-        centre={<span>trio</span>}
-        quarryLabel={QUARRY_LABEL}
-      />,
-    )
-    const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
-    expect(quarry?.querySelectorAll('[data-state="ticking"]')).toHaveLength(4)
-    expect(
-      screen.getByRole('meter', { name: QUARRY_LABEL }).getAttribute('aria-valuetext'),
-    ).toContain('ticking')
-  })
 
   it('binds each heart to the symbol its state calls for — a broken state is a different shape, not a colour (AC6)', () => {
     const dented = {
@@ -181,23 +160,6 @@ describe('DuelHealthBars — the shield cluster (DLR-115)', () => {
     ).toBe(`${PLAYER_START_HEALTH} of ${PLAYER_START_HEALTH}. 2 shielded.`)
   })
 
-  it('names a shield partly claimed by a booked Timebomb, with "of them"', () => {
-    render(
-      <DuelHealthBars
-        bars={duelHealthBars(FULL, FULL, MAX, {
-          shield: 2,
-          ticking: { [DuelSide.Player]: 2, [DuelSide.Quarry]: 0 },
-        })}
-        centre={<span>trio</span>}
-        quarryLabel={QUARRY_LABEL}
-      />,
-    )
-    expect(
-      screen
-        .getByRole('meter', { name: HEALTH_BAR_LABEL[DuelSide.Player] })
-        .getAttribute('aria-valuetext'),
-    ).toBe(`${PLAYER_START_HEALTH} of ${PLAYER_START_HEALTH}. 2 shielded, 2 of them ticking.`)
-  })
 
   it('leaves an unshielded bar’s accessible value unchanged from today', () => {
     renderPair(FULL, FULL)

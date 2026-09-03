@@ -154,7 +154,6 @@ function App() {
     const recorded = recordEncounter(
       run,
       result.encounter,
-      result.blastGuardHeld,
       result.discardsRemaining,
       result.unplayedAtResolve,
       result.coinsEarned,
@@ -175,14 +174,9 @@ function App() {
       if (recorded.outcome === RunOutcome.Lost) {
         commit((v) => depositLeftoverCoin(v, recorded.coins))
       }
-      // The verdict is next, not another hand. D5 — any queued Timebomb is discarded, because
-      // `advanceRun` and `startRun` both re-seed the encounter through `startEncounter`.
+      // The verdict is next, not another hand.
       return
     }
-    // D1 — nothing is owed at a hand boundary any more. A Timebomb is paid by `applyResolution` at the
-    // trick that resolves it, so an unresolved hand simply deals the next one. Any Timebomb booked by
-    // this hand's last trick rides on `encounter.pendingTimebomb` into the next hand's first trick,
-    // which is D5's carry half.
     // DLR-123 AC2/AC4 — the SAME deck, minus this hand's 13. `closeHand` spends the decree and
     // everything else not in the draw pile, so the next hand deals on from where this one stopped
     // instead of from a fresh shuffle.
@@ -383,7 +377,6 @@ function App() {
       maxHealth={maxHealth}
       runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)}
       coins={run.coins}
-      blastGuardHeld={run.blastGuardHeld}
       discardsRemaining={run.discardsRemaining}
       feederCarry={run.feederCarry}
       streak={run.streak}

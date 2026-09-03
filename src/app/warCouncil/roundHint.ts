@@ -2,7 +2,6 @@ import {
   cardAccessibleName,
   DISCARD_READY_HINT,
   DISCARD_SELECT_HINT,
-  TIMEBOMB_ARMED_HINT,
   ILLEGAL_MOVE_MESSAGE,
 } from './labels'
 import { type RoundUiState } from './roundUiState'
@@ -26,12 +25,6 @@ export function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead:
   if (ui.discardSelection !== null) {
     return ui.discardSelection.length > 0 ? DISCARD_READY_HINT : DISCARD_SELECT_HINT
   }
-  // DLR-154 — the armed-Timebomb prompt joins the discard branch ABOVE `quarryToLead`, and for
-  // the same reason: the Quarry-to-lead gap spans exactly the between-tricks window a Timebomb is
-  // activatable in, so beneath it the prompt was unreachable throughout its own lifetime. An
-  // armed Timebomb reinterprets the next hand-card tap — the most specific, most actionable thing
-  // there is to say — and AC1 requires it to be said out loud.
-  if (ui.timebombArmedDamage !== null) return TIMEBOMB_ARMED_HINT
   if (quarryToLead) return 'They are choosing their lead'
   if (ui.armed) return `Tap ${cardAccessibleName(ui.armed)} again to play it`
   // DLR-132 — a live Cheat needs no hint of its own: it is visible in the fan's widened legal set.

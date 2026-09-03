@@ -15,15 +15,17 @@ import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
 import { apCostOf, isConditionFamily } from '../buffCosts'
 
 describe('BUFF_TEMPLATES', () => {
-  it('holds exactly the 18 templates DLR-161 names', () => {
-    expect(BUFF_TEMPLATES).toHaveLength(18)
-    expect(BUFF_TEMPLATE_COUNT).toBe(18)
+  // DLR-166 — 17, not DLR-161's 18: 6 Taker + 6 Feeder + 2 Sidestep + 1 Skull Helmet +
+  // 1 Skull Tether + 1 Cheat. The second activated card was deleted outright.
+  it('holds exactly the 17 templates DLR-166 leaves', () => {
+    expect(BUFF_TEMPLATES).toHaveLength(17)
+    expect(BUFF_TEMPLATE_COUNT).toBe(17)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Taker)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Sidestep)).toHaveLength(2)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullHelmet)).toHaveLength(1)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullTether)).toHaveLength(1)
-    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(2)
+    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(1)
   })
 
   it('DLR-161 — resolves both new template ids through templateById', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BuffTier, mintFromTemplate, templateById, timebombBuff } from '../../../hunt'
+import { BuffTier, mintFromTemplate, templateById } from '../../../hunt'
 import { Suit, type Card } from '../../../warCouncil'
 import {
   buffBadgeText,
@@ -9,25 +9,17 @@ import {
   deadRowReasonText,
   removeBuffLabel,
   ridingRowText,
-  timebombRemovedText,
 } from '../buffRideLabels'
-import type { RidingBuffRow, TimebombRide } from '../buffRideModel'
+import type { RidingBuffRow } from '../buffRideModel'
 
 const bellsTaker = mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, 1)
 const sidestep = mintFromTemplate(templateById('sidestep:magnitude')!, BuffTier.Bronze, 2)
 const keysCard: Card = { suit: Suit.Keys, rank: 5 }
-const five: Card = { suit: Suit.Bells, rank: 5 }
-const timebombCard = timebombBuff(BuffTier.Bronze, 9)
 
 const takerRow: RidingBuffRow = {
   buff: bellsTaker,
   reach: 3,
   revocable: true,
-  timebomb: null,
-}
-
-function rowWith(timebomb: TimebombRide): RidingBuffRow {
-  return { buff: timebombCard, reach: 0, revocable: true, timebomb }
 }
 
 describe('buffReachText', () => {
@@ -93,33 +85,8 @@ describe('buffRemovedText', () => {
 })
 
 describe('ridingRowText', () => {
-  it('says the row is not yet primed before a card is chosen — AC12', () => {
-    expect(ridingRowText(rowWith({ target: null, fuseRemaining: 0 }))).toMatch(/not yet primed/i)
-  })
-
-  it('names the target once primed — AC12', () => {
-    expect(ridingRowText(rowWith({ target: five, fuseRemaining: 2 }))).toMatch(/5 of/)
-  })
-
-  it('leaves a non-Timebomb row on the reach sentence', () => {
-    expect(ridingRowText({ ...takerRow, timebomb: null })).toBe(buffReachText(takerRow.reach))
-  })
-
-  it('does not claim "0 tricks left" for a primed card whose fuse already spent by another route — FIX 8', () => {
-    const text = ridingRowText(rowWith({ target: five, fuseRemaining: 0 }))
-    expect(text).toContain('5 of')
-    expect(text).not.toMatch(/0 tricks left/)
-  })
-})
-
-describe('timebombRemovedText — DLR-154 AC5/AC13, wired into buffRideProps.ts (FIX 4)', () => {
-  it('says nothing was primed yet when the target is null', () => {
-    expect(timebombRemovedText(null)).toBe('Timebomb taken back.')
-  })
-
-  it('names the card taken back', () => {
-    // `five` is rank 5 — `CardRank.Woodcutter` — so `cardAccessibleName` includes its rank name.
-    expect(timebombRemovedText(five)).toBe('Timebomb taken off the 5 of Bells (Woodcutter).')
+  it('reports the row on the reach sentence', () => {
+    expect(ridingRowText(takerRow)).toBe(buffReachText(takerRow.reach))
   })
 })
 

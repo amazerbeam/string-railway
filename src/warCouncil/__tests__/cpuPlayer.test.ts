@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { dealRound } from '../deal'
 import { playCard } from '../playCard'
 import { legalMoves } from '../legalMoves'
@@ -33,7 +33,6 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
-    primedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

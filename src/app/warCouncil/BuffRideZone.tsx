@@ -20,7 +20,7 @@ import { cardDamagePreview } from './cardDamage'
 import CardBuffBreakdown from './CardBuffBreakdown'
 import HandFan from './HandFan'
 import { cardKey } from './labels'
-import { discardSelecting, timebombArmed, type RoundUiState } from './roundUiState'
+import { discardSelecting, type RoundUiState } from './roundUiState'
 
 export interface BuffRideZoneProps {
   readonly ui: RoundUiState
@@ -58,9 +58,6 @@ export default function BuffRideZone({
           hint={buffRide.removedAnnouncement ?? hint}
           rejected={ui.rejection !== null}
           promptOpen={ui.prompt !== null}
-          primedCards={ui.round.primedCards}
-          timebombFuseRemaining={ui.timebombFuseRemaining}
-          timebombArmed={timebombArmed(ui)}
           discardSelecting={discardSelecting(ui)}
           discardSelection={ui.discardSelection ?? []}
           damageForCard={(card) => cardDamagePreview(ui, card)}

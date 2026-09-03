@@ -35,18 +35,9 @@
   --wc-hp-heart-gap: 0.18rem;
   --wc-hp-broken: #3a4a52;
   --wc-hp-atrisk-opacity: 0.55;
-  /* DLR-101 — the committed-Timebomb heart. An ALIAS of the Timebomb mark's own colour rather than a
-     new colour value: it ties the heart to the marker that caused it, and it means no tuning
-     number was invented for it. The opacity is a PLACEHOLDER, picked only to sit clearly above
-     --wc-hp-atrisk-opacity and clearly below solid — the developer owns the value. */
-  --wc-hp-ticking-fill: var(--wc-timebomb);
-  --wc-hp-ticking-opacity: 0.78;
-  /* DLR-115 — the blue heart. NONE of these three numbers was chosen by anyone: the developer owns
-     the colour, the opacity and the gap, and none has been seen against a full row. The opacity
-     copies --wc-hp-ticking-opacity so the two "already claimed" readings agree; two unseen numbers
-     agreeing is a reason to tune them together, not evidence either is right. */
+  /* DLR-115 — the blue heart. NEITHER of these numbers was chosen by anyone: the developer owns
+     the colour and the gap, and neither has been seen against a full row. */
   --wc-hp-shield-fill: #4f8fc0;
-  --wc-hp-shield-ticking-opacity: 0.78;
   --wc-hp-shield-gap: 0.5rem;
   --wc-hp-break-ms: 520ms;
   --wc-hp-flash-ms: 900ms;
@@ -137,17 +128,6 @@
   animation: wc-hp-flash var(--wc-hp-flash-ms) ease-in-out infinite alternate;
 }
 
-/* DLR-101 — committed Timebomb. STATIC, deliberately: `atRisk` flashes because it is conditional
-   and evaporates if the streak is broken, while a booked hit lands at the next trick and nothing
-   on the felt stops it. A flashing committed heart would say the wrong thing about certainty —
-   and because it is static it needs no entry in the reduced-motion block below, and loses
-   nothing when motion is off. Shape still carries the reading before colour does: a ticking heart
-   binds to the same solid <symbol> as a whole one, so it reads as STANDING, which it is. */
-.wc-hp-heart[data-type='health'][data-state='ticking'] {
-  color: var(--wc-hp-ticking-fill);
-  opacity: var(--wc-hp-ticking-opacity);
-}
-
 .wc-hp-heart[data-type='health'][data-state='breaking'] {
   color: var(--wc-hp-lethal-edge);
   animation: wc-hp-break var(--wc-hp-break-ms) ease-out 1 both;
@@ -177,14 +157,6 @@
    block and neither loses anything when motion is off. */
 .wc-hp-heart[data-type='shield'][data-state='whole'] {
   color: var(--wc-hp-shield-fill);
-}
-
-/* A blue heart a booked Timebomb has already claimed. Same static treatment, and the same
-   opacity figure, as the red `ticking` heart — one visual language for "committed, not yet
-   landed", across both pip types. */
-.wc-hp-heart[data-type='shield'][data-state='ticking'] {
-  color: var(--wc-hp-shield-fill);
-  opacity: var(--wc-hp-shield-ticking-opacity);
 }
 
 /* The break runs ONCE on the state's arrival and never retriggers: health only decreases, so a

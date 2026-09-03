@@ -53,16 +53,13 @@ describe('startRun (AC1)', () => {
     }
   })
 
-  it('opens holding no Blast Guard (DLR-91 AC2)', () => {
-    expect(startRun().blastGuardHeld).toBe(false)
-  })
 })
 
 describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('stays in progress while the fight is live', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    expect(recordEncounter(run, hit, false, run.discardsRemaining, null).outcome).toBe(
+    expect(recordEncounter(run, hit, run.discardsRemaining, null).outcome).toBe(
       RunOutcome.InProgress,
     )
   })
@@ -72,7 +69,6 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
     const after = recordEncounter(
       run,
       winEncounter(run.encounter),
-      false,
       run.discardsRemaining,
       null,
     )
@@ -85,13 +81,12 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
     let run = startRun()
     for (let i = 0; i < run.encounterCount - 1; i += 1) {
       run = advanceRun(
-        recordEncounter(run, winEncounter(run.encounter), false, run.discardsRemaining, null),
+        recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null),
       )
     }
     const final = recordEncounter(
       run,
       winEncounter(run.encounter),
-      false,
       run.discardsRemaining,
       null,
     )
@@ -103,7 +98,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('ends the run as LOST the moment the player is down, whatever the position (AC4)', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const after = recordEncounter(run, dead, false, run.discardsRemaining, null)
+    const after = recordEncounter(run, dead, run.discardsRemaining, null)
     expect(after.outcome).toBe(RunOutcome.Lost)
     expect(canAdvanceRun(after)).toBe(false)
   })
@@ -113,12 +108,11 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
     const lost = recordEncounter(
       run,
       applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0)),
-      false,
       run.discardsRemaining,
       null,
     )
     expect(() =>
-      recordEncounter(lost, lost.encounter, false, lost.discardsRemaining, null),
+      recordEncounter(lost, lost.encounter, lost.discardsRemaining, null),
     ).toThrow(RangeError)
   })
 })
@@ -129,7 +123,6 @@ describe('recordEncounter — the payout (AC1)', () => {
     const after = recordEncounter(
       run,
       winEncounter(run.encounter),
-      false,
       run.discardsRemaining,
       null,
     )
@@ -139,14 +132,14 @@ describe('recordEncounter — the payout (AC1)', () => {
   it('credits nothing while the encounter is still live', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    const after = recordEncounter(run, hit, false, run.discardsRemaining, null)
+    const after = recordEncounter(run, hit, run.discardsRemaining, null)
     expect(after.coins).toBe(run.coins)
   })
 
   it('credits nothing when the Quarry wins', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const after = recordEncounter(run, dead, false, run.discardsRemaining, null)
+    const after = recordEncounter(run, dead, run.discardsRemaining, null)
     expect(after.coins).toBe(run.coins)
   })
 })
@@ -156,7 +149,7 @@ describe('advanceRun — the carry (AC3)', () => {
     const run = startRun()
     const loss = 3
     const next = advanceRun(
-      recordEncounter(run, winEncounter(run.encounter, loss), false, run.discardsRemaining, null),
+      recordEncounter(run, winEncounter(run.encounter, loss), run.discardsRemaining, null),
     )
     expect(next.encounterIndex).toBe(1)
     expect(next.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - loss)
@@ -166,7 +159,7 @@ describe('advanceRun — the carry (AC3)', () => {
   it('opens the next fight unresolved, with its own damage counter at zero', () => {
     const run = startRun()
     const next = advanceRun(
-      recordEncounter(run, winEncounter(run.encounter, 2), false, run.discardsRemaining, null),
+      recordEncounter(run, winEncounter(run.encounter, 2), run.discardsRemaining, null),
     )
     expect(next.encounter.winner).toBeNull()
     expect(next.encounter.damageEventsApplied).toBe(0)
@@ -181,7 +174,6 @@ describe('advanceRun — the carry (AC3)', () => {
     const lost = recordEncounter(
       live,
       applyDamage(live.encounter, damage(PLAYER_START_HEALTH, 0)),
-      false,
       live.discardsRemaining,
       null,
     )
@@ -193,7 +185,6 @@ describe('advanceRun — the carry (AC3)', () => {
     const won = recordEncounter(
       run,
       winEncounter(run.encounter, 4),
-      false,
       run.discardsRemaining,
       null,
     )
@@ -207,7 +198,6 @@ describe('advanceRun — the carry (AC3)', () => {
     const won = recordEncounter(
       run,
       winEncounter(run.encounter),
-      false,
       run.discardsRemaining,
       null,
     )
@@ -235,7 +225,6 @@ describe('the opening Cheat, now a pile member (DLR-132)', () => {
     const won = recordEncounter(
       run,
       winEncounter(run.encounter),
-      false,
       run.discardsRemaining,
       null,
       0,
@@ -249,7 +238,7 @@ describe('the opening Cheat, now a pile member (DLR-132)', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
     const spent = run.buffs.filter((b) => b.kind !== BuffKind.Cheat)
-    const after = recordEncounter(run, hit, false, run.discardsRemaining, null, 0, spent)
+    const after = recordEncounter(run, hit, run.discardsRemaining, null, 0, spent)
     expect(after.buffs).toEqual(spent)
   })
 })

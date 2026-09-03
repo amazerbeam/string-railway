@@ -248,35 +248,6 @@ export const FLASK_STARTING_CHARGES = 1
 // UNIT: proportion of maximum health, 0..1.
 export const FLASK_HEAL_PERCENT = 0.6
 
-// DLR-90 AC1 — the Timebomb price. TRANSCRIBED from version-4-scope.md's own heading ("2 coins"),
-// which prices it at twice Blast Guard's cost because unlike Guard this is a guaranteed,
-// unconditional hit rather than insurance against a risk. NOT chosen here and NOT a tuning value
-// open today. A separate key from CHEAT_PRICE and HEAL_PRICE for the reason those two are already
-// separate: re-pricing one item must not move another.
-// UNIT: coins per purchase.
-export const TIMEBOMB_PRICE: Coins = 2
-
-// DLR-91 D2 (2026-08-19) — Timebomb's two figures. TWO keys, not one shared number: the player-side
-// hit is HALVED because it also forces the streak's cash-out (D3), which the Quarry has no
-// equivalent of. A single shared key is the bug that type-checks, reads correctly, and pays the
-// wrong side. Renamed from TIMEBOMB_DAMAGE for exactly that reason — a bare name sitting beside
-// TIMEBOMB_PLAYER_DAMAGE is an invitation to reach for the wrong one.
-//
-// The Quarry's 4 is TRANSCRIBED from version-4-scope.md §1: "the same figure the doc already uses
-// for 'one fight's worth of damage' (the-hunt.md §9) and for the shop's own Heal".
-// The player's 2 is DEVELOPER-CHOSEN, 2026-08-19. Not transcribed and not an open tuning value.
-// UNIT: health points, applied once, to one side, at the resolution of the next trick.
-export const TIMEBOMB_QUARRY_DAMAGE: Damage = 4
-export const TIMEBOMB_PLAYER_DAMAGE: Damage = 2
-
-// DLR-91 AC1 — TRANSCRIBED from version-4-scope.md §1's own heading ("Fight-long — new item:
-// Blast Guard, 1 coin"), which prices it level with HEAL_PRICE because both are a 1-coin-for-4-HP
-// trade run in opposite directions. NOT chosen here and NOT an open tuning value. Its own key for
-// the reason CHEAT_PRICE and HEAL_PRICE are already separate: re-pricing one item must not move
-// another.
-// UNIT: coins per purchase.
-export const BLAST_GUARD_PRICE: Coins = 1
-
 // DLR-92 AC1 — the Whetstone's price. TRANSCRIBED from version-4-scope.md §1's own heading
 // ("Run-permanent — new item: Whetstone (placeholder name), 4 coins"), which prices it as "the
 // shop's one real splurge": four times a Heal, and reachable early only via the quick-kill payout

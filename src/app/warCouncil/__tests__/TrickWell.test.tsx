@@ -5,10 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
 import {
   BuffTier,
-  DuelSide,
   mintFromTemplate,
-  TIMEBOMB_DAMAGE,
-  TIMEBOMB_QUARRY_DAMAGE,
   templateById,
   type Buff,
 } from '../../../hunt'
@@ -37,13 +34,9 @@ const resolvedTrick: ResolvedTrick = {
     damageToPlayer: 1,
     total: 0,
     roll: 0,
-    timebombTarget: null,
-    timebombToQuarry: 0,
-    blastGuardSpent: false,
     buffAccrual: null,
     firedBuffIds: [],
   },
-  timebombDamage: null,
 }
 
 // DLR-157 — `TrickWell` now registers the well's own anchor, which throws outside a
@@ -104,85 +97,6 @@ describe('TrickWell — a resolved trick', () => {
     expect(screen.getByText(/You take 1\./)).toBeDefined()
   })
 
-  it('announces the marked card as primed (DLR-90 AC2)', () => {
-    renderWell({
-      currentTrick: [],
-      resolvedTrick,
-      primedCards: [{ suit: Suit.Bells, rank: 7 }],
-      quarryToLead: false,
-      onCarryOn: vi.fn(),
-    })
-    expect(screen.getByRole('button', { name: /7 of Bells, primed/i })).toBeDefined()
-  })
-
-  it('announces a card carrying both a skull and the mark, both wordings present', () => {
-    renderWell({
-      currentTrick: [],
-      resolvedTrick,
-      skulledCards: [{ suit: Suit.Bells, rank: 7 }],
-      primedCards: [{ suit: Suit.Bells, rank: 7 }],
-      quarryToLead: false,
-      onCarryOn: vi.fn(),
-    })
-    expect(screen.getByRole('button', { name: /7 of Bells, skulled, primed/i })).toBeDefined()
-  })
-
-  it('names a booked hit and its target when the trick just booked a Timebomb (DLR-101)', () => {
-    const primed: ResolvedTrick = {
-      ...resolvedTrick,
-      resolution: { ...resolvedTrick.resolution, timebombTarget: DuelSide.Quarry },
-    }
-    renderWell({
-      currentTrick: [],
-      resolvedTrick: primed,
-      quarryToLead: false,
-      onCarryOn: vi.fn(),
-    })
-    expect(
-      screen.getByText(
-        (_, node) =>
-          node?.tagName === 'P' &&
-          Boolean(
-            node.textContent?.includes(`they take ${TIMEBOMB_QUARRY_DAMAGE} at the next trick`),
-          ),
-      ),
-    ).toBeDefined()
-  })
-
-  it('narrates a GOLD Timebomb at its own figure, not the bronze one (DLR-132 Task 10a)', () => {
-    // Before this task the reveal always read `TIMEBOMB_DAMAGE[BuffTier.Bronze]` regardless of
-    // the spent card's tier — this is the assertion that would have caught that bug.
-    const goldPrimed: ResolvedTrick = {
-      ...resolvedTrick,
-      resolution: { ...resolvedTrick.resolution, timebombTarget: DuelSide.Quarry },
-      timebombDamage: TIMEBOMB_DAMAGE[BuffTier.Gold],
-    }
-    renderWell({
-      currentTrick: [],
-      resolvedTrick: goldPrimed,
-      quarryToLead: false,
-      onCarryOn: vi.fn(),
-    })
-    const goldFigure = TIMEBOMB_DAMAGE[BuffTier.Gold][DuelSide.Quarry]
-    expect(goldFigure).not.toBe(TIMEBOMB_QUARRY_DAMAGE)
-    expect(
-      screen.getByText(
-        (_, node) =>
-          node?.tagName === 'P' &&
-          Boolean(node.textContent?.includes(`they take ${goldFigure} at the next trick`)),
-      ),
-    ).toBeDefined()
-  })
-
-  it('renders no Timebomb clause when nothing was booked this trick', () => {
-    renderWell({
-      currentTrick: [],
-      resolvedTrick,
-      quarryToLead: false,
-      onCarryOn: vi.fn(),
-    })
-    expect(screen.queryByText(/Timebomb ticking/)).toBeNull()
-  })
 })
 
 describe('TrickWell — DLR-119 clauses', () => {

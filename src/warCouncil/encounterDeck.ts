@@ -27,7 +27,7 @@ export interface EncounterDeck {
 }
 
 /** AC1/AC10 — a new encounter carries nothing, so `dealRound` builds and shuffles a fresh 33.
- *  Shared and only ever spread from, exactly as `encounter.ts`'s `NO_PENDING_TIMEBOMB` is. */
+ *  Shared and only ever spread from, exactly as `shield.ts`'s `NO_SHIELD_HEARTS` is. */
 export const FRESH_ENCOUNTER_DECK: EncounterDeck = { drawPile: [], spentPile: [] }
 
 /** Whether this deck is a new encounter's. ONE statement, so `dealRound`'s branch and a spec

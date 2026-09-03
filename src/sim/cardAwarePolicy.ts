@@ -25,7 +25,7 @@
  *
  * WHAT IT STILL DOES NOT DO: `taker` needs the trick WON and `feeder` needs it LOST, and while
  * leading the Quarry's answer is unknowable, so a match is an aimed shot rather than a guaranteed
- * fire. It also never arms a Cheat or a Timebomb — those stay `maximalistPolicy`'s territory.
+ * fire. It also never arms a Cheat — that stays `maximalistPolicy`'s territory.
  */
 import {
   CardRank,

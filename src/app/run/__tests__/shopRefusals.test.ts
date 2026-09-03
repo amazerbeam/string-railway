@@ -6,7 +6,6 @@ const stock = {
   coins: 5,
   playerHealth: 10,
   maxPlayerHealth: 20,
-  blastGuardHeld: false,
   rankTiers: ALL_BRONZE,
   maxHealthPurchases: 0,
 }

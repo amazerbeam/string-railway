@@ -79,8 +79,8 @@ export function combineRefusalFor(buffs: readonly Buff[], key: string): CombineR
 /**
  * Two copies destroyed, one card of the next tier minted in their place, `nextBuffId` advanced by
  * one. The produced card goes through `mintFromTemplate`, so it is indistinguishable from one the
- * slot machine could have dealt — which is what makes it stack with one, and what gives Cheat and
- * Timebomb (AC5) their own tier ladders with no branch here that knows they are special.
+ * slot machine could have dealt — which is what makes it stack with one, and what gives Cheat
+ * (AC5) its own tier ladder with no branch here that knows it is special.
  *
  * THROWS a `RangeError` naming the refusal rather than returning `run` unchanged, exactly as
  * `buyFromShop` and `pullSlotMachine` do: a silent no-op on a destructive action is the failure

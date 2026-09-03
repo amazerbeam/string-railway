@@ -3,18 +3,14 @@ import {
   PlayerSide,
   QUARRY_SIDE,
   RoundPhase,
-  containsCard,
   currentTurn,
-  primeCard,
-  isPrimed,
   sameCard,
   type Card,
 } from '../../warCouncil'
-import { isEncounterResolved, openBuffWindow, TIMEBOMB_FUSE_TRICKS } from '../../hunt'
+import { isEncounterResolved, openBuffWindow } from '../../hunt'
 import {
   canAct,
   discardSelecting,
-  timebombArmed,
   RoundUiActionKind,
   type RoundUiAction,
   type RoundUiState,
@@ -154,14 +150,6 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   if (discardSelecting(state)) {
     return toggleDiscardCard(state, tapped)
   }
-  // DLR-154 FIX A — also NOT `canAct`-gated, and for the same reason: a Timebomb can be armed
-  // during the Quarry-to-lead gap (`discardWindowOpen`'s window), where `canAct` is false because
-  // the Quarry, not the player, is next to move. Priming there must still reach `primeTapped`,
-  // whose own guards (membership, an existing mark, the armed damage) are what keep this safe to
-  // reach from a window where `canAct` is false — legality is deliberately not checked here.
-  if (timebombArmed(state)) {
-    return primeTapped(state, tapped)
-  }
   if (!canAct(state)) {
     return state
   }
@@ -174,44 +162,6 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   }
 
   return { ...state, armed: tapped, rejection: null }
-}
-
-/**
- * AC2 — an armed Timebomb's next hand-card tap primes the card rather than playing it.
- *
- * Guards membership, the existing mark, and the armed damage BEFORE calling `primeCard`, which
- * throws on the first two: a reducer must not throw, because a throw during an event handler
- * unmounts the tree. Kept verbatim from the pre-DLR-132 `commitTimebomb`'s three guards. A guard
- * that fails clears the armed state rather than half-applying, so the player is never left armed
- * with no visible cause.
- *
- * On success, the pair moves from `timebombArmedDamage` (paid for, waiting) to
- * `primedTimebombDamage` (what the primed card will detonate for) — `applyResolution` reads the
- * latter when this trick's prime books against the encounter.
- *
- * Legality is deliberately NOT checked: priming is not a move, and the whole point of the card is
- * marking one the player expects to lose with.
- */
-function primeTapped(state: RoundUiState, tapped: Card): RoundUiState {
-  const hand = state.round.hands[PlayerSide.Player]
-  if (state.timebombArmedDamage === null || !containsCard(hand, tapped)) {
-    // Unreachable from the fan (every rendered card is held), so this keeps its existing
-    // clear-and-abandon behaviour rather than growing a second recovery path.
-    return { ...state, timebombArmedDamage: null }
-  }
-  // Assumption 5 — a tap on an already-primed card is a NO-OP that keeps the mode open. Clearing
-  // here would abandon a paid-for card with no mark to show for it, and leave the player with no
-  // visible cause. The prompt stays on screen and the next tap can still land.
-  if (isPrimed(state.round.primedCards, tapped)) return state
-  return {
-    ...state,
-    round: primeCard(state.round, PlayerSide.Player, tapped),
-    timebombArmedDamage: null,
-    primedTimebombDamage: state.timebombArmedDamage,
-    timebombFuseRemaining: TIMEBOMB_FUSE_TRICKS,
-    armed: null,
-    rejection: null,
-  }
 }
 
 /**

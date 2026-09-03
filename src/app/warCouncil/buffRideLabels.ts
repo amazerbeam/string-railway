@@ -14,7 +14,7 @@ import { buffTargetSuitOf, type Buff } from '../../hunt'
 import type { Card } from '../../warCouncil'
 import type { BreakdownBranch } from './buffBreakdownModel'
 import { buffName } from './buffLabels'
-import { cardAccessibleName, SUIT_NAME } from './labels'
+import { SUIT_NAME } from './labels'
 import type { CardBuffLight, RidingBuffRow } from './buffRideModel'
 
 export { buffConditionSentence, buffName, buffPayoff } from './buffLabels'
@@ -50,38 +50,10 @@ export function buffReachText(reach: number): string {
   return `lights up ${reach} of your ${reach === 1 ? 'card' : 'cards'}`
 }
 
-/** DLR-154 AC12 — the Timebomb row's status sentence, and the reach sentence for every other row.
- *  ONE function so `BuffRidingList` reads one string per slot and branches on nothing. PLACEHOLDER
- *  copy, as this file's rest is. */
+/** DLR-154 AC12 — a riding row's status sentence. ONE function so `BuffRidingList` reads one
+ *  string per slot and branches on nothing. PLACEHOLDER copy, as this file's rest is. */
 export function ridingRowText(row: RidingBuffRow): string {
-  if (row.timebomb === null) return buffReachText(row.reach)
-  if (row.timebomb.target === null) return 'Not yet primed — pick a card in your hand.'
-  const name = cardAccessibleName(row.timebomb.target)
-  // DLR-154 FIX 8 — `0` is NOT "this is its last trick minus one": it is `round.primedCards`
-  // still naming a card whose fuse has already been spent by some OTHER route than counting down
-  // in hand — the Fox exchange is the reachable case (`WarCouncilRound.timebomb.test.tsx`'s
-  // "DecreePile wiring" regression) — while FIX 2 keeps the row itself alive past a trick
-  // boundary. Stated plainly rather than rendering the nonsensical "0 tricks left.".
-  if (row.timebomb.fuseRemaining <= 0) return `Riding the ${name} — no longer counting down.`
-  return row.timebomb.fuseRemaining === 1
-    ? `Riding the ${name} — this is its last trick.`
-    : `Riding the ${name} — ${row.timebomb.fuseRemaining} tricks left.`
-}
-
-/** DLR-154 AC12/AC5 — names the card whose mark is lifted, or says nothing is primed yet.
- *  PLACEHOLDER copy. */
-export function timebombRemoveLabel(target: Card | null): string {
-  return target === null
-    ? 'Take the Timebomb back — nothing is primed yet'
-    : `Take the Timebomb back off the ${cardAccessibleName(target)}`
-}
-
-/** DLR-154 AC5/AC13's confirmation, through the hand's existing aria-live region. PLACEHOLDER
- *  copy. */
-export function timebombRemovedText(target: Card | null): string {
-  return target === null
-    ? 'Timebomb taken back.'
-    : `Timebomb taken off the ${cardAccessibleName(target)}.`
+  return buffReachText(row.reach)
 }
 
 /** AC10. Says the buff comes off the TRICK and names what else goes dark, so nobody reads it as

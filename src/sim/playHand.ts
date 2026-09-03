@@ -1,7 +1,7 @@
 /**
  * DLR-130 — the INNER loop: plays one hand by dispatching `RoundUiAction`s at `roundReducer`,
  * exactly as a player's taps would, until the hand or the encounter is over. Never re-implements
- * the hand over `playCard` directly — `applyResolution`'s damage/Timebomb fold and
+ * the hand over `playCard` directly — `applyResolution`'s damage fold and
  * `handleTapBuff`'s activation-plus-consumable-spend live in `src/app/warCouncil/` and have no
  * equivalent in the pure tree, so driving anything else would measure a game nobody plays.
  *

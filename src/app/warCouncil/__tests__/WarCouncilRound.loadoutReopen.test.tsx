@@ -11,7 +11,6 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -25,7 +24,7 @@ stubMatchMedia()
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => vi.useRealTimers())
 
-/** Mirrors `WarCouncilRound.timebomb.test.tsx`'s own `renderRound` helper. */
+/** Mirrors `WarCouncilRound.test.tsx`'s own `renderRound` helper. */
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   return render(
     <WarCouncilRound
@@ -36,7 +35,6 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
-      blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? []}
@@ -55,9 +53,8 @@ function gallery() {
 
 describe('WarCouncilRound — the loadout drawer deliberately remembers it was open (Defender, DLR-148 fix pass)', () => {
   it('reopens on its own once a held reveal is dismissed, with no new tap on the bar', () => {
-    // Same construction as `WarCouncilRound.timebomb.test.tsx`'s "is not rendered at all once a
-    // trick reveal is held" spec: the fixture hand's one Bells card completes a trick. The panel
-    // is opened BEFORE the trick resolves, exactly as that spec does.
+    // The fixture hand's one Bells card completes a trick. The panel is opened BEFORE the trick
+    // resolves.
     renderRound()
     openLoadout()
     expect(gallery()).toBeTruthy()
@@ -68,8 +65,7 @@ describe('WarCouncilRound — the loadout drawer deliberately remembers it was o
     advanceTrickDwell()
     // DLR-160 AC11 — the table (and the gallery it can open) stays MOUNTED behind the resolution
     // panel now, so the gallery being gone is `loadoutDoorOpen`'s own `canAct` gate going false
-    // while a trick is held, not the felt being torn down — this half is already pinned by the
-    // timebomb spec; restated here so the sequence reads whole. Both the well's own outcome line
+    // while a trick is held, not the felt being torn down. Both the well's own outcome line
     // and the panel's now say the same thing, so this reads `getAllByText` rather than
     // `getByText` — the wording exists on both surfaces at once by design (`resolutionOutcome.ts`
     // is read by both), not a duplicate rendering bug.

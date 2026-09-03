@@ -41,8 +41,6 @@ const noSlotRefusal: SlotPullRefusal | null = null
 
 const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
   [ShopItem.Cheat]: null,
-  [ShopItem.Timebomb]: null,
-  [ShopItem.BlastGuard]: null,
   [ShopItem.Whetstone]: null,
   [ShopItem.Heal]: null,
   [ShopItem.ApCapacity]: null,
@@ -56,7 +54,6 @@ const baseStock: ShopStock = {
   coins: 10,
   playerHealth: 6,
   maxPlayerHealth: 10,
-  blastGuardHeld: false,
   rankTiers: ALL_BRONZE,
   maxHealthPurchases: 0,
 }
@@ -65,8 +62,6 @@ const baseStock: ShopStock = {
  *  this fixture cannot drift from the rule it prices. */
 const basePrices: Readonly<Record<ShopItem, Coins>> = {
   [ShopItem.Cheat]: priceOf(ShopItem.Cheat, baseStock),
-  [ShopItem.Timebomb]: priceOf(ShopItem.Timebomb, baseStock),
-  [ShopItem.BlastGuard]: priceOf(ShopItem.BlastGuard, baseStock),
   [ShopItem.Whetstone]: priceOf(ShopItem.Whetstone, baseStock),
   [ShopItem.Heal]: priceOf(ShopItem.Heal, baseStock),
   [ShopItem.ApCapacity]: priceOf(ShopItem.ApCapacity, baseStock),

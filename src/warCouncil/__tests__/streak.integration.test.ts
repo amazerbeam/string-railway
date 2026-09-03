@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { buyFromShop, startRun, baseDamageBonusFor } from '../../hunt'
 import { WHETSTONE_PRICE } from '../../hunt/config'
 import { ShopItem } from '../../hunt/shop'
@@ -8,10 +8,6 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   playerWon: false,
   skullTrick: false,
   finalTrick: false,
-  timebombTrick: false,
-  timebombToPlayer: 0,
-  timebombToQuarry: 0,
-  blastGuarded: false,
   baseDamageBonus: 0,
   swanKeepsMultiplier: false,
   swanKeepsBank: false,

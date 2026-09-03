@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { BuffId } from '../../hunt'
 import type { Card } from '../../warCouncil'
 import { breakdownFor, type CardBuffBreakdown } from './buffBreakdownModel'
-import { buffRemovedText, timebombRemovedText } from './buffRideLabels'
+import { buffRemovedText } from './buffRideLabels'
 import {
   lightsForHand,
   ridingRowsFor,
@@ -136,15 +136,7 @@ export function useBuffRide(options: BuffRideOptions): BuffRideBundle {
     flyToGallery(String(id), () => {
       view.onRemoveBuff(id)
       if (row === undefined) return
-      // FIX 4 — a Timebomb row announces through `timebombRemovedText`, which names the CARD taken
-      // back, rather than the generic `buffRemovedText`, which reads `reach: 0` for a Timebomb (it
-      // has no condition to reach) and always rendered "Bronze taken off the trick — nothing went
-      // dark", never naming the card.
-      setRemovedAnnouncement(
-        row.timebomb === null
-          ? buffRemovedText(row.buff, row.reach)
-          : timebombRemovedText(row.timebomb.target),
-      )
+      setRemovedAnnouncement(buffRemovedText(row.buff, row.reach))
     })
   }
 

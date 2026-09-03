@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { startEncounter } from '../../../hunt'
 import { createRoundUiState } from '../roundUiState'
 import { roundResultFor } from '../roundResult'
@@ -12,7 +12,6 @@ function seededUi() {
   return createRoundUiState({
     round,
     encounter,
-    blastGuardHeld: true,
     baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],
@@ -26,7 +25,6 @@ describe('roundResultFor', () => {
 
     expect(result.finalState).toBe(ui.round)
     expect(result.encounter).toBe(ui.encounter)
-    expect(result.blastGuardHeld).toBe(ui.blastGuardHeld)
     expect(result.discardsRemaining).toBe(ui.discardsRemaining)
     expect(result.buffs).toBe(ui.buffs)
     expect(result.unplayedAtResolve).toBe(ui.unplayedAtResolve)
@@ -52,7 +50,6 @@ describe('roundResultFor', () => {
     const ui = createRoundUiState({
       round,
       encounter,
-      blastGuardHeld: true,
       baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],

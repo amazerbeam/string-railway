@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   AP_CAPACITY_PRICE,
   CHEAT_PRICE,
-  TIMEBOMB_PRICE,
   HEAL_PRICE,
-  BLAST_GUARD_PRICE,
   WHETSTONE_PRICE,
 } from '../config'
 import {
@@ -30,7 +28,6 @@ const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
   coins: 5,
   playerHealth: 6,
   maxPlayerHealth: 10,
-  blastGuardHeld: false,
   rankTiers: ALL_BRONZE,
   maxHealthPurchases: 0,
   ...over,
@@ -50,7 +47,7 @@ describe('SHOP_ITEMS', () => {
     expect(priceOf(ShopItem.WitchTier, baseStock())).toBe(RANK_TIER_STEP_PRICE)
   })
 
-  it('DLR-145 AC3 — ApCapacity is still priced even though it left the shelf, exactly as Cheat/Timebomb/Blast Guard/Whetstone stayed priced on DLR-116', () => {
+  it('DLR-145 AC3 — ApCapacity is still priced even though it left the shelf, exactly as Cheat and Whetstone stayed priced on DLR-116', () => {
     expect(priceOf(ShopItem.ApCapacity, baseStock())).toBe(AP_CAPACITY_PRICE)
   })
 })
@@ -119,14 +116,6 @@ describe('priceOf', () => {
     expect(priceOf(ShopItem.Heal, baseStock())).toBe(HEAL_PRICE)
   })
 
-  it('reads TIMEBOMB_PRICE for Timebomb', () => {
-    expect(priceOf(ShopItem.Timebomb, baseStock())).toBe(TIMEBOMB_PRICE)
-  })
-
-  it('reads BLAST_GUARD_PRICE for the Blast Guard', () => {
-    expect(priceOf(ShopItem.BlastGuard, baseStock())).toBe(BLAST_GUARD_PRICE)
-  })
-
   it('DLR-92 AC1 — prices the Whetstone from WHETSTONE_PRICE', () => {
     expect(priceOf(ShopItem.Whetstone, baseStock())).toBe(WHETSTONE_PRICE)
   })
@@ -193,32 +182,6 @@ describe('refusalFor — MaxHealth (DLR-158 AC6)', () => {
   })
 })
 
-describe('refusalFor — Timebomb (DLR-90)', () => {
-  it('refuses only for coins: there is no cap on charges held', () => {
-    expect(refusalFor(stock({ coins: TIMEBOMB_PRICE }), ShopItem.Timebomb)).toBeNull()
-    expect(refusalFor(stock({ coins: TIMEBOMB_PRICE - 1 }), ShopItem.Timebomb)).toBe(
-      PurchaseRefusal.NotEnoughCoins,
-    )
-  })
-})
-
-describe('refusalFor — Blast Guard (DLR-91 AC1/AC3)', () => {
-  it('AC3 — refuses a Guard while one is held, and says which reason', () => {
-    const held = { ...baseStock(), coins: 9, blastGuardHeld: true }
-    expect(refusalFor(held, ShopItem.BlastGuard)).toBe(PurchaseRefusal.GuardAlreadyActive)
-  })
-
-  it('AC3 — the held Guard outranks the coin check, so the reason survives the coin arriving', () => {
-    const broke = { ...baseStock(), coins: 0, blastGuardHeld: true }
-    expect(refusalFor(broke, ShopItem.BlastGuard)).toBe(PurchaseRefusal.GuardAlreadyActive)
-  })
-
-  it('AC1 — sells a Guard when none is held and the coins are there', () => {
-    const ready = { ...baseStock(), coins: BLAST_GUARD_PRICE, blastGuardHeld: false }
-    expect(refusalFor(ready, ShopItem.BlastGuard)).toBeNull()
-  })
-})
-
 describe('canBuyAnything', () => {
   it('is true when at least one item is purchasable', () => {
     expect(canBuyAnything(stock())).toBe(true)
@@ -259,14 +222,6 @@ describe('categoryOf', () => {
 
   it('gives the Heal no category at all — an instant transfer has no duration (AC2)', () => {
     expect(categoryOf(ShopItem.Heal)).toBeNull()
-  })
-
-  it('shelves Timebomb on the one-time-use rung (AC1)', () => {
-    expect(categoryOf(ShopItem.Timebomb)).toBe(ShopCategory.OneTimeUse)
-  })
-
-  it('shelves the Blast Guard on the fight-long rung (DLR-91 AC1)', () => {
-    expect(categoryOf(ShopItem.BlastGuard)).toBe(ShopCategory.FightLong)
   })
 
   it('DLR-92 AC1 — puts the Whetstone on the run-permanent rung', () => {

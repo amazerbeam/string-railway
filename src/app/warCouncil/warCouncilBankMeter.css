@@ -130,13 +130,13 @@
 .wc-bank-carry-out {
   margin: 0.2rem 0 0;
   padding-left: 0.45rem;
-  border-left: 3px dashed var(--wc-timebomb-edge);
+  border-left: 3px dashed var(--wc-gain-edge);
   font-size: 0.7rem;
-  color: var(--wc-timebomb);
+  color: var(--wc-gain);
 }
 
 .wc-bank-carry-out b {
-  color: var(--wc-timebomb);
+  color: var(--wc-gain);
   font-variant-numeric: tabular-nums;
 }
 

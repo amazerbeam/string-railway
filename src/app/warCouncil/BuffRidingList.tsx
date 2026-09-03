@@ -16,7 +16,6 @@ import {
   removeBuffLabel,
   ridingRowText,
   RIDING_LIST_LABEL,
-  timebombRemoveLabel,
 } from './buffRideLabels'
 import { PlaceKind } from './cardPlacement'
 import { anchorKeyFor, useMotionAnchors } from './motionAnchorContext'
@@ -46,7 +45,7 @@ export default function BuffRidingList({ rows, onRemove, disabled }: BuffRidingL
       {rows.map((row) => (
         <div
           key={row.buff.id}
-          className={`wc-buff-riding-row${row.reach === 0 && row.timebomb === null ? ' wc-is-unreachable' : ''}`}
+          className={`wc-buff-riding-row${row.reach === 0 ? ' wc-is-unreachable' : ''}`}
           ref={register(anchorKeyFor({ kind: PlaceKind.RidingStrip, slot: String(row.buff.id) }))}
         >
           <span>
@@ -57,11 +56,7 @@ export default function BuffRidingList({ rows, onRemove, disabled }: BuffRidingL
             <button
               type="button"
               className="wc-buff-riding-remove"
-              aria-label={
-                row.timebomb === null
-                  ? removeBuffLabel(row.buff, row.reach)
-                  : timebombRemoveLabel(row.timebomb.target)
-              }
+              aria-label={removeBuffLabel(row.buff, row.reach)}
               disabled={disabled}
               onClick={() => onRemove(row.buff.id)}
             >

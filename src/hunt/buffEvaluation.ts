@@ -146,7 +146,7 @@ export type BuffHandContext = Pick<
 >
 
 /** The hand-scoped half of buff evaluation, handed to `resolveTrickBank` as PLAIN VALUES exactly
- *  as `baseDamageBonus` and `blastGuarded` are. Declared in `src/hunt/` because `hunt` owns what a
+ *  as `baseDamageBonus` is. Declared in `src/hunt/` because `hunt` owns what a
  *  buff is; `streak.ts` imports it rather than restating it. */
 export interface BuffTrickInput {
   /** The buffs activated for THIS trick — already filtered through `activatableBuffs`. */

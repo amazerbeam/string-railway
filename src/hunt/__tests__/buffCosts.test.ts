@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cheatBuff, shieldBuff, timebombBuff } from '../buffCatalog'
+import { cheatBuff, shieldBuff } from '../buffCatalog'
 import {
   AP_COST_MAX,
   AP_COST_MIN,
@@ -168,10 +168,6 @@ describe('CONSUMABLE_AP_COST — the eight off-curve prices', () => {
     expect(CONSUMABLE_AP_COST[BuffKind.Cheat]).toEqual({ bronze: 3, silver: 5, gold: 7 })
   })
 
-  it('timebomb is flat at 2', () => {
-    expect(CONSUMABLE_AP_COST[BuffKind.Timebomb]).toEqual({ bronze: 2, silver: 2, gold: 2 })
-  })
-
   // DLR-110 — 2/3/4 is a DEVELOPER DECISION nobody has made; no source document prices Shield.
   // Pinned so the placeholder cannot drift silently, not because the figures are settled.
   it('shield is 2/3/4 — a placeholder ladder, see the table’s own comment', () => {
@@ -192,9 +188,6 @@ describe('apCostOf reads through the real buffCatalog.ts minters', () => {
     expect(apCostOf(cheatBuff(Gold, 1))).toBe(7)
   })
 
-  it('a gold Timebomb costs 2', () => {
-    expect(apCostOf(timebombBuff(Gold, 2))).toBe(2)
-  })
 })
 
 describe('apCostOf throws on placeholder content', () => {

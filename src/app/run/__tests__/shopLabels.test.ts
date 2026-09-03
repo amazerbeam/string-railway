@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   AP_CAPACITY_STEP,
-  TIMEBOMB_PLAYER_DAMAGE,
-  TIMEBOMB_QUARRY_DAMAGE,
   FlaskRefusal,
   flaskHealAmount,
   HEAL_HEALTH_RESTORED,
@@ -18,7 +16,6 @@ const stock = (over: Partial<ShopStock> = {}): ShopStock => ({
   coins: 5,
   playerHealth: 6,
   maxPlayerHealth: 10,
-  blastGuardHeld: false,
   rankTiers: ALL_BRONZE,
   maxHealthPurchases: 0,
   ...over,
@@ -61,11 +58,6 @@ describe('shopLabels', () => {
 
   it('interpolates HEAL_HEALTH_RESTORED into the Heal blurb rather than quoting a literal', () => {
     expect(SHOP_ITEM_BLURB[ShopItem.Heal]).toContain(String(HEAL_HEALTH_RESTORED))
-  })
-
-  it('interpolates both Timebomb figures into the blurb rather than quoting a literal', () => {
-    expect(SHOP_ITEM_BLURB[ShopItem.Timebomb]).toContain(String(TIMEBOMB_QUARRY_DAMAGE))
-    expect(SHOP_ITEM_BLURB[ShopItem.Timebomb]).toContain(String(TIMEBOMB_PLAYER_DAMAGE))
   })
 
   it('DLR-92 — blurbs the Whetstone as stacking, without quoting a price', () => {

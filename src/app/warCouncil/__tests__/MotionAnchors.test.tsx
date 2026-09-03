@@ -116,9 +116,6 @@ function FeltPlaces() {
         hint="Lead"
         rejected={false}
         promptOpen={false}
-        primedCards={[]}
-        timebombFuseRemaining={0}
-        timebombArmed={false}
         discardSelecting={false}
         discardSelection={[]}
         damageForCard={() => null}
@@ -193,7 +190,7 @@ function PromptGalleryStripPlaces() {
         onClose={() => {}}
       />
       <BuffRidingList
-        rows={[{ buff: woodcutterBuff, reach: 1, revocable: true, timebomb: null }]}
+        rows={[{ buff: woodcutterBuff, reach: 1, revocable: true }]}
         onRemove={() => {}}
         disabled={false}
       />

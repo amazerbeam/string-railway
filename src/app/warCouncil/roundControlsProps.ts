@@ -22,7 +22,6 @@ import { createElement, type ReactNode } from 'react'
 import type { Buff, BuffActivationRefusal } from '../../hunt'
 import {
   CardRank,
-  isPrimed,
   isSkulled,
   RoundPhase,
   sameCard,
@@ -119,12 +118,10 @@ export function feltRailProps({ ui, galleryOpen }: FeltRailOptions): FeltRailPro
     decree: ui.round.decree,
     trumpSuit: ui.round.trumpSuit,
     drawPileCount: ui.round.drawPile.length,
-    decreePrimed: isPrimed(ui.round.primedCards, ui.round.decree),
     spentCount: ui.round.spentPile.length,
     reshuffled: ui.round.reshuffled,
     trick: galleryOpen ? ui.round.currentTrick : null,
     skulledCards: ui.round.skulledCards,
-    primedCards: ui.round.primedCards,
     // The ONE reading of the readout's facts — built here so the rail and any future consumer
     // cannot read the trick differently, mirroring `trickConsequenceFacts`'s own stated reason.
     consequence: trickConsequence(trickConsequenceFacts(ui)),
@@ -181,8 +178,7 @@ export function feltStageProps({
       currentTrick: ui.round.currentTrick,
       resolvedTrick: ui.resolvedTrick,
       skulledCards: ui.round.skulledCards,
-      primedCards: ui.round.primedCards,
-      offeredBuffs: offered,
+        offeredBuffs: offered,
       // DLR-160 AC2 — the ONE reading of skull membership for THIS trick, filtered from the
       // round's own list through the SAME `isSkulled` predicate every other reader here uses.
       skulledInTrick: ui.resolvedTrick.cards
@@ -204,8 +200,7 @@ export function feltStageProps({
       decree: ui.round.decree,
       hand: displayHand.filter((c) => !sameCard(c, promptCard)),
       drawnCard: promptCard.rank === CardRank.Woodcutter ? (ui.round.drawPile[0] ?? null) : null,
-      primedCards: ui.round.primedCards,
-      onChoose: (choice: AbilityChoice) =>
+        onChoose: (choice: AbilityChoice) =>
         dispatch({ kind: RoundUiActionKind.ChooseAbility, choice }),
       onCancel,
     })
@@ -214,8 +209,7 @@ export function feltStageProps({
       currentTrick: ui.round.currentTrick,
       resolvedTrick: null,
       skulledCards: ui.round.skulledCards,
-      primedCards: ui.round.primedCards,
-      offeredBuffs: offered,
+        offeredBuffs: offered,
       quarryToLead,
       onCarryOn,
     })

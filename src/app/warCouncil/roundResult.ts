@@ -9,7 +9,6 @@ export function roundResultFor(ui: RoundUiState): WarCouncilRoundResult {
   return {
     finalState: ui.round,
     encounter: ui.encounter,
-    blastGuardHeld: ui.blastGuardHeld,
     discardsRemaining: ui.discardsRemaining,
     buffs: ui.buffs,
     unplayedAtResolve: ui.unplayedAtResolve,

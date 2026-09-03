@@ -24,8 +24,8 @@ import { discardStock, type RoundUiState } from './roundUiState'
  * happens is a non-empty selection, so COMMIT through `applyDiscard` and decrement the budget.
  * Refused → no-op.
  *
- * DLR-132 — opening no longer clears a live Cheat or an armed Timebomb: neither is a transient
- * selection any more (a Cheat is a paid-for duration, a Timebomb an armed spend), so opening the
+ * DLR-132 — opening no longer clears a live Cheat: it is not a transient
+ * selection any more (a Cheat is a paid-for duration), so opening the
  * discard rail does not touch either.
  */
 export function handleTapDiscard(state: RoundUiState): RoundUiState {

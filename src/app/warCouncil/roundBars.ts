@@ -1,7 +1,7 @@
 /**
  * The round screen's two health bars, assembled from committed reducer state.
  *
- * Split out of `WarCouncilRound.tsx` on DLR-101, the moment the Timebomb wiring pushed it past its
+ * Split out of `WarCouncilRound.tsx` on DLR-101, the moment that file passed its
  * 400-line budget — the same forced split that produced `quarryAdvance.ts` (DLR-94),
  * `commitHandlers.ts` and `discardHandlers.ts` (DLR-100). It is also the split that makes this
  * derivation directly testable: as a block inside a component it could only be exercised through
@@ -18,14 +18,11 @@ import {
 import type { RoundUiState } from './roundUiState'
 
 /**
- * Four derivations, no new state:
+ * Three derivations, no new state:
  *
  *  · the AT-RISK preview (DLR-86 AC3) is the streak over `bank` and `multiplier`, which the engine
  *    already writes on every trick — it resets itself when they reset (AC5), because it is a view
  *    of them rather than a copy.
- *  · the TICKING hearts (DLR-101) are `encounter.pendingTimebomb`, which the engine books when a
- *    marked trick resolves and clears when it pays. Read rather than remembered, for the same
- *    reason: a copy would need an effect, and an effect would need to survive StrictMode.
  *  · the BREAKING hearts (DLR-86 AC2) are the damage of the trick currently held on screen.
  *    `roundReducer` never applies damage without setting `resolvedTrick` in the same transition,
  *    so the held reveal IS the damage event. Reading it rather than diffing a remembered previous
@@ -52,20 +49,12 @@ export function barsForRound(
   ui: RoundUiState,
   maxHealth: Readonly<Record<DuelSide, Health>>,
 ): readonly HealthBarView[] {
-  const pendingTimebombs = ui.encounter.pendingTimebomb
   return duelHealthBars(
     ui.encounter.health,
-    projectedDepletion(
-      ui.encounter.health,
-      ui.round.total,
-      ui.round.roll,
-      pendingTimebombs,
-      ui.encounter.shieldHearts,
-    ),
+    projectedDepletion(ui.encounter.health, ui.round.total, ui.round.roll),
     maxHealth,
     {
       breaking: ui.resolvedTrick ? incomingFrom(ui.resolvedTrick.resolution) : NO_BREAKING,
-      ticking: pendingTimebombs,
       shield: ui.encounter.shieldHearts,
     },
   )

@@ -1,9 +1,7 @@
 import {
   AP_CAPACITY_PRICE,
   CHEAT_PRICE,
-  TIMEBOMB_PRICE,
   HEAL_PRICE,
-  BLAST_GUARD_PRICE,
   WHETSTONE_PRICE,
 } from './config'
 import { isAtMaxTier, RANK_TIER_STEP_PRICE, TieredRank, type RankTierTable } from './rankTiers'
@@ -12,8 +10,6 @@ import type { Coins, Health } from './types'
 
 export const ShopItem = {
   Cheat: 'cheat',
-  Timebomb: 'timebomb',
-  BlastGuard: 'blastGuard',
   Whetstone: 'whetstone',
   Heal: 'heal',
   ApCapacity: 'apCapacity', // DLR-116 AC2
@@ -26,8 +22,8 @@ export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
 
 /** DLR-116 AC2/AC3 — what the shop OFFERS, pared to the two fixed, always-purchasable items.
  *  The `ShopItem` union above keeps every member and `priceOf` / `categoryOf` / `refusalFor` /
- *  `buyFromShop` stay TOTAL over it, so no mechanic is deleted — only this list changed. Cheat,
- *  Timebomb, Blast Guard and Whetstone are still priced, still buyable by a caller, and still
+ *  `buyFromShop` stay TOTAL over it, so no mechanic is deleted — only this list changed. Cheat
+ *  and Whetstone are still priced, still buyable by a caller, and still
  *  tested; they are simply not on the shelf while this pared-down version is played.
  *
  *  DLR-122 AC2 REFILLS the run-permanent rung with `SwanTier` and `WitchTier`. Nothing DLR-116
@@ -36,13 +32,13 @@ export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
  *  Whetstone stay off this list. */
 /** DLR-145 AC3 — the action-point purchase leaves the shelf: with `AP_ENABLED` false it has
  *  nothing to sell. It keeps its `ShopItem` member, its `priceOf` row, its `categoryOf` rung and
- *  its `refusalFor` handling, exactly as DLR-116 kept Cheat, Timebomb, Blast Guard and Whetstone —
+ *  its `refusalFor` handling, exactly as DLR-116 kept Cheat and Whetstone —
  *  no mechanic is deleted, only this list changed. */
 /** 2026-09-01 — the Swan and Witch rank upgrades leave the shelf (developer decision): their rules
  *  are not settled yet, and each printed a forty-word blurb that was most of what made the shop
  *  read as a wall of text. They keep their `ShopItem` member, their `priceOf` row, their
  *  `categoryOf` rung and their `refusalFor` handling, exactly as DLR-145 left the action-point
- *  purchase and DLR-116 left Cheat, Timebomb, Blast Guard and Whetstone — no mechanic is deleted,
+ *  purchase and DLR-116 left Cheat and Whetstone — no mechanic is deleted,
  *  only this list changed, and putting either back is one row here. */
 /** DLR-158 AC1 — the shelf gains a second item, the first addition since the 2026-09-01 pass
  *  pared it to Heal alone. Nothing that left comes back: this is a NEW item, and every card off
@@ -78,7 +74,6 @@ export const PurchaseRefusal = {
   // code would ripple into that copy map for no rule this ticket owns.
   SlotsFull: 'slotsFull',
   AlreadyFullHealth: 'alreadyFullHealth',
-  GuardAlreadyActive: 'guardAlreadyActive',
   /** DLR-122 AC2 — the rank is already at gold, so there is no rung left to buy. A rank is a
    *  RUNG, not a counter: unlike Whetstone and AP capacity it cannot be stacked, so this is the
    *  ceiling and it is stated once. */
@@ -93,8 +88,6 @@ export interface ShopStock {
   readonly coins: Coins
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
-  /** DLR-91 AC3 — a bought-but-unspent Guard is already held. Only one can be active at a time. */
-  readonly blastGuardHeld: boolean
   /** DLR-122 AC2 — where every tierable rank currently stands, so the ceiling is a rule this
    *  module can state rather than something the caller has to remember to check. */
   readonly rankTiers: RankTierTable
@@ -118,10 +111,6 @@ export function priceOf(item: ShopItem, stock: ShopStock): Coins {
   switch (item) {
     case ShopItem.Cheat:
       return CHEAT_PRICE
-    case ShopItem.Timebomb:
-      return TIMEBOMB_PRICE
-    case ShopItem.BlastGuard:
-      return BLAST_GUARD_PRICE
     case ShopItem.Whetstone:
       return WHETSTONE_PRICE
     case ShopItem.Heal:
@@ -154,8 +143,6 @@ export function tieredRankOf(item: ShopItem): TieredRank | null {
     case ShopItem.WitchTier:
       return TieredRank.Witch
     case ShopItem.Cheat:
-    case ShopItem.Timebomb:
-    case ShopItem.BlastGuard:
     case ShopItem.Whetstone:
     case ShopItem.Heal:
     case ShopItem.ApCapacity:
@@ -176,12 +163,6 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
   switch (item) {
     case ShopItem.Cheat:
       return ShopCategory.OneTimeUse
-    // DLR-90 AC1: the one-time-use rung, which DLR-89 built for exactly this.
-    case ShopItem.Timebomb:
-      return ShopCategory.OneTimeUse
-    // DLR-91 AC1 — the fight-long rung, which DLR-89 built and left empty for exactly this.
-    case ShopItem.BlastGuard:
-      return ShopCategory.FightLong
     // DLR-92 AC1 — the run-permanent rung, which DLR-89 built and left empty for exactly this.
     case ShopItem.Whetstone:
       return ShopCategory.RunPermanent
@@ -234,8 +215,8 @@ export const UNCATEGORISED_SHOP_ITEMS: readonly ShopItem[] = SHOP_ITEMS.filter(
  * (which throws on a non-null result) and by the screen (which disables the control and prints
  * the reason). Two readings of one rule, never two rules.
  *
- * Item-specific reasons come BEFORE the coin check deliberately: with a Guard already held and
- * no coins, the Guard is the reason that will still be true when the coin arrives.
+ * Item-specific reasons come BEFORE the coin check deliberately: with a rank already at gold and
+ * no coins, the ceiling is the reason that will still be true when the coin arrives.
  *
  * A non-finite balance refuses rather than passing the comparison — `NaN >= 1` is `false`, which
  * would otherwise read as "not enough coins" by accident and hide a corrupted figure.
@@ -243,9 +224,6 @@ export const UNCATEGORISED_SHOP_ITEMS: readonly ShopItem[] = SHOP_ITEMS.filter(
 export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | null {
   if (item === ShopItem.Heal && stock.playerHealth >= stock.maxPlayerHealth) {
     return PurchaseRefusal.AlreadyFullHealth
-  }
-  if (item === ShopItem.BlastGuard && stock.blastGuardHeld) {
-    return PurchaseRefusal.GuardAlreadyActive
   }
   // DLR-122 AC2 — above the coin check, matching this docblock's stated order: with a rank at
   // gold and no coins, the ceiling is the reason that will still be true when the coin arrives.

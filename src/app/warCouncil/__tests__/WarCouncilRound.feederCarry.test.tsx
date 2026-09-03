@@ -5,7 +5,6 @@ import type { BuffCarry } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   baseDamageBonusFixture,
-  blastGuardHeldFixture,
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
@@ -38,7 +37,6 @@ describe('WarCouncilRound — a carried-in accrual seeds the hand it opens on (D
         runLabel={runLabelFixture}
         quarryLabel={quarryLabelFixture}
         coins={coinsFixture}
-        blastGuardHeld={blastGuardHeldFixture}
         baseDamageBonus={baseDamageBonusFixture}
         discardsRemaining={discardsRemainingFixture}
         buffs={[]}

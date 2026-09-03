@@ -116,10 +116,6 @@
   color: var(--wc-ink-soft);
 }
 
-.shop-reel-glyph[data-glyph='timebomb'] {
-  color: var(--wc-timebomb-edge);
-}
-
 /* DLR-161 — Skull Helmet and Skull Tether share one colour; separated by shape, not tint. */
 .shop-reel-glyph[data-glyph='skullHelmet'],
 .shop-reel-glyph[data-glyph='skullTether'] {

@@ -43,10 +43,6 @@ export {
   CHEAT_PRICE,
   HEAL_PRICE,
   HEAL_HEALTH_RESTORED,
-  TIMEBOMB_PRICE,
-  TIMEBOMB_QUARRY_DAMAGE,
-  TIMEBOMB_PLAYER_DAMAGE,
-  BLAST_GUARD_PRICE,
   WHETSTONE_PRICE,
   QUICK_KILL_TIER_MULTIPLIERS,
   FLASK_STARTING_CHARGES,
@@ -102,17 +98,11 @@ export {
   startingPileSeedFor,
 } from './startingPile'
 
-export type { TimebombDamage } from './buffCatalog'
 export {
   CHEAT_DURATION_TRICKS,
-  TIMEBOMB_FUSE_TRICKS,
-  TIMEBOMB_TIER_MULTIPLIER,
-  TIMEBOMB_DAMAGE,
   cheatBuff,
-  timebombBuff,
   shieldBuff,
   cheatDurationTricksOf,
-  timebombDamageOf,
   shieldHeartsOf,
 } from './buffCatalog'
 
@@ -223,9 +213,6 @@ export {
   startEncounter,
   applyDamage,
   isEncounterResolved,
-  NO_PENDING_TIMEBOMB,
-  hasPendingTimebomb,
-  queueTimebomb,
   activateShield,
   hasShieldHearts,
   NO_WARD,

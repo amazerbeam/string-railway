@@ -63,12 +63,14 @@
      PLACEHOLDER — the developer's to retune. */
   --wc-skull-shadow: #171310;
 
-  /* The mined-card green. Deliberately a sickly yellow-green rather than a felt green — it must
-     not read as "the table" — and light enough to carry the dark skull glyph at full contrast.
-     Not a suit colour: it names a card's *state*, which is why it sits apart from the three
-     above. The developer's to retune. */
-  --wc-timebomb: #8fb04e;
-  --wc-timebomb-edge: #5c7a2e;
+  /* The GAIN green — "a good thing happened". Deliberately a sickly yellow-green rather than a
+     felt green, so it does not read as "the table", and light enough to carry a dark glyph at
+     full contrast. Not a suit colour: it names an OUTCOME, which is why it sits apart from the
+     three above. Read by the won-verdict headline, the feeder carry-out row and the buff card's
+     payoff chip. DLR-166 renamed it when the card it used to be named for was deleted; the hex is
+     unchanged. The name and the hex are both the developer's to retune. */
+  --wc-gain: #8fb04e;
+  --wc-gain-edge: #5c7a2e;
 
   /* DLR-161 — Skull Helmet and Skull Tether share this ONE colour; the two are told apart by
      shape (a dome vs. a taut line to an anchor), not tint. Same family as the mockup's `#7fae8c`.

@@ -76,24 +76,12 @@ export interface EncounterState {
    *  onto a second vocabulary. Since D7 (2026-08-19) a Quarry killed by an event spares the
    *  player that event's damage, so `Quarry` here means the player went down alone. */
   readonly winner: DuelSide | null
-  /** DLR-90 AC3/AC4/AC7 — damage owed to each side at the START OF THE NEXT HAND, keyed by the
-   *  side it is APPLIED TO, exactly as `IncomingDamage` is and for exactly its reason: the
-   *  `PlayerSide` -> `DuelSide` crossing is performed once, in `bank.ts`, and a dealer-keyed
-   *  record would let a caller deplete the wrong bar and produce plausible numbers forever.
-   *
-   *  An ACCUMULATOR rather than a single side, so two marked tricks in one hand — or one on each
-   *  side — need no second field and no branch. `startEncounter` seeds it to zeros, which is what
-   *  discards it at an encounter boundary (AC7) with no explicit clear step to forget; that is
-   *  why this lives here and not on `RunState`. */
-  readonly pendingTimebomb: IncomingDamage
   /** DLR-110 — the player's blue hearts (design doc §7a). A second pool of hit points that is
    *  NOT part of `health`, cannot be restored by any heal path, and is spent before red health
    *  (AC4). A scalar rather than a `Record<DuelSide, Health>` because only the player can hold
    *  them — a side-keyed field would model a Quarry shield nothing can create and every reader
-   *  would have to handle, unlike `pendingTimebomb`, which is side-keyed because Timebomb
-   *  genuinely hits both sides. Seeded to `NO_SHIELD_HEARTS` by `startEncounter`, which is what
-   *  clears it at an encounter boundary with no explicit clear step to forget — the reason
-   *  `pendingTimebomb` lives here too. NOT PERSISTED. */
+   *  would have to handle. Seeded to `NO_SHIELD_HEARTS` by `startEncounter`, which is what
+   *  clears it at an encounter boundary with no explicit clear step to forget. NOT PERSISTED. */
   readonly shieldHearts: Health
   /** DLR-126 — a Ward held: how much damage it will absorb on the NEXT hit taken, after which it
    *  BREAKS regardless of whether that hit was fully absorbed (`v1-buff-card-list.md` → *Ward*).

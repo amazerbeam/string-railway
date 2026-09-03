@@ -51,7 +51,7 @@ function fenceReasonText(count: number, reason: BuffActivationRefusal | null): s
  * nothing about a card's own state.
  *
  * Keeps `role="dialog"` and `aria-label={LOADOUT_PANEL_LABEL}` — **load-bearing**:
- * `WarCouncilRound.actionBar.test.tsx` and `WarCouncilRound.timebomb.test.tsx` both reach this
+ * `WarCouncilRound.actionBar.test.tsx` reaches this
  * panel through `getByRole('dialog', { name: 'Your buffs' })`. Keeps the outer
  * `onClick={(e) => e.stopPropagation()}` too — this mounts inside `.wc-table`, which fires
  * `handleCarryOn` on click whenever the felt is waiting.

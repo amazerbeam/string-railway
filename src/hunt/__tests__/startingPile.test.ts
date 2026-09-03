@@ -100,9 +100,9 @@ describe('openingPileWeightOf', () => {
     expect(BUFF_TEMPLATES.every((t) => openingPileWeightOf(t) > 0)).toBe(true)
   })
 
-  it('leaves Cheat and Timebomb eligible (DLR-132 — ordinary pool members)', () => {
+  it('leaves Cheat eligible (DLR-132 — an ordinary pool member)', () => {
     const activated = BUFF_TEMPLATES.filter((t) => t.form === 'activated')
-    expect(activated).toHaveLength(2)
+    expect(activated).toHaveLength(1)
     expect(activated.every((t) => openingPileWeightOf(t) > 0)).toBe(true)
   })
 })

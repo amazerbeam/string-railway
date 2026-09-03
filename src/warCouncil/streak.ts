@@ -10,7 +10,6 @@ import {
   type BuffBonusAccrual,
   type BuffId,
   type BuffTrickInput,
-  type Damage,
   type IncomingDamage,
 } from '../hunt'
 
@@ -58,19 +57,6 @@ export interface TrickResolution extends StreakState {
   readonly cashOut: number
   /** 0 or `DAMAGE_PER_HIT`. */
   readonly damageToPlayer: number
-  /** DLR-90 AC3/AC6 — the side owed the Timebomb figure for that side (`TIMEBOMB_QUARRY_DAMAGE` or
-   *  `TIMEBOMB_PLAYER_DAMAGE`) at the start of the next hand, or `null` when the trick carried no
-   *  mark. Keyed by the side the damage will be APPLIED TO, and typed
-   *  `DuelSide` rather than `PlayerSide` deliberately: this module is already THE one crossing
-   *  between the two vocabularies (see `incomingFrom` below), so the reducer receives a side it
-   *  hands straight to `queueTimebomb` with no second crossing to get backwards. */
-  readonly timebombTarget: DuelSide | null
-  /** D1 — carried through so `incomingFrom` sums it into the Quarry's total. Display-safe: this is
-   *  the figure paid at THIS trick, not one booked by it — that is `timebombTarget`. */
-  readonly timebombToQuarry: Damage
-  /** AC4 — the Guard fired and suppressed a reset, so the reducer must spend it. `true` only when
-   *  Timebomb was actually owed to the player at this trick AND a Guard was held. */
-  readonly blastGuardSpent: boolean
   /** DLR-125 — the hand's accrual AFTER this trick, or `null` when `TrickFacts.buffs` was
    *  `null`. Reported back OUT so the felt folds one value rather than re-deriving it. */
   readonly buffAccrual: BuffBonusAccrual | null
@@ -92,24 +78,13 @@ export interface TrickFacts {
   readonly skullTrick: boolean
   /** The last trick of the hand, so AC8's end-of-hand cash applies. */
   readonly finalTrick: boolean
-  /** DLR-90 AC3 — any card played into the trick carries the Timebomb mark. */
-  readonly timebombTrick: boolean
-  /** D1/D3 — Timebomb owed to the PLAYER from an earlier trick, being paid at this one. 0 when none.
-   *  Non-zero makes this trick a hit for the cash-out's purposes even if the player won it. */
-  readonly timebombToPlayer: Damage
-  /** D1 — Timebomb owed to the QUARRY from an earlier trick, being paid at this one. 0 when none.
-   *  Never touches the total: the Quarry has no streak to lose. */
-  readonly timebombToQuarry: Damage
-  /** DLR-91 AC4 — a Blast Guard is held, so Timebomb must NOT force the cash-out. Gates the Timebomb
-   *  trigger only, never the trick's own hit: a 1-coin item does not insure against every loss. */
-  readonly blastGuarded: boolean
   /** DLR-92 AC4 — extra bank added by a TAKEN trick, on top of the trick's own 1. A plain number
    *  handed in, never a run figure read: this module must not learn what bought it, which is why
    *  it is not called a Whetstone count. 0 is the bare rule. The MULTIPLIER is unaffected (AC5). */
   readonly baseDamageBonus: number
   /** DLR-122 AC4 — the player's Swan ladder stands at silver or better AND the player played a
    *  Swan into this trick. A plain FACT handed in, never a run figure read, exactly as
-   *  `blastGuarded` and `baseDamageBonus` above: this module must not learn who holds which card.
+   *  `baseDamageBonus` above: this module must not learn who holds which card.
    *  `rankTierRules.ts`'s `swanTierFactsFor` is the single producer, and AC3's player-only gate
    *  lives there. Only ever consulted on a CLEAN LOSS — see `resolveTrickBank`. */
   readonly swanKeepsMultiplier: boolean
@@ -120,7 +95,7 @@ export interface TrickFacts {
   /** DLR-125 — the buffs activated for this trick plus the hand facts their conditions read.
    *  REQUIRED and `| null`, not optional: optional would let a call site skip buffs silently,
    *  and this shape has five construction sites the compiler should enumerate. A plain value
-   *  handed in, never a run figure read — exactly `baseDamageBonus`'s and `blastGuarded`'s
+   *  handed in, never a run figure read — exactly `baseDamageBonus`'s
    *  contract. */
   readonly buffs: BuffTrickInput | null
 }
@@ -190,26 +165,8 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
   let roll = before.roll
   let trickDamage: TrickDamage | null = null
 
-  // AC5 — REPLACED, not added to. A marked trick the Quarry won CLEANLY costs the player nothing:
-  // no health lost, and the total and roll survive uncashed even though this is a loss by the
-  // normal rules. That is the item's whole point — it gives a card the player already expects to
-  // lose with a reason to be played instead of being dead weight.
-  //
-  // Keyed on `CleanLoss` rather than on "the Quarry won" DELIBERATELY: a Dodge is also a trick the
-  // Quarry won, and it is one the player BANKS, so treating every Quarry win as replaced would zero
-  // a climb the player had already earned. `CleanLoss` is the only outcome where a Quarry win
-  // costs the player anything, so it is the only one with something to replace.
-  //
-  // AC6 needs no counterpart and gets none: a marked trick the player wins is already a `CleanWin`
-  // and falls through to the ordinary branch below, banking its own damage and climbing the roll.
-  // The delayed hit is symmetric because `timebombTarget` follows the WINNER, not a mirrored rule.
-  const replaced = trick.timebombTrick && outcome === TrickOutcome.CleanLoss
-
-  // TWO sources of a hit since D1/D3. `trickHit` is the pre-existing one — a clean loss or a skull
-  // win, unless DLR-90's AC5 replaced it. Timebomb is the new one, and it reaches the SAME branch
-  // rather than getting a rule of its own: that is what makes "Timebomb behaves like any other
-  // damage" true in code instead of asserted in a comment.
-  const trickHit = !taken && !replaced
+  // A hit is a trick the player did not take — a clean loss or a skull win.
+  const trickHit = !taken
 
   // DLR-122 AC4/AC5 — the Swan ladder, gated on CLEAN LOSS here rather than at the call site.
   // "Not an eaten skull" is a rule about OUTCOMES, and outcomes are this module's subject; a
@@ -220,13 +177,8 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
   const swanKeepsBank = swanCleanLoss && trick.swanKeepsBank
   // Gold implies silver, folded in HERE rather than trusted from the caller.
   const swanKeepsMultiplier = swanCleanLoss && (trick.swanKeepsMultiplier || trick.swanKeepsBank)
-  // AC4 — a held Guard suppresses the TIMEBOMB trigger only.
-  const timebombResets = trick.timebombToPlayer > 0 && !trick.blastGuarded
 
-  // Owed whether or not the streak resets: a Guard buys back the streak, never the health.
-  // D2's 2-or-3 is this line — the Timebomb alone on a trick the player won, plus DAMAGE_PER_HIT
-  // on one they also lost.
-  const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer
+  const damageToPlayer = trickHit ? DAMAGE_PER_HIT : 0
 
   // DLR-156 Assumption 10 — Hoarder is a cut, unconstructible family (CLAUDE.md — "Cut buffs are
   // cut until a ticket brings them back"), so this value is inert. Fed the ROLL after the trick
@@ -293,16 +245,9 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     roll += 1
   }
 
-  if (trickHit || timebombResets) {
-    // A1 — the win above has already banked, so a won-but-primed trick still loses THAT climb
-    // too: the reset below wipes whatever `total` and `roll` stand at, including this trick's own
-    // contribution.
-    //
+  if (trickHit) {
     // AC7 — a hit pays the Quarry NOTHING. There is no reduced share any more: the whole streak
     // is lost, full stop. That is the change that makes the roll-over choice a real bet.
-    //
-    // TIMEBOMB REACHES THIS BRANCH TOO, and deliberately (`plan.md` → Assumptions). D3's Timebomb
-    // hit is the case the-hunt.md calls "the moment you cannot choose".
     //
     // DLR-122 AC5 — gold spares the streak from this reset entirely. This is the
     // poisoned-clean-loss exception's own shape (`the-hunt.md` §7) reached by a different
@@ -339,14 +284,6 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     damageToPlayer,
     total,
     roll,
-    // The PHYSICAL winner of a marked trick, crossed to `DuelSide` here and only here.
-    timebombTarget: trick.timebombTrick
-      ? trick.playerWon
-        ? DuelSide.Player
-        : DuelSide.Quarry
-      : null,
-    timebombToQuarry: trick.timebombToQuarry,
-    blastGuardSpent: trick.timebombToPlayer > 0 && trick.blastGuarded,
     buffAccrual: accrual,
     firedBuffIds: buffOutcome?.firedIds ?? [],
   }
@@ -354,14 +291,14 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
 
 /**
  * THE one `PlayerSide` -> `DuelSide` crossing. Keyed by the side the damage is APPLIED TO: the
- * player eats `damageToPlayer`, the Quarry eats its cash-out (always 0 from a resolution now)
- * PLUS any Timebomb paid at this trick. Summing here rather than at the call site keeps that the
+ * player eats `damageToPlayer`, the Quarry eats its cash-out (always 0 from a resolution now).
+ * Crossing here rather than at the call site keeps that the
  * only crossing — a caller assembling this record by hand is one transposition from depleting the
  * wrong bar forever.
  */
 export function incomingFrom(resolution: TrickResolution): IncomingDamage {
   return {
     [DuelSide.Player]: resolution.damageToPlayer,
-    [DuelSide.Quarry]: resolution.cashOut + resolution.timebombToQuarry,
+    [DuelSide.Quarry]: resolution.cashOut,
   }
 }

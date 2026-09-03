@@ -33,9 +33,6 @@ function renderFan(overrides = {}) {
         hint="Follow their lead"
         rejected={false}
         promptOpen={false}
-        primedCards={[]}
-        timebombFuseRemaining={0}
-        timebombArmed={false}
         discardSelecting={false}
         discardSelection={[]}
         damageForCard={() => PREVIEW}
@@ -113,42 +110,6 @@ describe('HandFan', () => {
     expect(document.querySelector('.wc-fan')?.getAttribute('aria-hidden')).toBe('true')
   })
 
-  it('announces a card in primedCards as primed (DLR-90 AC2)', () => {
-    renderFan({ primedCards: [card(Suit.Bells, 7)] })
-    expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeDefined()
-  })
-
-  it('draws the countdown on the primed card only — R4', () => {
-    renderFan({ primedCards: [card(Suit.Bells, 7)], timebombFuseRemaining: 2 })
-    const marks = document.querySelectorAll('.wc-timebomb-mark')
-    expect(marks).toHaveLength(1)
-    expect(marks[0].textContent).toContain('2')
-  })
-
-  it('disables an illegal card as today when timebombArmed is false', () => {
-    renderFan({ timebombArmed: false })
-    expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', true)
-  })
-
-  it('makes every card tappable while timebombArmed, including an illegal one (DLR-90 AC2)', () => {
-    const { onTap } = renderFan({ timebombArmed: true })
-    const illegal = screen.getByRole('button', { name: '7 of Bells' })
-    expect(illegal).toHaveProperty('disabled', false)
-    illegal.click()
-    expect(onTap).toHaveBeenCalledWith(card(Suit.Bells, 7))
-  })
-
-  it('lets the roving tabindex reach an illegal card by arrow key while timebombArmed', () => {
-    // Otherwise a keyboard-only player could never reach the very card the item exists to mark.
-    // legal=[Moons 11] (the default fixture), so both Bells 7 and Keys 3 are illegal to PLAY —
-    // arrow-key movement must still land on them while armed.
-    renderFan({ timebombArmed: true })
-    const group = screen.getByRole('group', { name: /hand/i })
-    fireEvent.keyDown(group, { key: 'ArrowRight' })
-    const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
-    expect(fox.getAttribute('tabindex')).toBe('0')
-    expect(document.activeElement).toBe(fox)
-  })
 
   it('makes every card tappable while discardSelecting, including an illegal one (DLR-100)', () => {
     const { onTap } = renderFan({ discardSelecting: true })

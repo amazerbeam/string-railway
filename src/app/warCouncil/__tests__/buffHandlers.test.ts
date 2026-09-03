@@ -9,11 +9,8 @@ import {
   BuffTier,
   CHEAT_DURATION_TRICKS,
   cheatBuff,
-  mintFromTemplate,
   shieldHeartsForTier,
   STARTING_AP,
-  templateById,
-  timebombBuff,
   WARD_ABSORPTION,
   type Buff,
 } from '../../../hunt'
@@ -25,7 +22,7 @@ import {
   RoundUiActionKind,
   type RoundUiSeed,
 } from '../roundUiState'
-import { handleRemoveBuff, loadoutBarRefusalFor, loadoutRefusalFor } from '../buffHandlers'
+import { loadoutBarRefusalFor, loadoutRefusalFor } from '../buffHandlers'
 import { roundReducer } from '../roundReducer'
 import { makeRound, encounterFixture } from './roundFixture'
 
@@ -36,7 +33,6 @@ function seed(overrides: Partial<WarCouncilState> = {}): RoundUiSeed {
   return {
     round: makeRound(overrides),
     encounter: encounterFixture,
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: 2,
     buffs: [cheat],
@@ -78,7 +74,7 @@ describe('the loadout panel — opening and closing', () => {
     // The Quarry has led; the trick is non-empty so `discardWindowOpen` is false, but it is the
     // player's own turn to follow, so `canAct` is true. This is exactly the reach the pre-DLR-114
     // felt-rail plates offered and the panel's relocation must not have narrowed: arming a Cheat
-    // or Timebomb has value only while following an already-committed lead.
+    // has value only while following an already-committed lead.
     const followingLead = createRoundUiState(
       seed({
         leader: PlayerSide.Cpu,
@@ -247,7 +243,7 @@ describe('handleTapBuff — a consumable item leaves the pile at the spend', () 
   })
 })
 
-// ── DLR-132 — Cheat and Timebomb, as ordinary rows through the ordinary two-tap flow ───────────
+// ── DLR-132 — Cheat, as an ordinary row through the ordinary two-tap flow ─────────────────────
 
 describe('handleTapBuff — spending a Cheat row', () => {
   it('spends a Cheat on the second tap and lifts follow-suit for its tier of tricks', () => {
@@ -288,50 +284,3 @@ describe('handleTapBuff — spending a Shield row', () => {
   })
 })
 
-// ── DLR-154 AC5 — taking a riding Timebomb back off the trick ──────────────────────────────────
-
-describe('handleRemoveBuff — reversing a riding Timebomb', () => {
-  const timebombBronze = timebombBuff(BuffTier.Bronze, 31)
-  const takerBuff = mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, 32)
-
-  function primedUiFixture() {
-    const opened = openWith([timebombBronze])
-    const armed = spend(opened, timebombBronze.id)
-    const closed = roundReducer(armed, { kind: RoundUiActionKind.ToggleLoadout })
-    const target = closed.round.hands[PlayerSide.Player][0]
-    return roundReducer(closed, { kind: RoundUiActionKind.TapCard, card: target })
-  }
-
-  function armedUiFixture() {
-    const opened = openWith([timebombBronze])
-    return spend(opened, timebombBronze.id)
-  }
-
-  function takerUiFixture() {
-    const opened = openWith([takerBuff])
-    return spend(opened, takerBuff.id)
-  }
-
-  it('clears the mark, both damages and the fuse when a primed Timebomb is taken back — AC5', () => {
-    const primedUi = primedUiFixture()
-    const back = handleRemoveBuff(primedUi, timebombBronze.id)
-    expect(back.round.primedCards).toHaveLength(0)
-    expect(back.timebombArmedDamage).toBeNull()
-    expect(back.primedTimebombDamage).toBeNull()
-    expect(back.timebombFuseRemaining).toBe(0)
-    expect(back.buffs).toContainEqual(timebombBronze)
-  })
-
-  it('closes a pending priming mode when the Timebomb is taken back before a card is chosen', () => {
-    const armedUi = armedUiFixture()
-    const back = handleRemoveBuff(armedUi, timebombBronze.id)
-    expect(back.timebombArmedDamage).toBeNull()
-    expect(back.round.primedCards).toHaveLength(0)
-  })
-
-  it('leaves a Taker removal untouched', () => {
-    const takerUi = takerUiFixture()
-    const back = handleRemoveBuff(takerUi, takerBuff.id)
-    expect(back.timebombFuseRemaining).toBe(takerUi.timebombFuseRemaining)
-  })
-})

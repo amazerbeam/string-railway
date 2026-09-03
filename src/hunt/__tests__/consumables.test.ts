@@ -68,17 +68,6 @@ function cheat(id = 90): Buff {
   }
 }
 
-/** A Timebomb — an Activated card whose single-use-ness is `ACTIVATED_CARD_SINGLE_USE`'s to say. */
-function timebomb(id = 92): Buff {
-  return {
-    id,
-    kind: BuffKind.Timebomb,
-    tier: BuffTier.Bronze,
-    condition: ACTIVATED_BUFF_CONDITION,
-    reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
-  }
-}
-
 /** A Shield — an Activated card whose single-use-ness is `ACTIVATED_CARD_SINGLE_USE`'s to say. */
 function shield(id = 93): Buff {
   return {
@@ -124,9 +113,8 @@ describe('isConsumableItemKind — the five one-shot items, and nothing else', (
     }
   })
 
-  it('excludes Cheat, Timebomb and Shield — Activated cards with their own live mechanics', () => {
+  it('excludes Cheat and Shield — Activated cards with their own live mechanics', () => {
     expect(isConsumableItemKind(BuffKind.Cheat)).toBe(false)
-    expect(isConsumableItemKind(BuffKind.Timebomb)).toBe(false)
     expect(isConsumableItemKind(BuffKind.Shield)).toBe(false)
   })
 
@@ -140,15 +128,13 @@ describe('isConsumableItemKind — the five one-shot items, and nothing else', (
 })
 
 describe('ACTIVATED_CARD_SINGLE_USE — DLR-142, the developer-owned revert switch', () => {
-  it('defaults to true for Cheat, Timebomb and Shield', () => {
+  it('defaults to true for Cheat and Shield', () => {
     expect(ACTIVATED_CARD_SINGLE_USE[BuffKind.Cheat]).toBe(true)
-    expect(ACTIVATED_CARD_SINGLE_USE[BuffKind.Timebomb]).toBe(true)
     expect(ACTIVATED_CARD_SINGLE_USE[BuffKind.Shield]).toBe(true)
   })
 
-  it('isConsumableItem now removes Cheat, Timebomb and Shield from the pile, since their toggle defaults true', () => {
+  it('isConsumableItem now removes Cheat and Shield from the pile, since their toggle defaults true', () => {
     expect(isConsumableItem(cheat())).toBe(true)
-    expect(isConsumableItem(timebomb())).toBe(true)
     expect(isConsumableItem(shield())).toBe(true)
   })
 })

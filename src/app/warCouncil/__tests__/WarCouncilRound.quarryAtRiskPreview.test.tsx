@@ -10,7 +10,6 @@ import {
   encounterFixture,
   huntFixture,
   maxHealthFixture,
-  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -29,7 +28,7 @@ afterEach(() => vi.useRealTimers())
 // DLR-160 QA fix — carved out of `WarCouncilRound.duelHealthBars.test.tsx`, which the same
 // contract's Task 3 pushed to 409 lines. This describe block, and the helpers it alone used
 // (`quarryHearts`, `currentRoll`, `playUntilStreak`), move here rather than being split
-// arbitrarily — the same precedent `WarCouncilRound.timebomb.test.tsx` and
+// arbitrarily — the same precedent `WarCouncilRound.actionBar.test.tsx` and
 // `WarCouncilRound.abilityCancel.test.tsx` already set for this directory.
 
 // A deterministic RNG — never `Math.random()` in anything that must be reproducible.
@@ -52,7 +51,6 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         runLabel={runLabelFixture}
         quarryLabel={quarryLabelFixture}
         coins={coinsFixture}
-        blastGuardHeld={blastGuardHeldFixture}
         baseDamageBonus={baseDamageBonusFixture}
         discardsRemaining={discardsRemainingFixture}
         buffs={[]}

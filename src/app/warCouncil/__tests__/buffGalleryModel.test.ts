@@ -37,7 +37,6 @@ const bellTakerMomentumTemplate = templateFor(
 )
 const sidestepTemplate = templateFor((t) => t.form === 'condition' && t.kind === 'sidestep')
 const cheatTemplate = templateFor((t) => t.form === 'activated' && t.kind === 'cheat')
-const timebombTemplate = templateFor((t) => t.form === 'activated' && t.kind === 'timebomb')
 
 let nextId = 1
 function mint(template: BuffTemplate, tier: BuffTier = BuffTier.Bronze): Buff {
@@ -55,9 +54,8 @@ describe('buffRunOf — which run a card belongs to', () => {
     expect(buffRunOf(mint(sidestepTemplate))).toBe(BuffRunKind.Suitless)
   })
 
-  it('Cheat and Timebomb land in Press, not Suitless (AC4)', () => {
+  it('Cheat lands in Press, not Suitless (AC4)', () => {
     expect(buffRunOf(mint(cheatTemplate))).toBe(BuffRunKind.Press)
-    expect(buffRunOf(mint(timebombTemplate))).toBe(BuffRunKind.Press)
   })
 })
 
@@ -71,7 +69,7 @@ describe('buildBuffGallery — run order', () => {
       BuffRunKind.Press,
     ])
 
-    const pile = [mint(timebombTemplate), mint(bellTakerBladeTemplate), mint(sidestepTemplate)]
+    const pile = [mint(cheatTemplate), mint(bellTakerBladeTemplate), mint(sidestepTemplate)]
     const view = buildBuffGallery(pile, noRefusal)
     expect(view.runs.map((run) => run.kind)).toEqual([
       BuffRunKind.Bells,

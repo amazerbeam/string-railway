@@ -21,7 +21,6 @@ function playAnotherHand(run: ReturnType<typeof startRun>) {
   return recordEncounter(
     run,
     applyDamage(run.encounter, damage(1, 1)),
-    run.blastGuardHeld,
     run.discardsRemaining,
     null,
   )
@@ -43,7 +42,6 @@ describe('handOfFight — the hand-within-encounter counter (AC3)', () => {
     const won = recordEncounter(
       second,
       winEncounter(second.encounter),
-      second.blastGuardHeld,
       second.discardsRemaining,
       3,
     )
@@ -55,7 +53,6 @@ describe('handOfFight — the hand-within-encounter counter (AC3)', () => {
     const won = recordEncounter(
       third,
       winEncounter(third.encounter),
-      third.blastGuardHeld,
       third.discardsRemaining,
       0,
     )
@@ -70,7 +67,6 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
     return recordEncounter(
       run,
       winEncounter(run.encounter),
-      run.blastGuardHeld,
       run.discardsRemaining,
       unplayedCards,
     )
@@ -101,7 +97,6 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
     const won = recordEncounter(
       run,
       winEncounter(run.encounter),
-      run.blastGuardHeld,
       run.discardsRemaining,
       null,
     )
@@ -112,7 +107,7 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
   it('pays nothing at all when the player is the one who went down', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const lost = recordEncounter(run, dead, run.blastGuardHeld, run.discardsRemaining, 6)
+    const lost = recordEncounter(run, dead, run.discardsRemaining, 6)
     expect(lost.lastQuickKillPayout).toBe(0)
     expect(lost.coins).toBe(0)
   })

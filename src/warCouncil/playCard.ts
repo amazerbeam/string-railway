@@ -5,7 +5,6 @@ import { buffTrickFactsFor } from './buffTrickFacts'
 import { containsCard, removeCard, sameCard } from './cardUtils'
 import { drawCards } from './encounterDeck'
 import { legalMoves, type PlayCardOptions } from './legalMoves'
-import { trickIsPrimed } from './timebomb'
 import { resolveTrickWinner } from './resolveTrick'
 import { swanTierFactsFor, tierForSide } from './rankTierRules'
 import { trickIsSkulled } from './skulls'
@@ -115,19 +114,14 @@ export function playCard(
   const tricksWon = { ...next.tricksWon, [winner]: next.tricksWon[winner] + 1 }
   const finalTrick = tricksPlayed === HAND_SIZE
 
-  // Every rule AC4-AC9 states lives in `resolveTrickBank`, DLR-90's AC5 with them, and DLR-91's
-  // D1/D3 too; this function decides nothing about the outcome, it only reports the facts. The
-  // three Timebomb facts arrive from the caller for the reason `PlayCardOptions` documents.
+  // Every rule AC4-AC9 states lives in `resolveTrickBank`; this function decides nothing about the
+  // outcome, it only reports the facts.
   const lastResolution = resolveTrickBank(
     { total: next.total, roll: next.roll },
     {
       playerWon: winner === PlayerSide.Player,
       skullTrick: trickIsSkulled(next.skulledCards, completedTrick),
       finalTrick,
-      timebombTrick: trickIsPrimed(next.primedCards, completedTrick),
-      timebombToPlayer: options?.timebombToPlayer ?? 0,
-      timebombToQuarry: options?.timebombToQuarry ?? 0,
-      blastGuarded: options?.blastGuarded ?? false,
       baseDamageBonus: options?.baseDamageBonus ?? 0,
       // DLR-122 AC4/AC5 — the Swan ladder as two plain facts, derived by `rankTierRules.ts`,
       // which owns AC3's player-only gate. `streak.ts` adds the clean-loss half of the rule.

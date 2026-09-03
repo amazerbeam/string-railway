@@ -16,8 +16,8 @@ const bellsFeeder = mintFromTemplate(templateById('feeder:bells:multiplier')!, B
 const card = { suit: Suit.Bells, rank: 2 } as const
 
 const ridingFixture: readonly RidingBuffRow[] = [
-  { buff: bellsTaker, reach: 2, revocable: true, timebomb: null },
-  { buff: bellsFeeder, reach: 1, revocable: true, timebomb: null },
+  { buff: bellsTaker, reach: 2, revocable: true },
+  { buff: bellsFeeder, reach: 1, revocable: true },
 ]
 
 function fullBreakdown(overrides: Partial<CardBuffBreakdownModel> = {}): CardBuffBreakdownModel {

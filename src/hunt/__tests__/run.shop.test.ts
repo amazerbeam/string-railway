@@ -78,7 +78,6 @@ describe('shopStockFor (DLR-84)', () => {
       coins: 3,
       playerHealth: run.encounter.health[DuelSide.Player],
       maxPlayerHealth: PLAYER_START_HEALTH,
-      blastGuardHeld: run.blastGuardHeld,
       rankTiers: run.rankTiers,
       maxHealthPurchases: run.maxHealthPurchases,
     })

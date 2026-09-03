@@ -1,8 +1,6 @@
 import {
   AP_CAPACITY_STEP,
   MAX_HEALTH_PER_PURCHASE,
-  TIMEBOMB_PLAYER_DAMAGE,
-  TIMEBOMB_QUARRY_DAMAGE,
   FlaskRefusal,
   HEAL_HEALTH_RESTORED,
   PurchaseRefusal,
@@ -44,13 +42,11 @@ export function heldCountText(count: number): string {
   return `${count} card${count === 1 ? '' : 's'}`
 }
 
-/** Total over the WHOLE `ShopItem` union, not over `SHOP_ITEMS` — Cheat, Timebomb, Blast Guard and
+/** Total over the WHOLE `ShopItem` union, not over `SHOP_ITEMS` — Cheat and
  *  Whetstone still get a name even though DLR-116 took them off this screen's offered list. AC3's
  *  "not deleted from the codebase" stated in copy. */
 export const SHOP_ITEM_NAME: Readonly<Record<ShopItem, string>> = {
   [ShopItem.Cheat]: 'Cheat',
-  [ShopItem.Timebomb]: 'Timebomb',
-  [ShopItem.BlastGuard]: 'Blast Guard', // PLACEHOLDER copy — the developer's call.
   [ShopItem.Whetstone]: 'Whetstone', // PLACEHOLDER copy — the developer's call
   [ShopItem.Heal]: 'Heal',
   [ShopItem.ApCapacity]: 'Action points',
@@ -64,8 +60,6 @@ export const SHOP_ITEM_NAME: Readonly<Record<ShopItem, string>> = {
  *  `ShopItem` union, same reason as `SHOP_ITEM_NAME`. */
 export const SHOP_ITEM_BLURB: Readonly<Record<ShopItem, string>> = {
   [ShopItem.Cheat]: 'A card for a slot. Play it later to ignore follow-suit.',
-  [ShopItem.Timebomb]: `Prime a card in your hand. The winner of the trick it is played into takes the blast at the next trick — ${TIMEBOMB_QUARRY_DAMAGE} for the Quarry, ${TIMEBOMB_PLAYER_DAMAGE} for you, and yours cashes out your streak.`,
-  [ShopItem.BlastGuard]: `Insurance for one fight. The next time your own Timebomb detonates on you, you still take the ${TIMEBOMB_PLAYER_DAMAGE} but your streak survives.`, // PLACEHOLDER copy
   [ShopItem.Whetstone]:
     'Every trick you take banks one more, for the rest of the run. Buy it again to stack it.', // PLACEHOLDER copy
   [ShopItem.Heal]: `Restore ${HEAL_HEALTH_RESTORED} health, now. Anything over your maximum is lost.`,
@@ -85,7 +79,6 @@ export const SHOP_ITEM_BLURB: Readonly<Record<ShopItem, string>> = {
 export const PURCHASE_REFUSAL_MESSAGE: Readonly<Record<PurchaseRefusal, string>> = {
   [PurchaseRefusal.SlotsFull]: 'Both Cheat slots are full.',
   [PurchaseRefusal.AlreadyFullHealth]: 'You are already at full health.',
-  [PurchaseRefusal.GuardAlreadyActive]: 'You are already holding a Blast Guard.',
   [PurchaseRefusal.RankAtMaxTier]: 'That rank is already at gold.',
   [PurchaseRefusal.NotEnoughCoins]: 'You do not have the coins for this.',
 }
@@ -123,7 +116,7 @@ export function nextOpponentText(name: string | undefined, progressText: string)
 export const SHOP_FLASK_GROUP_LABEL = 'Your flask'
 
 /** The control's own name. PLACEHOLDER copy — and "Flask" itself is on `version-4-scope.md`'s
- *  open-names list beside Timebomb, Blast Guard and Whetstone. */
+ *  open-names list beside Whetstone. */
 export const SHOP_FLASK_LABEL = 'Drink the flask'
 
 /** AC6 — the flask's answer to every shop card's price line. Words, not a colour or a glyph alone,

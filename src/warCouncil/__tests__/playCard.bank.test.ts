@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { DAMAGE_PER_HIT } from '../../hunt'
 import { TrickOutcome } from '../streak'
 import { playCard } from '../playCard'
@@ -20,7 +20,6 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
-    primedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

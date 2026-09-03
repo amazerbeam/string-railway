@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   currentTurn,
   PlayerSide,
@@ -37,7 +37,6 @@ function uiFrom(
   return createRoundUiState({
     round,
     encounter,
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],

@@ -19,12 +19,6 @@ export const BuffActivationRefusal = {
   /** AC1 — the felt is not between tricks; the discard/buff window `discardWindowOpen` already
    *  opens is closed. No new timing gate is built — this reads that same signal. */
   WindowClosed: 'windowClosed',
-  /** R2 — one Timebomb at a time. A second spend is REFUSED rather than allowed and then blocked
-   *  at the prime, which would strand a paid-for card — the exact failure AC13 exists to prevent.
-   *  Distinct from `AlreadyActive` below, which means the SAME card twice in one trick; this is a
-   *  DIFFERENT card blocked by state carried from an earlier trick, so reusing that reason would
-   *  put "Already active this trick" on a row for which it is false. */
-  TimebombLive: 'timebombLive',
   /** Paying twice for one card in one trick is a duplicate-payment bug wearing a stacking rule's
    *  clothes (`plan.md` Part 1 → Assumptions made). */
   AlreadyActive: 'alreadyActive',
@@ -47,9 +41,6 @@ export interface BuffActivationStock {
   readonly apPool: ActionPoints
   readonly apCost: ActionPoints
   readonly alreadyActive: boolean
-  /** R2 — a Timebomb is already armed or a card is already primed. Set only for a Timebomb;
-   *  `false` for every other kind, so the branch below cannot refuse anything else. */
-  readonly timebombLive: boolean
 }
 
 /**
@@ -88,17 +79,14 @@ export function startBuffActivation(capacity: ActionPoints = STARTING_AP): BuffA
  * THE single statement of whether a buff can be activated — read by the reducer's guard and by
  * the plate's disabled state, so the two can never read availability differently.
  *
- * Order — `NoEffectYet → WindowClosed → TimebombLive → AlreadyActive → InsufficientAp` — reports
+ * Order — `NoEffectYet → WindowClosed → AlreadyActive → InsufficientAp` — reports
  * the reason true of the CARD, then the reason true of the whole felt, then the reasons true of
  * this card on this felt. A Foresight is refused for having no effect even on a wide-open felt
- * with a full pool, because
- * opening the window would not make it usable. `TimebombLive` reports ahead of `AlreadyActive` so
- * a felt-wide reason (the window) still wins over both, and R2's reason wins over a per-card one.
+ * with a full pool, because opening the window would not make it usable.
  */
 export function buffActivationRefusalFor(stock: BuffActivationStock): BuffActivationRefusal | null {
   if (!stock.effectLive) return BuffActivationRefusal.NoEffectYet
   if (!stock.windowOpen) return BuffActivationRefusal.WindowClosed
-  if (stock.timebombLive) return BuffActivationRefusal.TimebombLive
   if (stock.alreadyActive) return BuffActivationRefusal.AlreadyActive
   if (!canAffordAp(stock.apPool, stock.apCost)) return BuffActivationRefusal.InsufficientAp
   return null
@@ -111,7 +99,6 @@ export function buffActivationStockFor(
   state: BuffActivationState,
   buff: Buff,
   windowOpen: boolean,
-  timebombLive: boolean,
 ): BuffActivationStock {
   return {
     effectLive: consumableEffectIsLive(buff),
@@ -119,8 +106,6 @@ export function buffActivationStockFor(
     apPool: state.apPool,
     apCost: apCostOf(buff),
     alreadyActive: state.activatedThisTrick.includes(buff.id),
-    // Only a Timebomb can be refused for this reason; every other kind reads `false`.
-    timebombLive: buff.kind === BuffKind.Timebomb && timebombLive,
   }
 }
 
@@ -135,12 +120,8 @@ export function activateBuff(
   state: BuffActivationState,
   buff: Buff,
   windowOpen: boolean,
-  // R2 — DLR-154 FIX 5 — `activateFromPile` (below) now threads the felt's real `timebombLive`
-  // fact through to here. Still defaults `false`, matching `activateFromPile`'s own default, so a
-  // caller with no Timebomb fact of its own to report (a fixture, a preview) keeps compiling.
-  timebombLive: boolean = false,
 ): BuffActivationState {
-  const stock = buffActivationStockFor(state, buff, windowOpen, timebombLive)
+  const stock = buffActivationStockFor(state, buff, windowOpen)
   const refusal = buffActivationRefusalFor(stock)
   if (refusal !== null) {
     throw new RangeError(`Cannot activate buff ${buff.id} — ${refusal}`)
@@ -171,8 +152,8 @@ export interface BuffActivationResult {
  * to prevent. `activateBuff` runs FIRST, so a refused activation throws before the pile is touched
  * and neither half lands.
  *
- * Cheat, Timebomb and Shield are `Activated` cards with their own live mechanics, not items held
- * until used — but DLR-142's `ACTIVATED_CARD_SINGLE_USE` (defaulted `true` for all three) means
+ * Cheat and Shield are `Activated` cards with their own live mechanics, not items held
+ * until used — but DLR-142's `ACTIVATED_CARD_SINGLE_USE` (defaulted `true` for both) means
  * `isConsumableItem` also removes them from the pile here, same as the five DLR-111 items, unless
  * that toggle is flipped for a given card. See `consumables.ts`'s own docblock for the full
  * distinction and how to revert one card to "stays in the pile."
@@ -182,16 +163,8 @@ export function activateFromPile(
   buffs: readonly Buff[],
   buff: Buff,
   windowOpen: boolean,
-  // R2 — DLR-154 FIX 5 threads the real felt-supplied fact from `buffHandlers.ts`'s `handleTapBuff`,
-  // exactly as `windowOpen` above is threaded, so `activateBuff`'s own throw-guard below is a REAL
-  // re-check rather than an assumed one. Defaults `false` only so every OTHER caller (fixtures,
-  // previews, and any future one that has no Timebomb of its own to report) keeps compiling and
-  // behaving exactly as before — the refusal is still enforced first, and earlier, through
-  // `buffActivationStock` (`roundUiState.ts`), which disables the row before this function is ever
-  // reached on the production path.
-  timebombLive: boolean = false,
 ): BuffActivationResult {
-  const activation = activateBuff(state, buff, windowOpen, timebombLive)
+  const activation = activateBuff(state, buff, windowOpen)
   if (!isConsumableItem(buff)) {
     return { activation, buffs }
   }
@@ -204,8 +177,8 @@ export function activateFromPile(
 /**
  * DLR-153 AC10 — THE one statement of which activated cards may be taken back off the trick.
  *
- * TRUE for the three REVOCABLE condition families — Taker, Feeder, Sidestep — plus, since DLR-154,
- * `BuffKind.Timebomb`. Deliberately NOT `isConditionFamily` from `buffCosts.ts`: that predicate
+ * TRUE for the three REVOCABLE condition families — Taker, Feeder, Sidestep.
+ * Deliberately NOT `isConditionFamily` from `buffCosts.ts`: that predicate
  * spans all 11 condition families the type system still declares, eight of which are cut and
  * unmintable (CLAUDE.md → "Cut buffs are cut until a ticket brings them back"). Activating a
  * condition family touches only the AP pool and the pile, both of which `deactivateFromPile` can
@@ -214,28 +187,14 @@ export function activateFromPile(
  * FALSE for Cheat, Ward and Shield, because their spend ALSO arms felt state this module cannot
  * reach — `cheatTricksRemaining`, `activateShield`'s credited hearts, `activateWard`'s guard.
  * Reversing those is a second rule change and its own ticket (`plan.md` Part 1 → Assumption 2).
- * Timebomb is the ONE Activated card that is revocable (DLR-154 AC5/AC13): with AP off
- * (`AP_ENABLED = false`, R1) the whole of its cost is the card leaving the pile, so returning the
- * card returns everything spent — exactly what `deactivateFromPile` already does. The felt-state
- * reversal this module cannot do — clearing the armed damage, the primed damage, the fuse and the
- * mark — is `handleRemoveBuff`'s.
  *
  * Read by the riding row's own control AND by `handleRemoveBuff`'s guard, so the two cannot read
  * revocability differently — the discipline `buffActivationRefusalFor` sets for activation.
- *
- * DLR-154 FIX D — for a Timebomb specifically, `true` here does NOT mean `deactivateFromPile` can
- * fully reverse one: both of `handleRemoveBuff`'s Timebomb branches intercept the call before the
- * generic path below ever runs, at the app layer. This module has no way to reach
- * `timebombArmedDamage`, `primedTimebombDamage`, `timebombFuseRemaining`, or the felt's own mark —
- * a caller reading `isRevocableBuff`/`deactivateFromPile` alone would wrongly conclude it can undo
- * all of that itself.
  */
 const REVOCABLE_BUFF_KINDS: ReadonlySet<BuffKind> = new Set([
   BuffKind.Taker,
   BuffKind.Feeder,
   BuffKind.Sidestep,
-  // DLR-154 AC5/AC13 — with AP off, revocation is the card returning; see the docblock above.
-  BuffKind.Timebomb,
 ])
 
 export function isRevocableBuff(buff: Buff): boolean {

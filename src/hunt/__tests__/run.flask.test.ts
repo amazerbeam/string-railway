@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { FLASK_STARTING_CHARGES, OpponentKind, RUN_ENCOUNTERS } from '../config'
 import { FlaskRefusal, flaskHealAmount } from '../flask'
 import { advanceRun, drinkFlask, flaskStockFor, recordEncounter, startRun } from '../run'
@@ -127,7 +127,6 @@ describe("recordEncounter's flask refill (AC5)", () => {
     const recorded = recordEncounter(
       at,
       wonEncounter(at.encounter, 3),
-      at.blastGuardHeld,
       at.discardsRemaining,
       null,
     )
@@ -139,7 +138,6 @@ describe("recordEncounter's flask refill (AC5)", () => {
     const recorded = recordEncounter(
       at,
       wonEncounter(at.encounter, 3),
-      at.blastGuardHeld,
       at.discardsRemaining,
       null,
     )
@@ -151,7 +149,6 @@ describe("recordEncounter's flask refill (AC5)", () => {
     const recorded = recordEncounter(
       at,
       wonEncounter(at.encounter, 3),
-      at.blastGuardHeld,
       at.discardsRemaining,
       null,
     )
@@ -173,7 +170,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
         [DuelSide.Quarry]: 0,
       })
     }
-    const recorded = recordEncounter(at, lost, at.blastGuardHeld, at.discardsRemaining, null)
+    const recorded = recordEncounter(at, lost, at.discardsRemaining, null)
     expect(recorded.flaskCharges).toBe(0)
   })
 })

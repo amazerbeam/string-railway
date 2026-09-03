@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { AbilityTier, ALL_BRONZE, DAMAGE_PER_HIT, steppedTo, TieredRank } from '../../hunt'
 import { resolveTrickBank, type StreakState, type TrickFacts } from '../streak'
 import { swanTierFactsFor, tierForSide } from '../rankTierRules'
@@ -85,10 +85,6 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     playerWon: false,
     skullTrick: false,
     finalTrick: false,
-    timebombTrick: false,
-    timebombToPlayer: 0,
-    timebombToQuarry: 0,
-    blastGuarded: false,
     baseDamageBonus: 0,
     swanKeepsMultiplier: false,
     swanKeepsBank: false,

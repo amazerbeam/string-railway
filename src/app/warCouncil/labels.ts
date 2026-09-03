@@ -7,9 +7,9 @@ import {
   type Card,
   type SuitShape,
 } from '../../warCouncil'
-import { DuelSide, MAX_CARDS_PER_DISCARD, type Damage } from '../../hunt'
+import { DuelSide, MAX_CARDS_PER_DISCARD } from '../../hunt'
 import type { CardDamageBranch, CardDamagePreview } from './cardDamage'
-import { HeartState, type HealthBarView } from './duelHealthBars'
+import type { HealthBarView } from './duelHealthBars'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
   [Suit.Bells]: 'Bells',
@@ -25,50 +25,21 @@ export const RANK_NAME: Readonly<Record<number, string>> = {
   [CardRank.Monarch]: 'Monarch',
 }
 
-/** Which markers a card is carrying. An OBJECT rather than positional booleans: DLR-90 added a
- *  second marker, and `cardAccessibleName(card, true, false)` is one transposition away from
+/** Which markers a card is carrying. An OBJECT rather than positional booleans: a second marker
+ *  would make `cardAccessibleName(card, true, false)` one transposition away from
  *  announcing the wrong one — on the exact surface a player who cannot see the card depends on. */
 export interface CardMarks {
   readonly skulled?: boolean
-  readonly primed?: boolean
-  /** R4 — trick resolutions left, so the numeral reaches assistive tech through the NAME rather
-   *  than a second live region. Read only when `primed`. */
-  readonly fuseRemaining?: number
 }
 
 /** `marks` is optional so every call site that names an unmarked card keeps compiling unchanged;
- *  a caller that knows a card's markers passes them. Skull before Timebomb, matching the order the
- *  two marks are drawn in. PLACEHOLDER COPY, as this file's rest is. */
+ *  a caller that knows a card's markers passes them. PLACEHOLDER COPY, as this file's rest is. */
 export function cardAccessibleName(card: Card, marks: CardMarks = {}): string {
   const base = `${card.rank} of ${SUIT_NAME[card.suit]}`
   const named = RANK_NAME[card.rank]
   const name = named ? `${base} (${named})` : base
-  // R4 — the fuse clause is folded in only once a caller states a POSITIVE fuse figure.
-  // `PlayingCard`'s `fuseRemaining` prop defaults to 0 (Assumption/Task 13) so every construction
-  // site that does not yet know the real count — every pre-Phase-5 caller, before `HandFan`
-  // threads the true value through — keeps reading the plain "primed" it always has. A card
-  // whose fuse has actually hit zero detonates within the same commit that reads it
-  // (`commitHandlers.ts`), so a rendered "0, going off now" name is not a state a player can see
-  // anyway; treating 0 as "no fuse to report" loses nothing real.
-  const primedClause =
-    marks.primed && marks.fuseRemaining !== undefined && marks.fuseRemaining > 0
-      ? `primed, ${timebombFuseText(marks.fuseRemaining)}`
-      : marks.primed && 'primed'
-  const suffix = [marks.skulled && 'skulled', primedClause].filter(Boolean).join(', ')
-  return suffix ? `${name}, ${suffix}` : name
+  return marks.skulled ? `${name}, skulled` : name
 }
-
-/** R4 — the fuse clause, folded into a primed card's accessible name and its hover tip.
- *  PLACEHOLDER copy, as this file's rest is. */
-export function timebombFuseText(fuseRemaining: number): string {
-  if (fuseRemaining <= 0) return 'Timebomb — going off now.'
-  return fuseRemaining === 1
-    ? 'Timebomb — play it this trick or it goes off in your hand.'
-    : `Timebomb — ${fuseRemaining} tricks to play it before it goes off in your hand.`
-}
-
-/** The mark's own label, beside `SKULL_MARK_LABEL`. PLACEHOLDER copy. */
-export const PRIMED_MARK_LABEL = 'Primed'
 
 /** A stable React list key for a card — suit and rank never repeat within one hand or pile. */
 export function cardKey(card: Card): string {
@@ -125,21 +96,12 @@ export function quarryHealthLabel(name: string | undefined): string {
  * at-risk clause is byte-identical to DLR-86's whenever `ticking` is 0 — which is every shape the
  * earlier assertions pin.
  *
- * DLR-101 splits the two clauses because they are two different claims. "At risk" is conditional
- * and evaporates if the streak breaks; "ticking" is committed and lands at the next trick. A
- * meter that calls a booked hit "at risk" is less true than its own picture, which this file's
- * own standard says is worse than having no picture at all. Placeholder copy: the wording is the
- * developer's.
+ * "At risk" is conditional and evaporates if the streak breaks. Placeholder copy: the wording is
+ * the developer's.
  *
  * DLR-115 adds the shield clause, inserted between `standing` and `atRisk` so the sentence reads
- * outermost protection to innermost certainty — standing, shielded, at risk, ticking, lethal —
- * matching the row's own left-to-right reading (shield cluster inboard of the red run). The
- * claimed count is derived from `view.shieldPips` itself
- * (`shieldPips.filter((s) => s === HeartState.Ticking).length`) rather than a second absorption
- * calculation here — the view already carries the answer, and recomputing it would be exactly the
- * drift this module avoids elsewhere. "of them" disambiguates the shield's ticking count from the
- * red row's own ticking count below it; without it, "2 shielded, 1 ticking. 3 ticking." reads as
- * two unrelated ticking figures rather than one figure nested inside the other.
+ * outermost protection to innermost certainty — standing, shielded, at risk, lethal —
+ * matching the row's own left-to-right reading (shield cluster inboard of the red run).
  *
  * DLR-119 moves `Lethal.` from the end of the sentence to the front: it is the one fact that
  * changes what the player does next, and it was arriving after four descriptive clauses. The
@@ -147,23 +109,12 @@ export function quarryHealthLabel(name: string | undefined): string {
  */
 export function healthBarValueText(view: HealthBarView): string {
   const standing = `${view.current} of ${view.max}.`
-  const shieldClaimed = view.shieldPips.filter((state) => state === HeartState.Ticking).length
-  const shielded =
-    view.shielded > 0
-      ? shieldClaimed > 0
-        ? ` ${view.shielded} shielded, ${shieldClaimed} of them ticking.`
-        : ` ${view.shielded} shielded.`
-      : ''
-  const atRiskOnly = view.pending - view.ticking
-  const atRisk = atRiskOnly > 0 ? ` ${atRiskOnly} at risk.` : ''
-  const ticking = view.ticking > 0 ? ` ${view.ticking} ticking.` : ''
-  const body = `${standing}${shielded}${atRisk}${ticking}`
-  // DLR-119 — `Lethal.` LEADS. The worst case on the record was
-  // `10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking. Lethal.` — five clauses, with
-  // the one fact that changes what the player does next arriving last. Nothing is dropped: every
-  // clause is load-bearing state and the four descriptive ones keep their outermost-to-innermost
-  // order. The defect was ordering, not length. Whether the sentence should also be SHORTENED is
-  // a copy judgement and remains the developer's.
+  const shielded = view.shielded > 0 ? ` ${view.shielded} shielded.` : ''
+  const atRisk = view.pending > 0 ? ` ${view.pending} at risk.` : ''
+  const body = `${standing}${shielded}${atRisk}`
+  // DLR-119 — `Lethal.` LEADS: it is the one fact that changes what the player does next, and it
+  // was arriving after the descriptive clauses. Nothing is dropped: every clause is load-bearing
+  // state and the descriptive ones keep their outermost-to-innermost order.
   return view.lethal ? `Lethal. ${body}` : body
 }
 
@@ -214,28 +165,6 @@ export function quarryLeadTelegraphText(suit: Suit): string {
  *  copy, so the felt and the shop can be reworded independently. */
 export const COINS_PLATE_LABEL = 'Coins'
 
-/** DLR-90, narrowed on DLR-132 to its one surviving hint. A live Cheat is visible in the fan's
- *  widened legal set and needs no hint of its own; an armed Timebomb reinterprets the very next
- *  hand-card tap and must be said out loud, since nothing on the card itself signals that yet.
- *  DLR-154 AC1 — was 'Pick a card in your hand to prime', which said WHAT but not WHY. A Timebomb
- *  is the one buff that attaches to a card, and the prompt is where that is learned. PLACEHOLDER
- *  — the wording is the developer's, exactly as this file's rest is. */
-export const TIMEBOMB_ARMED_HINT =
-  'Timebomb — pick the card it rides on. It goes off in two tricks.'
-
-/** DLR-101 — the reveal's clause for a hit this trick just BOOKED, as distinct from one it paid.
- *  Names the side and the amount, which the Apply Damage refusal (the only prior trace of a
- *  booked hit anywhere in the UI) named neither of.
- *
- *  DLR-132 — takes `amount` rather than looking it up: `timebombDamageFor` is gone, and the figure
- *  is now the primed card's OWN tier's, which this module cannot see. PLACEHOLDER copy, as this
- *  file's rest is. */
-export function timebombBookedText(target: DuelSide, amount: Damage): string {
-  return target === DuelSide.Player
-    ? `Timebomb ticking — you take ${amount} at the next trick.`
-    : `Timebomb ticking — they take ${amount} at the next trick.`
-}
-
 /** The discard rail's copy (DLR-100). PLACEHOLDER — the wording is the developer's, exactly as
  *  this file's rest is. */
 export const DISCARD_RAIL_LABEL = 'Discard'
@@ -272,7 +201,7 @@ export function discardAccessibleName(
  *  constant rather than an inline string, so the sentence and any future non-fan reader of
  *  the same caveat cannot drift. PLACEHOLDER copy, as this file's rest is. */
 export const CARD_DAMAGE_ESTIMATE_NOTE =
-  'Estimate — the Quarry’s card is face down, so this trick’s skull and Timebomb state are not yet decided.'
+  'Estimate — the Quarry’s card is face down, so this trick’s skull state is not yet decided.'
 
 /** The `~` an estimate carries in the compact form. A FORM signal, not colour — `game-ux`'s
  *  "state reads without motion or colour alone". PLACEHOLDER glyph. */
@@ -287,9 +216,9 @@ export const CARD_DAMAGE_ESTIMATE_GLYPH = '~'
  * `win.toQuarry`: AC5 means a win no longer pays the Quarry immediately, so `win.toQuarry` is
  * correctly 0 on every ordinary trick and would make this glyph say the same thing on every
  * card. `winPot.trickDamage` is what this card is actually worth toward the pot. The two
- * cross-terms — a Timebomb detonating on a win, the loss's own hit — are the same whichever
- * card is played and are already previewed on the bars (DLR-101's ticking hearts, DLR-86 AC3's
- * at-risk band), so repeating them on six cards would add noise without adding information. The
+ * cross-term — the loss's own hit — is the same whichever
+ * card is played and is already previewed on the bars (DLR-86 AC3's
+ * at-risk band), so repeating it on six cards would add noise without adding information. The
  * full truth, including the pot the streak would then stand at, is in the sentence below.
  * PLACEHOLDER glyphs: the wording is the developer's.
  */
@@ -312,8 +241,8 @@ function cardDamageBranchText(branch: CardDamageBranch): string {
 /**
  * DLR-156 B1 — the win branch in words. Nothing is dealt to the Quarry immediately from a win any
  * more (AC5) — winning GROWS the streak instead, so this states what the trick adds and what the
- * pot would then be worth, plus any genuine immediate cross-term (a Timebomb landing on the
- * Quarry or the player this trick, or shield absorption) exactly as `cardDamageBranchText` states
+ * pot would then be worth, plus any genuine immediate cross-term (shield absorption, say) exactly
+ * as `cardDamageBranchText` states
  * them for the lose branch. PLACEHOLDER copy, as this file's rest is.
  */
 function cardDamageWinText(preview: CardDamagePreview): string {

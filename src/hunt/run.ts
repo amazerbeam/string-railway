@@ -66,18 +66,10 @@ export interface RunState {
    *  by `buyFromShop`, and carried through `advanceRun` untouched by the spread. NEVER persisted:
    *  the ticket puts cross-run carry-over out of scope. */
   readonly coins: Coins
-  /** DLR-91 AC2 — a bought-but-unspent Blast Guard. Run-level like `coins` rather than on
-   *  `EncounterState`, and that placement is load-bearing: the shop is reachable only AFTER an
-   *  encounter resolves and BEFORE `advanceRun` runs, and `advanceRun` re-seeds the encounter
-   *  through `startEncounter` — so a flag on the encounter would be bought onto the finished fight
-   *  and destroyed by the very transition that opens the fight it was bought for. Carried by
-   *  `advanceRun`'s spread and cleared by `guardAfter` when that fight resolves, which is what
-   *  makes "fight-long" a real duration. NEVER persisted, exactly as `coins` above. */
-  readonly blastGuardHeld: boolean
   /** DLR-92 AC2/AC3 — Whetstones owned. A COUNT, not a flag: each copy stacks, and the price is
    *  the only limiter. Run-level like `coins` rather than on `EncounterState`, and carried by
    *  `advanceRun`'s and `recordEncounter`'s spread — a run-permanent buff that reset at a fight
-   *  boundary would be a fight-long one. Unlike `blastGuardHeld` it is NEVER handed back by a
+   *  boundary would be a fight-long one. Unlike `discardsRemaining` it is NEVER handed back by a
    *  hand, because a hand cannot spend one. NEVER persisted, exactly
    *  as `coins` above. */
   readonly whetstones: number
@@ -97,7 +89,7 @@ export interface RunState {
    *  "regardless of whether the player had 0 or 1", and the epic's deferred re-tune of the charge
    *  count raises the ceiling without changing this type. Run-level like `coins` and carried by
    *  `advanceRun`'s and `recordEncounter`'s spreads — a free heal that reset at a fight boundary
-   *  would be a per-fight heal. Unlike `blastGuardHeld` it is NEVER handed back by a
+   *  would be a per-fight heal. Unlike `discardsRemaining` it is NEVER handed back by a
    *  hand, because a hand cannot drink it (AC4). NEVER persisted, exactly as `coins` above. */
   readonly flaskCharges: number
   /** DLR-95 AC3 — which hand OF THE CURRENT FIGHT is being played. 1-BASED: a fight's first hand
@@ -113,11 +105,11 @@ export interface RunState {
    *  one — which makes the reset structural instead of something three separate callbacks have to
    *  remember. `recordEncounter` advances it. NEVER persisted, exactly as `coins` above. */
   readonly handOfFight: number
-  /** DLR-100 AC5 — the discard's per-fight budget. Carried across every hand within a fight,
-   *  exactly as `blastGuardHeld` is — NOT on `EncounterState`, which `advanceRun`
+  /** DLR-100 AC5 — the discard's per-fight budget. Carried across every hand within a fight —
+   *  NOT on `EncounterState`, which `advanceRun`
    *  re-seeds. Reset to `DISCARDS_PER_FIGHT` by `startRun` and by `advanceRun`; carried through
    *  `recordEncounter`'s spread otherwise, because the hand owns it for its life and hands the
-   *  survivor back through `WarCouncilRoundResult`, exactly as `blastGuardHeld` does.
+   *  survivor back through `WarCouncilRoundResult`.
    *  NEVER persisted, exactly as `coins` above. */
   readonly discardsRemaining: number
   /** DLR-95 AC6 — the receipt: what the quick-kill payout paid for the encounter just recorded, so
@@ -152,14 +144,14 @@ export interface RunState {
   /** DLR-122 AC2 — where every tierable rank stands for THIS run. Run-permanent like `whetstones`
    *  rather than on `EncounterState`, and carried by `advanceRun`'s and `recordEncounter`'s
    *  spreads: a bought tier that reset at a fight boundary would be a fight-long asset, not a
-   *  run-permanent one. Unlike `blastGuardHeld` it is NEVER
+   *  run-permanent one. Unlike `discardsRemaining` it is NEVER
    *  handed back by a hand, because a hand cannot buy or spend a tier — only the shop between
    *  fights can. A TABLE rather than a count, and that is the point: unlike `whetstones` and
    *  `apCapacityBonus`, which stack, a rank is a RUNG and `steppedTo` refuses a third step.
    *  NEVER persisted, exactly as `coins` above. */
   readonly rankTiers: RankTierTable
   /** DLR-150 AC3/AC4 — the Feeder carry, carried across every hand WITHIN a fight and wiped at
-   *  the fight boundary, exactly as `blastGuardHeld` is. The hand owns it for its life and hands
+   *  the fight boundary, exactly as `discardsRemaining` is. The hand owns it for its life and hands
    *  the survivor back through `WarCouncilRoundResult`. NEVER persisted, exactly as `coins`. */
   readonly feederCarry: BuffCarry
   /** DLR-156 AC8/AC9 — the streak carried between the HANDS of one fight. Lives on the run
@@ -202,7 +194,6 @@ export function startRun(
     encounter: startEncounter(0, playerHealth),
     outcome: RunOutcome.InProgress,
     coins: 0,
-    blastGuardHeld: false,
     whetstones: 0,
     maxPlayerHealth: playerHealth,
     maxHealthPurchases: 0,
@@ -253,7 +244,6 @@ export function shopStockFor(run: RunState): ShopStock {
     coins: run.coins,
     playerHealth: run.encounter.health[DuelSide.Player],
     maxPlayerHealth: run.maxPlayerHealth,
-    blastGuardHeld: run.blastGuardHeld,
     rankTiers: run.rankTiers,
     maxHealthPurchases: run.maxHealthPurchases,
   }

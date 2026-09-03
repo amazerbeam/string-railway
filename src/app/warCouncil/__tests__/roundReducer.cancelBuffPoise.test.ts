@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { BuffTier, cheatBuff, startEncounter, type Buff } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind } from '../roundUiState'
@@ -13,7 +13,6 @@ function uiFrom(buffs: readonly Buff[]) {
   return createRoundUiState({
     round: makeRound(),
     encounter: startEncounter(0),
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs,

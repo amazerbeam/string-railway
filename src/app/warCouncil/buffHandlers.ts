@@ -18,18 +18,15 @@ import {
   deactivateFromPile,
   extraDiscardCharges,
   isRevocableBuff,
-  timebombDamageOf,
   type Buff,
   type BuffId,
 } from '../../hunt'
-import { isPrimed, unprimeCard } from '../../warCouncil'
 import {
   buffActivationStock,
   buffActivationWindowOpen,
   canAct,
   discardWindowOpen,
   offeredBuffs,
-  timebombLive,
   type RoundUiState,
 } from './roundUiState'
 
@@ -38,8 +35,8 @@ import {
  *  differently. UNCHANGED by the DLR-114
  *  door-widening fix below FOR EVERY CONDITION/CONSUMABLE ROW: activating one of those is
  *  genuinely a between-tricks decision (AC1), so it stays gated on `discardWindowOpen` exactly as
- *  it always has. Cheat and Timebomb are the one exception `roundUiState.ts`'s `buffActivationStock`
- *  now carves out — see that function's own docblock for why their window is `canAct`, not
+ *  it always has. Cheat is the one exception `roundUiState.ts`'s `buffActivationWindowOpen`
+ *  carves out — see that function's own docblock for why its window is `canAct`, not
  *  `discardWindowOpen`. */
 export function loadoutRefusalFor(state: RoundUiState, buff: Buff) {
   return buffActivationRefusalFor(buffActivationStock(state, state.buffActivation, buff))
@@ -49,10 +46,10 @@ export function loadoutRefusalFor(state: RoundUiState, buff: Buff) {
  * Whether the loadout panel can be OPENED at all — deliberately wider than `discardWindowOpen`,
  * which gates only whether a ROW inside can be activated.
  *
- * Before DLR-114 relocated `CheatSlots` and `TimebombCharge` off the felt rail and into this panel,
- * both were gated on `canAct` alone, reachable on any of the player's own turns — including while
+ * Before DLR-114 relocated `CheatSlots` off the felt rail and into this panel,
+ * it was gated on `canAct` alone, reachable on any of the player's own turns — including while
  * following a card the Quarry had already led, which is the only moment a Cheat has value (breaking
- * follow-suit) and the only moment marking an illegal card with Timebomb makes sense. Gating the
+ * follow-suit). Gating the
  * PANEL DOOR on `discardWindowOpen` — the activation window's own gate — made that reach
  * structurally impossible, since a committed lead means `currentTrick.length !== 0`. `plan.md`
  * promised the relocation would carry "no rule change and no reducer change"; the gate the
@@ -82,9 +79,9 @@ export function loadoutBarRefusalFor(state: RoundUiState): BuffActivationRefusal
 /**
  * Open or close the panel. Opening clears `armed` and `discardSelection`: both reinterpret the
  * next hand-card tap, and allowing two at once makes that tap ambiguous — `handleTapDiscard`'s own
- * rule, extended by one control. DLR-132 — a live Cheat or an armed Timebomb are no longer a
- * transient selection that opening must clear: a Cheat is a paid-for duration and a Timebomb an
- * armed spend, both already committed, and opening the panel again does not touch either. Closing
+ * rule, extended by one control. DLR-132 — a live Cheat is no longer a
+ * transient selection that opening must clear: it is a paid-for duration, already committed, and
+ * opening the panel again does not touch it. Closing
  * drops any poise unspent. Refused (no-op) unless `loadoutDoorOpen` holds — the same widened gate
  * `loadoutBarRefusalFor` reads for the button, so the two cannot disagree.
  */
@@ -137,21 +134,15 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
   // does not come back, which is the whole of what makes it one-shot.
   //
   // DLR-132 — `buffActivationWindowOpen`, NOT `discardWindowOpen` directly: `loadoutRefusalFor`
-  // (the guard just above) and this commit must ask the SAME window question or a Cheat/Timebomb
+  // (the guard just above) and this commit must ask the SAME window question or a Cheat
   // row can pass its guard and then throw here — `activateBuff` re-checks the window itself and
   // throws on a refusal, which is exactly what a narrower window at this line would trigger on a
-  // Cheat's or Timebomb's own second tap.
-  // DLR-154 FIX 5 — the real felt-supplied fact, threaded through exactly as
-  // `buffActivationWindowOpen(state, buff)` already is, so `activateBuff`'s own throw-guard is a
-  // REAL re-check rather than the permissive `false` default `src/hunt/`'s own docblock warns is
-  // otherwise silently inherited by a future caller. No behaviour changes for this production
-  // path: `loadoutRefusalFor` above already refused a live Timebomb before this line is reached.
+  // Cheat's own second tap.
   const { activation, buffs } = activateFromPile(
     state.buffActivation,
     state.buffs,
     buff,
     buffActivationWindowOpen(state, buff),
-    timebombLive(state),
   )
   return {
     ...state,
@@ -167,20 +158,14 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
         : buff.kind === BuffKind.Shield
           ? activateShield(state.encounter, buff.tier)
           : state.encounter,
-    // DLR-132/DLR-142 — Cheat and Timebomb fire HERE too, beside Ward and Shield. All three now
+    // DLR-132/DLR-142 — Cheat fires HERE too, beside Ward and Shield. All of them now
     // also leave the pile once spent, by default (`ACTIVATED_CARD_SINGLE_USE`, read through
     // `isConsumableItem` inside `activateFromPile` above) — this block only arms the felt-state
-    // effect; pile removal already happened above. `cheatDurationTricksOf`/`timebombDamageOf` both
-    // throw on the wrong kind; each is called only inside a branch that has already checked
-    // `buff.kind`, so neither throw is reachable here.
+    // effect; pile removal already happened above. `cheatDurationTricksOf`
+    // throws on the wrong kind; it is called only inside a branch that has already checked
+    // `buff.kind`, so that throw is not reachable here.
     cheatTricksRemaining:
       buff.kind === BuffKind.Cheat ? cheatDurationTricksOf(buff) : state.cheatTricksRemaining,
-    timebombArmedDamage:
-      buff.kind === BuffKind.Timebomb ? timebombDamageOf(buff) : state.timebombArmedDamage,
-    // DLR-154 FIX 2 — the Buff object itself, kept OUTSIDE `activatedThisTrick`/`spentThisTrick` so
-    // it survives the trick boundary those two lists are cleared at. See `RoundUiState.timebombBuff`'s
-    // own docblock for why the riding row and `Escape` both need this rather than either list.
-    timebombBuff: buff.kind === BuffKind.Timebomb ? buff : state.timebombBuff,
     discardsRemaining: state.discardsRemaining + extraDiscardCharges(buff),
     loadout: { poised: null },
   }
@@ -197,15 +182,6 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
  * so nothing here knows anything about which cards were lit — that stays `buffRideModel.ts`'s.
  */
 export function handleRemoveBuff(state: RoundUiState, id: BuffId): RoundUiState {
-  // DLR-154 FIX 2 — a riding Timebomb outlives `activatedThisTrick`: R3's two-trick fuse survives
-  // the trick boundary `openBuffWindow` clears that list (and `spentThisTrick`) at. Reading
-  // `state.timebombBuff` directly, rather than trick-scoped membership, is what keeps the
-  // reversal reachable for as long as the riding row itself is shown (`buffRideModel.ts`'s
-  // `ridingRowsFor` reads the same field) — without this branch, `deactivateFromPile` below would
-  // throw the moment a second trick passed with the card still held.
-  if (state.timebombBuff !== null && state.timebombBuff.id === id) {
-    return removeRidingTimebomb(state, state.timebombBuff)
-  }
   if (!state.buffActivation.activatedThisTrick.includes(id)) return state
   const buff = [...offeredBuffs(state), ...state.buffActivation.spentThisTrick].find(
     (b) => b.id === id,
@@ -215,37 +191,3 @@ export function handleRemoveBuff(state: RoundUiState, id: BuffId): RoundUiState 
   return { ...state, buffs, buffActivation: activation }
 }
 
-/**
- * DLR-154 FIX 2 — the Timebomb-specific reversal, for the case `deactivateFromPile` cannot serve:
- * once a trick boundary has passed, `buff.id` is no longer in `activatedThisTrick`, and that
- * function THROWS on exactly that membership check (`buffActivation.ts`'s own docblock). This
- * returns the card to the pile directly instead, and clears any stale trick-scoped membership too,
- * so a fresh re-arm afterwards is never refused `AlreadyActive` for a card that no longer exists.
- * `AP_ENABLED` is off (R1), so the AP side of a refund is inert either way (`refundAp` adds `0`);
- * the pile and the felt state are what actually matter here.
- */
-function removeRidingTimebomb(state: RoundUiState, buff: Buff): RoundUiState {
-  const alreadyInPile = state.buffs.some((held) => held.id === buff.id)
-  // AC5 — the felt-state reversal `src/hunt/` cannot do and must not learn to (Assumption 2).
-  // Guarded with `isPrimed` first: `unprimeCard` throws by design.
-  const round = state.round.primedCards.reduce(
-    (next, card) => (isPrimed(next.primedCards, card) ? unprimeCard(next, card) : next),
-    state.round,
-  )
-  return {
-    ...state,
-    buffs: alreadyInPile ? state.buffs : [...state.buffs, buff],
-    buffActivation: {
-      ...state.buffActivation,
-      activatedThisTrick: state.buffActivation.activatedThisTrick.filter(
-        (held) => held !== buff.id,
-      ),
-      spentThisTrick: state.buffActivation.spentThisTrick.filter((held) => held.id !== buff.id),
-    },
-    round,
-    timebombArmedDamage: null,
-    primedTimebombDamage: null,
-    timebombFuseRemaining: 0,
-    timebombBuff: null,
-  }
-}

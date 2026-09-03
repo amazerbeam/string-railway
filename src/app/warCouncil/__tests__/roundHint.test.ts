@@ -1,11 +1,9 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { IllegalMoveReason, PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
-import { BuffTier, TIMEBOMB_DAMAGE } from '../../../hunt'
 import {
   cardAccessibleName,
   DISCARD_READY_HINT,
   DISCARD_SELECT_HINT,
-  TIMEBOMB_ARMED_HINT,
   ILLEGAL_MOVE_MESSAGE,
 } from '../labels'
 import { deriveHint } from '../roundHint'
@@ -20,7 +18,6 @@ function baseUi(overrides: Partial<RoundUiState> = {}): RoundUiState {
     ...createRoundUiState({
       round: makeRound(),
       encounter: encounterFixture,
-      blastGuardHeld: false,
       baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],
@@ -42,13 +39,9 @@ const someResolvedTrick: ResolvedTrick = {
     damageToPlayer: 0,
     total: 1,
     roll: 1,
-    timebombTarget: null,
-    timebombToQuarry: 0,
-    blastGuardSpent: false,
     buffAccrual: null,
     firedBuffIds: [],
   },
-  timebombDamage: null,
 }
 
 describe('deriveHint — the cascade’s own priority order', () => {
@@ -92,16 +85,6 @@ describe('deriveHint — the cascade’s own priority order', () => {
     expect(deriveHint(cheatLive, true, false)).toBe(deriveHint(baseUi(), true, false))
   })
 
-  it('an armed Timebomb reports the one surviving hint, and beats a live Cheat held at the same time', () => {
-    const armed = baseUi({ timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze] })
-    expect(deriveHint(armed, true, false)).toBe(TIMEBOMB_ARMED_HINT)
-
-    const both = baseUi({
-      timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze],
-      cheatTricksRemaining: 2,
-    })
-    expect(deriveHint(both, true, false)).toBe(TIMEBOMB_ARMED_HINT)
-  })
 
   it('an interactive state names lead-vs-follow, distinctly', () => {
     const toLead = baseUi({ round: makeRound({ currentTrick: [] }) })
@@ -126,15 +109,5 @@ describe('deriveHint — the cascade’s own priority order', () => {
     const ready = baseUi({ discardSelection: [card(Suit.Bells, 7)] })
     expect(deriveHint(selecting, true, true)).toBe(DISCARD_SELECT_HINT)
     expect(deriveHint(ready, true, true)).toBe(DISCARD_READY_HINT)
-  })
-
-  it('says what an armed Timebomb is waiting for during the Quarry-to-lead gap — DLR-154 AC1', () => {
-    const ui = baseUi({ timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze] })
-    expect(deriveHint(ui, false, true)).toBe(TIMEBOMB_ARMED_HINT)
-  })
-
-  it('still yields to a rejection and to an open discard selection', () => {
-    const armed = baseUi({ timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze] })
-    expect(deriveHint({ ...armed, discardSelection: [] }, false, true)).toBe(DISCARD_SELECT_HINT)
   })
 })

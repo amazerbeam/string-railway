@@ -66,16 +66,16 @@ describe('templateWeightFor', () => {
   // GONE, not broken: it compared `Glutton`'s event-family share against `Hoarder`/`Unbloodied`'s
   // threshold-family share, and all three families were cut from `SLOT_FAMILY_WEIGHTS` along with
   // the coins/apRefund axis lean Strongbox rode on. Every surviving weight (Taker, Feeder,
-  // Sidestep, Cheat, Timebomb; Magnitude, Multiplier) is unchanged from before the pruning — see
+  // Sidestep, Cheat; Magnitude, Multiplier) is unchanged from before the pruning — see
   // `slotWeights.ts`'s own comments on both tables — so there is no new lean to assert; a
   // replacement lean is a developer decision this ticket does not make.
 })
 
 describe('activated templates', () => {
   it.each([SlotMachineId.Skirmisher, SlotMachineId.Strongbox])(
-    'gives %s a positive weight to both activated templates',
+    'gives %s a positive weight to every activated template',
     (machineId) => {
-      for (const id of ['cheat', 'timebomb']) {
+      for (const id of ['cheat']) {
         expect(templateWeightFor(machineId, templateById(id)!)).toBeGreaterThan(0)
       }
     },
@@ -84,7 +84,7 @@ describe('activated templates', () => {
   it.each([SlotMachineId.Skirmisher, SlotMachineId.Strongbox])(
     "makes an activated family's strip share equal its family weight on %s",
     (machineId) => {
-      for (const kind of [BuffKind.Cheat, BuffKind.Timebomb]) {
+      for (const kind of [BuffKind.Cheat]) {
         const total = templatesForFamily(kind).reduce(
           (sum, t) => sum + templateWeightFor(machineId, t),
           0,

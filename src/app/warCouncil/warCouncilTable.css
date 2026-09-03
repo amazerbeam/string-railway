@@ -152,14 +152,6 @@
   color: var(--wc-brass);
 }
 
-/* DLR-101 — the reveal's Timebomb clause, tinted with the same token the Timebomb mark and the
-   `ticking` heart already use, so all three read as one state. Lives here rather than in
-   `warCouncilHealthBars.css`: `.wc-table-line`, the paragraph this clause sits inside, is
-   declared in this sheet, and this file has room under its 400-line budget. */
-.wc-timebomb-clause {
-  color: var(--wc-timebomb);
-}
-
 .wc-table-hint {
   font-size: clamp(0.62rem, 1.35vmin, 0.78rem);
   letter-spacing: 0.13em;

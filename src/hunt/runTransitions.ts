@@ -15,7 +15,7 @@
 import { COINS_PER_ENCOUNTER_WIN, DISCARDS_PER_FIGHT, HEAL_HEALTH_RESTORED } from './config'
 import { BuffKind, BuffTier, type Buff } from './buffs'
 import { type BuffCarry } from './buffAccrual'
-import { cheatBuff, timebombBuff } from './buffCatalog'
+import { cheatBuff } from './buffCatalog'
 import { isEncounterResolved, startEncounter } from './encounter'
 import { flaskHealAmount, flaskRefusalFor } from './flask'
 import { quickKillPayout } from './quickKill'
@@ -32,7 +32,7 @@ import {
   slotVisitStockFor,
   type RunState,
 } from './run'
-import { feederCarryAfter, flaskAfter, guardAfter, handOfFightAfter, streakAfter } from './runCarry'
+import { feederCarryAfter, flaskAfter, handOfFightAfter, streakAfter } from './runCarry'
 // DLR-156 — type-only, erased under `verbatimModuleSyntax` (see `run.ts`'s import).
 import type { StreakState } from '../warCouncil'
 
@@ -43,18 +43,12 @@ import type { StreakState } from '../warCouncil'
  * Refuses a run that has already ended: recording onto a finished run would silently resurrect
  * it, and there is no legitimate caller — the driver stops handing hands to a finished run.
  *
- * `blastGuardHeld` (DLR-91 AC2/AC4) is REQUIRED for the same reason — the hand owns it for its
- * whole life and hands the survivor back through `WarCouncilRoundResult`. It is passed through
- * `guardAfter`, not adopted verbatim: the Guard does not outlive the fight it was bought for, and
- * this is the ONE transition that adopts a hand's end state, so it is the one place that rule can
- * be enforced.
- *
- * `flaskCharges` (DLR-93 AC5) is NOT a parameter: unlike `blastGuardHeld`, a hand cannot spend or
+ * `flaskCharges` (DLR-93 AC5) is NOT a parameter: a hand cannot spend or
  * grant a flask charge (AC4 makes it a between-fights action), so there is nothing for a hand to
  * hand back. It is read off `run` and refilled by `flaskAfter` when the opponent just beaten was
  * a stage boss.
  *
- * `discardsRemaining` (DLR-100 AC5) is REQUIRED for the same reason `blastGuardHeld` is: the hand
+ * `discardsRemaining` (DLR-100 AC5) is REQUIRED because the hand
  * owns it for its lifetime and hands the survivor back through `WarCouncilRoundResult`. Carried
  * through the returned spread unchanged — `advanceRun`, not this function, resets it at the fight
  * boundary.
@@ -64,14 +58,13 @@ import type { StreakState } from '../warCouncil'
  * forgot to thread the figure through, and would do it silently. `null` is the legitimate value
  * for a hand that did not end the fight.
  *
- * DLR-132 — `cheats` and `timebombCharges` were the two REQUIRED parameters here; both are
- * deleted along with the `RunState` fields they fed. A Cheat and a Timebomb are pile members now,
+ * DLR-132 — `cheats` was a REQUIRED parameter here; it is
+ * deleted along with the `RunState` field it fed. A Cheat is a pile member now,
  * carried through `buffs` below like every other buff.
  */
 export function recordEncounter(
   run: RunState,
   encounter: EncounterState,
-  blastGuardHeld: boolean,
   discardsRemaining: number,
   unplayedCards: number | null,
   /** DLR-125 — Purse coins this hand's fired buffs earned, already clipped at
@@ -117,7 +110,6 @@ export function recordEncounter(
     encounter,
     discardsRemaining,
     buffs: buffs ?? run.buffs,
-    blastGuardHeld: guardAfter(encounter, blastGuardHeld),
     // DLR-125 R3 step 5 — Purse coins are additive with the win payout and the quick kill, never
     // conditioned on `wonThisEncounter`: a buff's condition already decided whether it fired, and
     // the run's purse is not the place to re-judge that.
@@ -231,15 +223,11 @@ export function buyFromShop(run: RunState, item: ShopItem): RunState {
   const paid = { ...run, coins: run.coins - priceOf(item, stock) }
   // A `switch` with no `default`, so a FOURTH item is a compile error here rather than an item
   // that silently does whatever the last branch happened to do. That is not hypothetical: before
-  // DLR-90 this function returned the heal unconditionally as its fallback, so adding Timebomb
+  // DLR-90 this function returned the heal unconditionally as its fallback, so adding a new item
   // without this restructuring would have healed the player and type-checked cleanly.
   switch (item) {
     case ShopItem.Cheat:
       return withMintedBuff(paid, cheatBuff(BuffTier.Bronze, run.nextBuffId))
-    case ShopItem.Timebomb:
-      return withMintedBuff(paid, timebombBuff(BuffTier.Bronze, run.nextBuffId))
-    case ShopItem.BlastGuard:
-      return { ...paid, blastGuardHeld: true }
     case ShopItem.Whetstone:
       return { ...paid, whetstones: run.whetstones + 1 }
     case ShopItem.Heal:
@@ -280,7 +268,7 @@ export function buyFromShop(run: RunState, item: ShopItem): RunState {
 }
 
 /** DLR-132 — one bought activated card appended to the pile, with `nextBuffId` advanced. A
- *  helper rather than two identical spreads in `buyFromShop`'s Cheat and Timebomb branches, so
+ *  named helper rather than an inline spread in `buyFromShop`'s Cheat branch, so
  *  "a purchase adds one card and burns one id" is stated once. */
 function withMintedBuff(run: RunState, buff: Buff): RunState {
   return { ...run, buffs: [...run.buffs, buff], nextBuffId: run.nextBuffId + 1 }

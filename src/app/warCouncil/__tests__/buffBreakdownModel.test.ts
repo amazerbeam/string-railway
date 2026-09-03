@@ -13,7 +13,6 @@ function seededUi(
   return createRoundUiState({
     round: makeRound(overrides),
     encounter: encounterFixture,
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs,

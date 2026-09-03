@@ -1,9 +1,9 @@
 import type { MouseEvent } from 'react'
-import { BuffTier, TIMEBOMB_DAMAGE, type Buff } from '../../hunt'
-import { isPrimed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
+import type { Buff } from '../../hunt'
+import { isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
 import { buffFiredText } from './buffFiredLabels'
 import { PlaceKind } from './cardPlacement'
-import { cardAccessibleName, cardKey, timebombBookedText } from './labels'
+import { cardAccessibleName, cardKey } from './labels'
 import { useMotionAnchor, useMotionAnchors } from './motionAnchorContext'
 import PlayingCard from './PlayingCard'
 import { TRICK_OUTCOME_WHY, TRICK_OUTCOME_WORD, trickOutcomeKindFor } from './resolutionOutcome'
@@ -22,11 +22,8 @@ interface TrickWellProps {
    *  `[]` so a caller that predates this (there is none left after this task, but the pattern
    *  matches `cardAccessibleName`'s own default) keeps compiling. */
   readonly skulledCards?: readonly Card[]
-  /** DLR-90 AC2 — once a marked card is face up here, it announces its own Timebomb. Defaults to
-   *  `[]` for `skulledCards`' own stated reason. */
-  readonly primedCards?: readonly Card[]
   /** DLR-119 — the pile this trick's `firedBuffIds` are resolved against. Defaults to `[]`, the
-   *  same defaulting `skulledCards` and `primedCards` already carry, so a caller that predates
+   *  same defaulting `skulledCards` already carries, so a caller that predates
    *  this keeps compiling and simply narrates nothing. */
   readonly offeredBuffs?: readonly Buff[]
   /** DLR-160 AC2 — the cards in THIS trick that carry a skull, so the well words the outcome on
@@ -47,7 +44,6 @@ export default function TrickWell({
   currentTrick,
   resolvedTrick,
   skulledCards = [],
-  primedCards = [],
   offeredBuffs = [],
   skulledInTrick = [],
   quarryToLead,
@@ -115,7 +111,6 @@ export default function TrickWell({
                 variant="table"
                 winner={played.side === resolvedTrick.winner}
                 skulled={isSkulled(skulledCards, played.card)}
-                primed={isPrimed(primedCards, played.card)}
               />
             </span>
           ))}
@@ -128,22 +123,6 @@ export default function TrickWell({
           {TRICK_OUTCOME_WHY[outcomeKind]}.
           {resolvedTrick.resolution.damageToPlayer > 0 &&
             ` You take ${resolvedTrick.resolution.damageToPlayer}.`}
-          {resolvedTrick.resolution.timebombTarget !== null && (
-            <span className="wc-timebomb-clause">
-              {' '}
-              {timebombBookedText(
-                resolvedTrick.resolution.timebombTarget,
-                // DLR-132 Task 10a — reads the PAIR `commit` carried on `ResolvedTrick` itself
-                // (`roundUiState.ts`'s `timebombDamage`), which is the spent card's own tier, not
-                // a flat bronze figure. The bronze fallback below is now genuinely unreachable —
-                // a `timebombTarget` implies a primed card implies a spend, so `timebombDamage` is
-                // never `null` when this branch renders — and is kept only so this render path
-                // cannot throw on a value the type still allows to be `null`.
-                resolvedTrick.timebombDamage?.[resolvedTrick.resolution.timebombTarget] ??
-                  TIMEBOMB_DAMAGE[BuffTier.Bronze][resolvedTrick.resolution.timebombTarget],
-              )}
-            </span>
-          )}
         </p>
         {firedText !== null && <p className="wc-buff-fired">{firedText}</p>}
         <button type="button" className="wc-carry-btn" onClick={handleHintClick}>
@@ -183,7 +162,6 @@ export default function TrickWell({
               card={led.card}
               variant="table"
               skulled={isSkulled(skulledCards, led.card)}
-              primed={isPrimed(primedCards, led.card)}
             />
           </span>
         </div>

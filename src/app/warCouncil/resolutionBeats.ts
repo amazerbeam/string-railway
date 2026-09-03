@@ -67,7 +67,7 @@ function resolveFired(firedBuffIds: readonly BuffId[], fired: readonly Buff[]): 
  *  through the reset, and reporting the whole pre-trick pot would narrate a streak as wiped when
  *  it in fact survived) — but a REPLACED clean loss (DLR-90 AC5, a primed card the Quarry wins cleanly)
  *  resets NOTHING: `resolution.damageToPlayer === 0` is then a total and reliable test (§
- *  `streak.ts`'s own `trickHit`/`timebombResets` gate: either one being true always makes
+ *  `streak.ts`'s own `trickHit` gate: it being true always makes
  *  `damageToPlayer` positive, so `0` here can only mean neither fired), and the beat is
  *  `Absorbed` instead — narrating that nothing was lost rather than a broken streak that never
  *  broke.

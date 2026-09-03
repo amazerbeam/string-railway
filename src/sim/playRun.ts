@@ -175,7 +175,6 @@ export function playRun(
     run = recordEncounter(
       run,
       outcome.result.encounter,
-      outcome.result.blastGuardHeld,
       outcome.result.discardsRemaining,
       outcome.result.unplayedAtResolve,
       outcome.result.coinsEarned,

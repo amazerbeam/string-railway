@@ -29,7 +29,7 @@ describe('potIsLethal', () => {
   })
 
   it('is true, without calling applyDamage again, when the encounter is already resolved', () => {
-    // DLR-160 QA fix — the deciding trick's own damage (a skull's health loss, a Timebomb
+    // DLR-160 QA fix — the deciding trick's own damage (a skull's health loss
     // detonation, or earlier pot damage) routinely resolves the encounter before this
     // function is asked about it. `applyDamage` throws deliberately on an already-resolved
     // encounter, so this is the real shape `resolutionViewFor` (`commitHandlers.ts`) hands in.

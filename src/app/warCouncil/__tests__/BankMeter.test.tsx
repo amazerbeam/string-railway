@@ -13,9 +13,6 @@ const cleanLoss: TrickResolution = {
   damageToPlayer: 1,
   total: 0,
   roll: 0,
-  timebombTarget: null,
-  timebombToQuarry: 0,
-  blastGuardSpent: false,
   buffAccrual: null,
   firedBuffIds: [],
 }

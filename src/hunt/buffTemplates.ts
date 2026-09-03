@@ -12,21 +12,21 @@ import {
   type BuffTarget,
 } from './buffs'
 import type { BuffMintedAxis } from './buffCosts'
-import { cheatBuff, timebombBuff } from './buffCatalog'
+import { cheatBuff } from './buffCatalog'
 
 /**
  * DLR-112 — originally the 71-template v1 condition-card pool, GENERATED at module load from two
  * small crossing tables rather than hand-listed. `.docs/design/Balatro-Forbidden-Solitaire/
  * v1-buff-card-list.md` → *Condition templates* is the authoritative table this file transcribed.
  *
- * DLR-132 added `ActivatedBuffTemplate` and its two cards (Cheat, Timebomb), taking the pool to 73.
+ * DLR-132 added `ActivatedBuffTemplate` and its two activated cards, taking the pool to 73.
  *
  * DLR-145 PARED the pool to 13 — 6 Taker + 3 Feeder + 2 Sidestep condition templates plus the same
  * 2 activated ones — so that card scarcity, not a refilling action-points pool, is the limit on how
  * hard a hand can be pushed. `TEMPLATE_FAMILIES` now lists only these three families. The eight cut
  * families (MarkOfRank, Glutton, Hoarder, Unbloodied, DebtCollector, Keepsake, Miser, Cornered) are
  * NOT deleted from `BuffKind`, `CONDITION_MODIFIER`, `buffFires` or `BUFF_CADENCE` — they simply
- * have no row here any more, exactly as DLR-116 left Cheat, Timebomb, Blast Guard and Whetstone
+ * have no row here any more, exactly as DLR-116 left Cheat and Whetstone
  * priced but off the shop shelf. Restoring one is a `TEMPLATE_FAMILIES` row, not a design from
  * scratch. `MintableConditionKind` and `MintableRewardAxis` (below) are what make a cut family or a
  * cut axis UNCONSTRUCTIBLE rather than merely unweighted — narrowing the template's own types,
@@ -47,6 +47,11 @@ import { cheatBuff, timebombBuff } from './buffCatalog'
  * trick that hurt the player rather than paying into a per-hand pool. This restores the
  * "eat a skull with this card" condition for these two families ONLY — `BuffKind.Glutton` and the
  * other seven cut families are NOT restored and gain no row here.
+ *
+ * DLR-166 REMOVES the second activated card outright, taking the pool to 17 — the same 14 generated
+ * condition templates plus Skull Helmet, Skull Tether and the one remaining activated card, Cheat.
+ * That removal is a DELETION, not a pruning: the kind itself is gone from `BuffKind`, so unlike the
+ * eight cut condition families it cannot be restored by adding a row back here.
  *
  * The five consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are still absent —
  * DLR-120's scope boundary, unrelated to this pruning.
@@ -73,8 +78,8 @@ export interface ConditionBuffTemplate {
 
 /** DLR-145 AC5 — the three condition families a template can still mint. The other eight stay
  *  DECLARED on `BuffKind`, keep their `CONDITION_MODIFIER` price, their `buffFires` case and their
- *  `BUFF_CADENCE` row; they are simply unreachable, exactly as DLR-116 left Cheat, Timebomb, Blast
- *  Guard and Whetstone priced but off the shelf. Restoring one is a row in `TEMPLATE_FAMILIES`. */
+ *  `BUFF_CADENCE` row; they are simply unreachable, exactly as DLR-116 left Cheat and
+ *  Whetstone priced but off the shelf. Restoring one is a row in `TEMPLATE_FAMILIES`. */
 export type MintableConditionKind =
   | typeof BuffKind.Taker
   | typeof BuffKind.Feeder
@@ -93,15 +98,15 @@ export type MintableRewardAxis =
   | typeof BuffRewardAxis.Multiplier
   | typeof BuffRewardAxis.Protection
 
-/** The two kinds an ACTIVATED template can mint. A closed pair, not `BuffConsumableKind`: the
+/** The kinds an ACTIVATED template can mint. A closed set, not `BuffConsumableKind`: the
  *  five consumable items and Shield have no template and no slot weight yet (DLR-132 scope). */
-export type BuffActivatedTemplateKind = typeof BuffKind.Cheat | typeof BuffKind.Timebomb
+export type BuffActivatedTemplateKind = typeof BuffKind.Cheat
 
 /** An activated card's template. Carries NO axis and NO condition family — that is exactly the
  *  shape problem DLR-120 named, and the `form` tag is the answer to it. Its reward axis and value
- *  come from `buffCatalog.ts`'s minting functions (`cheatBuff` / `timebombBuff`) at draw time, not
+ *  come from `buffCatalog.ts`'s minting function (`cheatBuff`) at draw time, not
  *  from anything stored here. PERSISTED as of DLR-113 exactly like `ConditionBuffTemplate.id`: the
- *  Vault stores grants by this id, so `'cheat'` and `'timebomb'` are frozen the moment they ship. */
+ *  Vault stores grants by this id, so `'cheat'` is frozen the moment it ships. */
 export interface ActivatedBuffTemplate {
   readonly form: 'activated'
   readonly id: string
@@ -114,12 +119,11 @@ export interface ActivatedBuffTemplate {
  *  module already throws about. The tag makes every consumer's branch mandatory at compile time. */
 export type BuffTemplate = ConditionBuffTemplate | ActivatedBuffTemplate
 
-/** The two activated templates. Ids are bare kind strings — no axis segment, because there is no
+/** The activated templates. Ids are bare kind strings — no axis segment, because there is no
  *  axis — and they are PERSISTED by the Vault, so the format is frozen exactly as DLR-113 froze
  *  `<kind>[:<param>]:<axis>` for a condition template's id. */
 export const ACTIVATED_TEMPLATES: readonly ActivatedBuffTemplate[] = [
   { form: 'activated', id: 'cheat', kind: BuffKind.Cheat },
-  { form: 'activated', id: 'timebomb', kind: BuffKind.Timebomb },
 ]
 
 const BLADE_AND_MOMENTUM: readonly MintableRewardAxis[] = [
@@ -315,10 +319,10 @@ function isThresholdFamily(kind: BuffKind): kind is BuffThresholdFamily {
  *  a ladder for — and must not gain a softened version of it. */
 export function mintFromTemplate(template: BuffTemplate, tier: BuffTier, id: BuffId): Buff {
   if (template.form === 'activated') {
-    // DLR-132 — DLR-107's `cheatBuff`/`timebombBuff` ARE the minting path. Reproducing their
+    // DLR-132 — DLR-107's `cheatBuff` IS the minting path. Reproducing its
     // expressions here would give one card two answers, which is the discipline
     // `cheatDurationTricksOf` sets three files away.
-    return template.kind === BuffKind.Cheat ? cheatBuff(tier, id) : timebombBuff(tier, id)
+    return cheatBuff(tier, id)
   }
   const ladder = REWARD_TIER_VALUE[template.axis]
   if (ladder === undefined) {

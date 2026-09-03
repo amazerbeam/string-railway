@@ -44,9 +44,6 @@ export function dealRound(
     trumpSuit: decree.suit,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
     skulledCards: assignSkulls(cpuHand, rng),
-    // DLR-90 — a fresh deal carries no marks. Written here rather than defaulted on the type, so
-    // `RoundState` stays a total shape with no optional field for a reader to forget about.
-    primedCards: [],
     // DLR-123 AC3/AC8 — the spent pile CLIMBS ACROSS the hands of a fight and empties only when a
     // reshuffle folds it back into the draw pile. `FRESH_ENCOUNTER_DECK.spentPile` is `[]`, so the
     // new-encounter case needs no branch of its own.

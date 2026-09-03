@@ -26,7 +26,6 @@ export type SlotGlyph =
   | { readonly kind: 'suit'; readonly suit: BuffTargetSuit }
   | { readonly kind: 'sidestep' }
   | { readonly kind: 'cheat' }
-  | { readonly kind: 'timebomb' }
   | { readonly kind: 'skullHelmet' }
   | { readonly kind: 'skullTether' }
 
@@ -35,7 +34,7 @@ export interface SlotSymbolFace {
    *  match compares on, exactly as `resolvePull` compares templates. */
   readonly id: string
   readonly glyph: SlotGlyph
-  /** The family word — Taker / Feeder / Sidestep / Cheat / Timebomb. */
+  /** The family word — Taker / Feeder / Sidestep / Cheat. */
   readonly family: string
   /** The reward axis word — Blade / Momentum — or `null` for an activated card, which has no
    *  axis at all (`ActivatedBuffTemplate`'s own docblock). Rendering nothing rather than a
@@ -51,7 +50,6 @@ const FAMILY_WORD: Readonly<Record<BuffTemplate['kind'], string>> = {
   [BuffKind.Feeder]: 'Feeder',
   [BuffKind.Sidestep]: 'Sidestep',
   [BuffKind.Cheat]: 'Cheat',
-  [BuffKind.Timebomb]: 'Timebomb',
   // DLR-161 — short forms, for a moving reel window; the full card name is `slotLabels.ts`'s job.
   [BuffKind.SkullHelmet]: 'Helmet',
   [BuffKind.SkullTether]: 'Tether',
@@ -92,7 +90,7 @@ export function slotSymbolFace(template: BuffTemplate): SlotSymbolFace {
   if (template.form === 'activated') {
     return {
       id: template.id,
-      glyph: template.kind === BuffKind.Cheat ? { kind: 'cheat' } : { kind: 'timebomb' },
+      glyph: { kind: 'cheat' },
       family: FAMILY_WORD[template.kind],
       axis: null,
     }

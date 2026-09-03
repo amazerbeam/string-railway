@@ -210,10 +210,6 @@
   fill: var(--wc-skull-shadow);
 }
 
-/* DLR-154 — the Timebomb mark's face-printed rule used to live here. It now hangs on the card's
-   WRAPPER instead (AC4) — `TimebombMark.tsx` / `warCouncilTimebombMark.css` — since an
-   overhanging mark has no printed-on-the-face rectangle for this file to hold. */
-
 /* DLR-100 — the discard-selected mark. Its FIRST stylesheet rule ever: a centred badge inside
    `CARD_FACE_GEOMETRY.discardMark` (35%/65% x, 40%/60% y) plus a face tint on the card itself —
    NOT the mockup's full-face veil, which covered the corner index and so contradicted AC6.

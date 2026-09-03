@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { legalMoves, monarchFollowSet } from '../legalMoves'
 import { PlayerSide, RoundPhase, type Card, type RoundState } from '../types'
 
@@ -11,7 +11,6 @@ function playerFacing(playerHand: Card[], led: Card): RoundState {
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
-    primedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

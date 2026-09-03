@@ -7,7 +7,7 @@ import {
   type Buff,
   type BuffId,
 } from '../buffs'
-import { cheatBuff, shieldBuff, timebombBuff } from '../buffCatalog'
+import { cheatBuff, shieldBuff } from '../buffCatalog'
 import { apCostOf } from '../buffCosts'
 import { activatableBuffs, isPricedBuff } from '../buffActivation'
 import { BUFF_TEMPLATES, mintGrants } from '../buffTemplates'
@@ -35,9 +35,8 @@ describe('isPricedBuff / activatableBuffs — the unpriced-kind guard (DLR-135: 
     }
   })
 
-  it('accepts the three activated cards the catalog mints', () => {
+  it('accepts the two activated cards the catalog mints', () => {
     expect(isPricedBuff(cheatBuff(BuffTier.Bronze, 1))).toBe(true)
-    expect(isPricedBuff(timebombBuff(BuffTier.Silver, 2))).toBe(true)
     expect(isPricedBuff(shieldBuff(BuffTier.Gold, 3))).toBe(true)
   })
 

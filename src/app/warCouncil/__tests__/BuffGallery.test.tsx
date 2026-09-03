@@ -48,7 +48,6 @@ const bellFeederTemplate = templateFor(
 )
 const sidestepTemplate = templateFor((t) => t.form === 'condition' && t.kind === 'sidestep')
 const cheatTemplate = templateFor((t) => t.form === 'activated' && t.kind === 'cheat')
-const timebombTemplate = templateFor((t) => t.form === 'activated' && t.kind === 'timebomb')
 
 let nextId = 1
 function mint(template: BuffTemplate, tier: BuffTier = BuffTier.Bronze): Buff {
@@ -201,10 +200,10 @@ describe('BuffGallery — AC8 the fence', () => {
   })
 })
 
-describe('BuffGallery — AC4 Cheat and Timebomb sit under Press, not Suitless', () => {
+describe('BuffGallery — AC4 Cheat sits under Press, not Suitless', () => {
   it('renders a "Press" run tab distinct from a suitless one', () => {
     renderGallery({
-      buffs: [mint(cheatTemplate), mint(timebombTemplate), mint(sidestepTemplate)],
+      buffs: [mint(cheatTemplate), mint(sidestepTemplate)],
     })
     // DLR-160 AC8 — scoped to the grid: the new suit filter row (outside the grid) renders its
     // own "Press" chip, so an unscoped `getByText` now matches two nodes.

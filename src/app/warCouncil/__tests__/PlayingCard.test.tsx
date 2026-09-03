@@ -18,48 +18,6 @@ describe('PlayingCard', () => {
     expect(screen.queryByRole('button', { name: /skulled/i })).toBeNull()
   })
 
-  it('carries no mark wording when unmarked', () => {
-    render(<PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" />)
-    expect(screen.queryByRole('button', { name: /primed/i })).toBeNull()
-  })
-
-  it('renders the mark and names a primed card as primed', () => {
-    const { container } = render(
-      <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" primed />,
-    )
-    expect(screen.getByRole('button', { name: /primed/i })).toBeTruthy()
-    expect(container.querySelector('.wc-timebomb-mark')).toBeTruthy()
-  })
-
-  it('announces both marks on a card carrying skull and Timebomb together', () => {
-    render(<PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" skulled primed />)
-    const button = screen.getByRole('button', { name: /skulled, primed/i })
-    expect(button).toBeTruthy()
-  })
-
-  it('renders the Timebomb mark as aria-hidden, so it is announced once through the name', () => {
-    const { container } = render(
-      <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" primed />,
-    )
-    const mark = container.querySelector('.wc-timebomb-mark')
-    expect(mark?.getAttribute('aria-hidden')).toBe('true')
-  })
-
-  it('hangs the mark on the wrapper, not inside the card box — AC4', () => {
-    const { container } = render(
-      <PlayingCard card={{ suit: Suit.Bells, rank: 5 }} variant="hand" primed fuseRemaining={2} />,
-    )
-    expect(container.querySelector('button .wc-timebomb-mark')).toBeNull()
-    expect(container.querySelector('.wc-card-tip-host > .wc-timebomb-mark')).not.toBeNull()
-  })
-
-  it('keeps rank, suit and rank name — the mark is ADDED, never substituted (AC3)', () => {
-    render(
-      <PlayingCard card={{ suit: Suit.Bells, rank: 5 }} variant="hand" primed fuseRemaining={2} />,
-    )
-    expect(screen.getByRole('button', { name: /5 of/i })).toBeTruthy()
-  })
-
   it('folds the caller-supplied describedBy id in among the always-present rule id (DLR-117, DLR-149)', () => {
     const { rerender } = render(
       <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" describedBy="dmg-1" />,
@@ -134,15 +92,6 @@ describe('PlayingCard', () => {
     )
     expect(container.querySelector('.wc-card-rank')?.textContent).toBe('11')
     expect(container.querySelector('.wc-suit-keys .wc-card-suit')).toBeTruthy()
-  })
-
-  it('AC12 — a skulled and primed card renders both the skull face and the primed mark', () => {
-    const { container } = render(
-      <PlayingCard card={{ suit: Suit.Moons, rank: 1 }} variant="hand" skulled primed />,
-    )
-    expect(container.querySelector('.wc-card-skull-face')).toBeTruthy()
-    expect(container.querySelector('.wc-timebomb-mark')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /skulled, primed/i })).toBeTruthy()
   })
 
   it('AC12 — an unskulled card renders the pip and no skull element', () => {

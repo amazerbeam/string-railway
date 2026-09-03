@@ -8,8 +8,6 @@ import {
   cheatBuff,
   startBuffActivation,
   BuffTier,
-  TIMEBOMB_DAMAGE,
-  timebombBuff,
   type Buff,
   STARTING_AP,
   AP_CAPACITY_STEP,
@@ -19,9 +17,7 @@ import {
   createRoundUiState,
   discardWindowOpen,
   buffActivationStock,
-  timebombLive,
   type RoundUiSeed,
-  type RoundUiState,
 } from '../roundUiState'
 import { makeRound, encounterFixture } from './roundFixture'
 
@@ -31,7 +27,6 @@ function makeSeed(overrides: Partial<WarCouncilState> = {}): RoundUiSeed {
   return {
     round: makeRound(overrides),
     encounter: encounterFixture,
-    blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: 2,
     buffs: [],
@@ -142,45 +137,5 @@ describe('buffActivationStock — DLR-126, effectLive is delegated to the card',
     expect(discardWindowOpen(state)).toBe(true)
     expect(buffActivationStock(state, startBuffActivation(), cheat).effectLive).toBe(true)
     expect(buffActivationStock(state, startBuffActivation(), foresight).effectLive).toBe(false)
-  })
-})
-
-describe('timebombLive — DLR-154 R2', () => {
-  it('reports a Timebomb as live while one is armed', () => {
-    const state: RoundUiState = {
-      ...createRoundUiState(makeSeed()),
-      timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze],
-    }
-    expect(timebombLive(state)).toBe(true)
-  })
-
-  it('reports a Timebomb as live while a card is primed', () => {
-    const held = card(Suit.Bells, 2)
-    const state = createRoundUiState(makeSeed({ primedCards: [held] }))
-    expect(timebombLive(state)).toBe(true)
-  })
-
-  it('reports no Timebomb live on an untouched felt', () => {
-    const state = createRoundUiState(makeSeed())
-    expect(timebombLive(state)).toBe(false)
-  })
-})
-
-describe('buffActivationStock — DLR-154 R2, timebombLive is fed from the felt', () => {
-  it('refuses a Timebomb row while one is already live', () => {
-    const state: RoundUiState = {
-      ...createRoundUiState(makeSeed()),
-      timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze],
-    }
-    const timebomb = timebombBuff(BuffTier.Bronze, 2)
-    expect(buffActivationStock(state, startBuffActivation(), timebomb).timebombLive).toBe(true)
-  })
-
-  it('never refuses a non-Timebomb row for this reason', () => {
-    const state: RoundUiState = {
-      ...createRoundUiState(makeSeed()),
-      timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze],
-    }
-    expect(buffActivationStock(state, startBuffActivation(), cheat).timebombLive).toBe(false)
   })
 })

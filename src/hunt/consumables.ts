@@ -12,7 +12,7 @@ import type { Damage } from './types'
  *
  * The distinction this module exists to draw: DLR-108 shipped the generic activation flow — a
  * window, a tiered AP price, refusal codes, a poise/commit UI — and every one of those applies to
- * Cheat, Timebomb and Shield too. What none of that does is make a card a CONSUMABLE. Before this
+ * Cheat and Shield too. What none of that does is make a card a CONSUMABLE. Before this
  * module, activating a Ward spent 2 AP, recorded the id in `activatedThisTrick`, had that record
  * wiped by `openBuffWindow` at the next trick boundary, and did nothing at all — the card stayed in
  * the pile forever and could be re-bought every trick. A consumable is spent ONCE, leaves the pile,
@@ -24,14 +24,14 @@ import type { Damage } from './types'
  */
 
 /**
- * The five one-shot items DLR-111 names. Cheat, Timebomb and Shield are a SEPARATE, additive rule
+ * The five one-shot items DLR-111 names. Cheat and Shield are a SEPARATE, additive rule
  * layered on top of this fixed five-member set, not folded into it — see
- * `ACTIVATED_CARD_SINGLE_USE` below. All three are `BuffCadence.Activated` and all three are
+ * `ACTIVATED_CARD_SINGLE_USE` below. Both are `BuffCadence.Activated` and both are
  * priced through `buffCosts.ts`'s `CONSUMABLE_AP_COST`, but each ARMS FELT STATE at the spend
- * rather than (or in addition to) leaving the pile — a Cheat sets `cheatTricksRemaining`, a
- * Timebomb sets `timebombArmedDamage`, `activateShield` credits shield hearts. Whether the spent
+ * rather than (or in addition to) leaving the pile — a Cheat sets `cheatTricksRemaining`,
+ * `activateShield` credits shield hearts. Whether the spent
  * card ALSO leaves the pile is `ACTIVATED_CARD_SINGLE_USE`'s question, not this union's — DLR-142
- * defaults all three to single-use, reversible per card with a one-line edit to that toggle.
+ * defaults both to single-use, reversible per card with a one-line edit to that toggle.
  * "Consumable" here means the narrower thing DLR-111 names — spent ONCE and gone from the pile —
  * not the wider `CONSUMABLE_AP_COST` pricing bucket that happens to share the word.
  */
@@ -149,26 +149,25 @@ const CONSUMABLE_ITEM_KINDS: ReadonlySet<BuffKind> = new Set(
   Object.keys(CONSUMABLE_TIMING) as ConsumableItemKind[],
 )
 
-/** Whether `kind` is one of the five one-shot items. FALSE for Cheat, Timebomb and Shield. */
+/** Whether `kind` is one of the five one-shot items. FALSE for Cheat and Shield. */
 export function isConsumableItemKind(kind: BuffKind): kind is ConsumableItemKind {
   return CONSUMABLE_ITEM_KINDS.has(kind)
 }
 
-/** The three Activated cards whose single-use-ness is a developer-owned toggle rather than the
+/** The Activated cards whose single-use-ness is a developer-owned toggle rather than the
  *  fixed DLR-111 five-item set's rule. */
-type ActivatedItemKind = typeof BuffKind.Cheat | typeof BuffKind.Timebomb | typeof BuffKind.Shield
+type ActivatedItemKind = typeof BuffKind.Cheat | typeof BuffKind.Shield
 
 /**
  * Whether spending this Activated card ALSO removes it from the pile, on top of the felt-state
- * effect it always arms (`handleTapBuff`'s `cheatTricksRemaining` / `timebombArmedDamage` /
- * `activateShield`). Default `true` for all three as of 2026-08-25 — a player who spams Timebomb
- * now runs out of Timebombs. TO REVERT ONE CARD to "stays in the pile, spend it again next trick,"
+ * effect it always arms (`handleTapBuff`'s `cheatTricksRemaining` / `activateShield`). Default
+ * `true` for both as of 2026-08-25 — a player who spams a card now runs out of copies of it.
+ * TO REVERT ONE CARD to "stays in the pile, spend it again next trick,"
  * flip that entry to `false` here. Nothing else in this module, and no other file, needs to change
  * — `isConsumableItem` below is the only reader.
  */
 export const ACTIVATED_CARD_SINGLE_USE: Readonly<Record<ActivatedItemKind, boolean>> = {
   [BuffKind.Cheat]: true,
-  [BuffKind.Timebomb]: true,
   [BuffKind.Shield]: true,
 }
 
@@ -213,7 +212,7 @@ function isConsumedConditionKind(kind: BuffKind): kind is ConsumedConditionKind 
 
 /** Whether `buff` is a one-shot item — the predicate `activateFromPile` branches on to decide
  *  whether an activation also SPENDS the card. TRUE for the five DLR-111 items, true for
- *  Cheat/Timebomb/Shield exactly when `ACTIVATED_CARD_SINGLE_USE` says so for that kind, and TRUE
+ *  Cheat/Shield exactly when `ACTIVATED_CARD_SINGLE_USE` says so for that kind, and TRUE
  *  for Taker/Feeder/Sidestep exactly when `CONDITION_CARD_SINGLE_USE` says so for that kind —
  *  see each constant's own docblock for how to revert one card. FALSE for every other condition
  *  family (still declared, no longer mintable — DLR-145 Phase 1 does not touch the union). */

@@ -123,7 +123,7 @@ function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
  *
  * When the QUARRY leads, the suit is a prediction from `suitShape`'s posted counts rather than a
  * choice, so `intent.certain` is false and the stack is capped — a blind trick should not eat the
- * pile. Cheat and Timebomb are never armed here at all; see `RESERVED_KINDS`.
+ * pile. Cheat is never armed here at all; see `RESERVED_KINDS`.
  */
 function canPayUnder(buff: Buff, intent: TrickIntent): boolean {
   const suit = buffTargetSuitOf(buff)
@@ -159,26 +159,20 @@ function chooseBuffs(ui: RoundUiState): readonly BuffId[] {
   return capped.map((buff) => buff.id)
 }
 
-/**
- * Kinds the ordinary buff window must never spend.
- *
- * TIMEBOMB, because it marks the card played next and detonates on whoever loses that trick, and
- * this player deliberately loses tricks.
- *
- * CHEAT, because it is not a damage card at all — it lifts follow-suit, and its one job is turning
- * a FORCED hurt into a bank. `wantsCheatPlay` spends it at exactly that moment; armed as an
- * ordinary buff it is gone before the moment arrives.
- */
-const RESERVED_KINDS: ReadonlySet<BuffKind> = new Set([BuffKind.Timebomb, BuffKind.Cheat])
+/** Kinds the ordinary buff window must never spend. CHEAT, because it is not a damage card at all
+ *  — it lifts follow-suit, and its one job is turning a FORCED hurt into a bank. `wantsCheatPlay`
+ *  spends it at exactly that moment; armed as an ordinary buff it is gone before the moment
+ *  arrives. */
+const RESERVED_KINDS: ReadonlySet<BuffKind> = new Set([BuffKind.Cheat])
 
-/** Diagnostic — the UNAIMED "fire everything the loadout accepts" rule, Timebombs withheld. The
- *  control for `chooseBuffs` above: it arms Taker and Feeder of every suit together regardless of
- *  what the trick is going to be, which is what the trace showed spending four Keys cards on a
- *  Bells trick. Kept so that cost stays measurable rather than remembered. */
+/** Diagnostic — the UNAIMED "fire everything the loadout accepts" rule. The control for
+ *  `chooseBuffs` above: it arms Taker and Feeder of every suit together regardless of what the
+ *  trick is going to be, which is what the trace showed spending four Keys cards on a Bells
+ *  trick. Kept so that cost stays measurable rather than remembered. */
 function chooseBuffsUnaimed(ui: RoundUiState): readonly BuffId[] {
   const chosen = new Set(baselinePolicy.chooseBuffs(ui))
   return offeredBuffs(ui)
-    .filter((buff) => chosen.has(buff.id) && buff.kind !== BuffKind.Timebomb)
+    .filter((buff) => chosen.has(buff.id))
     .map((buff) => buff.id)
 }
 
@@ -284,27 +278,11 @@ export const skilledNaiveCardsPolicy: SimPolicy = {
   chooseCard: (round: RoundState) => chooseCpuMove(round, PlayerSide.Player),
 }
 
-/** Diagnostic — the skilled play ARMING Timebombs, the behaviour every other policy still has.
- *  Kept so the cost of priming a card you intend to throw stays measurable rather than remembered. */
-export const skilledWithTimebombPolicy: SimPolicy = {
-  ...skilledPolicy,
-  name: 'skilledWithTimebomb',
-  chooseBuffs: baselinePolicy.chooseBuffs,
-}
-
-/** Diagnostic — the skilled play firing every card it owns in every window, which empties the pile
- *  on the first trick of a fight. See `chooseBuffsUnaimed`. */
+/** Diagnostic — the skilled play firing every card it owns in every window, which empties the
+ *  pile on the first trick of a fight. See `chooseBuffsUnaimed`. */
 export const skilledUnaimedPolicy: SimPolicy = {
   ...skilledPolicy,
   name: 'skilledUnaimed',
-  chooseBuffs: chooseBuffsUnaimed,
-}
-
-/** Diagnostic — the previous best shop and card rule, with Timebombs withheld, so "is priming a
- *  problem for everyone or only for a player who dodges" is answerable. */
-export const sharpshooterNoTimebombPolicy: SimPolicy = {
-  ...sharpshooterPolicy,
-  name: 'sharpshooterNoTimebomb',
   chooseBuffs: chooseBuffsUnaimed,
 }
 
@@ -313,9 +291,9 @@ export const sharpshooterNoTimebombPolicy: SimPolicy = {
  *
  * `skilledPolicy` takes `sharpshooterPolicy`'s shop rule, which puts max health LAST — behind slot
  * pulls at 1 coin each, uncapped. Pulls therefore absorb every coin and the run's ceiling never
- * moves off `PLAYER_START_HEALTH`. That was measured on the OLD card play and with Timebombs still
- * armed, so it needs re-asking now that a fight's health cost is bimodal — median 0, p75 nine of
- * ten. A bigger bar converts fatal fights into free ones directly, which a card does not.
+ * moves off `PLAYER_START_HEALTH`. That was measured on the OLD card play, so it needs re-asking
+ * now that a fight's health cost is bimodal — median 0, p75 nine of ten. A bigger bar converts
+ * fatal fights into free ones directly, which a card does not.
  *
  * `raiseCeilingFirst` buys the ceiling before anything else, spending what is left on cards.
  * `oneCeilingPerVisit` buys exactly one step a visit and puts the rest into cards — the middle

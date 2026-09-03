@@ -21,7 +21,6 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -40,7 +39,7 @@ const cheatBuffFixture = cheatBuff(BuffTier.Bronze, 1)
 /** A Ward, minted by hand rather than through `mintFromTemplate` — Ward has no template
  *  (DLR-120 scope boundary), so `buffHandlers.test.ts`'s own `itemBuff` pattern is the way every
  *  spec in this codebase builds one. Used ONLY below, where the test's whole point is the
- *  ordinary between-tricks window — Cheat and Timebomb are DLR-132's one exception to it (see
+ *  ordinary between-tricks window — Cheat is DLR-132's one exception to it (see
  *  `roundUiState.ts`'s `buffActivationWindowOpen`), so they cannot stand in for "any buff" here. */
 function wardBuffFixture(): Buff {
   return {
@@ -64,7 +63,6 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
-      blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? [cheatBuffFixture]}
@@ -80,14 +78,12 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
     expect(within(bar).getAllByRole('button').length).toBe(3)
   })
 
-  it('the old felt-rail widgets are gone — DLR-132 folded Cheat and Timebomb into the row list', () => {
+  it('the old felt-rail widgets are gone — DLR-132 folded Cheat into the row list', () => {
     renderRound()
     expect(screen.queryByRole('group', { name: 'Cheats' })).toBeNull()
-    expect(screen.queryByRole('group', { name: 'Timebomb' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
-    // Still gone with the panel open — neither is its own group any more, just an ordinary row.
+    // Still gone with the panel open — it is not its own group any more, just an ordinary row.
     expect(screen.queryByRole('group', { name: 'Cheats' })).toBeNull()
-    expect(screen.queryByRole('group', { name: 'Timebomb' })).toBeNull()
   })
 
   it('clicking Apply Buff opens the "Your buffs" dialog, revealing the Cheat row in buffLine grammar', () => {

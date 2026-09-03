@@ -12,7 +12,7 @@ import { incomingFromPot } from '../../warCouncil'
 
 export function potIsLethal(encounter: EncounterState, pot: number): boolean {
   // The caller can hand in an encounter already resolved by the same trick's own damage (a
-  // skull's health loss, a Timebomb detonation, or pot damage folded in earlier) — routinely
+  // skull's health loss, or pot damage folded in earlier) — routinely
   // true by the time the resolution view is built. `applyDamage` throws deliberately on an
   // already-resolved encounter (its own docblock, `src/hunt/encounter.ts`), so this asks first:
   // a finished fight cannot be un-ended by applying more pot, so it already answers `true`.

@@ -1,6 +1,6 @@
 // A SIBLING of `run.test.ts`, holding only DLR-92's four Whetstone specs — split out here because
 // Phase 1's additions pushed `run.test.ts` past its 400-line budget, exactly the precedent
-// `playCard.timebomb.test.ts` sets beside `playCard.test.ts` for the same reason.
+// `playCard.bank.test.ts` sets beside `playCard.test.ts` for the same reason.
 import { describe, expect, it } from 'vitest'
 import {
   advanceRun,
@@ -50,7 +50,6 @@ describe('buyFromShop — Whetstone (DLR-92)', () => {
     const won = recordEncounter(
       run,
       winEncounter(run.encounter),
-      false,
       run.discardsRemaining,
       null,
     )

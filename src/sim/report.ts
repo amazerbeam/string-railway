@@ -87,12 +87,10 @@ export function formatSummary(summary: SimSummary): string {
   )
   const allTricks = oc.cleanWin + oc.dodge + oc.cleanLoss + oc.skullWin
   // A card is ACTIVATED for a trick and then its condition is checked when that trick resolves, so
-  // "fired" and "paid" are different questions. Cheat and Timebomb carry no condition, so they can
-  // never read as paid — they are excluded rather than counted as permanent failures.
+  // "fired" and "paid" are different questions. Cheat carries no condition, so it can
+  // never read as paid — it is excluded rather than counted as a permanent failure.
   const conditionFires = hands.flatMap((hand) =>
-    hand.buffFireOutcomes.filter(
-      (outcome) => outcome.kind !== 'cheat' && outcome.kind !== 'timebomb',
-    ),
+    hand.buffFireOutcomes.filter((outcome) => outcome.kind !== 'cheat'),
   )
   const paidFires = conditionFires.filter((outcome) => outcome.fired).length
   const paidByKind = new Map<string, { fired: number; paid: number }>()

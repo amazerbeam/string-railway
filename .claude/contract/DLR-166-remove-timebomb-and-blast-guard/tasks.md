@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: IN PROGRESS
 Started: 2026-09-03
 
 **Goal:** Delete the Timebomb and the Blast Guard from the game outright, along with every mechanism that exists only to serve them — the fuse, the pending-damage queue, the ticking-heart preview, the one-at-a-time activation refusal, the shop entries, the streak-reset and payout-fold ordering, and the simulator policies and fixtures that drive them — leaving the codebase ready for DLR-167 to build Curse.
@@ -70,7 +70,7 @@ Started: 2026-09-03
 
 The deepest layer, and the one every later phase depends on. Each task takes one shape or one constant group **together with all of its readers**, so the phase never leaves a field declared with no writer or a reader of a deleted name. `src/hunt/` and `src/warCouncil/` are lint-enforced React-free and DOM-free — every edit here stays inside that boundary. The phase ends type-checking.
 
-### Task 1: Delete the `BuffKind.Timebomb` variant and its template row
+### Task 1: Delete the `BuffKind.Timebomb` variant and its template row ✓
 
 - Skill: `react-frontend`
 
@@ -81,7 +81,7 @@ The deepest layer, and the one every later phase depends on. Each task takes one
 - Modify: `src/hunt/buffCosts.ts`, `src/hunt/buffEvaluation.ts`, `src/hunt/buffCombine.ts` — remove `BuffKind.Timebomb` cases and `CONDITION_MODIFIER` / `buffFires` entries
 - Test: `src/hunt/__tests__/buffTemplates.test.ts` — update `BUFF_TEMPLATE_COUNT` from 18 to 17
 
-- [ ] **Step 1: Remove the variant from the `BuffKind` map**
+- [x] **Step 1: Remove the variant from the `BuffKind` map**
 
 `src/hunt/buffs.ts` — delete the line, keeping every other variant untouched. Do **not** touch the eight cut condition families (`MarkOfRank`, `Glutton`, `Hoarder`, `Unbloodied`, `DebtCollector`, `Keepsake`, `Miser`, `Cornered`); they are deliberately retained.
 
@@ -91,7 +91,7 @@ The deepest layer, and the one every later phase depends on. Each task takes one
   Cheat: 'cheat',
 ```
 
-- [ ] **Step 2: Remove the activated-template row**
+- [x] **Step 2: Remove the activated-template row**
 
 `src/hunt/buffTemplates.ts` — `ACTIVATED_TEMPLATES` drops to one entry.
 
@@ -102,26 +102,26 @@ export const ACTIVATED_TEMPLATES: readonly ActivatedBuffTemplate[] = [
 ]
 ```
 
-- [ ] **Step 3: Remove every `BuffKind.Timebomb` case the compiler now flags**
+- [x] **Step 3: Remove every `BuffKind.Timebomb` case the compiler now flags**
 
 Run: `npm run typecheck`
 Expected: errors listing each remaining `BuffKind.Timebomb` reference. Delete each case, `CONDITION_MODIFIER` row, `BUFF_CADENCE` row and `buffFires` branch it names, in `buffCosts.ts`, `buffEvaluation.ts` and `buffCombine.ts`.
 
-- [ ] **Step 4: Update the template-count assertion**
+- [x] **Step 4: Update the template-count assertion**
 
 Find the assertion naming `BUFF_TEMPLATE_COUNT` and change the expected value from `18` to `17`, with the family arithmetic in the comment updated to match (6 Taker + 6 Feeder + 2 Sidestep + 1 Skull Helmet + 1 Skull Tether + 1 Cheat).
 
 Run: `npx vitest run src/hunt/__tests__/buffTemplates.test.ts`
 Expected: exits 0.
 
-- [ ] **Step 5: Confirm the vault still reconciles a stale grant**
+- [x] **Step 5: Confirm the vault still reconciles a stale grant**
 
 The persisted id string `'timebomb'` now fails to resolve through `templateById`. `reconcileVault` already drops it and counts it in `droppedCount` — no code change, but confirm the behaviour is covered.
 
 Run: `npx vitest run src/vault/__tests__ --project node`
 Expected: exits 0. If no spec asserts that an unresolvable `templateId` is dropped and counted, add one to the existing vault reconciliation spec using the literal `'timebomb'` as the stale id.
 
-### Task 2: Delete the Timebomb and Blast Guard configuration constants
+### Task 2: Delete the Timebomb and Blast Guard configuration constants ✓
 
 - Skill: `react-frontend`
 
@@ -130,7 +130,7 @@ Expected: exits 0. If no spec asserts that an unresolvable `templateId` is dropp
 - Config: `src/hunt/config.ts` — delete `TIMEBOMB_PRICE` (line 257), `TIMEBOMB_QUARRY_DAMAGE` (269), `TIMEBOMB_PLAYER_DAMAGE` (270), `BLAST_GUARD_PRICE`, `TIMEBOMB_FUSE_TRICKS`
 - Test: `src/hunt/__tests__/config.test.ts` — drop assertions naming the deleted constants
 
-- [ ] **Step 1: Delete the five constants and their docblocks**
+- [x] **Step 1: Delete the five constants and their docblocks**
 
 ```ts
 -export const TIMEBOMB_PRICE: Coins = 2
@@ -142,12 +142,12 @@ Expected: exits 0. If no spec asserts that an unresolvable `templateId` is dropp
 
 Delete the surrounding explanatory comments with them — including the note at line 262 explaining why `TIMEBOMB_QUARRY_DAMAGE` was renamed from `TIMEBOMB_DAMAGE`, which documents a constant that no longer exists.
 
-- [ ] **Step 2: Verify no reader survives**
+- [x] **Step 2: Verify no reader survives**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "TIMEBOMB_PRICE|TIMEBOMB_QUARRY_DAMAGE|TIMEBOMB_PLAYER_DAMAGE|BLAST_GUARD_PRICE|TIMEBOMB_FUSE_TRICKS"`
 Expected: zero hits.
 
-### Task 3: Delete the Timebomb damage catalogue
+### Task 3: Delete the Timebomb damage catalogue ✓
 
 - Skill: `react-frontend`
 
@@ -157,20 +157,20 @@ Expected: zero hits.
 - Modify: `src/hunt/index.ts` — drop the re-exports of all six
 - Test: `src/hunt/__tests__/buffCatalog.test.ts` — drop the Timebomb describe block
 
-- [ ] **Step 1: Delete the whole Timebomb block and its long design docblock**
+- [x] **Step 1: Delete the whole Timebomb block and its long design docblock**
 
 Remove the `TimebombDamage` type, the `TIMEBOMB_TIER_MULTIPLIER` table, the `TIMEBOMB_DAMAGE` table, `timebombBuff`, `timebombDamageOf` and the private `timebombRow` helper — together with the multi-paragraph comment above `TIMEBOMB_TIER_MULTIPLIER` that argues why a higher tier raises both sides. That reasoning documents a deleted mechanic. Leave `cheatBuff` and everything Cheat-related exactly as it is.
 
-- [ ] **Step 2: Drop the re-exports**
+- [x] **Step 2: Drop the re-exports**
 
 `src/hunt/index.ts` — remove all six names from the export list.
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: remaining errors name only files later tasks in this phase cover (`buffActivation.ts`, `shop.ts`, `streak.ts`) plus `src/app/` and `src/sim/`, which Phases 2–4 own.
 
-### Task 4: Delete the `TimebombLive` refusal and the `timebombLive` stock field
+### Task 4: Delete the `TimebombLive` refusal and the `timebombLive` stock field ✓
 
 - Skill: `react-frontend`
 
@@ -180,7 +180,7 @@ Expected: remaining errors name only files later tasks in this phase cover (`buf
 - Modify: `src/hunt/index.ts` — drop any re-export of the deleted names
 - Test: `src/hunt/__tests__/buffActivation.test.ts` and every other spec constructing a `BuffActivationStock` — **16 construction sites, 11 of them in tests**
 
-- [ ] **Step 1: Delete the refusal variant and its docblock**
+- [x] **Step 1: Delete the refusal variant and its docblock**
 
 ```ts
 export const BuffActivationRefusal = {
@@ -195,7 +195,7 @@ export const BuffActivationRefusal = {
 
 Update the ordering docblock above `buffActivationRefusalFor` — it currently reads `NoEffectYet → WindowClosed → TimebombLive → AlreadyActive → InsufficientAp`. Remove the `TimebombLive` term and the sentence explaining why it reports ahead of `AlreadyActive`.
 
-- [ ] **Step 2: Delete the stock field and the branch that reads it**
+- [x] **Step 2: Delete the stock field and the branch that reads it**
 
 ```ts
 export interface BuffActivationStock {
@@ -212,25 +212,25 @@ export interface BuffActivationStock {
 -  if (stock.timebombLive) return BuffActivationRefusal.TimebombLive
 ```
 
-- [ ] **Step 3: Drop the trailing parameter from the three functions**
+- [x] **Step 3: Drop the trailing parameter from the three functions**
 
 `buffActivationStockFor`, `activateBuff` and `activateFromPile` each take a defaulted `timebombLive: boolean = false` as their last parameter. Remove the parameter and every argument passed to it, including the DLR-154 FIX 5 comments explaining why it was defaulted.
 
-- [ ] **Step 4: Fix every construction site the compiler flags**
+- [x] **Step 4: Fix every construction site the compiler flags**
 
 Excess-property checking fires on each object literal still passing `timebombLive`. There are **16**; the type name appears at only 9 sites, so do not stop when the annotated ones are clean.
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "timebombLive"`
 Expected: zero hits.
 
-- [ ] **Step 5: Also remove `BuffKind.Timebomb` from the revocable-activated list**
+- [x] **Step 5: Also remove `BuffKind.Timebomb` from the revocable-activated list**
 
 The same file exports a list of activated kinds that may be taken back off a trick. It names `BuffKind.Timebomb` with a docblock explaining the DLR-154 FIX D caveat. Delete both the member and the caveat.
 
 Run: `npx vitest run src/hunt/__tests__ --project node`
 Expected: exits 0.
 
-### Task 5: Delete the two `ShopItem` variants and the Blast Guard stock
+### Task 5: Delete the two `ShopItem` variants and the Blast Guard stock ✓
 
 - Skill: `react-frontend`
 - Read first: `.claude/rules/save-data-versioning.md` — confirm for yourself that no persisted shape changes here. `plan.md`'s audit concluded no `SAVE_SCHEMA_VERSION` bump is needed because only a *value* stops resolving and `reconcileVault` already drops it; verify that reading rather than inheriting it.
@@ -241,7 +241,7 @@ Expected: exits 0.
 - Modify: `src/hunt/run.ts`, `src/hunt/runTransitions.ts`, `src/hunt/encounter.ts`, `src/hunt/types.ts`, `src/hunt/slotWeights.ts`, `src/hunt/consumables.ts`, `src/hunt/rankTiers.ts`, `src/hunt/index.ts` — drop the two items from shelves, price maps, run state and re-exports
 - Test: `src/hunt/__tests__/shop*.test.ts` and every spec constructing a `ShopStock`
 
-- [ ] **Step 1: Remove the two variants**
+- [x] **Step 1: Remove the two variants**
 
 ```ts
 export const ShopItem = {
@@ -253,7 +253,7 @@ export const ShopItem = {
 
 The union narrows. Every exhaustive `switch` over `ShopItem` must lose its two cases — `buyFromShop` is documented as total over the union, so the compiler finds each one.
 
-- [ ] **Step 2: Remove the stock field and its refusal**
+- [x] **Step 2: Remove the stock field and its refusal**
 
 ```ts
 export interface ShopStock {
@@ -269,16 +269,16 @@ export interface ShopStock {
 
 If `ShopRefusal.AlreadyHeld` (or whatever the refusal is named) has no other producer after this deletion, delete the refusal variant too — a declared refusal nothing can return is exactly the "type compiling with no behaviour behind it" state acceptance criterion 1 exists to prevent. If it *does* have another producer, leave it.
 
-- [ ] **Step 3: Remove both items from the shelf ladder**
+- [x] **Step 3: Remove both items from the shelf ladder**
 
 The four-shelf ladder sorts by how long a purchase lasts. Timebomb sits on **one-time use** and the Blast Guard on **fight-long**. Remove both entries. The fight-long shelf now has no stock — leave the shelf data empty here and let Task 14 decide what renders.
 
-- [ ] **Step 4: Typecheck and run the hunt specs**
+- [x] **Step 4: Typecheck and run the hunt specs**
 
 Run: `npm run typecheck; npx vitest run src/hunt/__tests__ --project node`
 Expected: `src/hunt/` reports no errors of its own; remaining errors name `src/warCouncil/`, `src/app/` or `src/sim/` only. Vitest exits 0.
 
-### Task 6: Delete the streak's Timebomb gate and the Blast Guard fold
+### Task 6: Delete the streak's Timebomb gate and the Blast Guard fold ✓
 
 - Skill: `react-frontend`
 
@@ -292,7 +292,7 @@ Expected: `src/hunt/` reports no errors of its own; remaining errors name `src/w
 - Delete: `src/warCouncil/__tests__/timebomb.test.ts`, `src/warCouncil/__tests__/playCard.timebomb.test.ts`
 - Test: `src/warCouncil/__tests__/streak.test.ts` — drop the timebomb-reset and guard cases
 
-- [ ] **Step 1: Simplify the reset gate**
+- [x] **Step 1: Simplify the reset gate**
 
 ```ts
 -  const timebombResets = trick.timebombToPlayer > 0 && !trick.blastGuarded
@@ -301,7 +301,7 @@ Expected: `src/hunt/` reports no errors of its own; remaining errors name `src/w
 +  if (trickHit) {
 ```
 
-- [ ] **Step 2: Delete the three fields and the guard fold**
+- [x] **Step 2: Delete the three fields and the guard fold**
 
 ```ts
 -  readonly blastGuardSpent: boolean          // line 73, on the resolution
@@ -313,7 +313,7 @@ Expected: `src/hunt/` reports no errors of its own; remaining errors name `src/w
 
 Remove the docblocks at lines 112 and 123 that cite `blastGuarded` as the precedent for how a figure is handed in — they explain a parameter that no longer exists. `baseDamageBonus` keeps its own docblock.
 
-- [ ] **Step 3: Drop the `blastGuarded` play option**
+- [x] **Step 3: Drop the `blastGuarded` play option**
 
 ```ts
 // legalMoves.ts:51
@@ -322,12 +322,12 @@ Remove the docblocks at lines 112 and 123 that cite `blastGuarded` as the preced
 -      blastGuarded: options?.blastGuarded ?? false,
 ```
 
-- [ ] **Step 4: Delete the dedicated module and its two specs**
+- [x] **Step 4: Delete the dedicated module and its two specs**
 
 Run: `Remove-Item src\warCouncil\timebomb.ts, src\warCouncil\__tests__\timebomb.test.ts, src\warCouncil\__tests__\playCard.timebomb.test.ts`
 Expected: no output; the three files are gone.
 
-- [ ] **Step 5: Verify the module is clean and typechecks**
+- [x] **Step 5: Verify the module is clean and typechecks**
 
 Run: `Get-ChildItem src\warCouncil -Recurse -Include *.ts | Select-String -Pattern "timebomb|blastGuard" -CaseSensitive:$false`
 Expected: zero hits.
@@ -341,7 +341,7 @@ Expected: exits 0.
 
 The largest single surface: five fields on `RoundUiState`, one on `TrickResolution`, one on the encounter, and their readers across the reducer and every handler. Each task moves one shape with all its readers, so the phase never leaves a written-but-unread field. `src/app/` may import React freely — the pure-core boundary does not apply here. The phase ends type-checking with the round state carrying no Timebomb or Blast Guard field.
 
-### Task 7: Delete the five `RoundUiState` fields and the two predicates
+### Task 7: Delete the five `RoundUiState` fields and the two predicates ✓
 
 - Skill: `react-frontend`
 
@@ -351,7 +351,7 @@ The largest single surface: five fields on `RoundUiState`, one on `TrickResoluti
 - Modify: `src/app/warCouncil/roundUiSeed.ts` — drop the fields from the seed
 - Test: every spec constructing a `RoundUiState` or `RoundUiSeed` literal — **40 sites name `timebombArmedDamage`, 31 name `timebombFuseRemaining`, 12 name `primedTimebombDamage`, 150 name `blastGuardHeld`**
 
-- [ ] **Step 1: Delete the fields and their docblocks**
+- [x] **Step 1: Delete the fields and their docblocks**
 
 ```ts
 export interface RoundUiState {
@@ -365,7 +365,7 @@ export interface RoundUiState {
 
 Also delete `TrickResolution.timebombDamage` at line 49 and the `TimebombDamage` import at line 35. Preserve the docblocks on `discardsRemaining` and the other hand-scoped fields that currently say "the same contract `blastGuardHeld` documents" — rewrite those to stand on their own rather than citing a deleted field.
 
-- [ ] **Step 2: Delete the two exported predicates**
+- [x] **Step 2: Delete the two exported predicates**
 
 ```ts
 -export function timebombArmed(state: RoundUiState): boolean { … }
@@ -374,17 +374,17 @@ Also delete `TrickResolution.timebombDamage` at line 49 and the `TimebombDamage`
 
 Leave the 2026-08-26 docblock at line 334 that explains Cheat's exception, but delete its two paragraphs about the Timebomb *not* sharing that exception — they describe a card that no longer exists.
 
-- [ ] **Step 3: Fix every construction site**
+- [x] **Step 3: Fix every construction site**
 
 Run: `npm run typecheck`
 Expected: an error for each literal still supplying a deleted field. Work through them; `RoundUiSeed` in particular is built by hand-written fixtures that carry no type annotation.
 
-- [ ] **Step 4: Verify zero survivors**
+- [x] **Step 4: Verify zero survivors**
 
 Run: `Get-ChildItem src\app -Recurse -Include *.ts,*.tsx | Select-String -Pattern "timebombArmedDamage|primedTimebombDamage|timebombFuseRemaining|timebombBuff|blastGuardHeld"`
 Expected: zero hits.
 
-### Task 8: Delete the pending-damage queue and the fuse from the reducer
+### Task 8: Delete the pending-damage queue and the fuse from the reducer ✓
 
 - Skill: `react-frontend`
 
@@ -396,7 +396,7 @@ Expected: zero hits.
 - Delete: `src/app/warCouncil/__tests__/roundReducer.timebomb.test.ts`, `roundReducer.timebombQueue.test.ts`, `timebombFuse.test.ts`
 - Test: `src/app/warCouncil/__tests__/roundReducer.test.ts` — drop queue and fuse cases
 
-- [ ] **Step 1: Delete `pendingTimebomb` from the encounter**
+- [x] **Step 1: Delete `pendingTimebomb` from the encounter**
 
 ```ts
 export interface EncounterState {
@@ -406,21 +406,21 @@ export interface EncounterState {
 
 Remove its initialiser in the encounter factory and every read.
 
-- [ ] **Step 2: Delete the fuse countdown and the queue transitions from the reducer**
+- [x] **Step 2: Delete the fuse countdown and the queue transitions from the reducer**
 
 Remove the branch that decrements `timebombFuseRemaining` at each trick boundary, the branch that moves an armed Timebomb to primed, and the branch that folds `pendingTimebomb` into health at the next resolution. Delete any `RoundUiActionKind` variant that exists only to drive one of these; leave every other action alone.
 
-- [ ] **Step 3: Delete the three dedicated reducer specs**
+- [x] **Step 3: Delete the three dedicated reducer specs**
 
 Run: `Remove-Item src\app\warCouncil\__tests__\roundReducer.timebomb.test.ts, src\app\warCouncil\__tests__\roundReducer.timebombQueue.test.ts, src\app\warCouncil\__tests__\timebombFuse.test.ts`
 Expected: no output.
 
-- [ ] **Step 4: Typecheck and run the reducer specs**
+- [x] **Step 4: Typecheck and run the reducer specs**
 
 Run: `npm run typecheck; npx vitest run src/app/warCouncil/__tests__/roundReducer.test.ts`
 Expected: Vitest exits 0.
 
-### Task 9: Delete the Timebomb branches from the buff and commit handlers
+### Task 9: Delete the Timebomb branches from the buff and commit handlers ✓
 
 - Skill: `react-frontend`
 
@@ -431,7 +431,7 @@ Expected: Vitest exits 0.
 - Modify: `src/app/warCouncil/discardHandlers.ts`, `cardDamage.ts:109`, `roundResult.ts`, `roundBars.ts`
 - Test: `src/app/warCouncil/__tests__/buffHandlers.test.ts`, `commitHandlers` specs, `cardDamage.test.ts`
 
-- [ ] **Step 1: Delete the arming writes**
+- [x] **Step 1: Delete the arming writes**
 
 ```ts
 -    timebombArmedDamage:
@@ -439,7 +439,7 @@ Expected: Vitest exits 0.
 -    timebombBuff: buff.kind === BuffKind.Timebomb ? buff : state.timebombBuff,
 ```
 
-- [ ] **Step 2: Delete the revoke interception**
+- [x] **Step 2: Delete the revoke interception**
 
 ```ts
 -  if (state.timebombBuff !== null && state.timebombBuff.id === id) { … }
@@ -447,7 +447,7 @@ Expected: Vitest exits 0.
 
 This is the branch the DLR-154 FIX D docblock in `buffActivation.ts` referred to; that docblock went in Task 4, so nothing is left describing a branch that no longer exists.
 
-- [ ] **Step 3: Delete the Blast Guard threading in the commit handlers**
+- [x] **Step 3: Delete the Blast Guard threading in the commit handlers**
 
 ```ts
 // :72
@@ -456,16 +456,16 @@ This is the branch the DLR-154 FIX D docblock in `buffActivation.ts` referred to
 -    blastGuardHeld: resolvedTrick?.resolution.blastGuardSpent ? false : state.blastGuardHeld,
 ```
 
-- [ ] **Step 4: Prune the docblocks that describe both cards at once**
+- [x] **Step 4: Prune the docblocks that describe both cards at once**
 
 Several comments in `buffHandlers.ts` read "a Cheat or a Timebomb". Rewrite each to name Cheat alone rather than deleting the whole comment — the Cheat behaviour they describe is unchanged and still needs explaining.
 
-- [ ] **Step 5: Typecheck and run the handler specs**
+- [x] **Step 5: Typecheck and run the handler specs**
 
 Run: `npm run typecheck; npx vitest run src/app/warCouncil/__tests__/buffHandlers.test.ts src/app/warCouncil/__tests__/cardDamage.test.ts`
 Expected: Vitest exits 0.
 
-### Task 10: Remove the Timebomb term from the resolution path
+### Task 10: Remove the Timebomb term from the resolution path ✓
 
 - Skill: `react-frontend`
 
@@ -476,15 +476,15 @@ Expected: Vitest exits 0.
 - Modify: `src/app/warCouncil/TrickResolutionScreen.tsx` — delete the Timebomb damage beat and the 60% payout-reduction term
 - Test: `src/app/warCouncil/__tests__/` resolution specs
 
-- [ ] **Step 1: Delete the Timebomb beat and the payout-reduction term from the screen**
+- [x] **Step 1: Delete the Timebomb beat and the payout-reduction term from the screen**
 
 Per `mockup.html`'s resolution panel: the rows "Timebomb detonation → you", "Payout reduced by Timebomb (60%)" and "Blast Guard spent — streak saved" all go. The base damage, buff, overlap-bonus and pot rows are untouched.
 
-- [ ] **Step 2: Update the two docblocks**
+- [x] **Step 2: Update the two docblocks**
 
 `resolutionBeats.ts:70` currently explains that either `trickHit` or `timebombResets` being true always makes a beat fire. After Task 6 there is only `trickHit` — rewrite the sentence rather than deleting the docblock.
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: `src/app/warCouncil/` reports no remaining errors from Phase 2's deletions; anything left names `src/sim/` or CSS-adjacent components Phase 3 covers.
@@ -495,7 +495,7 @@ Expected: `src/app/warCouncil/` reports no remaining errors from Phase 2's delet
 
 Everything the player sees: the ticking heart and its CSS, the dedicated mark component, the shop glyphs, the hint copy, and the one colour-token rename. `mockup.html` in this folder is the approved layout reference for what each surface looks like after the removal. This phase carries the contract's only non-subtractive change — the token rename — and the single most dangerous line, keeping `HeartState.AtRisk` while deleting `HeartState.Ticking`. The phase ends type-checking.
 
-### Task 11: Delete the ticking heart state and its CSS
+### Task 11: Delete the ticking heart state and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -505,7 +505,7 @@ Everything the player sees: the ticking heart and its CSS, the dedicated mark co
 - Modify: `src/app/warCouncil/warCouncilHealthBars.css:42-49` — delete `--wc-hp-ticking-fill`, `--wc-hp-ticking-opacity`, `--wc-hp-shield-ticking-opacity` and every `[data-state='ticking']` selector
 - Test: `src/app/warCouncil/__tests__/duelHealthBars.test.ts`, `BankMeter.test.tsx`
 
-- [ ] **Step 1: Delete `Ticking` — and only `Ticking` — from the heart-state map**
+- [x] **Step 1: Delete `Ticking` — and only `Ticking` — from the heart-state map**
 
 ```ts
 export const HeartState = {
@@ -519,7 +519,7 @@ export const HeartState = {
 
 Update the map's docblock, which currently ends "`Ticking` was added on DLR-101 for a standing heart that booked Timebomb has already claimed."
 
-- [ ] **Step 2: Delete the overlay and the arithmetic that reads it**
+- [x] **Step 2: Delete the overlay and the arithmetic that reads it**
 
 ```ts
 export interface HealthBarOverlays {
@@ -531,11 +531,11 @@ export interface HealthBarOverlays {
 
 Delete the clamp at line 205 (documented as "the ONE clamp on booked Timebomb"), the `atRiskEnd` subtraction of `ticking` at line 210, the `absorbWithShield` call at 223-224 that routes a booked Timebomb through the shield, and the `HeartState.Ticking` branch at 238. **The `AtRisk` branch stays** — recompute `atRiskEnd` from the streak alone.
 
-- [ ] **Step 3: Delete the CSS custom properties and selectors**
+- [x] **Step 3: Delete the CSS custom properties and selectors**
 
 The `HeartState` values are written into the DOM as `data-state` and matched by attribute selectors, so this must land in the same task as Step 1 or the stylesheet silently keeps a dead rule.
 
-- [ ] **Step 4: Verify `AtRisk` survived**
+- [x] **Step 4: Verify `AtRisk` survived**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "HeartState\.AtRisk|atRisk"`
 Expected: **non-zero** hits — this is an inverted check. Zero hits means the streak preview was deleted by mistake, which is a scope breach, not a clean removal.
@@ -543,12 +543,12 @@ Expected: **non-zero** hits — this is an inverted check. Zero hits means the s
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "ticking"`
 Expected: zero hits.
 
-- [ ] **Step 5: Run the health-bar specs**
+- [x] **Step 5: Run the health-bar specs**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/duelHealthBars.test.ts`
 Expected: exits 0.
 
-### Task 12: Delete the Timebomb mark component and its stylesheet
+### Task 12: Delete the Timebomb mark component and its stylesheet ✓
 
 - Skill: `react-frontend`
 
@@ -559,26 +559,26 @@ Expected: exits 0.
 - Modify: `src/app/warCouncil/WarCouncilRound.tsx`, `WarCouncilTable.tsx`, `HandFan.tsx`, `PlayingCard.tsx`, `TrickWell.tsx` — drop the import, the props and the render branch
 - Modify: `src/app/warCouncil/warCouncilHand.css:126-127` — delete `.wc-fan.wc-is-marking`
 
-- [ ] **Step 1: Delete the six files**
+- [x] **Step 1: Delete the six files**
 
 Run: `Remove-Item src\app\warCouncil\TimebombMark.tsx, src\app\warCouncil\timebombMarks.ts, src\app\warCouncil\warCouncilTimebombMark.css, src\app\warCouncil\__tests__\TimebombMark.test.tsx, src\app\warCouncil\__tests__\WarCouncilRound.timebomb.test.tsx, src\app\warCouncil\__tests__\WarCouncilRound.timebombRevoke.test.tsx`
 Expected: no output.
 
-- [ ] **Step 2: Remove the stylesheet import and every render branch the compiler flags**
+- [x] **Step 2: Remove the stylesheet import and every render branch the compiler flags**
 
 Run: `npm run typecheck`
 Expected: errors naming each component that imported the deleted module. Remove the import, the prop, and the branch — including the marking-mode predicate that put `wc-is-marking` on the hand fan.
 
-- [ ] **Step 3: Delete the marking-mode CSS**
+- [x] **Step 3: Delete the marking-mode CSS**
 
 `warCouncilHand.css:126-127` — delete the `.wc-fan.wc-is-marking` rule and the comment above it explaining that the tint is presentational only and `TIMEBOMB_ARMED_HINT` carries the mode to a player who cannot see colour.
 
-- [ ] **Step 4: Confirm no dangling stylesheet import**
+- [x] **Step 4: Confirm no dangling stylesheet import**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "warCouncilTimebombMark|TimebombMark|timebombMarks|wc-is-marking"`
 Expected: zero hits.
 
-### Task 13: Delete the hint copy and the buff-label branches
+### Task 13: Delete the hint copy and the buff-label branches ✓
 
 - Skill: `react-frontend`
 
@@ -590,7 +590,7 @@ Expected: zero hits.
 - Modify: `src/app/ErrorBoundary.tsx`
 - Test: `src/app/warCouncil/__tests__/buffLabels.test.ts`, `buffRideLabels.test.ts`, `buffRideModel.test.ts`, `BuffRidingList.test.tsx`, `BuffGallery.test.tsx`, `buffGalleryModel.test.ts`
 
-- [ ] **Step 1: Delete the copy constant and its only reader**
+- [x] **Step 1: Delete the copy constant and its only reader**
 
 ```ts
 // labels.ts:223
@@ -599,16 +599,16 @@ Expected: zero hits.
 -  if (ui.timebombArmedDamage !== null) return TIMEBOMB_ARMED_HINT
 ```
 
-- [ ] **Step 2: Remove the Timebomb rows from every label and gallery map**
+- [x] **Step 2: Remove the Timebomb rows from every label and gallery map**
 
 `buffLabels.ts` and its siblings hold per-`BuffKind` records. With the variant gone in Phase 1 these are compile errors — remove each row. **Do not touch the Sidestep rows**: its `'dodge a skull with this card'` description and its `'DODGE'` face are corrected on DLR-167, not here.
 
-- [ ] **Step 3: Typecheck and run the label specs**
+- [x] **Step 3: Typecheck and run the label specs**
 
 Run: `npm run typecheck; npx vitest run src/app/warCouncil/__tests__/buffLabels.test.ts src/app/warCouncil/__tests__/buffRideLabels.test.ts`
 Expected: Vitest exits 0.
 
-### Task 14: Remove the two items from the shop screen
+### Task 14: Remove the two items from the shop screen ✓
 
 - Skill: `react-frontend`, and `game-ux` for the empty-shelf decision
 
@@ -618,26 +618,26 @@ Expected: Vitest exits 0.
 - Modify: `src/app/run/shopSlot.css:112-113`, `src/app/run/shopSlotReel.css:119-120` — delete `[data-glyph='timebomb']`
 - Test: `src/app/run/__tests__/ShopPanel.test.tsx`, `ShopPanel.manageBuffs.test.tsx`, `shopLabels.test.ts`, `shopPrices.test.ts`, `shopRefusals.test.ts`, `ShopCardMotion.test.tsx`
 
-- [ ] **Step 1: Delete the labels, glyphs and symbols for both items**
+- [x] **Step 1: Delete the labels, glyphs and symbols for both items**
 
 Both `ShopItem` variants went in Task 5, so every per-item record is a compile error. Remove each row and the `timebomb` glyph from the symbol map.
 
-- [ ] **Step 2: Render no fight-long shelf when it has no stock**
+- [x] **Step 2: Render no fight-long shelf when it has no stock**
 
 The Blast Guard was the fight-long shelf's only item. Per `game-ux` — *do not render a panel that has nothing to say* — an empty labelled shelf becomes furniture that teaches the player to stop looking. Render the shelf only when it has at least one item, rather than showing an empty frame or a "nothing available" row.
 
 This is flagged under **Developer decides or observes**; implement the default and surface it in the final report so it can be overturned by eye.
 
-- [ ] **Step 3: Delete the glyph CSS**
+- [x] **Step 3: Delete the glyph CSS**
 
 Both `[data-glyph='timebomb']` rules and their `--wc-timebomb`/`--wc-timebomb-edge` reads go. Task 15 renames the token; deleting these first means Task 15 has two fewer call sites to repoint.
 
-- [ ] **Step 4: Run the shop specs**
+- [x] **Step 4: Run the shop specs**
 
 Run: `npx vitest run src/app/run/__tests__ --project dom`
 Expected: exits 0.
 
-### Task 15: Rename the shared colour token
+### Task 15: Rename the shared colour token ✓
 
 - Skill: `react-frontend`
 
@@ -647,7 +647,7 @@ Expected: exits 0.
 - Modify: `src/app/run/run.css:70`, `src/app/warCouncil/warCouncilBankMeter.css:133,135,139`, `src/app/warCouncil/warCouncilBuffCard.css:304` — the three surviving consumers
 - Modify: `src/app/warCouncil/warCouncilCardFace.css`, `warCouncilHunt.css`, `warCouncilTable.css` — any remaining read
 
-- [ ] **Step 1: Rename the two declarations**
+- [x] **Step 1: Rename the two declarations**
 
 ```css
 -  --wc-timebomb: #8fb04e;
@@ -658,11 +658,11 @@ Expected: exits 0.
 
 The hex values do not change — this is a rename, not a retune. **The name is the developer's call** and is listed under Developer decides or observes; if they chose differently at the gate, use their name here.
 
-- [ ] **Step 2: Repoint every surviving consumer**
+- [x] **Step 2: Repoint every surviving consumer**
 
 Three surfaces borrow this colour with no connection to the deleted mechanic and must keep rendering identically: the won-verdict headline (`run.css:70`), the feeder carry-out row (`warCouncilBankMeter.css`), and the buff card's payoff-gain chip (`warCouncilBuffCard.css:304`).
 
-- [ ] **Step 3: Verify the token is fully renamed, not half-renamed**
+- [x] **Step 3: Verify the token is fully renamed, not half-renamed**
 
 Run: `Get-ChildItem src -Recurse -Include *.css,*.ts,*.tsx | Select-String -Pattern "wc-timebomb"`
 Expected: zero hits.
@@ -676,7 +676,7 @@ Expected: non-zero hits — the two declarations plus the surviving consumers. A
 
 `src/sim/` depends on everything above and nothing depends on it, so it goes last among the code phases. It is lint-enforced pure. Removing the Timebomb fixtures changes how many draws are taken from the seeded generator, so seeded expectations downstream will shift — that is a fixture update, not a regression, and each new value must be reasoned about rather than pasted from a failing run. The phase ends with `npx vitest run src/sim/__tests__` green.
 
-### Task 16: Delete the Timebomb fixtures and policy behaviour
+### Task 16: Delete the Timebomb fixtures and policy behaviour ✓
 
 - Skill: `react-frontend`
 
@@ -688,24 +688,24 @@ Expected: non-zero hits — the two declarations plus the surviving consumers. A
 - Modify: `src/sim/playHand.ts`, `playHandWindows.ts`, `playRun.ts`, `report.ts`, `index.ts` — drop Timebomb instrumentation and re-exports
 - Test: `src/sim/__tests__/` — six spec files
 
-- [ ] **Step 1: Delete the two fixture builders**
+- [x] **Step 1: Delete the two fixture builders**
 
 `attemptPrimedTimebomb` (line 126) and `fixtureHandWithPrimedTimebomb` (line 221) both exist only to drive a Timebomb to detonation. Delete both, their retry loops, and the long docblocks at lines 113-125 and 208-220 explaining the narrow window they hunt for.
 
-- [ ] **Step 2: Delete the two named policies**
+- [x] **Step 2: Delete the two named policies**
 
 `skilledWithTimebomb` and `sharpshooterNoTimebomb` are policy variants distinguished only by whether they arm a Timebomb. With the card gone, `sharpshooterNoTimebomb` is a duplicate of its base and `skilledWithTimebomb` is unimplementable. Delete both entries from the policy registry, keeping the base policies.
 
-- [ ] **Step 3: Delete the Timebomb instrumentation from the report**
+- [x] **Step 3: Delete the Timebomb instrumentation from the report**
 
 Any counter or column in `report.ts` tracking Timebomb arms, detonations or guard saves goes with them.
 
-- [ ] **Step 4: Rebase the seeded expectations**
+- [x] **Step 4: Rebase the seeded expectations**
 
 Run: `npx vitest run src/sim/__tests__ --project node`
 Expected: any failure is a **seeded-value shift**, not a logic error. For each, confirm the new value follows from removing draws from the seeded sequence before updating the expectation — do not paste the actual output without that reasoning. Report each rebased value in the final report.
 
-- [ ] **Step 5: Confirm the module is clean and still pure**
+- [x] **Step 5: Confirm the module is clean and still pure**
 
 Run: `Get-ChildItem src\sim -Recurse -Include *.ts | Select-String -Pattern "timebomb|blastGuard" -CaseSensitive:$false`
 Expected: zero hits.
@@ -713,7 +713,7 @@ Expected: zero hits.
 Run: `npm run lint`
 Expected: exits 0 — `src/sim/` is lint-enforced pure and the purity override must still be firing.
 
-### Task 17: Sweep the remaining test files across all four modules
+### Task 17: Sweep the remaining test files across all four modules ✓
 
 - Skill: `react-frontend`
 
@@ -721,21 +721,21 @@ Expected: exits 0 — `src/sim/` is lint-enforced pure and the purity override m
 
 - Test: the remaining specs under `src/app/warCouncil/__tests__/`, `src/app/run/__tests__/`, `src/hunt/__tests__/`, `src/warCouncil/__tests__/`, `src/sim/__tests__/` that mention either mechanic among other things — **98 test files named one of the two at the start of this contract**, minus the eleven deleted outright
 
-- [ ] **Step 1: Find every test file still naming either mechanic**
+- [x] **Step 1: Find every test file still naming either mechanic**
 
 Run: `Get-ChildItem src -Recurse -Include *.test.ts,*.test.tsx | Select-String -Pattern "timebomb|blastGuard" -CaseSensitive:$false | Select-Object -ExpandProperty Path -Unique`
 Expected: a list. Each is a spec covering Timebomb or Blast Guard **among other things** — edit it in place, removing the fixture, field or assertion, rather than deleting the file.
 
-- [ ] **Step 2: Remove the test helper that builds a guarded fixture**
+- [x] **Step 2: Remove the test helper that builds a guarded fixture**
 
 `blastGuardHeldFixture` appears at 32 sites. Delete the helper and every call, along with any `describe` block whose whole subject was the guard.
 
-- [ ] **Step 3: Confirm the sweep is complete**
+- [x] **Step 3: Confirm the sweep is complete**
 
 Run: `Get-ChildItem src -Recurse -Include *.test.ts,*.test.tsx | Select-String -Pattern "timebomb|blastGuard" -CaseSensitive:$false`
 Expected: zero hits.
 
-- [ ] **Step 4: Run both Vitest projects separately to warm the cache**
+- [x] **Step 4: Run both Vitest projects separately to warm the cache**
 
 Run: `npx vitest run --project node; npx vitest run --project dom`
 Expected: both exit 0. Running them separately first is what avoids the cold-cache worker-start timeout on the `dom` project — a single cold timeout is infrastructure, not a failing test.
@@ -777,7 +777,7 @@ Expected: the skill reports which module docs were created versus updated, which
 
 No production changes. Only cumulative sanity checks, including the two inverted greps that catch a removal which went too far. Every recursive grep uses the `Get-ChildItem … | Select-String` form — `Select-String -Path` does not recurse, and its `**` matches exactly one directory level, which would report a false zero for exactly the names this phase exists to prove are gone.
 
-### Task 19: Prove the mechanics are gone — and that the survivors survived
+### Task 19: Prove the mechanics are gone — and that the survivors survived ✓
 
 - Skill: `none — verification only, no code is written`
 
@@ -785,12 +785,12 @@ No production changes. Only cumulative sanity checks, including the two inverted
 
 - (no file changes)
 
-- [ ] **Step 1: The headline acceptance grep**
+- [x] **Step 1: The headline acceptance grep**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "timebomb|blast.?guard" -CaseSensitive:$false`
 Expected: zero hits. Quote the command and the count in the final report — acceptance criterion 5 asks for both. If a hit survives inside a docblock deliberately recording project history, quote it and justify it explicitly rather than letting it pass silently.
 
-- [ ] **Step 2: The inverted checks — confirm nothing adjacent was deleted by mistake**
+- [x] **Step 2: The inverted checks — confirm nothing adjacent was deleted by mistake**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "atRisk"`
 Expected: **non-zero** hits. `HeartState.AtRisk` is the streak preview and must survive; zero hits means a scope breach.
@@ -801,12 +801,12 @@ Expected: **non-zero** hits. Cheat is out of scope and is the shape DLR-167 copi
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "BuffKind\.Sidestep"`
 Expected: **non-zero** hits, including its `'dodge a skull with this card'` description and `'DODGE'` face, both of which are DLR-167's to change and must be untouched here.
 
-- [ ] **Step 3: Confirm the cut condition families were not disturbed**
+- [x] **Step 3: Confirm the cut condition families were not disturbed**
 
 Run: `Get-ChildItem src\hunt -Recurse -Include *.ts | Select-String -Pattern "MarkOfRank|Glutton|Hoarder|Unbloodied|DebtCollector|Keepsake|Miser|Cornered"`
 Expected: non-zero hits. These eight are deliberately retained-but-unmintable and get the opposite treatment from the Timebomb; deleting or restoring any of them is out of contract.
 
-### Task 20: Confirm the architectural boundaries still hold
+### Task 20: Confirm the architectural boundaries still hold ✓
 
 - Skill: `none — verification only, no code is written`
 
@@ -814,22 +814,22 @@ Expected: non-zero hits. These eight are deliberately retained-but-unmintable an
 
 - (no file changes)
 
-- [ ] **Step 1: The pure-core boundary grep**
+- [x] **Step 1: The pure-core boundary grep**
 
 Run: `Get-ChildItem src\warCouncil, src\hunt, src\sim -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"`
 Expected: zero hits.
 
-- [ ] **Step 2: Confirm `eslint.config.js` was not edited**
+- [x] **Step 2: Confirm `eslint.config.js` was not edited**
 
 Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git diff --name-only -- eslint.config.js`
 Expected: no output. The two `no-restricted-globals` blocks' ordering is load-bearing — flat config replaces rather than merges same-key options, and the second block's `ignores` for `src/warCouncil/**` and `src/hunt/**` exist solely to stop it overwriting the first block's full DOM ban. That regression shipped once, on DLR-106.
 
-- [ ] **Step 3: Confirm the save schema was not bumped and no storage call escaped**
+- [x] **Step 3: Confirm the save schema was not bumped and no storage call escaped**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "SAVE_SCHEMA_VERSION = "`
 Expected: exactly one hit, `src/persistence/config.ts`, still reading `1`. This contract changes no persisted shape — only a stored template-id value stops resolving, which `reconcileVault` already handles.
 
-- [ ] **Step 4: Confirm no file grew past the budget**
+- [x] **Step 4: Confirm no file grew past the budget**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Where-Object { (Get-Content $_.FullName).Count -gt 400 } | Select-Object FullName, @{n='Lines';e={(Get-Content $_.FullName).Count}}`
 Expected: no output. Use `(Get-Content).Count`, never `Measure-Object -Line`, which drops blank lines and has hidden a real breach before.

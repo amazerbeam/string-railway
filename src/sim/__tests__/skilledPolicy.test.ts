@@ -186,21 +186,6 @@ describe('the strategy as a whole', () => {
     expect(share('skilled')).toBeGreaterThan(share('skilledNaiveCards'))
   })
 
-  it('withholds Timebombs, which is what keeps a dodging player from priming its own throwaways', () => {
-    const damage = (policy: string): number => {
-      let taken = 0
-      let hands = 0
-      for (let seed = 1; seed <= 40; seed += 1) {
-        for (const hand of playRun(seed, POLICIES[policy]).hands) {
-          taken += hand.damageToPlayer
-          hands += 1
-        }
-      }
-      return hands === 0 ? 0 : taken / hands
-    }
-    expect(damage('skilled')).toBeLessThan(damage('skilledWithTimebomb'))
-  })
-
   it('is registered and brings its own stopping rule', () => {
     expect(POLICIES.skilled).toBe(skilledPolicy)
     expect(skilledPolicy.wantsApplyPot).toBeDefined()

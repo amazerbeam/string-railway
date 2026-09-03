@@ -8,7 +8,7 @@ import type { ActionPoints } from './types'
  * `apCost = clamp(REWARD_BASE[axis][tier] + CONDITION_MODIFIER[family], AP_COST_MIN, AP_COST_MAX)`
  * for the eleven condition families, and a flat `CONSUMABLE_AP_COST[kind][tier]` lookup for the
  * eight consumable/activated cards. DLR-111 sources seven of those eight and sets them off-curve
- * for stated reasons (Ward and Timebomb flat because their tier is paid in something other than
+ * for stated reasons (Ward flat because its tier is paid in something other than
  * AP; Cheat's gold deliberately above `STARTING_AP`). The eighth, Shield, is NOT DLR-111's — see
  * the `CONSUMABLE_AP_COST` table's own comment on that row for where its figures came from.
  *
@@ -58,10 +58,9 @@ export type BuffConditionKind =
   | typeof BuffKind.SkullHelmet
   | typeof BuffKind.SkullTether
 
-/** Cheat, Timebomb, Shield and the 5 consumables — priced off the formula entirely. */
+/** Cheat, Shield and the 5 consumables — priced off the formula entirely. */
 export type BuffConsumableKind =
   | typeof BuffKind.Cheat
-  | typeof BuffKind.Timebomb
   | typeof BuffKind.Ward
   | typeof BuffKind.Puppeteer
   | typeof BuffKind.SecondThoughts
@@ -102,8 +101,8 @@ export const CONDITION_MODIFIER: Readonly<Record<BuffConditionKind, number>> = {
   [BuffKind.SkullTether]: 0,
 }
 
-// DLR-111 → Utilities, consumables and activated cards. Off-curve by design: Ward and Timebomb
-// are flat because their tier is paid in something other than AP (absorption / split damage); gold
+// DLR-111 → Utilities, consumables and activated cards. Off-curve by design: Ward
+// is flat because its tier is paid in something other than AP (absorption); gold
 // Cheat is deliberately priced above STARTING_AP. Puppeteer is single-tier only in the source
 // document; all three cells carry its one price so the table stays total over BuffTier.
 // UNIT: action points.
@@ -116,7 +115,6 @@ export const CONSUMABLE_AP_COST: Readonly<
   [BuffKind.Foresight]: { [BuffTier.Bronze]: 1, [BuffTier.Silver]: 2, [BuffTier.Gold]: 3 },
   [BuffKind.Spyglass]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 4 },
   [BuffKind.Cheat]: { [BuffTier.Bronze]: 3, [BuffTier.Silver]: 5, [BuffTier.Gold]: 7 },
-  [BuffKind.Timebomb]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 2, [BuffTier.Gold]: 2 },
   // DLR-110 — NOBODY CHOSE THESE NUMBERS. No source document prices Shield: `v1-buff-card-list.md`
   // has no Shield row, and design §7a states the heart counts but no cost. The ladder shape is
   // copied from `SecondThoughts`/`Spyglass`. A price row is FORCED by adding `BuffKind.Shield` —

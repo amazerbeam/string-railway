@@ -7,7 +7,6 @@ const stock = (over: Partial<ShopStock> = {}): ShopStock => ({
   coins: 5,
   playerHealth: 6,
   maxPlayerHealth: 10,
-  blastGuardHeld: false,
   rankTiers: ALL_BRONZE,
   maxHealthPurchases: 0,
   ...over,
