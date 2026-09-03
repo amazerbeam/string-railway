@@ -8,13 +8,13 @@ name: Deploy to GitHub Pages
 # base comment in `vite.config.ts` says the same thing, and both need revisiting together
 # if a route is ever added.
 #
-# This deploys from `Version-6-UX`, the branch the work is currently on. Change the branch
-# below if that moves. Deliberately only ONE branch: two branches publishing to one Pages
-# site race each other and the loser silently wins nothing.
+# This deploys from `master`, the repository's default branch and where the work actually
+# lands. Deliberately only ONE branch: two branches publishing to one Pages site race each
+# other, and the loser silently wins nothing.
 
 on:
   push:
-    branches: [Version-6-UX]
+    branches: [master]
   workflow_dispatch:
 
 permissions:

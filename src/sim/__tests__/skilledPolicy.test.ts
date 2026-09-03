@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { POLICIES, playRun } from '../index'
 import {
   cheatEscape,
@@ -24,6 +24,15 @@ function stateWith(over: Partial<RoundState>): RoundState {
 }
 
 const card = (suit: string, rank: number): Card => ({ suit, rank }) as unknown as Card
+
+// This file's "strategy as a whole" and "Manage Buffs upgrade path" tests each run 40 seeds x 2
+// policies of a full simulation (`playRun`) — measured locally at up to ~1.5s. GitHub's CI runners
+// have measured roughly 3.4x slower than this machine, which puts the heaviest of them (~1.5s local
+// -> ~5.1s on CI) right past Vitest's 5000ms default. Raising the default for this file only, with
+// real headroom over the CI estimate, rather than shrinking the seed count these tests' statistical
+// claims depend on. Scoped to this file via `vi.setConfig`, not raised globally in `vite.config.ts`,
+// so a genuinely hung test elsewhere in the suite still fails fast.
+vi.setConfig({ testTimeout: 15000 })
 
 describe('information discipline', () => {
   it('reads the Quarry only as per-suit counts, never as ranks', () => {
