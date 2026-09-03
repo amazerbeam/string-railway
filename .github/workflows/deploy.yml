@@ -1,0 +1,71 @@
+name: Deploy to GitHub Pages
+
+# Publishes the Vite build to https://amazerbeam.github.io/string-railway/.
+#
+# `vite.config.ts` sets `base: './'`, so every asset URL in the built `index.html` is
+# relative and resolves correctly under the `/string-railway/` sub-path with no config
+# change. That holds only while this is a single view with no client-side router — the
+# base comment in `vite.config.ts` says the same thing, and both need revisiting together
+# if a route is ever added.
+#
+# This deploys from `Version-6-UX`, the branch the work is currently on. Change the branch
+# below if that moves. Deliberately only ONE branch: two branches publishing to one Pages
+# site race each other and the loser silently wins nothing.
+
+on:
+  push:
+    branches: [Version-6-UX]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a deploy midway — a half-published site is worse than a stale one. Queued
+# runs wait instead, so the newest push is always the one that lands last.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm run build` already runs lint and typecheck ahead of `vite build`, so a broken
+      # tree fails here rather than publishing.
+      - name: Build
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the build output
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
