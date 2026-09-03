@@ -53,6 +53,28 @@ export function cheatBuff(tier: BuffTier, id: BuffId): Buff {
   }
 }
 
+/** DLR-162 AC1 — mint a Wildcard at `tier`. NO condition and NO reward, which is what AC1 says:
+ *  `ACTIVATED_BUFF_CONDITION` is the shared "the player pulls this" condition Cheat already uses,
+ *  and the `None` axis at 0 is the honest pair — `buffRewardPhrase` already words that axis as
+ *  "nothing", so no placeholder figure is invented.
+ *
+ *  The TIER IS CARRIED, not pinned: the reels award a tier and a three-of-a-kind readout says so,
+ *  and handing over a bronze card under a "1 gold" line would make that readout a lie. All three
+ *  tiers convert exactly one card (AC4) — whether a higher tier should do more is a design
+ *  question this ticket routes to the developer, not a default to invent.
+ *
+ *  `id` is the CALLER's, from `RunState.nextBuffId`; this module never invents one and never calls
+ *  `Math.random()`, because `src/hunt/` must stay deterministic. */
+export function wildcardBuff(tier: BuffTier, id: BuffId): Buff {
+  return {
+    id,
+    kind: BuffKind.Wildcard,
+    tier,
+    condition: ACTIVATED_BUFF_CONDITION,
+    reward: { axis: BuffRewardAxis.None, value: 0 },
+  }
+}
+
 /** DLR-110 — mint a Shield buff at `tier`. On the `heartCount` axis `buffs.ts` and
  *  `.docs/implementation/hunt/buff-pile.md` already name as Shield's. `id` is the caller's, minted
  *  from `RunState.nextBuffId` exactly as `cheatBuff`'s is; this module never invents one.

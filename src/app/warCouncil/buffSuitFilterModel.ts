@@ -35,6 +35,7 @@ const ZERO_RUN_COUNTS: Readonly<Record<BuffRunKind | 'all', number>> = {
   [BuffRunKind.Bells]: 0,
   [BuffRunKind.Keys]: 0,
   [BuffRunKind.Moons]: 0,
+  [BuffRunKind.Wild]: 0,
   [BuffRunKind.Suitless]: 0,
   [BuffRunKind.Press]: 0,
 }

@@ -1,7 +1,5 @@
-import { buffTargetSuitOf, type Buff } from '../../hunt'
-import { buffConditionSentence, buffName, buffPayoffFace } from '../warCouncil/buffLabels'
-import { SuitMark } from '../warCouncil/SuitMark'
-import { SUIT_CLASS, TIER_CLASS, TIER_NUMERAL } from '../warCouncil/buffCardVisuals'
+import { TIER_NUMERAL } from '../warCouncil/buffCardVisuals'
+import CardFace from './ManageBuffsCardFace'
 import type { CombineGroup } from './manageBuffs'
 import {
   COMBINE_REFUSAL_MESSAGE,
@@ -10,7 +8,8 @@ import {
   MANAGE_BUFFS_DESTROY_LABEL,
   MANAGE_BUFFS_JUST_MADE,
   MANAGE_BUFFS_MAKE_LABEL,
-  combineConfirmDestroyText,
+  combineCardText,
+  combineConfirmDestroyPairText,
   combineConfirmMakeText,
   combineCostText,
   combineReadyTileAccessibleName,
@@ -28,46 +27,6 @@ export interface CombineGroupCardProps {
   readonly onArm: () => void
   readonly onCommit: () => void
   readonly onCancel: () => void
-}
-
-/** The card face alone — no `aria-label`, since a ready or refused tile's accessible name is
- *  stated once, on the tile itself, by `combineReadyTileAccessibleName` /
- *  `combineRefusedTileAccessibleName`. Reuses `warCouncilBuffCard.css` wholesale
- *  (`HeldBuffCard.tsx`'s own reasoning) so a pile here is visibly the same object as the card on
- *  the felt. */
-function CardFace({ buff, count }: { readonly buff: Buff; readonly count: number }) {
-  const suit = buffTargetSuitOf(buff)
-  const payoff = buffPayoffFace(buff)
-  const className = `wc-buffcard ${TIER_CLASS[buff.tier]}${suit !== null ? ` ${SUIT_CLASS[suit]}` : ''}`
-
-  return (
-    <span className={className} aria-hidden="true">
-      <span className="wc-buffcard-sheen" aria-hidden="true" />
-      <span className="wc-buffcard-face" aria-hidden="true">
-        <span className="wc-buffcard-top">
-          {suit !== null ? (
-            <span className="wc-buffcard-suit">
-              <SuitMark suit={suit} />
-            </span>
-          ) : (
-            <span className="wc-buffcard-suit wc-buffcard-suit-none" />
-          )}
-          <span className="wc-buffcard-tier">{TIER_NUMERAL[buff.tier]}</span>
-          {count > 1 && <span className="wc-buffcard-count">×{count}</span>}
-        </span>
-        <span className="wc-buffcard-name">{buffName(buff)}</span>
-        <span className="wc-buffcard-cond">{buffConditionSentence(buff)}</span>
-        {payoff.risk === null ? (
-          <span className="wc-buffcard-payoff">{payoff.gain}</span>
-        ) : (
-          <span className="wc-buffcard-payoff wc-buffcard-payoff-split">
-            <span className="wc-buffcard-payoff-gain">{payoff.gain}</span>
-            <span className="wc-buffcard-payoff-risk">{payoff.risk}</span>
-          </span>
-        )}
-      </span>
-    </span>
-  )
 }
 
 /**
@@ -93,7 +52,7 @@ export default function CombineGroupCard({
   onCommit,
   onCancel,
 }: CombineGroupCardProps) {
-  const { buff, count, refusal, produces } = group
+  const { buff, count, refusal, produces, partner } = group
   const badge = justMade ? <span className="mb-new">{MANAGE_BUFFS_JUST_MADE}</span> : null
 
   if (refusal !== null) {
@@ -121,7 +80,10 @@ export default function CombineGroupCard({
         <CardFace buff={buff} count={count} />
         <div className="mb-confirm">
           <span className="mb-confirm-lab">{MANAGE_BUFFS_DESTROY_LABEL}</span>
-          <span className="mb-confirm-lose">{combineConfirmDestroyText(buff)}</span>
+          {/* DLR-162 — a WILD pile eats a suited card rather than a second copy of itself, so the
+              confirm face names both cards rather than saying "2 ×" of a card the player owns one
+              of. `partner` is null for every ordinary combine, and the text is unchanged there. */}
+          <span className="mb-confirm-lose">{combineConfirmDestroyPairText(buff, partner)}</span>
           <span className="mb-confirm-lab">{MANAGE_BUFFS_MAKE_LABEL}</span>
           <span className="mb-confirm-gain">{combineConfirmMakeText(produces)}</span>
           <span className="mb-confirm-cost">{combineCostText(held)}</span>
@@ -154,6 +116,9 @@ export default function CombineGroupCard({
           ⇧
         </span>{' '}
         Combine → {TIER_NUMERAL[produces.tier]}
+        {/* DLR-162 — say what the combine will EAT before it is armed, so a wild pile's cost is
+            visible at a glance rather than only on the confirmation face. */}
+        {partner !== null && ` · eats a ${combineCardText(partner)}`}
       </span>
     </button>
   )

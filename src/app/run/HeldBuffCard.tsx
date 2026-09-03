@@ -1,6 +1,7 @@
-import { buffTargetSuitOf } from '../../hunt'
+import { buffIsWild, buffTargetSuitOf } from '../../hunt'
 import { buffConditionSentence, buffName, buffPayoffFace } from '../warCouncil/buffLabels'
 import { SuitMark } from '../warCouncil/SuitMark'
+import { WildMark } from '../warCouncil/WildMark'
 import { SUIT_CLASS, TIER_CLASS, TIER_NUMERAL } from '../warCouncil/buffCardVisuals'
 import type { HeldBuffStack } from './heldBuffs'
 import '../warCouncil/warCouncilBuffCard.css'
@@ -22,8 +23,12 @@ import '../warCouncil/warCouncilBuffCard.css'
 export default function HeldBuffCard({ stack }: { readonly stack: HeldBuffStack }) {
   const { buff, count } = stack
   const suit = buffTargetSuitOf(buff)
+  // DLR-162 AC9 — a wild card takes the wild mark in the empty suit slot and the wild frame class.
+  const wild = buffIsWild(buff)
   const payoff = buffPayoffFace(buff)
-  const className = `wc-buffcard ${TIER_CLASS[buff.tier]}${suit !== null ? ` ${SUIT_CLASS[suit]}` : ''}`
+  const className = `wc-buffcard ${TIER_CLASS[buff.tier]}${
+    wild ? ' wc-buffcard-wild' : suit !== null ? ` ${SUIT_CLASS[suit]}` : ''
+  }`
 
   return (
     <li className="shop-held-card">
@@ -36,7 +41,11 @@ export default function HeldBuffCard({ stack }: { readonly stack: HeldBuffStack 
         <span className="wc-buffcard-sheen" aria-hidden="true" />
         <span className="wc-buffcard-face" aria-hidden="true">
           <span className="wc-buffcard-top">
-            {suit !== null ? (
+            {wild ? (
+              <span className="wc-buffcard-suit wc-buffcard-wild-mark">
+                <WildMark />
+              </span>
+            ) : suit !== null ? (
               <span className="wc-buffcard-suit">
                 <SuitMark suit={suit} />
               </span>

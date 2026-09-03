@@ -76,6 +76,12 @@ describe('manageBuffsView', () => {
   })
 
   it('reports an empty pile without inventing a group', () => {
-    expect(manageBuffsView([])).toEqual({ groups: [], held: 0, readyCount: 0 })
+    expect(manageBuffsView([])).toEqual({
+      groups: [],
+      held: 0,
+      wildcards: [],
+      wildTargets: [],
+      readyCount: 0,
+    })
   })
 })

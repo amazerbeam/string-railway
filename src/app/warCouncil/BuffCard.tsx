@@ -1,5 +1,5 @@
 import type { Ref } from 'react'
-import { BuffCadence, BUFF_CADENCE, buffTargetSuitOf, type BuffId } from '../../hunt'
+import { BuffCadence, BUFF_CADENCE, buffIsWild, buffTargetSuitOf, type BuffId } from '../../hunt'
 import {
   buffCadenceWord,
   buffCardAccessibleName,
@@ -11,6 +11,7 @@ import {
 } from './buffLabels'
 import type { BuffStack } from './buffGalleryModel'
 import { SuitMark } from './SuitMark'
+import { WildMark } from './WildMark'
 import { SUIT_CLASS, TIER_CLASS, TIER_NUMERAL } from './buffCardVisuals'
 
 interface BuffCardProps {
@@ -45,10 +46,14 @@ interface BuffCardProps {
 export default function BuffCard({ stack, poised, tabIndex, onTap, ref }: BuffCardProps) {
   const { buff, count, refusal } = stack
   const suit = buffTargetSuitOf(buff)
+  // DLR-162 AC9 — a wild card takes the wild mark in the empty suit slot and the wild frame class.
+  const wild = buffIsWild(buff)
   const isPress = BUFF_CADENCE[buff.kind] === BuffCadence.Activated
   const cadence = buffCadenceWord(buff)
   const payoff = buffPayoffFace(buff)
-  const className = `wc-buffcard ${TIER_CLASS[buff.tier]}${suit !== null ? ` ${SUIT_CLASS[suit]}` : ''}`
+  const className = `wc-buffcard ${TIER_CLASS[buff.tier]}${
+    wild ? ' wc-buffcard-wild' : suit !== null ? ` ${SUIT_CLASS[suit]}` : ''
+  }`
   // `count <= 1` is the common case: the button IS this component's root, so the ref lands there
   // directly. `count > 1` re-parents it onto the `.wc-stack` wrapper below instead.
   const buttonRef = count <= 1 ? (ref as Ref<HTMLButtonElement>) : undefined
@@ -67,7 +72,11 @@ export default function BuffCard({ stack, poised, tabIndex, onTap, ref }: BuffCa
       <span className="wc-buffcard-sheen" aria-hidden="true" />
       <span className="wc-buffcard-face" aria-hidden="true">
         <span className="wc-buffcard-top">
-          {suit !== null ? (
+          {wild ? (
+            <span className="wc-buffcard-suit wc-buffcard-wild-mark">
+              <WildMark />
+            </span>
+          ) : suit !== null ? (
             <span className="wc-buffcard-suit">
               <SuitMark suit={suit} />
             </span>

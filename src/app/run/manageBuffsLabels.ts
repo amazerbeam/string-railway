@@ -1,4 +1,4 @@
-import { BuffTier, CombineRefusal, type Buff } from '../../hunt'
+import { BuffTier, CombineRefusal, WildRefusal, type Buff } from '../../hunt'
 import { buffName, buffPayoff } from '../warCouncil/buffLabels'
 
 /** Total over `BuffTier`, so a new tier fails to compile here rather than rendering blank —
@@ -32,6 +32,8 @@ export const MANAGE_BUFFS_JUST_MADE = 'Just made'
 export const COMBINE_REFUSAL_MESSAGE: Readonly<Record<CombineRefusal, string>> = {
   [CombineRefusal.AtMaxTier]: 'Already gold — nothing above it',
   [CombineRefusal.NoPair]: 'Only one — nothing to pair it with',
+  // DLR-162 — PLACEHOLDER copy. Says why it would be a LOSS, not merely that it is refused.
+  [CombineRefusal.Untiered]: 'Every wildcard is the same — combining one would waste it',
 }
 
 /** `Bronze Moon-Feeder (Blade)` — the card named the way every other surface names it. */
@@ -51,6 +53,15 @@ export function combineConfirmDestroyText(buff: Buff): string {
   return `2 × ${combineCardText(buff)}`
 }
 
+/** DLR-162 — the same sentence, when the second card a combine eats is NOT another copy of the
+ *  first: a wild pile eats a SUITED card of the same family. `2 × <card>` when `partner` is null,
+ *  `1 × <card> + 1 × <partner>` when it is not — so the confirm face never says "2 ×" of a card the
+ *  player owns one of. */
+export function combineConfirmDestroyPairText(buff: Buff, partner: Buff | null): string {
+  if (partner === null) return combineConfirmDestroyText(buff)
+  return `1 × ${combineCardText(buff)} + 1 × ${combineCardText(partner)}`
+}
+
 export function combineConfirmMakeText(made: Buff): string {
   return `1 × ${combineCardText(made)} — ${combinePayoffText(made)}`
 }
@@ -64,6 +75,56 @@ export function combineCostText(held: number): string {
  *  rather than the player being expected to spot that something changed. */
 export function combineDoneText(spent: Buff, made: Buff): string {
   return `Two ${combineCardText(spent)} became one ${combineCardText(made)} — ${combinePayoffText(made)}.`
+}
+
+// ---------------------------------------------------------------------------------------------
+// DLR-162 — the wildcard band and its target grid. EVERY string below is PLACEHOLDER copy, exactly
+// as every other string on this screen is, and is the developer's to change.
+// ---------------------------------------------------------------------------------------------
+
+/** Total over the union, so a third wild refusal fails to compile here rather than rendering blank
+ *  on a card face. */
+export const WILD_REFUSAL_MESSAGE: Readonly<Record<WildRefusal, string>> = {
+  [WildRefusal.NoSuit]: 'No suit to take off',
+  [WildRefusal.AlreadyWild]: 'Already wild',
+}
+
+export const MANAGE_BUFFS_WILD_BAND = 'Wildcards'
+export const MANAGE_BUFFS_WILD_RULE =
+  'Spend a wildcard on a suited card to take its suit off. It then pays on any trick.'
+export const MANAGE_BUFFS_WILD_SPEND_LABEL = 'Spend a wildcard'
+export const MANAGE_BUFFS_WILD_TARGET_BAND = 'Pick a card to make wild'
+export const MANAGE_BUFFS_WILD_REFUSED_BAND = 'Cannot be made wild'
+export const MANAGE_BUFFS_WILD_COMMIT_LABEL = 'Make wild'
+
+/** `1 × Bronze Wildcard` — what the spend destroys. */
+export function wildConfirmDestroyText(tier: BuffTier): string {
+  return `1 × ${TIER_WORD[tier]} Wildcard`
+}
+
+/** `1 × Bronze Wild Taker (Blade) — +1 damage` — what the spend makes. */
+export function wildConfirmMakeText(made: Buff): string {
+  return `1 × ${combineCardText(made)} — ${combinePayoffText(made)}`
+}
+
+/** The `role="status"` sentence after a spend commits, so the converted card announces itself. */
+export function wildDoneText(spent: Buff, made: Buff): string {
+  return `One ${combineCardText(spent)} became ${combineCardText(made)} — ${combinePayoffText(made)}.`
+}
+
+/** One string for the tile, so what a sighted player reads and what a screen reader announces
+ *  cannot drift. `produces` is non-null exactly when `refusal` is null. */
+export function wildTargetTileAccessibleName(
+  buff: Buff,
+  count: number,
+  produces: Buff | null,
+  refusal: WildRefusal | null,
+): string {
+  const head = `${combineCardText(buff)}, ${count} held.`
+  if (refusal !== null || produces === null) {
+    return `${head} ${WILD_REFUSAL_MESSAGE[refusal ?? WildRefusal.NoSuit]}`
+  }
+  return `${head} Make it ${combineCardText(produces)}, ${combinePayoffText(produces)}`
 }
 
 /** The tile's own accessible name for a REFUSED pile — one string, so what a sighted player reads

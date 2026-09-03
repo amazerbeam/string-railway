@@ -2,7 +2,21 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
+
+> **Execution notes (batch run 2026-09-03).** Four spec files this plan names as "Modify" did not
+> exist on disk: `src/hunt/__tests__/buffActivation.timebombLive.test.ts` (deleted by DLR-166 along
+> with the card it covered), `src/app/warCouncil/__tests__/BuffCard.test.tsx`,
+> `src/app/run/__tests__/CombineGroupCard.test.tsx` and
+> `src/app/run/__tests__/manageBuffsLabels.test.ts`. The last was CREATED; BuffCard's wild-face
+> assertion went into `BuffGallery.test.tsx` (the spec that actually renders `BuffCard`) and the
+> combine tile's partner assertions into `ManageBuffsPanel.wild.test.tsx`. Two files outside the
+> declared map needed a one-line edit to compile: `src/App.tsx` (pass `onSpendWild` to the panel)
+> and `src/app/warCouncil/BuffRunTab.tsx` (a `RUN_CLASS` row compile-forced by `BuffRunKind.Wild`).
+> `isShopOnlyBuff` lives in `buffs.ts`, not `consumables.ts`: that file stood at 396 of the
+> 400-line blocking budget and the addition breached it. The pool count is 18, not the plan's 19,
+> and `templateWeightFor('taker:bells:magnitude')` is 5/6, not the plan's 2.5 — both plan figures
+> were measured before DLR-166 and DLR-150 respectively.
 Started: 2026-09-03
 
 **Goal:** Add a scarce card the slot machine deals and the player spends on the Manage Buffs screen to strip the suit condition off a card they own, so that card fires on a trick of any suit — with wild cards climbing the tier ladder by eating suited cards of the same family, and wildness absorbing so it can never be merged away.
@@ -80,7 +94,7 @@ Started: 2026-09-03
 
 The flag and the two `buffFires` cases, with no new card in the game yet. This is a safe stopping point because every change is additive and every existing pile still behaves exactly as it does today: nothing can construct a wild card at the end of this phase, so the new branches are provably unreachable from a live run and the whole suite must still pass unchanged.
 
-### Task 1: Add the wild flag and its accessor to `src/hunt/buffs.ts`
+### Task 1: Add the wild flag and its accessor to `src/hunt/buffs.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -90,7 +104,7 @@ The flag and the two `buffFires` cases, with no new card in the game yet. This i
 - Modify: `src/hunt/index.ts` — export `buffIsWild`
 - Test: `src/hunt/__tests__/buffs.test.ts`
 
-- [ ] **Step 1: Write the failing test for `buffIsWild` on both shapes**
+- [x] **Step 1: Write the failing test for `buffIsWild` on both shapes**
 
 Append to `src/hunt/__tests__/buffs.test.ts`, following that file's existing fixture style:
 
@@ -132,12 +146,12 @@ describe('buffIsWild', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch it fail on the missing export**
+- [x] **Step 2: Run it and watch it fail on the missing export**
 
 Run: `npx vitest run src/hunt/__tests__/buffs.test.ts`
 Expected: non-zero exit; the failure names `buffIsWild` as not exported (a transform/collection error, not an assertion failure — that is the expected shape here).
 
-- [ ] **Step 3: Add the optional field and the accessor**
+- [x] **Step 3: Add the optional field and the accessor**
 
 In `src/hunt/buffs.ts`, widen `BuffCondition` and add the accessor beside `buffTargetSuitOf`:
 
@@ -162,12 +176,12 @@ export function buffIsWild(buff: Buff): boolean {
 
 Add `buffIsWild` to the `export { … } from './buffs'` block in `src/hunt/index.ts`.
 
-- [ ] **Step 4: Run the spec and the fast gate**
+- [x] **Step 4: Run the spec and the fast gate**
 
 Run: `npx vitest run src/hunt/__tests__/buffs.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
-### Task 2: Make the Taker and Feeder conditions wild-aware in `src/hunt/buffEvaluation.ts`
+### Task 2: Make the Taker and Feeder conditions wild-aware in `src/hunt/buffEvaluation.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -176,7 +190,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 - Modify: `src/hunt/buffEvaluation.ts:64-80`
 - Test: `src/hunt/__tests__/buffEvaluation.test.ts`
 
-- [ ] **Step 1: Write the failing tests for the four wild cases**
+- [x] **Step 1: Write the failing tests for the four wild cases**
 
 Append to `src/hunt/__tests__/buffEvaluation.test.ts`, reusing that file's existing context builder:
 
@@ -211,12 +225,12 @@ describe('a wild condition ignores the suit but nothing else (AC3)', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch the wild cases fail**
+- [x] **Step 2: Run it and watch the wild cases fail**
 
 Run: `npx vitest run src/hunt/__tests__/buffEvaluation.test.ts`
 Expected: non-zero exit; the three `toBe(true)` assertions fail because the suit term still refuses.
 
-- [ ] **Step 3: Add the wild term to exactly two cases**
+- [x] **Step 3: Add the wild term to exactly two cases**
 
 In `src/hunt/buffEvaluation.ts`, read the flag once beside the suit and rank, then widen only `taker` and `feeder`:
 
@@ -242,7 +256,7 @@ export function buffFires(buff: Buff, ctx: BuffTrickContext): boolean {
 
 Import `buffIsWild` from `./buffs` in that file's existing import block.
 
-- [ ] **Step 4: Run the spec plus the two suites that read this function**
+- [x] **Step 4: Run the spec plus the two suites that read this function**
 
 Run: `npx vitest run src/hunt/__tests__/buffEvaluation.test.ts src/warCouncil/__tests__/buffProjection.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed across both files; `typecheck` exits 0. If `buffProjection.test.ts` is not at that path, run `Get-ChildItem src\warCouncil\__tests__ | Select-String -Pattern "buffProjection"` first and use the real filename.
@@ -253,7 +267,7 @@ Expected: Vitest reports 0 failed across both files; `typecheck` exits 0. If `bu
 
 The new card: its kind, its price row, its wording, its minting function, its template, its reel glyph and its stocking weight. The boundary is safe because a wildcard is inert at the end of it — it can be dealt and rendered, but nothing spends it and the felt already refuses to activate an unpriced card only through the refusal added in Phase 3, so this phase deliberately ends with the felt able to *offer* it. That gap closes in Phase 3 and is the reason these two phases are adjacent.
 
-### Task 3: Declare `BuffKind.Wildcard` and every total table it forces
+### Task 3: Declare `BuffKind.Wildcard` and every total table it forces ✓
 
 - Skill: `react-frontend`
 
@@ -266,7 +280,7 @@ The new card: its kind, its price row, its wording, its minting function, its te
 
 One task, not four: `BuffKind` is read by three `Readonly<Record<BuffKind, …>>` tables and by `BuffConsumableKind`'s price lookup, and splitting them leaves a phase boundary at which the app does not compile.
 
-- [ ] **Step 1: Add the kind and its cadence row**
+- [x] **Step 1: Add the kind and its cadence row**
 
 In `src/hunt/buffs.ts`:
 
@@ -288,7 +302,7 @@ and in `BUFF_CADENCE`:
   [BuffKind.Wildcard]: BuffCadence.Activated,
 ```
 
-- [ ] **Step 2: Add the mandatory price row**
+- [x] **Step 2: Add the mandatory price row**
 
 In `src/hunt/buffCosts.ts`, widen `BuffConsumableKind` with `| typeof BuffKind.Wildcard` and add:
 
@@ -302,7 +316,7 @@ In `src/hunt/buffCosts.ts`, widen `BuffConsumableKind` with `| typeof BuffKind.W
   [BuffKind.Wildcard]: { [BuffTier.Bronze]: 0, [BuffTier.Silver]: 0, [BuffTier.Gold]: 0 },
 ```
 
-- [ ] **Step 3: Add the two wording rows**
+- [x] **Step 3: Add the two wording rows**
 
 In `src/app/warCouncil/buffLabels.ts` — PLACEHOLDER copy, as that file's own docblocks already say of every non-transcribed row:
 
@@ -315,7 +329,7 @@ In `src/app/warCouncil/buffLabels.ts` — PLACEHOLDER copy, as that file's own d
   [BuffKind.Wildcard]: 'spend it on a suited card between fights',
 ```
 
-- [ ] **Step 4: Assert the cadence row rather than trusting the type**
+- [x] **Step 4: Assert the cadence row rather than trusting the type**
 
 Append to `src/hunt/__tests__/buffs.test.ts`:
 
@@ -325,12 +339,12 @@ it('the wildcard is an Activated card — the player spends it, it has no trigge
 })
 ```
 
-- [ ] **Step 5: Verify the tables are total and nothing else moved**
+- [x] **Step 5: Verify the tables are total and nothing else moved**
 
 Run: `npx vitest run src/hunt/__tests__/buffs.test.ts src/hunt/__tests__/buffCosts.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0. A `Record<BuffKind, …>` left without its new row fails at `typecheck`, which is the mechanism this step exists to exercise.
 
-### Task 4: Mint a wildcard in `src/hunt/buffCatalog.ts`
+### Task 4: Mint a wildcard in `src/hunt/buffCatalog.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -340,7 +354,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0. A `Record<BuffKind, …>
 - Modify: `src/hunt/index.ts` — export `wildcardBuff`
 - Test: `src/hunt/__tests__/buffCatalog.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `src/hunt/__tests__/buffCatalog.test.ts`:
 
@@ -369,12 +383,12 @@ describe('wildcardBuff', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/hunt/__tests__/buffCatalog.test.ts`
 Expected: non-zero exit; the failure names `wildcardBuff`.
 
-- [ ] **Step 3: Add the minting function**
+- [x] **Step 3: Add the minting function**
 
 ```ts
 /** DLR-162 AC1 — mint a Wildcard at `tier`. NO condition and NO reward, which is what AC1 says:
@@ -402,12 +416,12 @@ export function wildcardBuff(tier: BuffTier, id: BuffId): Buff {
 
 Export it from `src/hunt/index.ts`'s `from './buffCatalog'` block.
 
-- [ ] **Step 4: Run the spec and the fast gate**
+- [x] **Step 4: Run the spec and the fast gate**
 
 Run: `npx vitest run src/hunt/__tests__/buffCatalog.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
-### Task 5: Put the wildcard on the machine's template pool in `src/hunt/buffTemplates.ts`
+### Task 5: Put the wildcard on the machine's template pool in `src/hunt/buffTemplates.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -416,7 +430,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 - Modify: `src/hunt/buffTemplates.ts:95-115` (`BuffActivatedTemplateKind`, `ACTIVATED_TEMPLATES`) and the activated branch of `mintFromTemplate`
 - Test: `src/hunt/__tests__/buffTemplates.test.ts`
 
-- [ ] **Step 1: Write the failing tests for the pool and the mint route**
+- [x] **Step 1: Write the failing tests for the pool and the mint route**
 
 Append to `src/hunt/__tests__/buffTemplates.test.ts`:
 
@@ -446,12 +460,12 @@ describe('the wildcard template (DLR-162 AC1)', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch the count and the mint route fail**
+- [x] **Step 2: Run it and watch the count and the mint route fail**
 
 Run: `npx vitest run src/hunt/__tests__/buffTemplates.test.ts`
 Expected: non-zero exit; the count assertion fails at 18 and the mint assertion reports a `timebomb` kind — which is exactly the silent failure this task removes.
 
-- [ ] **Step 3: Widen the activated kind and the template list**
+- [x] **Step 3: Widen the activated kind and the template list**
 
 ```ts
 export type BuffActivatedTemplateKind =
@@ -471,7 +485,7 @@ export const ACTIVATED_TEMPLATES: readonly ActivatedBuffTemplate[] = [
 ]
 ```
 
-- [ ] **Step 4: Replace the activated binary with a total lookup**
+- [x] **Step 4: Replace the activated binary with a total lookup**
 
 Above `mintFromTemplate`, and reading `cheatBuff` / `timebombBuff` / `wildcardBuff` from `./buffCatalog`:
 
@@ -492,12 +506,12 @@ const ACTIVATED_MINT: Readonly<
 
 and in `mintFromTemplate`, replace the activated branch's ternary with `return ACTIVATED_MINT[template.kind](tier, id)`. Update this file's header docblock with a DLR-162 paragraph in the style of the DLR-150 and DLR-161 ones already there, stating the pool is now 19 and that no condition template was added.
 
-- [ ] **Step 5: Run the spec and the suites that count the pool**
+- [x] **Step 5: Run the spec and the suites that count the pool**
 
 Run: `npx vitest run src/hunt/__tests__/buffTemplates.test.ts src/hunt/__tests__/slotWeights.test.ts src/hunt/__tests__/slotMachine.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed. If a spec asserts a hard-coded 18, update it to 19 in the same step — that figure is the pool's size, not a behaviour. `typecheck` exits 0.
 
-### Task 6: Draw the wild mark, and make the reel glyph branch total
+### Task 6: Draw the wild mark, and make the reel glyph branch total ✓
 
 - Skill: `react-frontend`
 
@@ -508,7 +522,7 @@ Expected: Vitest reports 0 failed. If a spec asserts a hard-coded 18, update it 
 - Modify: `src/app/run/SlotGlyph.tsx:21-30` (`SlotGlyphKind` and the component's head)
 - Test: `src/app/run/__tests__/slotSymbols.test.ts`
 
-- [ ] **Step 1: Write the failing test for the wildcard's glyph and family word**
+- [x] **Step 1: Write the failing test for the wildcard's glyph and family word**
 
 Append to `src/app/run/__tests__/slotSymbols.test.ts`:
 
@@ -519,12 +533,12 @@ it('gives the wildcard its OWN glyph and word, not the Timebomb it used to fall 
 })
 ```
 
-- [ ] **Step 2: Run it and watch it report a timebomb glyph**
+- [x] **Step 2: Run it and watch it report a timebomb glyph**
 
 Run: `npx vitest run src/app/run/__tests__/slotSymbols.test.ts`
 Expected: non-zero exit; the received glyph is `{ kind: 'timebomb' }`.
 
-- [ ] **Step 3: Create the wild mark — one drawing, two hosts**
+- [x] **Step 3: Create the wild mark — one drawing, two hosts**
 
 `src/app/warCouncil/WildMark.tsx`:
 
@@ -559,7 +573,7 @@ export function WildMark({ className }: WildMarkProps) {
 }
 ```
 
-- [ ] **Step 4: Widen both glyph unions and make the activated branch total**
+- [x] **Step 4: Widen both glyph unions and make the activated branch total**
 
 In `src/app/run/slotSymbols.ts`, add `| { readonly kind: 'wildcard' }` to `SlotGlyph`, add `[BuffKind.Wildcard]: 'Wildcard'` to `FAMILY_WORD`, and replace the activated ternary with a total lookup for `mintFromTemplate`'s stated reason:
 
@@ -586,12 +600,12 @@ export default function SlotGlyph({ kind, className }: SlotGlyphProps) {
     // …unchanged…
 ```
 
-- [ ] **Step 5: Run the spec and the fast gate**
+- [x] **Step 5: Run the spec and the fast gate**
 
 Run: `npx vitest run src/app/run/__tests__/slotSymbols.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
-### Task 7: Stock the wildcard on both machines in `src/hunt/slotWeights.ts`
+### Task 7: Stock the wildcard on both machines in `src/hunt/slotWeights.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -601,7 +615,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 - Config: `src/hunt/slotWeights.ts` — add `SLOT_FAMILY_WEIGHTS[…][BuffKind.Wildcard]` (**the value is a developer decision**)
 - Test: `src/hunt/__tests__/slotWeights.test.ts`
 
-- [ ] **Step 1: Add the two rows with a documented placeholder**
+- [x] **Step 1: Add the two rows with a documented placeholder**
 
 `SlotTemplateKind` already resolves to `MintableConditionKind | BuffActivatedTemplateKind`, so Task 5's widening compile-forces both rows. Add to each machine's table:
 
@@ -621,7 +635,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
 `SLOT_AXIS_WEIGHTS` is deliberately NOT touched: an activated template has no axis, so `templateWeightFor` takes its `familyWeight / templates-in-family` branch.
 
-- [ ] **Step 2: Assert the wildcard is stockable and every suited card's weight is unchanged**
+- [x] **Step 2: Assert the wildcard is stockable and every suited card's weight is unchanged**
 
 Append to `src/hunt/__tests__/slotWeights.test.ts`:
 
@@ -643,7 +657,7 @@ describe('the wildcard on the strip (DLR-162 AC1/AC10)', () => {
 })
 ```
 
-- [ ] **Step 3: Run the spec and the odds suite**
+- [x] **Step 3: Run the spec and the odds suite**
 
 Run: `npx vitest run src/hunt/__tests__/slotWeights.test.ts src/hunt/__tests__/slotOdds.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0. `slotOdds`'s figures are derived rather than quoted, so no expected number there should need editing — if one does, read it before changing it.
@@ -654,7 +668,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0. `slotOdds`'s figures are
 
 The conversion itself and the two refusals AC5 names, plus the felt-side refusal that stops a wildcard being tapped to no effect in the loadout. The boundary is safe because both halves land together: at the end of this phase a wildcard can be converted through the engine and cannot be tapped on the felt, so no screen offers an action that does nothing.
 
-### Task 8: The wild transition in a new `src/hunt/buffWild.ts`
+### Task 8: The wild transition in a new `src/hunt/buffWild.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -664,7 +678,7 @@ The conversion itself and the two refusals AC5 names, plus the felt-side refusal
 - Modify: `src/hunt/index.ts` — export `WildRefusal`, `wildRefusalFor`, `isWildcardCard`, `mintWildAtTier`, `wildenedBuff`, `spendWildcard`
 - Test: `src/hunt/__tests__/buffWild.test.ts`
 
-- [ ] **Step 1: Write the failing spec for the refusals, the conversion and the spend**
+- [x] **Step 1: Write the failing spec for the refusals, the conversion and the spend**
 
 `src/hunt/__tests__/buffWild.test.ts` — the cases AC2, AC4 and AC5 name:
 
@@ -747,12 +761,12 @@ describe('mintWildAtTier', () => {
 
 Write the three small fixture helpers (`bellTaker`, `sidestep`) at the top of the file by minting real templates through `mintFromTemplate`, the way `src/sim/fixtures.ts` does — never by hand-building a `Buff` literal, so a future field on `Buff` cannot leave this spec constructing a shape production never produces.
 
-- [ ] **Step 2: Run it and watch the module fail to resolve**
+- [x] **Step 2: Run it and watch the module fail to resolve**
 
 Run: `npx vitest run src/hunt/__tests__/buffWild.test.ts`
 Expected: non-zero exit; the failure names `./buffWild` as unresolved.
 
-- [ ] **Step 3: Write the module**
+- [x] **Step 3: Write the module**
 
 `src/hunt/buffWild.ts`, with a header docblock in this tree's style stating that it is pure, that ids come from the caller, and that a wild card is deliberately mintable only here and never from a template:
 
@@ -815,12 +829,12 @@ Implement `spendWildcard` by finding both cards by id, throwing when either is a
 
 Add the six names to `src/hunt/index.ts`.
 
-- [ ] **Step 4: Run the spec, then measure the barrel**
+- [x] **Step 4: Run the spec, then measure the barrel**
 
 Run: `npx vitest run src/hunt/__tests__/buffWild.test.ts; npm run typecheck; (Get-Content src\hunt\index.ts).Count`
 Expected: Vitest reports 0 failed; `typecheck` exits 0; the line count is **under 400**. If it is 400 or more, split the barrel in this task — `CLAUDE.md`'s budget is blocking and the fix belongs in this ticket, not in a finding. Do NOT measure with `Measure-Object -Line`, which drops blank lines and has hidden a real breach in this repo before.
 
-### Task 9: Refuse a wildcard on the felt with a reason that says where to spend it
+### Task 9: Refuse a wildcard on the felt with a reason that says where to spend it ✓
 
 - Skill: `react-frontend`
 
@@ -835,7 +849,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0; the line count is **unde
 
 One task, not three: `BuffActivationStock` gains a **required** field, and every builder and every spec literal must gain it together or the phase boundary does not compile.
 
-- [ ] **Step 1: Write the failing tests for the new refusal and its precedence**
+- [x] **Step 1: Write the failing tests for the new refusal and its precedence**
 
 Append to `src/hunt/__tests__/buffActivation.test.ts`:
 
@@ -862,12 +876,12 @@ describe('ShopOnly (DLR-162)', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/hunt/__tests__/buffActivation.test.ts`
 Expected: non-zero exit; the failure names `shopOnly` / `isShopOnlyBuff` as unknown.
 
-- [ ] **Step 3: Add the predicate to the leaf module**
+- [x] **Step 3: Add the predicate to the leaf module**
 
 In `src/hunt/consumables.ts`, beside `consumableEffectIsLive`:
 
@@ -882,7 +896,7 @@ export function isShopOnlyBuff(buff: Buff): boolean {
 }
 ```
 
-- [ ] **Step 4: Add the refusal, the stock field, and the precedence line**
+- [x] **Step 4: Add the refusal, the stock field, and the precedence line**
 
 In `src/hunt/buffActivation.ts`:
 
@@ -906,7 +920,7 @@ export interface BuffActivationStock {
 
 Add `if (stock.shopOnly) return BuffActivationRefusal.ShopOnly` as the FIRST line of `buffActivationRefusalFor`, update that function's docblock's stated order, and add `shopOnly: isShopOnlyBuff(buff)` to `buffActivationStockFor`'s returned object.
 
-- [ ] **Step 5: Carry the field through the felt's builder and word the refusal**
+- [x] **Step 5: Carry the field through the felt's builder and word the refusal**
 
 In `src/app/warCouncil/roundUiState.ts`'s stock builder, pass the new field through (or delegate to `buffActivationStockFor`, if it already does). In `src/app/warCouncil/buffLabels.ts`:
 
@@ -917,7 +931,7 @@ In `src/app/warCouncil/roundUiState.ts`'s stock builder, pass the new field thro
   [BuffActivationRefusal.ShopOnly]: 'Spend this on the Manage Buffs screen.',
 ```
 
-- [ ] **Step 6: Add the field to both spec base literals and run everything that reads the stock**
+- [x] **Step 6: Add the field to both spec base literals and run everything that reads the stock**
 
 Run: `npx vitest run src/hunt/__tests__/buffActivation.test.ts src/hunt/__tests__/buffActivation.timebombLive.test.ts src/app/warCouncil/__tests__/buffActivationStock.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0. Every `tsc` error naming a missing `shopOnly` is a literal to fix in this step — the plan's audit expects them in the two `src/hunt/__tests__/buffActivation*.test.ts` files, and whatever `tsc` actually reports is the real list.
@@ -928,7 +942,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0. Every `tsc` error naming
 
 The one place the engine needs real design: pairing two cards with different exact keys, and making wildness absorbing. The boundary is safe because the rule's three new functions land with `combineRefusalFor` and `combineBuffs` rewritten over them in the same task, so the answer a tile shows and the cards a commit destroys can never disagree.
 
-### Task 10: Widen the pairing rule in `src/hunt/buffCombine.ts`
+### Task 10: Widen the pairing rule in `src/hunt/buffCombine.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -939,7 +953,7 @@ The one place the engine needs real design: pairing two cards with different exa
 - Modify: `src/app/run/manageBuffsLabels.ts:31-36` — the `Untiered` message
 - Test: `src/hunt/__tests__/buffCombine.test.ts`
 
-- [ ] **Step 1: Write the failing tests, including AC7 as a property**
+- [x] **Step 1: Write the failing tests, including AC7 as a property**
 
 Append to `src/hunt/__tests__/buffCombine.test.ts`. The property test is the one the ticket asks for by name:
 
@@ -1039,12 +1053,12 @@ describe('buffCombineKey', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch the wild cases fail**
+- [x] **Step 2: Run it and watch the wild cases fail**
 
 Run: `npx vitest run src/hunt/__tests__/buffCombine.test.ts`
 Expected: non-zero exit. The wild-pairing cases fail as `NoPair` (today's rule needs two exact copies) and `combinePairFor` / `combineProductFor` / `CombineRefusal.Untiered` are unknown.
 
-- [ ] **Step 3: Add the looser key, the pair function and the product function**
+- [x] **Step 3: Add the looser key, the pair function and the product function**
 
 In `src/hunt/buffCombine.ts`:
 
@@ -1105,11 +1119,11 @@ export function combineProductFor(a: Buff, b: Buff, tier: BuffTier, id: BuffId):
 
 Implement `combinePairFor` as: take the exact copies of `key` in ascending id order; return `null` when there are none; when the head is wild, look first for the lowest-id card whose `buffCombineFamilyKey` matches and which is **not** wild, and pair with it if found; otherwise pair the first two exact copies when there are two; otherwise `null`. A **suited** head takes only the two-exact-copies branch.
 
-- [ ] **Step 4: Rewrite the refusal and the commit over the pair**
+- [x] **Step 4: Rewrite the refusal and the commit over the pair**
 
 `combineRefusalFor` becomes: `Untiered` when the pile's card is a wildcard (`isWildcardCard`), read before everything else because it is true of the card; then `AtMaxTier` when there is no tier above (keeping DLR-159's deliberate gold-before-count ordering); then `NoPair` when `combinePairFor` is `null` **or** when `combineProductFor` would return `null`, which is the guard today's `templateForBuff === undefined` check performs. `combineBuffs` destroys exactly the two ids `combinePairFor` returns and appends `combineProductFor(...)` minted at `run.nextBuffId`, advancing it by one — keeping its existing throw, its message shape, and its `nextBuffId` discipline. Update the module's header docblock with a DLR-162 paragraph recording the widening and naming AC7 as the property `combineProductFor` enforces.
 
-- [ ] **Step 5: Word the third refusal**
+- [x] **Step 5: Word the third refusal**
 
 In `src/app/run/manageBuffsLabels.ts` — the table is `Readonly<Record<CombineRefusal, string>>`, so the row is compile-forced:
 
@@ -1118,7 +1132,7 @@ In `src/app/run/manageBuffsLabels.ts` — the table is `Readonly<Record<CombineR
   [CombineRefusal.Untiered]: 'Every wildcard is the same — combining one would waste it',
 ```
 
-- [ ] **Step 6: Run the combine suite plus everything that reads the key**
+- [x] **Step 6: Run the combine suite plus everything that reads the key**
 
 Run: `npx vitest run src/hunt/__tests__/buffCombine.test.ts src/app/run/__tests__/manageBuffs.test.ts src/app/warCouncil/__tests__/buffGalleryModel.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0. `buffStackKey` delegates to `buffCombineKey`, so the gallery suite is the check that the added key segment did not change how identical cards stack.
@@ -1129,7 +1143,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0. `buffStackKey` delegates
 
 AC9's four surfaces. The boundary is safe because every change here is presentational and additive: a suited card renders exactly as it does today, and each surface is covered by a test asserting both the wild and the suited reading.
 
-### Task 11: Give a wild card its name in `src/app/warCouncil/buffLabels.ts`
+### Task 11: Give a wild card its name in `src/app/warCouncil/buffLabels.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -1138,7 +1152,7 @@ AC9's four surfaces. The boundary is safe because every change here is presentat
 - Modify: `src/app/warCouncil/buffLabels.ts:110-125` (`buffName`)
 - Test: `src/app/warCouncil/__tests__/buffLabels.test.ts`
 
-- [ ] **Step 1: Write the failing tests for the name and the condition line**
+- [x] **Step 1: Write the failing tests for the name and the condition line**
 
 ```ts
 describe('a wild card names itself (DLR-162 AC9)', () => {
@@ -1158,12 +1172,12 @@ describe('a wild card names itself (DLR-162 AC9)', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch the prefix cases fail**
+- [x] **Step 2: Run it and watch the prefix cases fail**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/buffLabels.test.ts`
 Expected: non-zero exit; `buffName` returns `Taker (Blade)` for the wild card.
 
-- [ ] **Step 3: Add the prefix to the naming grammar**
+- [x] **Step 3: Add the prefix to the naming grammar**
 
 ```ts
 export function buffName(buff: Buff): string {
@@ -1185,12 +1199,12 @@ export function buffName(buff: Buff): string {
 }
 ```
 
-- [ ] **Step 4: Run the label suite and everything that quotes a card name**
+- [x] **Step 4: Run the label suite and everything that quotes a card name**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/buffLabels.test.ts src/app/run/__tests__/manageBuffsLabels.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
-### Task 12: Give wild cards their own run in the loadout grid
+### Task 12: Give wild cards their own run in the loadout grid ✓
 
 - Skill: `react-frontend`
 
@@ -1203,7 +1217,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
 One task: `BuffRunKind` is read by three total tables, and a missing row renders a blank chip or crashes a count.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 describe('the Wild run (DLR-162 AC9)', () => {
@@ -1228,12 +1242,12 @@ describe('the Wild run (DLR-162 AC9)', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/buffGalleryModel.test.ts`
 Expected: non-zero exit; `BuffRunKind.Wild` is unknown.
 
-- [ ] **Step 3: Add the run and its three rows**
+- [x] **Step 3: Add the run and its three rows**
 
 ```ts
 export const BuffRunKind = {
@@ -1265,12 +1279,12 @@ export function buffRunOf(buff: Buff): BuffRunKind {
 
 Add `[BuffRunKind.Wild]: 'Wild'` to `RUN_LABEL` (PLACEHOLDER copy) and `[BuffRunKind.Wild]: 0` to `ZERO_RUN_COUNTS`. `RUN_SUIT` is a `Partial` and takes no row — a wild card has no suit to hand a `SuitMark`.
 
-- [ ] **Step 4: Run the gallery and filter suites**
+- [x] **Step 4: Run the gallery and filter suites**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/buffGalleryModel.test.ts src/app/warCouncil/__tests__/buffSuitFilterModel.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0. If either spec asserts a five-member `BUFF_RUN_ORDER`, update the figure — it is the roster's size, not a behaviour.
 
-### Task 13: Put the wild mark on every card face
+### Task 13: Put the wild mark on every card face ✓
 
 - Skill: `react-frontend`
 
@@ -1283,11 +1297,11 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0. If either spec asserts a
 - Modify: `src/app/warCouncil/warCouncilBuffCard.css` — a `.wc-buffcard-wild` class
 - Test: `src/app/warCouncil/__tests__/BuffCard.test.tsx`
 
-- [ ] **Step 1: Extract the shared face rather than adding a fourth copy**
+- [x] **Step 1: Extract the shared face rather than adding a fourth copy**
 
 Move `CombineGroupCard.tsx`'s local `CardFace` function verbatim into `src/app/run/ManageBuffsCardFace.tsx` as a default-exported component, with a docblock stating it was extracted once a second consumer (Task 16's target tile) made the duplication real — the same reasoning `buffCardVisuals.ts` records for its own extraction. Import it in `CombineGroupCard.tsx` and delete the local copy. **No markup or class changes in the move** — a pure extraction, so any visual difference afterwards is a defect.
 
-- [ ] **Step 2: Write the failing test for the wild card's face**
+- [x] **Step 2: Write the failing test for the wild card's face**
 
 Append to `src/app/warCouncil/__tests__/BuffCard.test.tsx`:
 
@@ -1301,12 +1315,12 @@ it('draws the wild mark where a suit mark would go, and says Wild in its accessi
 })
 ```
 
-- [ ] **Step 3: Run it and watch it fail**
+- [x] **Step 3: Run it and watch it fail**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/BuffCard.test.tsx`
 Expected: non-zero exit; the wild mark is absent and the empty suit slot is present.
 
-- [ ] **Step 4: Render the mark in all three faces**
+- [x] **Step 4: Render the mark in all three faces**
 
 In each of `BuffCard.tsx`, `HeldBuffCard.tsx` and `ManageBuffsCardFace.tsx`, replace the two-branch suit slot with a three-branch one, reading `buffIsWild` beside `buffTargetSuitOf`:
 
@@ -1329,7 +1343,7 @@ In each of `BuffCard.tsx`, `HeldBuffCard.tsx` and `ManageBuffsCardFace.tsx`, rep
   )}
 ```
 
-- [ ] **Step 5: Add the frame class**
+- [x] **Step 5: Add the frame class**
 
 In `src/app/warCouncil/warCouncilBuffCard.css`, beside `.wc-buffcard-bells` / `-keys` / `-moons`:
 
@@ -1347,7 +1361,7 @@ In `src/app/warCouncil/warCouncilBuffCard.css`, beside `.wc-buffcard-bells` / `-
 }
 ```
 
-- [ ] **Step 6: Run the three faces' suites**
+- [x] **Step 6: Run the three faces' suites**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/BuffCard.test.tsx src/app/run/__tests__/CombineGroupCard.test.tsx; npm run typecheck; (Get-Content src\app\warCouncil\BuffCard.tsx).Count`
 Expected: Vitest reports 0 failed; `typecheck` exits 0; the line count is under 400. If a `CombineGroupCard.test.tsx` does not exist at that path, run `Get-ChildItem src\app\run\__tests__ | Select-String -Pattern "Combine"` and run whatever spec covers that component.
@@ -1358,7 +1372,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0; the line count is under 
 
 The screen the wildcard is spent on. Every arithmetic answer comes from `manageBuffs.ts`, which is pure and tested with no renderer; the components render it and own one piece of mode state between them. Layout and interaction follow `mockup.html` in this folder. The boundary is safe because the view model lands before the components that read it, and the panel is the last thing to change.
 
-### Task 14: Teach the view model about wildcards and targets
+### Task 14: Teach the view model about wildcards and targets ✓
 
 - Skill: `react-frontend`
 
@@ -1367,7 +1381,7 @@ The screen the wildcard is spent on. Every arithmetic answer comes from `manageB
 - Modify: `src/app/run/manageBuffs.ts` (whole file)
 - Test: `src/app/run/__tests__/manageBuffs.wild.test.ts`
 
-- [ ] **Step 1: Write the failing spec for the band and the target grid**
+- [x] **Step 1: Write the failing spec for the band and the target grid**
 
 `src/app/run/__tests__/manageBuffs.wild.test.ts`:
 
@@ -1423,21 +1437,21 @@ describe('a wild pile names the card it eats', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/app/run/__tests__/manageBuffs.wild.test.ts`
 Expected: non-zero exit; `wildcards`, `wildTargets` and `partner` are unknown.
 
-- [ ] **Step 3: Extend the view model**
+- [x] **Step 3: Extend the view model**
 
 Add `WildTargetTile` and the two `ManageBuffsView` fields exactly as `plan.md` Part 2 → Data shapes declares them. Build `wildTargets` from the same `heldBuffStacks` grouping the combine bands use — one grouping, not a second — attaching `wildRefusalFor(stack.buff)` and, when it is null, `wildenedBuff(stack.buff)` re-minted at `PREVIEW_ID` for wording only. Derive `CombineGroup.partner` from `combinePairFor`: the second card when its id differs from the pile's own head, `null` otherwise. Keep the existing ready-then-refused ordering and the existing `held` / `readyCount` figures untouched, and add a paragraph to the module docblock recording that the screen now has two gestures rather than one.
 
-- [ ] **Step 4: Run both view-model suites and the fast gate**
+- [x] **Step 4: Run both view-model suites and the fast gate**
 
 Run: `npx vitest run src/app/run/__tests__/manageBuffs.wild.test.ts src/app/run/__tests__/manageBuffs.test.ts; npm run typecheck; (Get-Content src\app\run\manageBuffs.ts).Count`
 Expected: Vitest reports 0 failed; `typecheck` exits 0; the line count is under 400.
 
-### Task 15: Word the screen and wire the spend through the hook
+### Task 15: Word the screen and wire the spend through the hook ✓
 
 - Skill: `react-frontend`
 
@@ -1447,13 +1461,13 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0; the line count is under 
 - Modify: `src/app/run/useManageBuffs.ts` — `spendWild`
 - Test: `src/app/run/__tests__/manageBuffsLabels.test.ts`
 
-- [ ] **Step 1: Add the copy and its tests**
+- [x] **Step 1: Add the copy and its tests**
 
 Add every string and helper `plan.md` Part 2 → Data shapes lists for this file, each marked PLACEHOLDER copy in the style the file already uses, with `WILD_REFUSAL_MESSAGE` typed `Readonly<Record<WildRefusal, string>>` so a third refusal fails to compile rather than rendering blank on a card face. `combineConfirmDestroyPairText(buff, partner)` returns `2 × <card>` when `partner` is null and `1 × <card> + 1 × <partner>` when it is not — so the confirm face never says "2 ×" of a card the player owns one of.
 
 Test each: the two refusal messages resolve, the pair text takes both shapes, and `wildConfirmMakeText` names the produced card with its payoff.
 
-- [ ] **Step 2: Add `spendWild` to the hook**
+- [x] **Step 2: Add `spendWild` to the hook**
 
 ```ts
   /** DLR-162 — spends the LOWEST-ID held wildcard on `targetId` and returns the converted card's
@@ -1472,12 +1486,12 @@ Test each: the two refusal messages resolve, the pair text takes both shapes, an
   }
 ```
 
-- [ ] **Step 3: Run the label suite and the fast gate**
+- [x] **Step 3: Run the label suite and the fast gate**
 
 Run: `npx vitest run src/app/run/__tests__/manageBuffsLabels.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
-### Task 16: Build the band and the target mode
+### Task 16: Build the band and the target mode ✓
 
 - Skill: `react-frontend`, and `game-ux` for the layout and the keyboard model
 
@@ -1490,7 +1504,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
 Layout, band position, tile shape and the two-tap gesture follow `mockup.html` in this folder — in particular its wildcard band above the two combine bands, and its confirmation living **on the target tile** rather than at a distant control.
 
-- [ ] **Step 1: Write the failing component spec for the gesture, focus and `Escape`**
+- [x] **Step 1: Write the failing component spec for the gesture, focus and `Escape`**
 
 `src/app/run/__tests__/ManageBuffsPanel.wild.test.tsx`, querying by role and accessible name throughout:
 
@@ -1505,29 +1519,29 @@ it('cancels the armed target with Escape, then leaves the mode with a second Esc
 it('returns focus to the tile that had it after a cancel, and to the band after leaving the mode', () => { /* … */ })
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/app/run/__tests__/ManageBuffsPanel.wild.test.tsx`
 Expected: non-zero exit; the band and its control do not exist.
 
-- [ ] **Step 3: Build the two components**
+- [x] **Step 3: Build the two components**
 
 `WildcardBand.tsx` renders the held-wildcard count, the rule sentence, one card face for the wildcard itself, and the arm control — and renders **nothing at all** when `wildcards.length === 0`, per `game-ux`'s rule against a panel that reports that nothing is happening. `WildTargetCard.tsx` renders one target tile in the three faces `CombineGroupCard.tsx` already establishes: refused as a non-interactive `<li>` with the reason on its face, selectable as a `<button>` whose accessible name states what it would become, and armed as its own confirmation face with `Make wild` carrying `autoFocus` and a `Cancel` beside it. Both reuse `ManageBuffsCardFace.tsx` from Task 13 rather than drawing a card.
 
-- [ ] **Step 4: Add the mode to the panel**
+- [x] **Step 4: Add the mode to the panel**
 
 Add one piece of ephemeral state — the mode, plus which target is armed — to `ManageBuffsPanel.tsx`, feed the target grid through the existing `useRovingTabIndex` over the **selectable** targets only (a refused tile carries no button, exactly as in the combine bands), extend the existing `Escape` handler to cancel an armed target and then leave the mode, and add the target keys to the existing post-render focus request list. Register **no new effect, listener, timer or observer** — the panel's one existing effect is a focus restore and keeps its exact shape.
 
-- [ ] **Step 5: Style the band and the target bands**
+- [x] **Step 5: Style the band and the target bands**
 
 Extend `src/app/run/manageBuffs.css` with the band and the two target bands, following `mockup.html`'s CSS as the draft of these rules. Every `clamp()` bound is a PLACEHOLDER the developer owns, and the tile width reuses `--wc-buffcard-w` rather than inventing a number — the reasoning that sheet's own header already records. Keep the shell's `100dvh` / `overflow: hidden` / safe-area grid untouched: the band is a row inside `.mb-stage`, not a fourth shell row.
 
-- [ ] **Step 6: Run the panel suites and measure every file this task grew**
+- [x] **Step 6: Run the panel suites and measure every file this task grew**
 
 Run: `npx vitest run src/app/run/__tests__/ManageBuffsPanel.wild.test.tsx src/app/run/__tests__/ManageBuffsPanel.test.tsx; npm run typecheck; (Get-Content src\app\run\ManageBuffsPanel.tsx).Count; (Get-Content src\app\run\WildcardBand.tsx).Count; (Get-Content src\app\run\WildTargetCard.tsx).Count`
 Expected: Vitest reports 0 failed; `typecheck` exits 0; every line count under 400. If `ManageBuffsPanel.tsx` breaches, split the target mode into its own component in this task.
 
-### Task 17: Name both destroyed cards on the combine tile's confirm face
+### Task 17: Name both destroyed cards on the combine tile's confirm face ✓
 
 - Skill: `react-frontend`
 
@@ -1536,7 +1550,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0; every line count under 4
 - Modify: `src/app/run/CombineGroupCard.tsx` — the armed face and the ready strip
 - Test: `src/app/run/__tests__/CombineGroupCard.test.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 it('names both cards a wild combine destroys, not "2 ×" of a card the player owns one of', () => {
@@ -1547,16 +1561,16 @@ it('names both cards a wild combine destroys, not "2 ×" of a card the player ow
 it('still says "2 ×" for an ordinary same-card combine', () => { /* … */ })
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/app/run/__tests__/CombineGroupCard.test.tsx`
 Expected: non-zero exit; the armed face still reads `2 × Bronze Wild Taker (Blade)`.
 
-- [ ] **Step 3: Read the partner on the confirm face and the ready strip**
+- [x] **Step 3: Read the partner on the confirm face and the ready strip**
 
 Replace `combineConfirmDestroyText(buff)` with `combineConfirmDestroyPairText(buff, group.partner)` in the armed face, and where `group.partner` is non-null add its name to the ready strip so the player knows what a combine will eat before arming it — `mockup.html`'s `⇧ Combine → II · eats a Bell-Taker`.
 
-- [ ] **Step 4: Run the tile's suite and the fast gate**
+- [x] **Step 4: Run the tile's suite and the fast gate**
 
 Run: `npx vitest run src/app/run/__tests__/CombineGroupCard.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0.
@@ -1567,7 +1581,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
 No production changes — only sanity checks that the cumulative work is clean.
 
-### Task 18: Confirm the pure-core boundary still holds
+### Task 18: Confirm the pure-core boundary still holds ✓
 
 - Skill: `none — a verification grep, no code`
 
@@ -1575,17 +1589,17 @@ No production changes — only sanity checks that the cumulative work is clean.
 
 - Test: (none — read-only checks)
 
-- [ ] **Step 1: Grep the two lint-enforced pure trees for React and DOM references**
+- [x] **Step 1: Grep the two lint-enforced pure trees for React and DOM references**
 
 Run: `Get-ChildItem src\hunt,src\sim -Recurse -Include *.ts,*.tsx | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage|Math\.random"`
 Expected: zero hits. `src/hunt/buffWild.ts` is the new file this exists to check; `src/sim/**` gained no import and must still be clean. Note the recursive form — `Select-String -Path` with a `**` glob reaches exactly one directory level and would report a false zero.
 
-- [ ] **Step 2: Confirm nothing new touches browser storage**
+- [x] **Step 2: Confirm nothing new touches browser storage**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "globalThis\.(localStorage|sessionStorage)\b|\b(localStorage|sessionStorage)\.(getItem|setItem|removeItem|clear)\("`
 Expected: exactly the three pre-existing hits `.claude/rules/save-data-versioning.md` records — two in `src/persistence/browserStorage.ts` and one docblock mention in `src/persistence/saveStore.ts`. Any fourth hit is a rule violation; `npm run lint` is the actual gate and runs in Task 20.
 
-### Task 19: Confirm no tunable was hard-coded and no file breached its budget
+### Task 19: Confirm no tunable was hard-coded and no file breached its budget ✓
 
 - Skill: `none — verification only`
 
@@ -1593,19 +1607,24 @@ Expected: exactly the three pre-existing hits `.claude/rules/save-data-versionin
 
 - Test: (none — read-only checks)
 
-- [ ] **Step 1: Confirm the wildcard's stocking weight lives only in the weight table**
+- [x] **Step 1: Confirm the wildcard's stocking weight lives only in the weight table**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "Wildcard\]: 1\b"`
 Expected: exactly two hits, both in `src/hunt/slotWeights.ts` — the two `SLOT_FAMILY_WEIGHTS` rows. A third hit anywhere else is the figure duplicated at a call site.
 
-- [ ] **Step 2: Measure every file this contract created or grew**
+- [x] **Step 2: Measure every file this contract created or grew**
 
 Run: `Get-ChildItem src\hunt\buffWild.ts,src\hunt\buffCombine.ts,src\hunt\buffTemplates.ts,src\hunt\buffActivation.ts,src\hunt\index.ts,src\app\run\manageBuffs.ts,src\app\run\ManageBuffsPanel.tsx,src\app\run\manageBuffsLabels.ts,src\app\run\WildcardBand.tsx,src\app\run\WildTargetCard.tsx,src\app\run\ManageBuffsCardFace.tsx,src\app\warCouncil\buffLabels.ts,src\app\warCouncil\WildMark.tsx,src\app\warCouncil\BuffCard.tsx | ForEach-Object { "$($_.Name) $((Get-Content $_.FullName).Count)" }`
 Expected: every count **under 400**. `src/hunt/index.ts` was 388 before this contract and is the one to watch. Any breach is fixed in this ticket, not reported as a finding.
 
-### Task 20: Static gates and the full suite
+### Task 20: Static gates and the full suite — DELEGATED TO QA
 
 - Skill: `none — verification only`
+
+> **Batch run 2026-09-03:** every step of this task belongs to the central QA pass that runs once
+> across all five contracts, not to this contract's Implementer. `npm run typecheck` was run here
+> as a signal and exits 0; the unfiltered suite, `npm run lint`, `prettier --check` and
+> `npm run build` were NOT run and stay unticked.
 
 **Files:**
 
@@ -1631,7 +1650,7 @@ Expected: exits 0. Do **not** run `npm run format` — it rewrites ~59 repo file
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 21: Update the PR description
+### Task 21: Update the PR description ✓
 
 - Skill: `none — a document for the developer`
 
@@ -1639,7 +1658,7 @@ Expected: exits 0, `dist/` written, no bundler errors.
 
 - Create: `.claude/contract/DLR-162-the-wildcard/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 

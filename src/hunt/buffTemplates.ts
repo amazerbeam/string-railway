@@ -12,7 +12,7 @@ import {
   type BuffTarget,
 } from './buffs'
 import type { BuffMintedAxis } from './buffCosts'
-import { cheatBuff } from './buffCatalog'
+import { cheatBuff, wildcardBuff } from './buffCatalog'
 
 /**
  * DLR-112 — originally the 71-template v1 condition-card pool, GENERATED at module load from two
@@ -52,6 +52,12 @@ import { cheatBuff } from './buffCatalog'
  * condition templates plus Skull Helmet, Skull Tether and the one remaining activated card, Cheat.
  * That removal is a DELETION, not a pruning: the kind itself is gone from `BuffKind`, so unlike the
  * eight cut condition families it cannot be restored by adding a row back here.
+ *
+ * DLR-162 ADDS one ACTIVATED template, the wildcard, taking the pool to 18. NO condition template is
+ * added, so `FAMILY_AXIS_TOTAL` is untouched and every existing suited template's
+ * `templateWeightFor` result is unchanged bit for bit. A card MADE wild by spending a wildcard has
+ * no template at all and never will: `buffWild.ts`'s `mintWildAtTier` mints it by transformation,
+ * deliberately, so the machine's candidate pool and the opening pile's draw never contain one.
  *
  * The five consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are still absent —
  * DLR-120's scope boundary, unrelated to this pruning.
@@ -100,7 +106,12 @@ export type MintableRewardAxis =
 
 /** The kinds an ACTIVATED template can mint. A closed set, not `BuffConsumableKind`: the
  *  five consumable items and Shield have no template and no slot weight yet (DLR-132 scope). */
-export type BuffActivatedTemplateKind = typeof BuffKind.Cheat
+export type BuffActivatedTemplateKind =
+  | typeof BuffKind.Cheat
+  // DLR-162 — the second activated card. Widening this type is what compile-forces the two
+  // Cheat-or-else-something binaries (this file's `mintFromTemplate` and
+  // `src/app/run/slotSymbols.ts`'s `slotSymbolFace`) to become total lookups.
+  | typeof BuffKind.Wildcard
 
 /** An activated card's template. Carries NO axis and NO condition family — that is exactly the
  *  shape problem DLR-120 named, and the `form` tag is the answer to it. Its reward axis and value
@@ -124,6 +135,9 @@ export type BuffTemplate = ConditionBuffTemplate | ActivatedBuffTemplate
  *  `<kind>[:<param>]:<axis>` for a condition template's id. */
 export const ACTIVATED_TEMPLATES: readonly ActivatedBuffTemplate[] = [
   { form: 'activated', id: 'cheat', kind: BuffKind.Cheat },
+  // DLR-162 — a bare kind string like its sibling. PERSISTED by the Vault as a grant id, so the
+  // format is frozen the moment it ships.
+  { form: 'activated', id: 'wildcard', kind: BuffKind.Wildcard },
 ]
 
 const BLADE_AND_MOMENTUM: readonly MintableRewardAxis[] = [
@@ -197,8 +211,9 @@ function makeTemplate(
     : { form: 'condition', id, kind, axis, target }
 }
 
-/** DLR-161's widened pool: 18 templates — 16 GENERATED condition templates (6 Taker + 6 Feeder +
- *  2 Sidestep + 1 Skull Helmet + 1 Skull Tether) plus the 2 activated ones (`ACTIVATED_TEMPLATES`).
+/** DLR-162's pool: 18 templates — 16 GENERATED condition templates (6 Taker + 6 Feeder +
+ *  2 Sidestep + 1 Skull Helmet + 1 Skull Tether) plus the 2 activated ones (`ACTIVATED_TEMPLATES`:
+ *  Cheat and the wildcard).
  *  The 5 consumable templates (Ward and its four siblings) are still absent — see this file's own
  *  docblock above for why that is a scope boundary, not a gap. */
 export const BUFF_TEMPLATES: readonly BuffTemplate[] = [
@@ -311,6 +326,18 @@ function isThresholdFamily(kind: BuffKind): kind is BuffThresholdFamily {
   return THRESHOLD_FAMILY_KINDS.has(kind)
 }
 
+/** DLR-162 — was `template.kind === BuffKind.Cheat ? cheatBuff : …`, a binary that type-checked
+ *  perfectly with a SECOND activated kind flowing through it and minted that kind as a Cheat.
+ *  A `Record` over the closed union instead, so a third activated card is a compile error here.
+ *  Still delegates to `buffCatalog.ts`'s minting functions rather than reproducing them — one card,
+ *  one answer, the discipline `cheatDurationTricksOf` sets three files away. */
+const ACTIVATED_MINT: Readonly<
+  Record<BuffActivatedTemplateKind, (tier: BuffTier, id: BuffId) => Buff>
+> = {
+  [BuffKind.Cheat]: cheatBuff,
+  [BuffKind.Wildcard]: wildcardBuff,
+}
+
 /** Mint an ordinary `Buff` from a template at `tier`. `id` is the CALLER's, from
  *  `RunState.nextBuffId` — this module never invents one and never calls `Math.random()`.
  *  Throws `RangeError` on a CONDITION template whose axis has no reward ladder rather than minting
@@ -322,7 +349,10 @@ export function mintFromTemplate(template: BuffTemplate, tier: BuffTier, id: Buf
     // DLR-132 — DLR-107's `cheatBuff` IS the minting path. Reproducing its
     // expressions here would give one card two answers, which is the discipline
     // `cheatDurationTricksOf` sets three files away.
-    return cheatBuff(tier, id)
+    // DLR-162 — was `return cheatBuff(tier, id)` outright, which type-checked perfectly with a
+    // SECOND activated kind flowing through it and minted that kind as a Cheat. See
+    // `ACTIVATED_MINT` above.
+    return ACTIVATED_MINT[template.kind](tier, id)
   }
   const ladder = REWARD_TIER_VALUE[template.axis]
   if (ladder === undefined) {

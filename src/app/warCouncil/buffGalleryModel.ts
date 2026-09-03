@@ -16,6 +16,7 @@ import {
   buffCombineKey,
   BuffCadence,
   BUFF_CADENCE,
+  buffIsWild,
   buffTargetSuitOf,
   BuffTargetSuit,
   BuffTier,
@@ -29,6 +30,10 @@ export const BuffRunKind = {
   Bells: 'bells',
   Keys: 'keys',
   Moons: 'moons',
+  /** DLR-162 — a card whose condition ignores the suit. Its OWN run rather than `Suitless`: these
+   *  runs answer "which of my cards are live on this trick", and a card live on every trick is a
+   *  different answer from Sidestep, which never cared about suits in the first place. */
+  Wild: 'wild',
   Suitless: 'suitless',
   Press: 'press',
 } as const
@@ -39,6 +44,7 @@ export const BUFF_RUN_ORDER: readonly BuffRunKind[] = [
   BuffRunKind.Bells,
   BuffRunKind.Keys,
   BuffRunKind.Moons,
+  BuffRunKind.Wild,
   BuffRunKind.Suitless,
   BuffRunKind.Press,
 ]
@@ -90,6 +96,9 @@ const RUN_FOR_SUIT: Readonly<Record<BuffTargetSuit, BuffRunKind>> = {
 export function buffRunOf(buff: Buff): BuffRunKind {
   const suit = buffTargetSuitOf(buff)
   if (suit !== null) return RUN_FOR_SUIT[suit]
+  // DLR-162 — read BEFORE the cadence split: a wild card is an Event-cadence condition card, so
+  // without this it would fall into `Suitless`.
+  if (buffIsWild(buff)) return BuffRunKind.Wild
   return BUFF_CADENCE[buff.kind] === BuffCadence.Activated
     ? BuffRunKind.Press
     : BuffRunKind.Suitless

@@ -11,6 +11,10 @@ const RUN_CLASS: Readonly<Record<BuffRunKind, string>> = {
   [BuffRunKind.Bells]: 'wc-runtab-bells',
   [BuffRunKind.Keys]: 'wc-runtab-keys',
   [BuffRunKind.Moons]: 'wc-runtab-moons',
+  // DLR-162 — the wild run borrows the suitless tab's styling: it too shows no suit mark
+  // (`RUN_SUIT` is a `Partial` and has no wild row), and a fourth tab colour is a visual judgement
+  // the developer owns rather than one to invent here.
+  [BuffRunKind.Wild]: 'wc-runtab-suitless',
   [BuffRunKind.Suitless]: 'wc-runtab-suitless',
   [BuffRunKind.Press]: 'wc-runtab-press',
 }

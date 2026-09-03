@@ -1,5 +1,11 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { buffCombineKey, combineBuffs, type RunState } from '../../hunt'
+import {
+  buffCombineKey,
+  combineBuffs,
+  spendWildcard,
+  type BuffId,
+  type RunState,
+} from '../../hunt'
 import { manageBuffsView, type ManageBuffsView } from './manageBuffs'
 
 export interface ManageBuffsHandle {
@@ -7,6 +13,9 @@ export interface ManageBuffsHandle {
   /** Commits the combine and returns the produced pile's key, so the panel can badge the pile the
    *  new card landed in. Returns the key rather than the card: the panel deals in piles. */
   readonly combine: (key: string) => string
+  /** DLR-162 — spends the lowest-id held wildcard on `targetId` and returns the converted card's
+   *  pile key, so the panel can badge where it landed. */
+  readonly spendWild: (targetId: BuffId) => string
 }
 
 /**
@@ -34,5 +43,22 @@ export function useManageBuffs(
     return producedKey
   }
 
-  return { view, combine }
+  /** DLR-162 — spends the LOWEST-ID held wildcard on `targetId` and returns the converted card's
+   *  pile key. The key is derived from the tile's own preview, not from the new run: the functional
+   *  update has not run yet, and reading `run` after `setRun` would read the stale one — the
+   *  reasoning `combine` above already records. */
+  function spendWild(targetId: BuffId): string {
+    const tile = view.wildTargets.find((candidate) => candidate.ids.includes(targetId))
+    const wildcardId = view.wildcards[0]
+    if (tile === undefined || tile.produces === null || wildcardId === undefined) {
+      throw new RangeError(
+        `Cannot make ${targetId} wild — no such target is selectable on this screen`,
+      )
+    }
+    const producedKey = buffCombineKey(tile.produces)
+    setRun((current) => spendWildcard(current, wildcardId, targetId))
+    return producedKey
+  }
+
+  return { view, combine, spendWild }
 }

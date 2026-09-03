@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import type { Buff } from '../../hunt'
+import type { Buff, BuffId } from '../../hunt'
 import CombineGroupCard from './CombineGroupCard'
+import WildcardBand, { WILD_BAND_FOCUS_KEY } from './WildcardBand'
+import WildTargetCard from './WildTargetCard'
 import type { ManageBuffsView } from './manageBuffs'
 import {
   MANAGE_BUFFS_BACK_LABEL,
+  MANAGE_BUFFS_WILD_REFUSED_BAND,
+  MANAGE_BUFFS_WILD_TARGET_BAND,
+  wildDoneText,
   MANAGE_BUFFS_EMPTY,
   MANAGE_BUFFS_HELD_LABEL,
   MANAGE_BUFFS_READY_BAND,
@@ -21,6 +26,9 @@ export interface ManageBuffsPanelProps {
   readonly view: ManageBuffsView
   /** Returns the produced pile's key, which the panel badges. */
   readonly onCombine: (key: string) => string
+  /** DLR-162 — spends a wildcard on `targetId`; returns the converted card's pile key, which the
+   *  panel badges exactly as it badges a combine's product. */
+  readonly onSpendWild: (targetId: BuffId) => string
   readonly onLeave: () => void
 }
 
@@ -44,8 +52,18 @@ interface JustMade {
  * removes the tile that had it — creates no subscription, timer, or observer, so it has nothing
  * for a cleanup to release.
  */
-export default function ManageBuffsPanel({ view, onCombine, onLeave }: ManageBuffsPanelProps) {
+export default function ManageBuffsPanel({
+  view,
+  onCombine,
+  onSpendWild,
+  onLeave,
+}: ManageBuffsPanelProps) {
   const [armedKey, setArmedKey] = useState<string | null>(null)
+  // DLR-162 — the screen's second gesture. `targeting` swaps the two combine bands for the target
+  // grid; `armedWildKey` is the target whose own confirmation face is open. Both are ephemeral view
+  // state owned here, cleared on cancel, on commit, and on `Escape` — no effect behind either.
+  const [targeting, setTargeting] = useState(false)
+  const [armedWildKey, setArmedWildKey] = useState<string | null>(null)
   const [justMade, setJustMade] = useState<JustMade | null>(null)
   // Keys to try, in order, for the tile that should receive focus once the DOM this action just
   // changed has actually re-rendered — a cancel or a commit swaps or removes the focused node, so
@@ -64,10 +82,28 @@ export default function ManageBuffsPanel({ view, onCombine, onLeave }: ManageBuf
 
   const readyGroups = view.groups.filter((group) => group.refusal === null)
   const refusedGroups = view.groups.filter((group) => group.refusal !== null)
+  const readyTargets = view.wildTargets.filter((tile) => tile.refusal === null)
+  const refusedTargets = view.wildTargets.filter((tile) => tile.refusal !== null)
+  const wildcardCount = view.wildcards.length
+  // The wildcard the band shows and a spend consumes: the lowest-id copy, which is `wildcards[0]`.
+  const wildcard = view.groups
+    .flatMap((group) => group.ids.map((id) => ({ id, buff: group.buff })))
+    .find((entry) => entry.id === view.wildcards[0])?.buff
 
   function cancelArmedOrLeave() {
     if (armedKey !== null) setArmedKey(null)
     else onLeave()
+  }
+
+  function cancelTargetingOrLeave() {
+    if (armedWildKey !== null) setArmedWildKey(null)
+    else leaveTargeting()
+  }
+
+  function leaveTargeting() {
+    setTargeting(false)
+    setArmedWildKey(null)
+    requestFocus([WILD_BAND_FOCUS_KEY])
   }
 
   // The roving collection is the READY piles only — a refused pile carries no button at all, so
@@ -76,6 +112,17 @@ export default function ManageBuffsPanel({ view, onCombine, onLeave }: ManageBuf
     readyGroups.length,
     (index) => readyGroups[index] !== undefined,
     cancelArmedOrLeave,
+  )
+  // DLR-162 — the target grid is its own roving collection, over the SELECTABLE targets only, for
+  // the same reason: a refused target renders as an `<li>` with no button in it.
+  const {
+    groupRef: targetGroupRef,
+    tabStopIndex: targetTabStopIndex,
+    handleKeyDown: handleTargetKeyDown,
+  } = useRovingTabIndex(
+    readyTargets.length,
+    (index) => readyTargets[index] !== undefined,
+    cancelTargetingOrLeave,
   )
 
   // Runs after a cancel or a commit has re-rendered the grid — never synchronously in the click or
@@ -89,7 +136,12 @@ export default function ManageBuffsPanel({ view, onCombine, onLeave }: ManageBuf
     focusRequestRef.current = null
     let target: HTMLElement | null = null
     for (const key of keys) {
-      target = panelRef.current?.querySelector<HTMLElement>(`[data-combine-key="${key}"]`) ?? null
+      // DLR-162 — a key may name a combine pile, a wild target tile, or the wildcard band's own
+      // control, so both attributes are searched in one pass rather than in two lists.
+      target =
+        panelRef.current?.querySelector<HTMLElement>(
+          `[data-combine-key="${key}"], [data-wild-key="${key}"]`,
+        ) ?? null
       if (target !== null) break
     }
     target = target ?? groupRef.current ?? backRef.current
@@ -129,6 +181,41 @@ export default function ManageBuffsPanel({ view, onCombine, onLeave }: ManageBuf
     requestFocus([key, producedKey])
   }
 
+  // DLR-162 — the target mode's own three handlers, mirroring the combine gesture's exactly.
+  function handleTargetGridKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (armedWildKey !== null) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        requestFocus([armedWildKey])
+        setArmedWildKey(null)
+      }
+      return
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      leaveTargeting()
+      return
+    }
+    handleTargetKeyDown(event)
+  }
+
+  function handleWildCancel(key: string) {
+    requestFocus([key])
+    setArmedWildKey(null)
+  }
+
+  function handleWildCommit(key: string) {
+    const tile = view.wildTargets.find((candidate) => candidate.key === key)
+    if (tile === undefined || tile.produces === null) return
+    const spent: Buff = tile.buff
+    const made: Buff = tile.produces
+    const producedKey = onSpendWild(tile.ids[0])
+    setArmedWildKey(null)
+    setTargeting(false)
+    setJustMade({ key: producedKey, text: wildDoneText(spent, made) })
+    requestFocus([producedKey, WILD_BAND_FOCUS_KEY])
+  }
+
   return (
     <div className="mb-shell" ref={panelRef}>
       <header className="mb-status">
@@ -154,6 +241,73 @@ export default function ManageBuffsPanel({ view, onCombine, onLeave }: ManageBuf
           <p className="mb-empty">{MANAGE_BUFFS_EMPTY}</p>
         ) : (
           <>
+            {/* DLR-162 — the band renders only when a wildcard is actually held: `game-ux`'s rule
+                against a panel that reports that nothing is happening. */}
+            {wildcardCount > 0 && wildcard !== undefined && (
+              <WildcardBand
+                wildcard={wildcard}
+                count={wildcardCount}
+                onArm={() => setTargeting(true)}
+              />
+            )}
+            {targeting ? (
+              <>
+                {readyTargets.length > 0 && (
+                  <section className="mb-bandrow">
+                    <h2 className="mb-bandhead">
+                      <span className="mb-pip" aria-hidden="true" />
+                      {MANAGE_BUFFS_WILD_TARGET_BAND} · {readyTargets.length}
+                    </h2>
+                    <div
+                      className="mb-grid"
+                      role="group"
+                      aria-label={MANAGE_BUFFS_WILD_TARGET_BAND}
+                      ref={targetGroupRef}
+                      tabIndex={-1}
+                      onKeyDown={handleTargetGridKeyDown}
+                    >
+                      {readyTargets.map((tile, index) => (
+                        <WildTargetCard
+                          key={tile.key}
+                          tile={tile}
+                          armed={armedWildKey === tile.key}
+                          wildcardTier={wildcard?.tier ?? tile.buff.tier}
+                          held={view.held}
+                          tabStop={index === targetTabStopIndex}
+                          onArm={() => setArmedWildKey(tile.key)}
+                          onCommit={() => handleWildCommit(tile.key)}
+                          onCancel={() => handleWildCancel(tile.key)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {refusedTargets.length > 0 && (
+                  <section className="mb-bandrow mb-bandrow-refused">
+                    <h2 className="mb-bandhead is-refused">
+                      <span className="mb-pip" aria-hidden="true" />
+                      {MANAGE_BUFFS_WILD_REFUSED_BAND} · {refusedTargets.length}
+                    </h2>
+                    <ul className="mb-grid" role="group" aria-label={MANAGE_BUFFS_WILD_REFUSED_BAND}>
+                      {refusedTargets.map((tile) => (
+                        <WildTargetCard
+                          key={tile.key}
+                          tile={tile}
+                          armed={false}
+                          wildcardTier={wildcard?.tier ?? tile.buff.tier}
+                          held={view.held}
+                          tabStop={false}
+                          onArm={() => {}}
+                          onCommit={() => {}}
+                          onCancel={() => {}}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                )}
+              </>
+            ) : (
+              <>
             {readyGroups.length > 0 && (
               <section className="mb-bandrow">
                 <h2 className="mb-bandhead">
@@ -206,6 +360,8 @@ export default function ManageBuffsPanel({ view, onCombine, onLeave }: ManageBuf
                   ))}
                 </ul>
               </section>
+            )}
+              </>
             )}
           </>
         )}

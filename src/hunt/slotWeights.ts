@@ -57,6 +57,17 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     // UNIT: relative weight, >= 0, unitless. See `tasks.md` → Developer decides or observes.
     [BuffKind.SkullHelmet]: 3,
     [BuffKind.SkullTether]: 2,
+    // DLR-162 AC10 — NOBODY HAS CHOSEN THIS NUMBER. AC10 asks for a LOW weight and says the exact
+    // figure is the developer's. `1` is a PLACEHOLDER: it is the lowest weight either table
+    // already carries, chosen only so this total `Record` compiles. Only RATIOS matter within one
+    // machine's table. UNIT: relative weight, >= 0, unitless.
+    //
+    // Worth reading before it is set: because wildness is absorbing, one wildcard seeds an entire
+    // wild line, so what this rations is how many INDEPENDENT WILD LINES a player can start, not
+    // how many wild cards they end up holding. And the machine has no per-card rarity — a low
+    // weight makes the card rarely APPEAR, but on a visit where it does appear it is as likely as
+    // anything else on that strip. See `tasks.md` → Developer decides or observes.
+    [BuffKind.Wildcard]: 1,
   },
   [SlotMachineId.Strongbox]: {
     [BuffKind.Taker]: 2,
@@ -67,6 +78,9 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     // DLR-161 — see the Skirmisher table's comment above; same nobody-approved status.
     [BuffKind.SkullHelmet]: 1,
     [BuffKind.SkullTether]: 1,
+    // DLR-162 AC10 — see the Skirmisher table's comment above; same PLACEHOLDER, nobody-approved
+    // status. UNIT: relative weight, >= 0, unitless.
+    [BuffKind.Wildcard]: 1,
   },
 }
 

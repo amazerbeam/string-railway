@@ -1,6 +1,7 @@
 import {
   BuffKind,
   BuffRewardAxis,
+  type BuffActivatedTemplateKind,
   type BuffTargetSuit,
   type BuffTemplate,
   type ConditionBuffTemplate,
@@ -28,6 +29,8 @@ export type SlotGlyph =
   | { readonly kind: 'cheat' }
   | { readonly kind: 'skullHelmet' }
   | { readonly kind: 'skullTether' }
+  // DLR-162 — the wildcard's own mark, drawn by `src/app/warCouncil/WildMark.tsx`.
+  | { readonly kind: 'wildcard' }
 
 export interface SlotSymbolFace {
   /** `template.id` — already unique across the strip, so it is the React key AND what a
@@ -53,6 +56,16 @@ const FAMILY_WORD: Readonly<Record<BuffTemplate['kind'], string>> = {
   // DLR-161 — short forms, for a moving reel window; the full card name is `slotLabels.ts`'s job.
   [BuffKind.SkullHelmet]: 'Helmet',
   [BuffKind.SkullTether]: 'Tether',
+  // DLR-162 — PLACEHOLDER copy.
+  [BuffKind.Wildcard]: 'Wildcard',
+}
+
+/** DLR-162 — was `glyph: { kind: 'cheat' }` outright on the activated branch, which rendered a
+ *  SECOND activated card as a Cheat in a reel window with no error at all. Total over the closed
+ *  union, so a third activated card is a compile error here. */
+const ACTIVATED_GLYPH: Readonly<Record<BuffActivatedTemplateKind, SlotGlyph>> = {
+  [BuffKind.Cheat]: { kind: 'cheat' },
+  [BuffKind.Wildcard]: { kind: 'wildcard' },
 }
 
 /** The mintable axes, in the same words `BUFF_REWARD_SUFFIX` uses — restated as a narrowed
@@ -90,7 +103,7 @@ export function slotSymbolFace(template: BuffTemplate): SlotSymbolFace {
   if (template.form === 'activated') {
     return {
       id: template.id,
-      glyph: { kind: 'cheat' },
+      glyph: ACTIVATED_GLYPH[template.kind],
       family: FAMILY_WORD[template.kind],
       axis: null,
     }

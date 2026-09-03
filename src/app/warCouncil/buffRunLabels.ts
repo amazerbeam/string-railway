@@ -12,6 +12,8 @@ export const RUN_LABEL: Readonly<Record<BuffRunKind, string>> = {
   [BuffRunKind.Bells]: 'Bells',
   [BuffRunKind.Keys]: 'Keys',
   [BuffRunKind.Moons]: 'Moons',
+  // DLR-162 — PLACEHOLDER copy.
+  [BuffRunKind.Wild]: 'Wild',
   [BuffRunKind.Suitless]: 'No suit',
   [BuffRunKind.Press]: 'Press',
 }

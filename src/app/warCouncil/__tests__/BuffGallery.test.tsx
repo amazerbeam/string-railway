@@ -6,6 +6,8 @@ import {
   BuffActivationRefusal,
   BuffTier,
   mintFromTemplate,
+  wildcardBuff,
+  wildenedBuff,
   type Buff,
   type BuffTemplate,
 } from '../../../hunt'
@@ -311,5 +313,27 @@ describe('BuffGallery — AC8 the suit filter composes with the tier filter', ()
     const grid = screen.getByRole('group', { name: 'Usable buffs' })
     expect(within(grid).queryAllByRole('button')).toHaveLength(0)
     expect(screen.getByText('No buffs match this filter.')).toBeTruthy()
+  })
+})
+
+describe('a wild card on the felt (DLR-162 AC9)', () => {
+  it('draws the wild mark where a suit mark would go, and says Wild in its accessible name', () => {
+    renderGallery({ buffs: [wildenedBuff(mint(bellTakerBladeTemplate))] })
+    const card = screen.getByRole('button', { name: /Wild Taker \(Blade\)/ })
+    expect(card.querySelector('.wc-buffcard-wild-mark')).not.toBeNull()
+    expect(card.querySelector('.wc-buffcard-suit-none')).toBeNull()
+    expect(card.className).toContain('wc-buffcard-wild')
+  })
+
+  it('refuses the wildcard itself on the felt, saying where it IS spent', () => {
+    renderGallery({
+      buffs: [wildcardBuff(BuffTier.Bronze, 900)],
+      refusalFor: () => BuffActivationRefusal.ShopOnly,
+    })
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(BUFF_ACTIVATION_REFUSAL_MESSAGE[BuffActivationRefusal.ShopOnly]),
+      }),
+    ).toBeTruthy()
   })
 })

@@ -329,6 +329,18 @@
   --wc-buffcard-suit-color: var(--wc-moons);
 }
 
+/* DLR-162 — a wild card sets the same three custom properties a suit does, so the payoff chip and
+   the mark tint resolve exactly as a suited card's do rather than falling back to an unset value.
+   It BORROWS --wc-brass rather than introducing a fourth field colour: tier already owns the
+   metallic frame and suit already owns the field, and `game-ux` forbids a second categorical axis
+   in a field colour. Wildness is carried by the MARK and by the `Wild` prefix in the name, so it
+   survives greyscale. The tint is the developer's to change (`tasks.md` → Developer decides). */
+.wc-buffcard-wild {
+  --wc-buffcard-payoff-bg: var(--wc-brass);
+  --wc-buffcard-payoff-fg: #221a08;
+  --wc-buffcard-suit-color: var(--wc-brass-dim, #7d6132);
+}
+
 /* poised — the first tap. Form as well as colour: a lift AND a ring. */
 .wc-buffcard[aria-pressed='true'] {
   transform: translateY(-9px);

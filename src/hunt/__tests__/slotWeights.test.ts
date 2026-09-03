@@ -192,3 +192,25 @@ describe('weightedDrawWithReplacement (DLR-145)', () => {
     expect(calls).toBe(7)
   })
 })
+
+describe('the wildcard on the strip (DLR-162 AC1/AC10)', () => {
+  it('carries positive weight, so the machine can stock it', () => {
+    expect(
+      templateWeightFor(SlotMachineId.Skirmisher, templateById('wildcard')!),
+    ).toBeGreaterThan(0)
+  })
+
+  it('leaves every CONDITION template weight untouched - no condition template was added', () => {
+    // The wildcard is an ACTIVATED template, so it never enters `FAMILY_AXIS_TOTAL`. A Bell-Taker
+    // (Blade) on the Skirmisher is family 5, axis 3, family-axis total 6 templates x 3 = 18
+    // -> 5 * 3 / 18 = 0.8333, exactly as before. (The plan quoted 2.5 off a two-template Taker
+    // family; the family has held six templates since DLR-150.)
+    expect(
+      templateWeightFor(SlotMachineId.Skirmisher, templateById('taker:bells:magnitude')!),
+    ).toBeCloseTo(5 / 6)
+  })
+
+  it('shares its family weight across nothing - one template in the family', () => {
+    expect(templateWeightFor(SlotMachineId.Skirmisher, templateById('wildcard')!)).toBeCloseTo(1)
+  })
+})

@@ -5,6 +5,7 @@ import {
   BuffRewardAxis,
   BuffTargetSuit,
   BuffTier,
+  buffIsWild,
   buffTargetRankOf,
   buffTargetSuitOf,
   conditionIsWidened,
@@ -40,6 +41,8 @@ export const BUFF_FAMILY_WORD: Readonly<Record<BuffKind, string>> = {
   // DLR-161 — PLACEHOLDER copy, as this table's docblock already says of every non-transcribed row.
   [BuffKind.SkullHelmet]: 'Skull Helmet',
   [BuffKind.SkullTether]: 'Skull Tether',
+  // DLR-162 — PLACEHOLDER copy.
+  [BuffKind.Wildcard]: 'Wildcard',
 }
 
 /** The condition half, in sentence form. The eleven family rows are TRANSCRIBED from the same
@@ -69,6 +72,9 @@ export const BUFF_CONDITION_SENTENCE: Readonly<Record<BuffKind, string>> = {
   // DLR-161 — the BRONZE reading for both. PLACEHOLDER copy.
   [BuffKind.SkullHelmet]: 'eat a skull with this card',
   [BuffKind.SkullTether]: 'eat a skull with this card',
+  // DLR-162 — it has no trigger, so it reads as the action the player takes, exactly as Cheat's
+  // row does. PLACEHOLDER copy.
+  [BuffKind.Wildcard]: 'spend it on a suited card between fights',
 }
 
 /** DLR-161 AC5 — silver and gold print a WIDER sentence than bronze, because they fire on a clean
@@ -111,8 +117,13 @@ export function buffName(buff: Buff): string {
   const suit = buffTargetSuitOf(buff)
   const rank = buffTargetRankOf(buff)
   const family = BUFF_FAMILY_WORD[buff.kind]
-  const head =
-    rank !== null
+  // DLR-162 AC9 — a wild card carries its wildness in the NAME as well as in its mark, so a
+  // greyscale screenshot and a screen reader both read it. The prefix sits exactly where the suit
+  // prefix would, because it is what replaced the suit. A wild card reports no suit and no rank,
+  // so the branches stay mutually exclusive.
+  const head = buffIsWild(buff)
+    ? `Wild ${family}`
+    : rank !== null
       ? `${family} ${rank}`
       : suit !== null
         ? `${SUIT_WORD[suit].replace(/s$/, '')}-${family}`
@@ -188,6 +199,10 @@ export function buffLine(buff: Buff): string {
 
 /** PLACEHOLDER copy, as this project's rest is. */
 export const BUFF_ACTIVATION_REFUSAL_MESSAGE: Readonly<Record<BuffActivationRefusal, string>> = {
+  // DLR-162 — PLACEHOLDER copy. Says WHERE the card is spent, not merely that it cannot be:
+  // the row renders this on its own face, and a player holding a card they cannot use is exactly
+  // who this sentence is for.
+  [BuffActivationRefusal.ShopOnly]: 'Spend this on the Manage Buffs screen.',
   [BuffActivationRefusal.NoEffectYet]: 'Not usable yet.',
   [BuffActivationRefusal.WindowClosed]: 'Not between tricks.',
   [BuffActivationRefusal.AlreadyActive]: 'Already active this trick.',

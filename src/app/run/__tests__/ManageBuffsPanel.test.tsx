@@ -37,7 +37,14 @@ function renderPanel(buffs: readonly Buff[], onLeave = vi.fn()) {
     const group = view.groups.find((candidate) => candidate.key === key)
     return group!.key
   })
-  render(<ManageBuffsPanel view={view} onCombine={onCombine} onLeave={onLeave} />)
+  render(
+    <ManageBuffsPanel
+      view={view}
+      onCombine={onCombine}
+      onSpendWild={vi.fn(() => '')}
+      onLeave={onLeave}
+    />,
+  )
   return { view, onCombine, onLeave }
 }
 
@@ -55,7 +62,14 @@ function LiveManageBuffs({ initial }: { readonly initial: readonly Buff[] }) {
     setBuffs(next.buffs)
     return producedKey
   }
-  return <ManageBuffsPanel view={view} onCombine={combine} onLeave={() => {}} />
+  return (
+    <ManageBuffsPanel
+      view={view}
+      onCombine={combine}
+      onSpendWild={() => ''}
+      onLeave={() => {}}
+    />
+  )
 }
 
 describe('ManageBuffsPanel', () => {

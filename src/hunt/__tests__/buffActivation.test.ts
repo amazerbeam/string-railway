@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { apCostOf } from '../buffCosts'
 import { spendAp } from '../actionPoints'
 import { AP_ENABLED, STARTING_AP } from '../apConfig'
-import { cheatBuff, shieldBuff } from '../buffCatalog'
+import { cheatBuff, shieldBuff, wildcardBuff } from '../buffCatalog'
+import { isShopOnlyBuff } from '../buffs'
 import { ACTIVATED_BUFF_CONDITION, BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
 import {
   BuffActivationRefusal,
@@ -60,6 +61,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
     // apCostFor(cost) internally, which reads AP_ENABLED — not the apCost this stock carries.
     expect(
       buffActivationRefusalFor({
+        shopOnly: false,
         effectLive: true,
         windowOpen: true,
         apPool: 1,
@@ -72,6 +74,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('refuses WindowClosed when the window is not open', () => {
     expect(
       buffActivationRefusalFor({
+        shopOnly: false,
         effectLive: true,
         windowOpen: false,
         apPool: 6,
@@ -84,6 +87,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('refuses AlreadyActive when the buff is already active this trick', () => {
     expect(
       buffActivationRefusalFor({
+        shopOnly: false,
         effectLive: true,
         windowOpen: true,
         apPool: 6,
@@ -96,6 +100,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('permits activation — null — when window is open, affordable, and not already active', () => {
     expect(
       buffActivationRefusalFor({
+        shopOnly: false,
         effectLive: true,
         windowOpen: true,
         apPool: 6,
@@ -108,6 +113,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('reports WindowClosed before InsufficientAp — a closed window is true of the whole felt', () => {
     expect(
       buffActivationRefusalFor({
+        shopOnly: false,
         effectLive: true,
         windowOpen: false,
         apPool: 0,
@@ -120,6 +126,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('DLR-126 — reports NoEffectYet before every other reason, because it is true of the CARD', () => {
     expect(
       buffActivationRefusalFor({
+        shopOnly: false,
         effectLive: false,
         windowOpen: false,
         apPool: 0,
@@ -132,6 +139,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('DLR-126 — refuses NoEffectYet even on a wide-open felt with a full pool', () => {
     expect(
       buffActivationRefusalFor({
+        shopOnly: false,
         effectLive: false,
         windowOpen: true,
         apPool: STARTING_AP,
@@ -350,3 +358,47 @@ describe('isRevocableBuff — DLR-154 AC5/AC13', () => {
   })
 })
 
+
+describe('ShopOnly (DLR-162)', () => {
+  const openStock = {
+    shopOnly: false,
+    effectLive: true,
+    windowOpen: true,
+    apPool: STARTING_AP,
+    apCost: 1,
+    alreadyActive: false,
+  }
+
+  it('refuses a shop-only card even on a wide-open felt', () => {
+    expect(buffActivationRefusalFor({ ...openStock, shopOnly: true })).toBe(
+      BuffActivationRefusal.ShopOnly,
+    )
+  })
+
+  it('reports ShopOnly ahead of every other reason - it is true of the CARD, not of the felt', () => {
+    const worst = {
+      ...openStock,
+      shopOnly: true,
+      effectLive: false,
+      windowOpen: false,
+      alreadyActive: true,
+    }
+    expect(buffActivationRefusalFor(worst)).toBe(BuffActivationRefusal.ShopOnly)
+  })
+
+  it('is set for a wildcard and for nothing else', () => {
+    expect(isShopOnlyBuff(wildcardBuff(BuffTier.Bronze, 1))).toBe(true)
+    expect(isShopOnlyBuff(cheatBuff(BuffTier.Bronze, 2))).toBe(false)
+    expect(isShopOnlyBuff(shieldBuff(BuffTier.Bronze, 3))).toBe(false)
+  })
+
+  it('is carried onto the stock the felt reads', () => {
+    const state = startBuffActivation()
+    expect(buffActivationStockFor(state, wildcardBuff(BuffTier.Bronze, 1), true).shopOnly).toBe(true)
+    expect(buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 2), true).shopOnly).toBe(false)
+  })
+
+  it('prices a wildcard rather than throwing on a render path', () => {
+    expect(() => apCostOf(wildcardBuff(BuffTier.Gold, 4))).not.toThrow()
+  })
+})

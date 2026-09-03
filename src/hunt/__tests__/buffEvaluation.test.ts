@@ -326,3 +326,47 @@ describe('Keepsake — the known open defect, pinned', () => {
     expect(buffFires(k, ctx({ finalTrick: true, remainingSuits: [] }))).toBe(false)
   })
 })
+
+describe('a wild condition ignores the suit but nothing else (DLR-162 AC3)', () => {
+  const wildTaker: Buff = {
+    id: 40,
+    kind: BuffKind.Taker,
+    tier: BuffTier.Bronze,
+    condition: { kind: BuffKind.Taker, wild: true },
+    reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+  }
+  const wildFeeder: Buff = {
+    ...wildTaker,
+    id: 41,
+    kind: BuffKind.Feeder,
+    condition: { kind: BuffKind.Feeder, wild: true },
+  }
+
+  it('fires a wild Taker on a won trick of a suit it never named', () => {
+    expect(buffFires(wildTaker, ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Moons] }))).toBe(
+      true,
+    )
+    expect(buffFires(wildTaker, ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Keys] }))).toBe(
+      true,
+    )
+  })
+
+  it('still refuses a wild Taker on a LOST trick - the mechanical term is untouched', () => {
+    expect(
+      buffFires(wildTaker, ctx({ playerWon: false, playerSuits: [BuffTargetSuit.Moons] })),
+    ).toBe(false)
+  })
+
+  it('fires a wild Feeder on a lost trick of any suit, and never on a won one', () => {
+    expect(
+      buffFires(wildFeeder, ctx({ playerWon: false, playerSuits: [BuffTargetSuit.Bells] })),
+    ).toBe(true)
+    expect(buffFires(wildFeeder, ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Bells] }))).toBe(
+      false,
+    )
+  })
+
+  it('fires a wild card even when the player played NO suit this trick', () => {
+    expect(buffFires(wildTaker, ctx({ playerWon: true, playerSuits: [] }))).toBe(true)
+  })
+})

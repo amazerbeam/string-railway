@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUFF_TEMPLATES, BuffKind, BuffRewardAxis } from '../../../hunt'
+import { BUFF_TEMPLATES, BuffKind, BuffRewardAxis, templateById } from '../../../hunt'
 import { slotSymbolFace } from '../slotSymbols'
 
 describe('slotSymbolFace — every real template', () => {
@@ -42,5 +42,15 @@ describe('slotSymbolFace — the Protection axis word matches the reward suffix'
   it('is Guard, the same word BUFF_REWARD_SUFFIX uses', () => {
     // Cross-check against the reward axis this face's word narrows over.
     expect(BuffRewardAxis.Protection).toBe('protection')
+  })
+})
+
+it('gives the wildcard its OWN glyph and word, not the Cheat it used to fall through to', () => {
+  const face = slotSymbolFace(templateById('wildcard')!)
+  expect(face).toEqual({
+    id: 'wildcard',
+    glyph: { kind: 'wildcard' },
+    family: 'Wildcard',
+    axis: null,
   })
 })

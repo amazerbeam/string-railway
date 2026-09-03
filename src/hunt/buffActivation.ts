@@ -1,7 +1,7 @@
 import { canAffordAp, refreshActionPointsForNewHand, refundAp, spendAp } from './actionPoints'
 import { apCostOf, isConditionFamily, isConsumableKind } from './buffCosts'
 import { consumableEffectIsLive, isConsumableItem, spendConsumable } from './consumables'
-import { BuffKind, type Buff, type BuffId } from './buffs'
+import { BuffKind, isShopOnlyBuff, type Buff, type BuffId } from './buffs'
 import { AP_REFRESH_CADENCE, ApRefreshCadence, STARTING_AP } from './apConfig'
 import type { ActionPoints } from './types'
 
@@ -10,6 +10,11 @@ import type { ActionPoints } from './types'
  * no user-facing copy, exactly `src/hunt/flask.ts`'s `FlaskRefusal`.
  */
 export const BuffActivationRefusal = {
+  /** DLR-162 — this card is spent on the Manage Buffs screen, between fights, and has no effect on
+   *  the felt at all. Read FIRST, ahead of `NoEffectYet`, because it is true of the CARD rather
+   *  than of the felt — and deliberately NOT folded into `NoEffectYet`, whose copy reads "Not
+   *  usable yet" and would be false of a card that is perfectly usable one screen away. */
+  ShopOnly: 'shopOnly',
   /** DLR-126 — the card can never do anything IN THIS BUILD: it is a consumable whose effect needs
    *  a player-choice surface no screen provides (Puppeteer, Foresight, Spyglass). Read FIRST,
    *  before every other refusal, because it is true of the CARD rather than of the felt. NOT a
@@ -34,6 +39,9 @@ export type BuffActivationRefusal =
  * the shape of the layer that calls it. `roundUiState.ts`'s `buffActivationStock` builds it.
  */
 export interface BuffActivationStock {
+  /** DLR-162 — `isShopOnlyBuff(buff)` (declared in `buffs.ts`). `false` for every card but the
+   *  wildcard. */
+  readonly shopOnly: boolean
   /** DLR-126 — whether spending this card would do anything at all in this build. `false` only for
    *  a consumable whose effect surface is not built yet; `true` for every other card. */
   readonly effectLive: boolean
@@ -79,12 +87,13 @@ export function startBuffActivation(capacity: ActionPoints = STARTING_AP): BuffA
  * THE single statement of whether a buff can be activated — read by the reducer's guard and by
  * the plate's disabled state, so the two can never read availability differently.
  *
- * Order — `NoEffectYet → WindowClosed → AlreadyActive → InsufficientAp` — reports
+ * Order — `ShopOnly → NoEffectYet → WindowClosed → AlreadyActive → InsufficientAp` — reports
  * the reason true of the CARD, then the reason true of the whole felt, then the reasons true of
  * this card on this felt. A Foresight is refused for having no effect even on a wide-open felt
  * with a full pool, because opening the window would not make it usable.
  */
 export function buffActivationRefusalFor(stock: BuffActivationStock): BuffActivationRefusal | null {
+  if (stock.shopOnly) return BuffActivationRefusal.ShopOnly
   if (!stock.effectLive) return BuffActivationRefusal.NoEffectYet
   if (!stock.windowOpen) return BuffActivationRefusal.WindowClosed
   if (stock.alreadyActive) return BuffActivationRefusal.AlreadyActive
@@ -101,6 +110,7 @@ export function buffActivationStockFor(
   windowOpen: boolean,
 ): BuffActivationStock {
   return {
+    shopOnly: isShopOnlyBuff(buff),
     effectLive: consumableEffectIsLive(buff),
     windowOpen,
     apPool: state.apPool,

@@ -3,6 +3,7 @@ import { isConditionFamily } from './buffCosts'
 import {
   BUFF_CADENCE,
   BuffCadence,
+  buffIsWild,
   buffTargetRankOf,
   buffTargetSuitOf,
   type Buff,
@@ -66,11 +67,15 @@ export function buffFires(buff: Buff, ctx: BuffTrickContext): boolean {
   const suit = buffTargetSuitOf(buff)
   const rank = buffTargetRankOf(buff)
   const threshold = conditionThresholdOf(buff)
+  // DLR-162 AC3 — a wild condition drops the SUIT term and nothing else. The `playerWon` term
+  // below is the mechanical axis (`BuffTrickContext.playerWon`'s own docblock) and is untouched:
+  // a wild Taker still has to take the trick, a wild Feeder still has to lose one.
+  const wild = buffIsWild(buff)
   switch (buff.kind) {
     case 'taker':
-      return ctx.playerWon && suit !== null && ctx.playerSuits.includes(suit)
+      return ctx.playerWon && (wild || (suit !== null && ctx.playerSuits.includes(suit)))
     case 'feeder':
-      return !ctx.playerWon && suit !== null && ctx.playerSuits.includes(suit)
+      return !ctx.playerWon && (wild || (suit !== null && ctx.playerSuits.includes(suit)))
     case 'markOfRank':
       return ctx.playerWon && rank !== null && ctx.playerRanks.includes(rank)
     // "Dodge a skull with this card" — the trick this buff was activated FOR is a Dodge.

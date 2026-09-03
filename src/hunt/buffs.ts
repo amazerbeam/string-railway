@@ -47,6 +47,11 @@ export const BuffKind = {
   // multiplier: they keep one of the streak's two figures through a trick that hurt you.
   SkullHelmet: 'skullHelmet',
   SkullTether: 'skullTether',
+  /** DLR-162 — spent on the Manage Buffs screen to strip a card's suit condition. It has no
+   *  condition and no reward of its own, and is refused on the felt by
+   *  `BuffActivationRefusal.ShopOnly`. Its template id `'wildcard'` is a bare kind string like
+   *  `'cheat'`, and is FROZEN the moment it ships (`ActivatedBuffTemplate`'s own docblock). */
+  Wildcard: 'wildcard',
 } as const
 export type BuffKind = (typeof BuffKind)[keyof typeof BuffKind]
 
@@ -117,6 +122,12 @@ export interface BuffTarget {
 export interface BuffCondition {
   readonly kind: string
   readonly target?: BuffTarget
+  /** DLR-162 — this condition IGNORES THE SUIT: it is satisfied on a trick of any suit, with the
+   *  family's other requirement unchanged. Optional so every existing `BuffCondition` value
+   *  (`UNASSIGNED_BUFF_CONDITION`, `ACTIVATED_BUFF_CONDITION`, every template's) stays valid with
+   *  no edit. Set ONLY by `buffWild.ts`'s `wildenedBuff` / `mintWildAtTier` — never by a template,
+   *  because a wild card is not a card the machine can deal. */
+  readonly wild?: boolean
 }
 
 /** Whether `target`'s rank (if present) falls within `BUFF_TARGET_RANK_MIN..BUFF_TARGET_RANK_MAX`.
@@ -130,6 +141,23 @@ export function isValidBuffTarget(target: BuffTarget): boolean {
  *  `buff.condition.target?.suit` so a consumer never reaches into the payload directly. */
 export function buffTargetSuitOf(buff: Buff): BuffTargetSuit | null {
   return buff.condition.target?.suit ?? null
+}
+
+/** DLR-162 — whether this buff's condition ignores the suit. Reads `condition.wild` so no
+ *  consumer reaches into the payload directly, exactly as `buffTargetSuitOf` does for the suit. */
+export function buffIsWild(buff: Buff): boolean {
+  return buff.condition.wild === true
+}
+
+/** DLR-162 — whether `buff` can ONLY be spent on the Manage Buffs screen, between fights. TRUE for
+ *  the wildcard and nothing else. NEVER THROWS: it is read on a render path.
+ *
+ *  The plan put this in `consumables.ts` beside `consumableEffectIsLive`; it lives HERE instead
+ *  because that file stood at 396 of the 400-line blocking budget and this predicate would have
+ *  breached it. `buffs.ts` is the leaf-most module in this tree and the predicate reads nothing but
+ *  `kind`, so the import edge still runs one way into `buffActivation.ts`. */
+export function isShopOnlyBuff(buff: Buff): boolean {
+  return buff.kind === BuffKind.Wildcard
 }
 
 /** The rank a buff's condition targets, or `null` if it targets none. */
@@ -197,6 +225,8 @@ export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
   [BuffKind.Shield]: BuffCadence.Activated,
   [BuffKind.SkullHelmet]: BuffCadence.Event,
   [BuffKind.SkullTether]: BuffCadence.Event,
+  // DLR-162 — the player spends it; it has no trigger, exactly like Cheat.
+  [BuffKind.Wildcard]: BuffCadence.Activated,
 }
 
 /**

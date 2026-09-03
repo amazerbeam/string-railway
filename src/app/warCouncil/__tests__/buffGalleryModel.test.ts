@@ -4,6 +4,8 @@ import {
   BuffActivationRefusal,
   BuffTier,
   mintFromTemplate,
+  wildcardBuff,
+  wildenedBuff,
   type Buff,
   type BuffTemplate,
 } from '../../../hunt'
@@ -14,6 +16,7 @@ import {
   buffRunOf,
   buffStackKey,
 } from '../buffGalleryModel'
+import { runCountsFor } from '../buffSuitFilterModel'
 
 function templateFor(predicate: (template: BuffTemplate) => boolean): BuffTemplate {
   const template = BUFF_TEMPLATES.find(predicate)
@@ -60,11 +63,12 @@ describe('buffRunOf — which run a card belongs to', () => {
 })
 
 describe('buildBuffGallery — run order', () => {
-  it('BUFF_RUN_ORDER is [Bells, Keys, Moons, Suitless, Press], runs come back in that order, empty runs omitted', () => {
+  it('BUFF_RUN_ORDER is [Bells, Keys, Moons, Wild, Suitless, Press], runs come back in that order, empty runs omitted', () => {
     expect(BUFF_RUN_ORDER).toEqual([
       BuffRunKind.Bells,
       BuffRunKind.Keys,
       BuffRunKind.Moons,
+      BuffRunKind.Wild,
       BuffRunKind.Suitless,
       BuffRunKind.Press,
     ])
@@ -182,5 +186,33 @@ describe('buildBuffGallery — refusalFor call count', () => {
       return null
     })
     expect(calls).toBe(1)
+  })
+})
+
+describe('the Wild run (DLR-162 AC9)', () => {
+  it('puts a wild card in its own run, not in Suitless beside Sidestep', () => {
+    expect(buffRunOf(wildenedBuff(mint(bellTakerBladeTemplate)))).toBe(BuffRunKind.Wild)
+    expect(buffRunOf(mint(sidestepTemplate))).toBe(BuffRunKind.Suitless)
+  })
+
+  it('leaves the wildcard itself in Press - it is a card you spend, not a wild card', () => {
+    expect(buffRunOf(wildcardBuff(BuffTier.Bronze, 999))).toBe(BuffRunKind.Press)
+  })
+
+  it('orders Wild after the three suits and before Suitless', () => {
+    expect(BUFF_RUN_ORDER.indexOf(BuffRunKind.Wild)).toBeGreaterThan(
+      BUFF_RUN_ORDER.indexOf(BuffRunKind.Moons),
+    )
+    expect(BUFF_RUN_ORDER.indexOf(BuffRunKind.Wild)).toBeLessThan(
+      BUFF_RUN_ORDER.indexOf(BuffRunKind.Suitless),
+    )
+  })
+
+  it('counts wild cards in the chip row', () => {
+    const view = buildBuffGallery(
+      [wildenedBuff(mint(bellTakerBladeTemplate)), wildenedBuff(mint(bellTakerBladeTemplate))],
+      noRefusal,
+    )
+    expect(runCountsFor(view, 'all')[BuffRunKind.Wild]).toBe(2)
   })
 })

@@ -5,9 +5,11 @@ import {
   cheatDurationTricksOf,
   shieldBuff,
   shieldHeartsOf,
+  wildcardBuff,
 } from '../buffCatalog'
 import {
   ACTIVATED_BUFF_CONDITION,
+  buffIsWild,
   BuffKind,
   BuffRewardAxis,
   BuffTier,
@@ -117,5 +119,28 @@ describe('nothing in this ticket puts a gold Cheat on a player-reachable path', 
     expect(pile.every((b) => b.tier === BuffTier.Bronze)).toBe(true)
     expect(pile.every((b) => b.kind !== BuffKind.Unassigned)).toBe(true)
     expect(pile.every((b) => isPricedBuff(b))).toBe(true)
+  })
+})
+
+describe('wildcardBuff (DLR-162)', () => {
+  it('mints an activated card with no condition and no reward, at the caller id and tier', () => {
+    const card = wildcardBuff(BuffTier.Silver, 77)
+    expect(card).toEqual({
+      id: 77,
+      kind: BuffKind.Wildcard,
+      tier: BuffTier.Silver,
+      condition: ACTIVATED_BUFF_CONDITION,
+      reward: { axis: BuffRewardAxis.None, value: 0 },
+    })
+  })
+
+  it('is not itself wild - it is the card you spend, not a card made wild by one', () => {
+    expect(buffIsWild(wildcardBuff(BuffTier.Bronze, 1))).toBe(false)
+  })
+
+  it('carries the tier it was dealt at every rung', () => {
+    for (const tier of [BuffTier.Bronze, BuffTier.Silver, BuffTier.Gold]) {
+      expect(wildcardBuff(tier, 1).tier).toBe(tier)
+    }
   })
 })

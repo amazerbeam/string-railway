@@ -67,6 +67,7 @@ export type BuffConsumableKind =
   | typeof BuffKind.Foresight
   | typeof BuffKind.Spyglass
   | typeof BuffKind.Shield
+  | typeof BuffKind.Wildcard
 
 // DLR-111 → The formula. UNIT: action points, per tier, before the condition modifier.
 export const REWARD_BASE: Readonly<Record<BuffMintedAxis, Readonly<Record<BuffTier, number>>>> = {
@@ -123,6 +124,13 @@ export const CONSUMABLE_AP_COST: Readonly<
   // this is the type system's minimum, not a costing pass. Nothing player-reachable mints a
   // Shield yet, so no player can pay this today. UNIT: action points.
   [BuffKind.Shield]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 4 },
+  // DLR-162 — UNREACHABLE BY CONSTRUCTION, and a row is nonetheless MANDATORY:
+  // `buffActivationStockFor` calls `apCostOf` eagerly for every card in the loadout gallery, and
+  // `buffApCost` throws on an unpriced kind — an omitted row here would take the felt down the
+  // first time a player was dealt a wildcard. Zero is the honest figure rather than a plausible
+  // default: action points left the buff layer on DLR-145, and `BuffActivationRefusal.ShopOnly`
+  // refuses this card ahead of `InsufficientAp` in any case. UNIT: action points.
+  [BuffKind.Wildcard]: { [BuffTier.Bronze]: 0, [BuffTier.Silver]: 0, [BuffTier.Gold]: 0 },
 }
 
 const CONDITION_FAMILY_KINDS: ReadonlySet<BuffKind> = new Set(

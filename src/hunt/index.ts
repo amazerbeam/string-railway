@@ -88,6 +88,8 @@ export {
   ACTIVATED_BUFF_CONDITION,
   buffTargetSuitOf,
   buffTargetRankOf,
+  buffIsWild,
+  isShopOnlyBuff,
   isValidBuffTarget,
 } from './buffs'
 
@@ -101,6 +103,7 @@ export {
 export {
   CHEAT_DURATION_TRICKS,
   cheatBuff,
+  wildcardBuff,
   shieldBuff,
   cheatDurationTricksOf,
   shieldHeartsOf,
@@ -354,10 +357,23 @@ export {
 export {
   CombineRefusal,
   buffCombineKey,
+  buffCombineFamilyKey,
+  combinePairFor,
+  combineProductFor,
   nextBuffTierAfter,
   combineRefusalFor,
   combineBuffs,
 } from './buffCombine'
+
+// DLR-162 — the wild transition.
+export {
+  WildRefusal,
+  wildRefusalFor,
+  isWildcardCard,
+  mintWildAtTier,
+  wildenedBuff,
+  spendWildcard,
+} from './buffWild'
 
 export type { SlotMachine, SlotAward, SlotPull, SlotVisitStock } from './slotMachine'
 export {

@@ -11,9 +11,9 @@ import {
 import { mintableBuffKinds, unreachableBuffKinds, unshelvedShopItems } from '../reachability'
 
 describe('reachability — the DLR-120 audit', () => {
-  it('DLR-166 — mints exactly the 5 surviving condition families plus the one activated card', () => {
+  it('DLR-162 — mints exactly the 5 surviving condition families plus the two activated cards', () => {
     const mintable = mintableBuffKinds()
-    expect(mintable.size).toBe(6)
+    expect(mintable.size).toBe(7)
     expect([...mintable].sort()).toEqual(
       [
         BuffKind.Taker,
@@ -22,6 +22,10 @@ describe('reachability — the DLR-120 audit', () => {
         BuffKind.SkullHelmet,
         BuffKind.SkullTether,
         BuffKind.Cheat,
+        // DLR-162 — the wildcard is DEALT by the machine like any other card, so it is reachable.
+        // A card MADE wild by spending one is not on this list and never will be: it has no
+        // template at all (`buffWild.ts`'s `mintWildAtTier` mints it by transformation).
+        BuffKind.Wildcard,
       ].sort(),
     )
   })
@@ -69,7 +73,7 @@ describe('reachability — the DLR-120 audit', () => {
   })
 
   it('partitions the BuffKind union with mintable and unreachable, less Unassigned', () => {
-    expect(BUFF_TEMPLATES.length).toBe(17)
+    expect(BUFF_TEMPLATES.length).toBe(18)
     const total = Object.values(BuffKind).length
     expect(mintableBuffKinds().size + unreachableBuffKinds().size + 1).toBe(total)
   })

@@ -11,6 +11,8 @@ import {
   mintFromTemplate,
   shieldBuff,
   templateById,
+  wildcardBuff,
+  wildenedBuff,
   type Buff,
 } from '../../../hunt'
 import type { BuffStack } from '../buffGalleryModel'
@@ -23,6 +25,7 @@ import {
   BUFF_REWARD_SUFFIX,
   buffCadenceWord,
   buffCardAccessibleName,
+  buffConditionSentence,
   buffLine,
   buffName,
   buffRewardPhrase,
@@ -222,5 +225,33 @@ describe('buffCardAccessibleName — AC5, count, and the poise hint ladder', () 
     const takerName = buffCardAccessibleName(stackOf(bellTaker), true, null)
     expect(takerName).toContain(BUFF_POISED_HINT)
     expect(takerName).not.toContain(BUFF_POISED_HINT_PRESS)
+  })
+})
+
+describe('a wild card names itself (DLR-162 AC9)', () => {
+  const wildTakerBlade = wildenedBuff(mintedBuff('taker:bells:magnitude', BuffTier.Bronze, 1))
+  const wildFeederMomentum = wildenedBuff(mintedBuff('feeder:keys:multiplier', BuffTier.Bronze, 2))
+
+  it('takes a Wild prefix where the suit prefix would go', () => {
+    expect(buffName(wildTakerBlade)).toBe('Wild Taker (Blade)')
+    expect(buffName(wildFeederMomentum)).toBe('Wild Feeder (Momentum)')
+  })
+
+  it('leaves every suited and suitless name exactly as it was', () => {
+    expect(buffName(mintedBuff('taker:bells:magnitude', BuffTier.Bronze, 3))).toBe(
+      'Bell-Taker (Blade)',
+    )
+    expect(buffName(mintedBuff('sidestep:magnitude', BuffTier.Bronze, 4))).toBe('Sidestep (Blade)')
+  })
+
+  it('words its condition as "any suit" with no new copy - the substitution already exists', () => {
+    expect(buffConditionSentence(wildTakerBlade)).toBe('win a trick with any suit')
+  })
+
+  it('names the wildcard itself, and words its ShopOnly refusal', () => {
+    expect(buffName(wildcardBuff(BuffTier.Bronze, 5))).toBe('Wildcard (No reward)')
+    expect(BUFF_ACTIVATION_REFUSAL_MESSAGE[BuffActivationRefusal.ShopOnly]).toContain(
+      'Manage Buffs',
+    )
   })
 })

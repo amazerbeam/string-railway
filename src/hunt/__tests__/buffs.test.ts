@@ -11,14 +11,18 @@ import {
   UNASSIGNED_BUFF_CONDITION,
   ACTIVATED_BUFF_CONDITION,
   isValidBuffTarget,
+  buffIsWild,
+  buffTargetSuitOf,
+  BuffTier,
+  type Buff,
   type BuffCondition,
 } from '../buffs'
 
-describe('BuffKind (DLR-161 widened it to 22; DLR-166 deleted one, leaving 21)', () => {
-  it('carries all 21 members, pairwise distinct', () => {
+describe('BuffKind (DLR-166 left 21; DLR-162 added the wildcard, making 22)', () => {
+  it('carries all 22 members, pairwise distinct', () => {
     const values = Object.values(BuffKind)
-    expect(values).toHaveLength(21)
-    expect(new Set(values).size).toBe(21)
+    expect(values).toHaveLength(22)
+    expect(new Set(values).size).toBe(22)
   })
 
   it('carries the two surviving pre-existing members unchanged', () => {
@@ -182,5 +186,45 @@ describe('BUFF_CADENCE — DLR-124 R4’s classification, transcribed', () => {
       expect(BUFF_CADENCE[kind]).toBeDefined()
     }
     expect(Object.keys(BUFF_CADENCE)).toHaveLength(Object.values(BuffKind).length)
+  })
+
+  it('the wildcard is an Activated card — the player spends it, it has no trigger', () => {
+    expect(BUFF_CADENCE[BuffKind.Wildcard]).toBe(BuffCadence.Activated)
+  })
+})
+
+describe('buffIsWild (DLR-162)', () => {
+  it('is false for a card whose condition names a suit', () => {
+    const buff: Buff = {
+      id: 1,
+      kind: BuffKind.Taker,
+      tier: BuffTier.Bronze,
+      condition: { kind: BuffKind.Taker, target: { suit: BuffTargetSuit.Bells } },
+      reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+    }
+    expect(buffIsWild(buff)).toBe(false)
+  })
+
+  it('is false for a card whose condition names no suit and is not wild', () => {
+    const buff: Buff = {
+      id: 2,
+      kind: BuffKind.Sidestep,
+      tier: BuffTier.Bronze,
+      condition: { kind: BuffKind.Sidestep },
+      reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+    }
+    expect(buffIsWild(buff)).toBe(false)
+  })
+
+  it('is true only when the condition carries the flag', () => {
+    const buff: Buff = {
+      id: 3,
+      kind: BuffKind.Taker,
+      tier: BuffTier.Bronze,
+      condition: { kind: BuffKind.Taker, wild: true },
+      reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+    }
+    expect(buffIsWild(buff)).toBe(true)
+    expect(buffTargetSuitOf(buff)).toBeNull()
   })
 })

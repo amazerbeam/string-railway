@@ -325,6 +325,7 @@ function App() {
       <ManageBuffsPanel
         view={manageBuffs.view}
         onCombine={manageBuffs.combine}
+        onSpendWild={manageBuffs.spendWild}
         onLeave={() => setPhase(RunPhase.Shop)}
       />
     )

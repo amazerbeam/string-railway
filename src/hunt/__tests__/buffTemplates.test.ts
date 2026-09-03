@@ -12,20 +12,21 @@ import {
   templatesForFamily,
 } from '../buffTemplates'
 import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
+import { wildcardBuff } from '../buffCatalog'
 import { apCostOf, isConditionFamily } from '../buffCosts'
 
 describe('BUFF_TEMPLATES', () => {
-  // DLR-166 — 17, not DLR-161's 18: 6 Taker + 6 Feeder + 2 Sidestep + 1 Skull Helmet +
-  // 1 Skull Tether + 1 Cheat. The second activated card was deleted outright.
-  it('holds exactly the 17 templates DLR-166 leaves', () => {
-    expect(BUFF_TEMPLATES).toHaveLength(17)
-    expect(BUFF_TEMPLATE_COUNT).toBe(17)
+  // DLR-162 — 18: 6 Taker + 6 Feeder + 2 Sidestep + 1 Skull Helmet + 1 Skull Tether, plus the two
+  // activated cards Cheat and the wildcard. (DLR-166 deleted a third activated card outright.)
+  it('holds exactly the 18 templates DLR-162 leaves', () => {
+    expect(BUFF_TEMPLATES).toHaveLength(18)
+    expect(BUFF_TEMPLATE_COUNT).toBe(18)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Taker)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Sidestep)).toHaveLength(2)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullHelmet)).toHaveLength(1)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullTether)).toHaveLength(1)
-    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(1)
+    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(2)
   })
 
   it('DLR-161 — resolves both new template ids through templateById', () => {
@@ -158,5 +159,29 @@ describe('templateIdForBuff', () => {
         expect(templateForBuff(minted)).toBe(template)
       }
     }
+  })
+})
+
+describe('the wildcard template (DLR-162 AC1)', () => {
+  it('takes the pool to 18 - one more ACTIVATED template, no new condition template', () => {
+    expect(BUFF_TEMPLATE_COUNT).toBe(18)
+    expect(BUFF_TEMPLATES.filter((t) => t.form === 'condition')).toHaveLength(16)
+    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(2)
+  })
+
+  it('is resolvable by its frozen bare-kind id', () => {
+    const template = templateById('wildcard')
+    expect(template).toEqual({ form: 'activated', id: 'wildcard', kind: BuffKind.Wildcard })
+  })
+
+  it('mints a Wildcard and NOT a Cheat - the activated branch is total, not a binary', () => {
+    const template = templateById('wildcard')!
+    const minted = mintFromTemplate(template, BuffTier.Gold, 5)
+    expect(minted.kind).toBe(BuffKind.Wildcard)
+    expect(minted.tier).toBe(BuffTier.Gold)
+  })
+
+  it('recomposes its own template id from a minted card', () => {
+    expect(templateIdForBuff(wildcardBuff(BuffTier.Bronze, 1))).toBe('wildcard')
   })
 })

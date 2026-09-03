@@ -1,3 +1,5 @@
+import { WildMark } from '../warCouncil/WildMark'
+
 /**
  * 2026-09-01 — the four drawn marks that are NOT a suit: Sidestep, Cheat, Skull Helmet
  * and Skull Tether.
@@ -15,7 +17,7 @@
  * the dome takes it), the Tether is a taut line to an anchor (the roll stays tied on). Each also
  * reads distinctly from Sidestep's three chevrons with colour removed.
  */
-export type SlotGlyphKind = 'sidestep' | 'cheat' | 'skullHelmet' | 'skullTether'
+export type SlotGlyphKind = 'sidestep' | 'cheat' | 'skullHelmet' | 'skullTether' | 'wildcard'
 
 interface SlotGlyphProps {
   readonly kind: SlotGlyphKind
@@ -23,6 +25,10 @@ interface SlotGlyphProps {
 }
 
 export default function SlotGlyph({ kind, className }: SlotGlyphProps) {
+  // DLR-162 — the wild mark is `WildMark`'s drawing, not a second copy of it. Returned ahead of
+  // this component's own <svg> because WildMark brings its own, exactly as SuitMark does for the
+  // three suits this module deliberately does not draw.
+  if (kind === 'wildcard') return <WildMark className={className} />
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
