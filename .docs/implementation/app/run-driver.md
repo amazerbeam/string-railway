@@ -81,7 +81,7 @@ is derived per render instead:
 
 ```tsx
 const maxHealth = {
-  [DuelSide.Player]: run.maxPlayerHealth,   // DLR-158 — was PLAYER_START_HEALTH
+  [DuelSide.Player]: run.maxPlayerHealth, // DLR-158 — was PLAYER_START_HEALTH
   [DuelSide.Quarry]: quarryHealthForEncounter(run.encounterIndex),
 }
 ```
@@ -272,8 +272,15 @@ const RunPhase = {
   ManageBuffs: 'manageBuffs', // DLR-159 — reachable ONLY from the shop, returning ONLY to the shop
   Map: 'map', // DLR-85
   Vault: 'vault', // DLR-118 — reachable ONLY from a terminal verdict
+  PreFight: 'preFight', // DLR-160 — reached ONLY from `leaveForNextFight`, left ONLY by starting the fight
 } as const
 ```
+
+**DLR-160 added `PreFight`, and it is the first member since `Start` that is gated the same way
+`Start` is** — checked _before_ the `!encounterOver` branch rather than behind it. The reason is the
+same in both cases and easy to get wrong: **the next encounter is already live by the time the phase
+is set.** `leaveForNextFight` deals the next hand in the same handler, so `encounterOver` is false,
+and a `PreFight` branch placed after `!encounterOver` would be dead code that never rendered.
 
 **DLR-159 added `ManageBuffs` and cost the driver no new state either**, the same argument DLR-118
 made for `Vault`. It is gated `encounterOver && phase === RunPhase.ManageBuffs`, exactly like `Shop`
@@ -320,7 +327,7 @@ drifts.
 ```ts
 function leaveForNextFight() {
   setRun(advanceRun(run))
-  setPhase(RunPhase.Verdict)
+  setPhase(RunPhase.PreFight) // DLR-160 — was RunPhase.Verdict
   setTricks(NO_TRICKS)
   dealNextHand()
 }
@@ -328,6 +335,13 @@ function leaveForNextFight() {
 
 `Continue` on an unwarned verdict, `Continue anyway` on a warned one, and `Next fight` in the shop
 all reach it — so three controls cannot each grow their own copy of "start the next fight".
+
+**Since DLR-160 it no longer lands on the felt.** It sets `RunPhase.PreFight`, and the pre-fight
+screen's own control sets `RunPhase.Verdict` where this used to — so **the fight begins on the
+player's press** rather than on their leaving the shop. Everything else about the handler is
+unchanged: the run is advanced and the hand is dealt here, exactly as before, which is why the phase
+has to be checked ahead of `!encounterOver`. The screen itself is
+[run-ui's third path surface](../run-ui/run-map-and-the-path-screen.md).
 
 ### The guard on `Continue`
 
@@ -440,7 +454,7 @@ deliberately not taken, precisely because StrictMode would fire it twice.
 > `debugState`'s mirror reads the same value the render does. **`RunPhase` moved to `screenFor.ts`
 > with it** — the derivation and the type it switches on cannot drift apart if they live together —
 > and `App.tsx` imports both. The chain below is shown in its pre-DLR-150 form because it is the
-> clearest statement of *which* branch wins over which; nothing about that order changed.
+> clearest statement of _which_ branch wins over which; nothing about that order changed.
 >
 > The extraction was forced by the 400-line budget: `App.tsx` stood at **399** and this ticket adds
 > `feederCarry` down to the mount and back from the result. It is **379** lines after DLR-156 added
@@ -450,7 +464,6 @@ deliberately not taken, precisely because StrictMode would fire it twice.
 > goes down as the `streak` mount prop and comes back on `WarCouncilRoundResult.streak`, which
 > `App.tsx` hands to `recordEncounter` as its ninth argument. It is `feederCarry`'s route field for
 > field, and it is what makes a streak survive a hand boundary and die at a fight boundary.
-
 
 ```tsx
 if (phase === RunPhase.Start) {                       // DLR-85 — precedes the run, so it is first

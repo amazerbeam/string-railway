@@ -50,14 +50,26 @@
   font-weight: 600;
 }
 
+/* DLR-161 follow-up — three children (tier row, suit rail, scroll region) into a 2x2 grid, not
+   two rows: the tier row spans both columns on row 1, the suit rail sits in column 1 of row 2 and
+   the card grid fills column 2. The rail's column track is `max-content`, not a literal width —
+   it sizes to the widest chip's intrinsic content, so no size bound is invented here at all. Before
+   this, three children were laid into two explicit `grid-template-rows` tracks and the third
+   (`.wc-gallery-scroll`) fell into an implicit row that overflowed the panel and painted the suit
+   chips over the first row of cards. */
 .wc-gallery-body {
   min-height: 0;
   display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'tier tier'
+    'suit scroll';
 }
 
 /* ---------- the tier filter: real <button>s, rendered OUTSIDE the roving-tabindex group ---------- */
 .wc-tier-filter {
+  grid-area: tier;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -120,7 +132,44 @@
   font-weight: 400;
 }
 
+/* ---------- the suit filter: a left rail beside the card grid, same outside-groupRef rule ----------
+   Vertical, not the tier row's horizontal wrap: `flex-direction: column` with its own
+   `overflow-y: auto` and `min-height: 0`, mirroring `.wc-gallery-scroll` exactly — six chips can
+   exceed a short viewport's available height, and the rail must scroll itself rather than grow the
+   panel or clip a chip. `.wc-suit-chip` layers onto `.wc-tier-chip` rather than restating its
+   hit-area floor — the button carries BOTH classes, so the 44px minimum lives in exactly one
+   place. */
+.wc-suit-filter {
+  grid-area: suit;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: clamp(0.5rem, 1.2vh, 0.9rem) clamp(0.4rem, 1vw, 0.7rem);
+  border-right: 1px solid #ffffff0f;
+}
+
+/* Stacked, full-rail-width chips read as an aligned column rather than a ragged wrap: the count
+   is pushed to the chip's trailing edge instead of trailing the label at whatever distance the
+   label's length happens to leave. */
+.wc-suit-chip {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.wc-suit-chip .wc-tier-chip-n {
+  margin-left: auto;
+}
+
+.wc-suit-chip svg.wc-suit-mark {
+  width: clamp(0.6rem, 1.4vmin, 0.85rem);
+  height: clamp(0.6rem, 1.4vmin, 0.85rem);
+  flex-shrink: 0;
+}
+
 .wc-gallery-scroll {
+  grid-area: scroll;
   min-height: 0;
   overflow-y: auto;
   padding: clamp(0.5rem, 1.2vh, 0.9rem) clamp(0.5rem, 1.2vw, 1rem);
@@ -225,6 +274,14 @@
 }
 .wc-stack > .wc-buffcard {
   z-index: 1;
+}
+
+/* DLR-160 AC8 — the composed-filter empty state: a line, not an empty grid, when the tier and
+   suit filters together narrow to nothing a single filter could not reach alone. */
+.wc-gallery-empty {
+  margin: clamp(0.5rem, 1.2vh, 0.9rem) 0 0;
+  font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+  color: var(--wc-chalk-dim);
 }
 
 /* the fence: ONE group, with the count and the shared reason */

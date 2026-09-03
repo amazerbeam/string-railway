@@ -1,12 +1,11 @@
-import { HAND_SIZE } from '../../hunt'
-import { PlayerSide, potValue } from '../../warCouncil'
-import PlayingCard from './PlayingCard'
-import ResolutionLedger from './ResolutionLedger'
+import { potValue } from '../../warCouncil'
+import ResolutionBreakdown from './ResolutionBreakdown'
 import { appliedHoldLabel, rolledOverHoldLabel } from './resolutionLabels'
 import { RoundUiActionKind, type RoundUiAction, type ResolutionView } from './roundUiState'
 import { useBeatSequence } from './useBeatSequence'
 import { useResolveHold } from './useResolveHold'
 import './warCouncilResolve.css'
+import './warCouncilResolvePanel.css'
 
 /** The two keys `useResolveHold` is armed with here — a string union rather than a bare literal
  *  so the header derivation below and the click handlers cannot drift on the spelling. */
@@ -16,24 +15,29 @@ const HELD_ROLL_OVER = 'rollOver'
 export interface TrickResolutionScreenProps {
   readonly resolution: ResolutionView
   readonly dispatch: (action: RoundUiAction) => void
-}
-
-// Copy, not an engine string leaking into the UI — matches `TrickWell.tsx`'s own `SIDE_LABEL`.
-const SIDE_LABEL: Readonly<Record<PlayerSide, string>> = {
-  [PlayerSide.Player]: 'You',
-  [PlayerSide.Cpu]: 'Them',
+  /** DLR-160 (widened) — the Quarry's CURRENT health (`ui.encounter.health[DuelSide.Quarry]`),
+   *  threaded from `WarCouncilTable.tsx` so the Apply control's hint carries the pot's scale in
+   *  EVERY state, not only when the pot happens to be lethal. Named generically ("the Quarry"),
+   *  not by the Quarry's own name — `resolutionLabels.ts`'s `appliedHoldLabel` docblock records
+   *  the same DLR-85 precedent this follows: the fight screen keeps its own resolution wording
+   *  generic, and the bare name is not cheaply reachable here (only the already-worded possessive
+   *  `quarryLabel`, e.g. "Aoife's health", reaches this tree — see the Implementer's own report). */
+  readonly quarryHealth: number
 }
 
 /**
- * DLR-156 AC3/AC14 — the resolution screen: the trick that just resolved, its build-up (through
- * `ResolutionLedger`), the pot as it stands, and the apply-or-roll choice — REPLACING the felt
- * rather than overlaying it (`ui-notes.md` §1). Every duration and size bound is a transcribed
- * PLACEHOLDER from `warCouncilResolve.css`, not a value chosen here.
+ * DLR-156 AC3/AC14, narrowed by DLR-160 to the BODY and FOOT of `PotCard.tsx`'s merged card — the
+ * build-up (through `ResolutionBreakdown`) and the apply-or-roll choice. `PotCard.tsx` owns the
+ * card's own chrome (border, background, radius) and the head (`BankMeter`); this component no
+ * longer renders a section of its own with a border, and no longer renders the trick's cards, the
+ * four-outcome word, or the decree chip — all three moved to the felt (`TrickWell.tsx`, already
+ * reading the SAME `resolutionOutcome.ts` module) and the felt rail (`DecreePile.tsx`'s permanent
+ * "<suit> is trump" chip), per the developer's own direction on this ticket. AC2 (the outcome
+ * word) and AC7 (the decree) are still MET — just from a different surface than the one those
+ * ACs originally named; `.docs/game_rules/the-hunt.md` needs a note reflecting the new owner.
  *
- * The two played cards are CLONED from `resolution.cards`, never the felt's own trick well — the
- * felt is not mounted while this screen is up (`WarCouncilRound.tsx`'s switch), so there is
- * nothing to move them FROM; this screen owns its own rendering of the same two cards
- * (`ui-notes.md` §1: "cloned, not moved").
+ * Every duration and size bound below is a transcribed PLACEHOLDER from `warCouncilResolve.css` /
+ * `warCouncilResolvePanel.css`, not a value chosen here.
  *
  * A HURT trick (`resolution.resolution.trickDamage === null`) offers no choice (AC7): the single
  * `RollOver` dispatch is this branch's "Onward" exit, reusing the SAME action `applyPot`'s sibling
@@ -42,15 +46,16 @@ const SIDE_LABEL: Readonly<Record<PlayerSide, string>> = {
  * DLR-156 — a choice does not dispatch immediately. `useResolveHold` holds it locally, renders
  * what just happened, and disables all three buttons for `--wc-resolve-hold` before the REAL
  * dispatch fires — otherwise applying the pot and cutting straight back to the felt would show
- * the player the number they chose for zero frames (`ui-notes.md` §4). The screen stays mounted
- * for the whole hold because `ui.resolution` is untouched until that delayed dispatch lands;
- * `WarCouncilRound.tsx`'s switch is what actually returns to the felt, once it does.
+ * the player the number they chose for zero frames (`ui-notes.md` §4). Since the head (the
+ * outcome/consequence line) moved to `BankMeter`, which does not know about the hold at all, the
+ * "what just happened" line during the hold now renders HERE, in the body — see `heldLine` below.
  */
 export default function TrickResolutionScreen({
   resolution,
   dispatch,
+  quarryHealth,
 }: TrickResolutionScreenProps) {
-  const { beats, trickNumber, winner, cards, nextPotFloor } = resolution
+  const { trickNumber, nextPotFloor, deadBuffs, potIsLethal, beats } = resolution
   const { total, roll, trickDamage, damageToPlayer } = resolution.resolution
   const { landed } = useBeatSequence(beats)
   const { held, settle } = useResolveHold()
@@ -59,22 +64,20 @@ export default function TrickResolutionScreen({
   // DLR-156 B2 — a REPLACED clean loss (DLR-90 AC5) reaches this branch too (`trickDamage` is
   // `null` on every non-taken outcome), but resets NOTHING: `damageToPlayer === 0` here can only
   // mean neither the ordinary hit nor a Timebomb fired (`resolutionBeats.ts`'s own docblock
-  // proves the implication), so the header and the exit's own subtext must not say "broken".
+  // proves the implication).
   const absorbed = hurt && damageToPlayer === 0
   const pot = potValue(total, roll)
   const nextRoll = roll + 1
-  const thisTrick = landed > 0 ? beats[Math.min(landed, beats.length) - 1].running : 0
 
-  const outcomeWord = hurt ? (absorbed ? 'nothing changed' : 'the streak is broken') : 'banked'
-  // DLR-156 AC-hold — the header names what just happened once a choice has been made
-  // (`ui-notes.md` §4). The hurt branch's Onward changes nothing the header didn't already say
-  // (AC7 offers no choice), so it keeps `outcomeWord` rather than gaining a third string.
-  const headerWord =
+  // DLR-156 AC-hold — the ONE place "what just happened" is said while the hold is live. Rendered
+  // only during the hold (`held !== null`); the hurt branch's Onward changes nothing the felt and
+  // head didn't already say (AC7 offers no choice), so it renders nothing here either.
+  const heldLine =
     held === HELD_APPLY
       ? appliedHoldLabel()
       : held === HELD_ROLL_OVER && !hurt
         ? rolledOverHoldLabel(nextRoll)
-        : outcomeWord
+        : null
 
   // DLR-156 AC-hold — a press while already held is a no-op here too, on top of `useResolveHold`'s
   // own guard: `disabled` on the buttons below already blocks a second click, but a dispatch
@@ -92,57 +95,14 @@ export default function TrickResolutionScreen({
   }
 
   return (
-    <section className="wc-resolve" aria-label="Trick resolved — apply the pot or roll it over">
-      <p className="wc-resolve-head">
-        Trick {trickNumber} of {HAND_SIZE} · {headerWord}
-      </p>
-
-      <div className="wc-resolve-main">
-        <div className="wc-resolve-trick">
-          {cards.map((played) => (
-            <figure
-              key={`${played.side}-${played.card.suit}-${played.card.rank}`}
-              className={`wc-resolve-card${played.side === winner ? ' wc-is-winner' : ''}`}
-            >
-              <div className="wc-resolve-card-slot">
-                <PlayingCard card={played.card} variant="table" winner={played.side === winner} />
-              </div>
-              <figcaption>
-                {SIDE_LABEL[played.side]} {played.card === cards[0].card ? 'led' : 'played'}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-
-        <p className={`wc-resolve-verdict${hurt ? ' wc-is-hurt' : ''}`}>
-          {winner === PlayerSide.Player ? 'You took it' : 'They took it'}
-        </p>
-
-        <section
-          className="wc-resolve-figures"
-          aria-live="polite"
-          aria-label="Damage for this trick"
-        >
-          <ResolutionLedger beats={beats} landed={landed} />
-          <div className="wc-resolve-registers">
-            <div className={`wc-resolve-big${hurt ? ' wc-is-hurt' : ''}`}>
-              <span key={landed} className="wc-resolve-big-value">
-                {hurt ? 0 : thisTrick}
-              </span>
-            </div>
-            <div
-              className="wc-resolve-potline"
-              role="group"
-              aria-label={`Total ${total}, roll ${roll}, pot ${pot}`}
-            >
-              <span className="wc-resolve-figure-value">{total}</span>
-              <span aria-hidden="true">×</span>
-              <span className="wc-resolve-figure-value">{roll}</span>
-              <span aria-hidden="true">=</span>
-              <span className="wc-resolve-figure-value">{pot}</span>
-            </div>
-          </div>
-        </section>
+    <>
+      <div className="wc-resolve-body">
+        {heldLine !== null && (
+          <p className="wc-resolve-held" aria-live="polite">
+            {heldLine}
+          </p>
+        )}
+        <ResolutionBreakdown beats={beats} landed={landed} deadBuffs={deadBuffs} />
       </div>
 
       {hurt ? (
@@ -166,30 +126,36 @@ export default function TrickResolutionScreen({
           <button
             type="button"
             className="wc-resolve-pbtn wc-is-solid"
-            aria-label={`Apply Damage — deal ${pot} to the Quarry now, total and roll reset`}
+            aria-label={`Apply Damage — deal ${pot} to the Quarry now${potIsLethal ? ', which ends the fight' : ', total and roll reset'}. The Quarry holds ${quarryHealth}.`}
             onClick={handleApply}
             disabled={held !== null}
           >
-            <b>Apply Damage</b>
+            {/* DLR-160 AC6 — reads in greyscale: a WORD, never only a colour on the button
+                itself (`game-ux` hard floor). */}
+            {potIsLethal && <span className="wc-resolve-lethal-tag">Lethal — ends the fight</span>}
+            <b>Apply damage</b>
             <span className="wc-resolve-pbtn-fig">{pot}</span>
-            <span className="wc-resolve-pbtn-small">dealt now · total and roll reset</span>
+            <span className="wc-resolve-pbtn-small">
+              The Quarry holds {quarryHealth}
+              {!potIsLethal && ' · your total and streak reset'}
+            </span>
           </button>
           <button
             type="button"
             className="wc-resolve-pbtn wc-is-dashed"
-            aria-label={`Roll over — next roll ${nextRoll}, ${nextPotFloor}+ if you take trick ${trickNumber + 1}, 0 if you do not`}
+            aria-label={`Roll over — next roll ${nextRoll}, at least ${nextPotFloor} if you take trick ${trickNumber + 1} before any buff you arm, 0 if you do not`}
             onClick={handleRollOver}
             disabled={held !== null}
           >
             <b>Roll over</b>
             <span className="wc-resolve-pbtn-fig">{nextPotFloor}+</span>
             <span className="wc-resolve-pbtn-small">
-              if you take trick {trickNumber + 1} ·{' '}
+              at least {nextPotFloor} if you take trick {trickNumber + 1}, before any buff you arm ·{' '}
               <span className="wc-resolve-pbtn-risk">0 if you do not</span>
             </span>
           </button>
         </nav>
       )}
-    </section>
+    </>
   )
 }

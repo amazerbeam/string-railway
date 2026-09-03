@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DLR-161 — Skull Helmet &amp; Skull Tether</title>
+    <style>
+      :root {
+        --felt: #17301f;
+        --felt-deep: #102417;
+        --parchment: #ede2c8;
+        --chalk-dim: #a9a08a;
+        --ink-soft: #6f6754;
+        --bronze: #b0793f;
+        --silver: #b9bec4;
+        --gold: #d8b054;
+        --bells: #c9873f;
+        --keys: #6fa8c9;
+        --moons: #9b86c4;
+        --timebomb: #d1603d;
+        --alarm: #a83a2a;
+        --guard: #7fae8c;
+        --serif: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--felt-deep);
+        color: var(--parchment);
+        font: 14px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+        padding: 24px clamp(16px, 4vw, 48px) 64px;
+      }
+      body.greyscale { filter: grayscale(1); }
+      h1 { font-family: var(--serif); font-size: 1.5rem; margin: 0 0 4px; }
+      h2 {
+        font-family: var(--serif); font-size: 1.05rem; font-weight: 600;
+        margin: 40px 0 4px; color: var(--parchment);
+        border-bottom: 1px solid rgba(237,226,200,.18); padding-bottom: 6px;
+      }
+      p.note { color: var(--chalk-dim); max-width: 74ch; margin: 6px 0 18px; }
+      .bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 16px 0 0; }
+      button {
+        font: inherit; color: var(--parchment); background: rgba(237,226,200,.08);
+        border: 1px solid rgba(237,226,200,.3); border-radius: 6px;
+        padding: 10px 16px; min-height: 44px; cursor: pointer;
+        touch-action: manipulation;
+      }
+      button[aria-pressed='true'] { background: rgba(237,226,200,.24); border-color: var(--parchment); }
+      button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+      @media (hover: hover) { button:hover { background: rgba(237,226,200,.16); } }
+      button:active { transform: translateY(1px); }
+
+      /* ---------- buff card face ---------- */
+      .grid { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+      .card {
+        width: 170px; min-height: 232px; border-radius: 10px; padding: 10px;
+        background: linear-gradient(180deg, #1e3a28, #162c1d);
+        border: 2px solid var(--bronze);
+        display: flex; flex-direction: column; gap: 8px;
+        box-shadow: 0 6px 14px rgba(0,0,0,.35);
+      }
+      .card.silver { border-color: var(--silver); }
+      .card.gold { border-color: var(--gold); }
+      .card-top { display: flex; justify-content: space-between; align-items: center; }
+      .pill {
+        font-size: .58rem; letter-spacing: .14em; padding: 3px 7px; border-radius: 999px;
+        background: rgba(237,226,200,.14); border: 1px solid rgba(237,226,200,.32);
+      }
+      .numeral { font-family: var(--serif); font-size: .78rem; letter-spacing: .1em; color: var(--chalk-dim); }
+      .card.silver .numeral, .card.gold .numeral { color: var(--parchment); }
+      .card-mark {
+        height: 62px; display: grid; place-items: center; color: var(--guard);
+      }
+      .card-mark svg { width: 54px; height: 54px; }
+      .card-name { font-family: var(--serif); font-size: .95rem; line-height: 1.2; }
+      .card-cond { font-size: .72rem; color: var(--chalk-dim); min-height: 2.4em; }
+      .card-reward {
+        margin-top: auto; font-size: .74rem; text-align: center;
+        background: rgba(127,174,140,.2); border: 1px solid rgba(127,174,140,.5);
+        border-radius: 5px; padding: 6px 4px;
+      }
+
+      /* ---------- reel windows and strip chips ---------- */
+      .reels { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+      .window {
+        width: 96px; height: 108px; border-radius: 8px; padding: 8px 6px;
+        background: var(--parchment); color: #23201a;
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        border: 1px solid rgba(0,0,0,.25);
+      }
+      .window svg { width: 40px; height: 40px; }
+      .window .fam { font-family: var(--serif); font-size: .74rem; }
+      .window .ax { font-size: .58rem; letter-spacing: .1em; color: var(--ink-soft); text-transform: uppercase; }
+      .g-bells { color: var(--bells); } .g-keys { color: var(--keys); } .g-moons { color: var(--moons); }
+      .g-plain { color: var(--ink-soft); } .g-timebomb { color: var(--timebomb); }
+      .g-guard { color: var(--guard); }
+
+      .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+      .chip {
+        display: flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 999px;
+        background: rgba(237,226,200,.08); border: 1px solid rgba(237,226,200,.22); font-size: .68rem;
+      }
+      .chip svg { width: 15px; height: 15px; }
+
+      /* ---------- streak demo ---------- */
+      .demo { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 14px; align-items: flex-start; }
+      .figs { display: flex; gap: 18px; }
+      .fig {
+        min-width: 116px; padding: 12px; border-radius: 8px; text-align: center;
+        background: rgba(237,226,200,.06); border: 1px solid rgba(237,226,200,.2);
+      }
+      .fig b { display: block; font-family: var(--serif); font-size: 2rem; line-height: 1.1; }
+      .fig.saved { border-color: var(--guard); background: rgba(127,174,140,.16); }
+      .fig.saved::after { content: ' saved'; }
+      .fig small { color: var(--chalk-dim); letter-spacing: .1em; font-size: .6rem; text-transform: uppercase; }
+      .beat {
+        margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-family: var(--serif);
+        background: rgba(168,58,42,.16); border: 1px solid rgba(168,58,42,.5); max-width: 46ch;
+      }
+      .dead {
+        margin-top: 8px; padding: 10px 14px; border-radius: 8px; font-size: .78rem;
+        background: rgba(237,226,200,.05); border: 1px dashed rgba(237,226,200,.3); max-width: 46ch;
+        color: var(--chalk-dim);
+      }
+      code { background: rgba(0,0,0,.3); padding: 1px 5px; border-radius: 3px; font-size: .8em; }
+    </style>
+  </head>
+  <body>
+    <h1>DLR-161 — Skull Helmet &amp; Skull Tether</h1>
+    <p class="note">
+      Layout and glyph reference for the plan in this folder. Placeholder copy and placeholder
+      figures throughout — every name, word and number here is the developer's to overrule. Nothing
+      on this page talks to the real engine.
+    </p>
+
+    <div class="bar">
+      <button id="grey" aria-pressed="false">Greyscale test</button>
+      <span class="note" style="margin:0">— every state below must still read with colour removed.</span>
+    </div>
+
+    <h2>1 · The two card faces, at all three tiers</h2>
+    <p class="note">
+      Rendered through the existing buff-card shape: cadence pill, tier numeral, mark, name,
+      condition sentence, reward bar. Note the condition sentence <em>widens</em> at silver — that is
+      AC5, and it is why the label layer needs a second sentence table rather than one row per family.
+      Click a card to cycle its tier.
+    </p>
+    <div class="grid" id="cards"></div>
+
+    <h2>2 · The two new reel glyphs, beside the six that exist</h2>
+    <p class="note">
+      Reel-window size. The two new marks must be distinguishable from each other and from Sidestep
+      with colour removed — press the greyscale button and check the pair.
+    </p>
+    <div class="reels" id="reels"></div>
+    <p class="note" style="margin-top:18px">The same marks as strip chips:</p>
+    <div class="chips" id="chips"></div>
+
+    <h2>3 · What a protected hurt trick looks like</h2>
+    <p class="note">
+      Carrying a total of 8 on a roll of 2 when the skull lands. Arm one card, both, or neither, and
+      watch the reset. The health always lands — that is AC7, and no rung of either card changes it.
+    </p>
+    <div class="bar">
+      <button data-arm="helmet" aria-pressed="false">Arm Skull Helmet</button>
+      <button data-arm="tether" aria-pressed="false">Arm Skull Tether</button>
+      <button id="goldToggle" aria-pressed="false">Make them gold</button>
+      <button id="fire">Eat the skull</button>
+      <button id="reset">Reset</button>
+    </div>
+    <div class="demo">
+      <div>
+        <div class="figs">
+          <div class="fig" id="figTotal"><small>total</small><b>8</b></div>
+          <div class="fig" id="figRoll"><small>roll</small><b>2</b></div>
+          <div class="fig"><small>health</small><b id="figHealth">6</b></div>
+        </div>
+        <div class="beat" id="beat">Nothing has resolved yet.</div>
+        <div class="dead" id="deadRow" hidden></div>
+      </div>
+    </div>
+
+    <script>
+      /* ---------------- glyph drawings ---------------- */
+      const G = {
+        bells: '<circle cx="12" cy="10" r="6"/><path d="M7 17h10"/><path d="M12 19v2"/>',
+        keys: '<circle cx="9" cy="9" r="4.2"/><path d="M12 12l7 7"/><path d="M16.5 16.5l2 2"/>',
+        moons: '<path d="M16.5 4A8 8 0 1 0 20 12.5 6.5 6.5 0 0 1 16.5 4Z"/>',
+        sidestep:
+          '<path d="M4 6.5 9.5 12 4 17.5"/><path d="M12.5 6.5 18 12l-5.5 5.5" opacity=".55"/><path d="M20.5 6.5V17.5" opacity=".35"/>',
+        cheat:
+          '<rect x="7.5" y="4" width="10" height="14" rx="1.6" transform="rotate(-14 12.5 11)"/><rect x="7.5" y="4" width="10" height="14" rx="1.6" opacity=".55"/><path d="M4 20.5h16" opacity=".4"/>',
+        timebomb:
+          '<circle cx="11" cy="15" r="6.4"/><path d="M15.6 10.4 18 8"/><path d="M18 8c1.6-1.6 3.2-.6 3 1.1"/><path d="M8.2 12.4a4 4 0 0 1 2.4-1.6" opacity=".45"/>',
+        /* NEW — a dome over a skull: the helmet takes the blow, the skull still lands. */
+        skullHelmet:
+          '<path d="M4.5 12a7.5 7.5 0 0 1 15 0"/><path d="M3 12.4h18"/><path d="M7.5 14.5v3.2a1.6 1.6 0 0 0 1.6 1.6h5.8a1.6 1.6 0 0 0 1.6-1.6v-3.2" opacity=".55"/><circle cx="10" cy="17" r="1" opacity=".8"/><circle cx="14" cy="17" r="1" opacity=".8"/>',
+        /* NEW — a line held taut to an anchor: the roll stays tied on. */
+        skullTether:
+          '<circle cx="6" cy="6" r="2.6"/><path d="M8.2 7.8 15 15"/><path d="M13 19.5h7a1.5 1.5 0 0 0 1.5-1.5v-4" opacity=".55"/><path d="M15 15l4.5-1.2" opacity=".7"/><path d="M15 15l-1.2 4.5" opacity=".7"/>',
+      };
+      const svg = (k, cls) =>
+        `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${G[k]}</g></svg>`;
+
+      /* ---------------- card faces ---------------- */
+      const TIERS = ['bronze', 'silver', 'gold'];
+      const NUMERAL = { bronze: 'I', silver: 'II', gold: 'III' };
+      const FAMILIES = [
+        { key: 'skullHelmet', name: 'Skull Helmet', figure: 'total' },
+        { key: 'skullTether', name: 'Skull Tether', figure: 'roll' },
+      ];
+      function condition(tier) {
+        return tier === 'bronze' ? 'eat a skull with this card' : 'eat a skull, or lose a trick';
+      }
+      function reward(fam, tier) {
+        return tier === 'gold'
+          ? `your ${fam.figure} survives, +1`
+          : `your ${fam.figure} survives`;
+      }
+      const cardsEl = document.getElementById('cards');
+      function paintCards() {
+        cardsEl.innerHTML = '';
+        for (const fam of FAMILIES) {
+          for (const tier of TIERS) {
+            const el = document.createElement('button');
+            el.className = `card ${tier}`;
+            el.style.textAlign = 'left';
+            el.dataset.fam = fam.key;
+            el.dataset.tier = tier;
+            el.innerHTML = `
+              <span class="card-top"><span class="pill">HURT</span><span class="numeral">${NUMERAL[tier]}</span></span>
+              <span class="card-mark">${svg(fam.key, '')}</span>
+              <span class="card-name">${fam.name} (Guard)</span>
+              <span class="card-cond">${condition(tier)}</span>
+              <span class="card-reward">${reward(fam, tier)}</span>`;
+            el.setAttribute(
+              'aria-label',
+              `${tier[0].toUpperCase() + tier.slice(1)} ${fam.name} (Guard) — ${condition(tier)}: ${reward(fam, tier)}.`,
+            );
+            el.addEventListener('click', () => {
+              const next = TIERS[(TIERS.indexOf(el.dataset.tier) + 1) % 3];
+              el.dataset.tier = next;
+              el.className = `card ${next}`;
+              el.querySelector('.numeral').textContent = NUMERAL[next];
+              el.querySelector('.card-cond').textContent = condition(next);
+              el.querySelector('.card-reward').textContent = reward(fam, next);
+            });
+            cardsEl.appendChild(el);
+          }
+        }
+      }
+      paintCards();
+
+      /* ---------------- reels and chips ---------------- */
+      const REEL = [
+        ['bells', 'g-bells', 'Taker', 'Blade'],
+        ['keys', 'g-keys', 'Feeder', 'Momentum'],
+        ['moons', 'g-moons', 'Taker', 'Momentum'],
+        ['sidestep', 'g-plain', 'Sidestep', 'Blade'],
+        ['cheat', 'g-plain', 'Cheat', ''],
+        ['timebomb', 'g-timebomb', 'Timebomb', ''],
+        ['skullHelmet', 'g-guard', 'Helmet', 'Guard'],
+        ['skullTether', 'g-guard', 'Tether', 'Guard'],
+      ];
+      document.getElementById('reels').innerHTML = REEL.map(
+        ([k, c, fam, ax]) =>
+          `<div class="window"><span class="${c}">${svg(k, '')}</span><span class="fam">${fam}</span><span class="ax">${ax || '&nbsp;'}</span></div>`,
+      ).join('');
+      document.getElementById('chips').innerHTML = REEL.map(
+        ([k, c, fam, ax]) =>
+          `<span class="chip"><span class="${c}">${svg(k, '')}</span>${fam}${ax ? ' · ' + ax : ''}</span>`,
+      ).join('');
+
+      /* ---------------- streak demo ---------------- */
+      const state = { helmet: false, tether: false, gold: false, resolved: false };
+      const START = { total: 8, roll: 2, health: 6 };
+      const $ = (id) => document.getElementById(id);
+
+      for (const b of document.querySelectorAll('[data-arm]')) {
+        b.addEventListener('click', () => {
+          state[b.dataset.arm] = !state[b.dataset.arm];
+          b.setAttribute('aria-pressed', String(state[b.dataset.arm]));
+        });
+      }
+      $('goldToggle').addEventListener('click', () => {
+        state.gold = !state.gold;
+        $('goldToggle').setAttribute('aria-pressed', String(state.gold));
+      });
+      $('reset').addEventListener('click', () => {
+        state.resolved = false;
+        paintDemo(START.total, START.roll, START.health, false, false);
+        $('beat').textContent = 'Nothing has resolved yet.';
+        $('deadRow').hidden = true;
+      });
+      $('fire').addEventListener('click', () => {
+        const bonus = state.gold ? 1 : 0;
+        const total = state.helmet ? START.total + bonus : 0;
+        const roll = state.tether ? START.roll + bonus : 0;
+        const health = START.health - 1; // AC7 — always.
+        const potBefore = START.total * START.roll;
+        const potAfter = total * roll;
+        paintDemo(total, roll, health, state.helmet, state.tether);
+        $('beat').textContent = `Hurt — −1 health, ${potBefore - potAfter} pot lost`;
+        if (!state.helmet && !state.tether) {
+          $('deadRow').hidden = false;
+          $('deadRow').textContent =
+            'Nothing was armed. With a Helmet armed but the trick clean and won, this row would read: “Skull Helmet (Guard) — needed: eat a skull with this card”.';
+        } else {
+          $('deadRow').hidden = true;
+        }
+      });
+      function paintDemo(total, roll, health, savedT, savedR) {
+        $('figTotal').querySelector('b').textContent = total;
+        $('figRoll').querySelector('b').textContent = roll;
+        $('figHealth').textContent = health;
+        $('figTotal').className = 'fig' + (savedT ? ' saved' : '');
+        $('figRoll').className = 'fig' + (savedR ? ' saved' : '');
+      }
+      paintDemo(START.total, START.roll, START.health, false, false);
+
+      /* ---------------- greyscale ---------------- */
+      $('grey').addEventListener('click', () => {
+        const on = document.body.classList.toggle('greyscale');
+        $('grey').setAttribute('aria-pressed', String(on));
+      });
+    </script>
+  </body>
+</html>

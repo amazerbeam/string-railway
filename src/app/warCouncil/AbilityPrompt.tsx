@@ -6,6 +6,7 @@ import {
   type Card,
 } from '../../warCouncil'
 import { PlaceKind } from './cardPlacement'
+import { cardTipTitle } from './cardRuleText'
 import { cardAccessibleName, cardKey } from './labels'
 import { useMotionAnchor } from './motionAnchorContext'
 import PlayingCard from './PlayingCard'
@@ -48,6 +49,9 @@ export default function AbilityPrompt({
   onCancel,
 }: AbilityPromptProps) {
   const isFox = card.rank === CardRank.Fox
+  // Shared by both branches and by the hint copy below — AC12's whole point is that this
+  // button, unlike "Keep the decree" / discarding, plays nothing at all.
+  const cancelLabel = `← Don't play the ${cardTipTitle(card.rank)}`
   // Every offered choice is always a legal one — a Fox may exchange any held card, a
   // Woodcutter may discard any held card or the one just drawn — so nothing here is
   // adjudicating legality; the count alone drives which single item is the tab stop.
@@ -122,7 +126,21 @@ export default function AbilityPrompt({
             Keep the decree
           </button>
         </div>
-        <p className="wc-table-hint">Choose one, or decline</p>
+        <p className="wc-table-hint">
+          Choose a card, keep the decree, or cancel. <strong>Keep the decree</strong> still plays
+          the {cardTipTitle(card.rank)} — <strong>{cancelLabel}</strong> is the only exit that
+          doesn't.
+        </p>
+        {/* AC12 — outside `.wc-prompt-row` and rendered last, so it does NOT join the
+            roving-tabindex collection: `useRovingTabIndex.focusIndex` reads
+            `groupRef.current.querySelectorAll('button')` over this whole group, not just the
+            row, so a button anywhere earlier in DOM order would shift every index after it.
+            Placed after every element `count` addresses, this one is simply never reached by
+            an arrow-key index — Tab still reaches it, in normal document order, as a distinct
+            stop. */}
+        <button type="button" className="wc-prompt-cancel" onClick={onCancel}>
+          {cancelLabel}
+        </button>
       </div>
     )
   }
@@ -168,7 +186,12 @@ export default function AbilityPrompt({
           />
         ))}
       </div>
-      <p className="wc-table-hint">Choose one to discard</p>
+      <p className="wc-table-hint">Choose one to discard, or cancel to draw nothing.</p>
+      {/* AC12 — same placement rationale as the Fox branch above: outside `.wc-prompt-row` and
+          rendered last, so it falls outside the roving-tabindex collection's positional index. */}
+      <button type="button" className="wc-prompt-cancel" onClick={onCancel}>
+        {cancelLabel}
+      </button>
     </div>
   )
 }

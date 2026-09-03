@@ -35,7 +35,7 @@ import {
   type TimebombDamage,
 } from '../../hunt'
 import type { BuffHandState } from './buffRoundState'
-import type { ResolutionBeat } from './resolutionBeats'
+import type { ResolutionView } from './resolutionView'
 
 export interface ResolvedTrick {
   readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
@@ -171,20 +171,9 @@ export interface RoundUiState {
   readonly resolution: ResolutionView | null
 }
 
-/** DLR-156 AC3/AC14 — the resolution screen's whole content. */
-export interface ResolutionView {
-  /** AC14 — the two played cards, CLONED onto the screen (`ui-notes.md` §1). */
-  readonly cards: readonly TrickCard[]
-  readonly winner: PlayerSide
-  readonly resolution: TrickResolution
-  /** AC16 — the ordered beats, derived ONCE at the hand-off, never per render. */
-  readonly beats: readonly ResolutionBeat[]
-  /** The trick's ordinal, for the header line. 1-based. */
-  readonly trickNumber: number
-  /** AC2 — what the pot becomes if the next trick also banks, at the bare rule:
-   *  `potValue(total + BASE_DAMAGE, roll + 1)`, because the player may fire nothing next trick. */
-  readonly nextPotFloor: number
-}
+// `ResolutionView` lives in `resolutionView.ts` now (DLR-160 — this file was at its 400-line
+// budget) and is re-exported here so no importer has to know the seam moved.
+export type { ResolutionView } from './resolutionView'
 
 /** DLR-114 — `null` when the loadout panel is closed; an object (with `poised: null`) while it is
  *  open. ONE nullable field rather than a boolean-plus-id pair: two fields would admit "closed but

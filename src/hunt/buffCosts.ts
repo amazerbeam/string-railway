@@ -34,7 +34,15 @@ export type BuffCostAxis =
   | typeof BuffRewardAxis.ApRefund
   | typeof BuffRewardAxis.Multiplier
 
-/** The 11 shipping condition families DLR-111 finding 1 names. */
+/** DLR-161 — every axis a TEMPLATE can be minted on: the four accrual axes plus Protection.
+ *  Protection has an AP price base and a reward ladder but NO per-hand accrual counter, because
+ *  it pays into the streak's reset rather than into a pool. Split from `BuffCostAxis` rather
+ *  than widening it deliberately: widening would compile-force `accrualCapFor`,
+ *  `accrueAxisBonus`, `accrueCarry` and `trickBonusFor` to each grow a Protection case that
+ *  returns "nothing" — a plausible zero in four places, instead of one honest exclusion in two. */
+export type BuffMintedAxis = BuffCostAxis | typeof BuffRewardAxis.Protection
+
+/** The 11 shipping condition families DLR-111 finding 1 names, plus the two DLR-161 adds. */
 export type BuffConditionKind =
   | typeof BuffKind.Taker
   | typeof BuffKind.Feeder
@@ -47,6 +55,8 @@ export type BuffConditionKind =
   | typeof BuffKind.Keepsake
   | typeof BuffKind.Miser
   | typeof BuffKind.Cornered
+  | typeof BuffKind.SkullHelmet
+  | typeof BuffKind.SkullTether
 
 /** Cheat, Timebomb, Shield and the 5 consumables — priced off the formula entirely. */
 export type BuffConsumableKind =
@@ -60,11 +70,15 @@ export type BuffConsumableKind =
   | typeof BuffKind.Shield
 
 // DLR-111 → The formula. UNIT: action points, per tier, before the condition modifier.
-export const REWARD_BASE: Readonly<Record<BuffCostAxis, Readonly<Record<BuffTier, number>>>> = {
+export const REWARD_BASE: Readonly<Record<BuffMintedAxis, Readonly<Record<BuffTier, number>>>> = {
   [BuffRewardAxis.Magnitude]: { [BuffTier.Bronze]: 1, [BuffTier.Silver]: 2, [BuffTier.Gold]: 3 },
   [BuffRewardAxis.Coins]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 4 },
   [BuffRewardAxis.ApRefund]: { [BuffTier.Bronze]: 1, [BuffTier.Silver]: 1, [BuffTier.Gold]: 1 },
   [BuffRewardAxis.Multiplier]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 5 },
+  // DLR-161 — NOBODY CHOSE THESE THREE NUMBERS. No source document prices a protective axis.
+  // The ladder shape is copied from Coins'. UNIT: action points, added to CONDITION_MODIFIER
+  // before the clamp. See `tasks.md` → Developer decides or observes.
+  [BuffRewardAxis.Protection]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 4 },
 }
 
 // DLR-111 → The formula. A discount for an unreliable family, a surcharge for a reliable one —
@@ -82,6 +96,10 @@ export const CONDITION_MODIFIER: Readonly<Record<BuffConditionKind, number>> = {
   [BuffKind.Keepsake]: 0,
   [BuffKind.Miser]: -1,
   [BuffKind.Cornered]: -1,
+  // DLR-161 — NOBODY CHOSE THESE TWO NUMBERS. 0 is the neutral row Taker and Glutton already
+  // take. UNIT: action points. See `tasks.md` → Developer decides or observes.
+  [BuffKind.SkullHelmet]: 0,
+  [BuffKind.SkullTether]: 0,
 }
 
 // DLR-111 → Utilities, consumables and activated cards. Off-curve by design: Ward and Timebomb
@@ -144,6 +162,22 @@ export function narrowToCostAxis(axis: BuffRewardAxis, contextLabel: string): Bu
   throw new RangeError(`${contextLabel} ${axis} has no AP cost base — it cannot price it`)
 }
 
+/** DLR-161 — an axis that pays by protecting a streak figure. It contributes to NO per-hand
+ *  accrual counter and to NO trick's damage, so `buffAccrual.ts` checks this ABOVE
+ *  `narrowToCostAxis` rather than asking that function to grow a fifth case. */
+export function isProtectiveAxis(axis: BuffRewardAxis): axis is typeof BuffRewardAxis.Protection {
+  return axis === BuffRewardAxis.Protection
+}
+
+/** Narrows to the axes the two reward LADDERS (`REWARD_BASE`, `REWARD_TIER_VALUE`) are keyed by.
+ *  Throws rather than defaulting to zero, for `narrowToCostAxis`'s own stated reason: a template
+ *  minted on an axis with no base is a construction bug, and a silent zero would price it at the
+ *  clamp floor and look reasonable. */
+export function narrowToMintedAxis(axis: BuffRewardAxis, contextLabel: string): BuffMintedAxis {
+  if (axis === BuffRewardAxis.Protection) return axis
+  return narrowToCostAxis(axis, contextLabel)
+}
+
 function clampApCost(cost: number): ActionPoints {
   return Math.min(Math.max(cost, AP_COST_MIN), AP_COST_MAX)
 }
@@ -156,7 +190,7 @@ export function buffApCost(kind: BuffKind, axis: BuffRewardAxis, tier: BuffTier)
   if (!isConditionFamily(kind)) {
     throw new RangeError(`Buff kind ${kind} has no AP price — it is placeholder content`)
   }
-  const base = REWARD_BASE[narrowToCostAxis(axis, 'Reward axis')][tier]
+  const base = REWARD_BASE[narrowToMintedAxis(axis, 'Reward axis')][tier]
   return clampApCost(base + CONDITION_MODIFIER[kind])
 }
 

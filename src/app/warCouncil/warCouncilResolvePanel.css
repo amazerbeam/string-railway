@@ -1,0 +1,212 @@
+/* DLR-160 (widened) — `.wc-resolve` is now the MERGED pot card (`PotCard.tsx`): `BankMeter`'s own
+   markup is its head, and `TrickResolutionScreen`'s body/foot render inside the SAME card only once
+   a resolution exists. Mounted as the LAST child of `.wc-dossier`'s flex column — it takes exactly
+   the leftover height below `QuarryShape` by construction, so there is nothing left to arbitrate
+   with a z-index. Imported from `TrickResolutionScreen.tsx` and `PotCard.tsx` alongside
+   `warCouncilResolve.css` — the two files are always loaded together. */
+
+.wc-resolve {
+  /* Fills whatever height `.wc-dossier` has left after `QuarryShape`, and never grows past it —
+     the column, not the card, decides how tall this gets. During play (`.wc-is-resting`, no
+     resolution) the card shrinks to its head's own content instead of claiming the leftover
+     space, so it never sits as an empty frame under the shape readout.
+
+     DLR-160 readability fix — the card itself no longer scrolls. `overflow-y: auto` moved onto
+     `.wc-resolve-body` alone, so the head (`.wc-bank`) and the foot (`.wc-resolve-prompt`) stay
+     put and only the breakdown between them scrolls (`game-ux`'s scoped-overflow exception: one
+     region genuinely needs it, the rest of the shell does not). Without this the body's
+     `min-height: 0` let it shrink below its own content with nowhere for the overflow to go,
+     and that content spilled out and sat under the buttons drawn below it — not a z-index bug,
+     content escaping a shrunken flex item with no `overflow` declared. */
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0.7rem 0.6rem 0.8rem;
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 11px;
+  box-shadow: 0 16px 40px #000000cc;
+  color-scheme: dark;
+  background: linear-gradient(180deg, #141d21, #0f1518);
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.wc-resolve.wc-is-resting {
+  flex: 0 0 auto;
+  border-color: var(--wc-felt-line);
+}
+
+/* ---------- the body: the arithmetic breakdown (`ResolutionBreakdown.tsx`) ---------- */
+
+.wc-resolve-body {
+  /* DLR-160 readability fix — the one flexible, scrolling region in the card. `flex: 1 1 auto`
+     lets it claim the leftover height between the head and the foot; `min-height: 0` lets it
+     shrink below its content's natural height (the flex default of `auto` would otherwise refuse
+     to shrink at all); `overflow-y: auto` is what makes that shrink safe — anything that does not
+     fit scrolls WITHIN this box instead of spilling out and colliding with `.wc-resolve-prompt`
+     below it. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: clamp(0.4rem, 1vh, 0.6rem);
+  border-top: 1px solid #ffffff10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* DLR-156 AC-hold — "what just happened" while the post-choice hold is live. Lives in the body
+   now that the head (`BankMeter`) does not know about the hold at all. */
+.wc-resolve-held {
+  margin: 0;
+  font-family: var(--wc-serif);
+  font-size: clamp(0.6rem, 1.3vmin, 0.72rem);
+  color: var(--wc-brass);
+}
+
+.wc-resolve-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.wc-resolve-breakdown-eyebrow {
+  font-size: clamp(0.44rem, 0.95vmin, 0.52rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  margin-bottom: 0.1rem;
+}
+
+.wc-resolve-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wc-resolve-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: clamp(0.5rem, 1.1vmin, 0.6rem);
+  padding: 0.15rem 0;
+}
+
+.wc-resolve-row-what {
+  flex: 1;
+  min-width: 0;
+  color: var(--wc-chalk);
+}
+
+.wc-resolve-row-amt {
+  font-family: var(--wc-serif);
+  font-size: 1.1em;
+  color: var(--wc-brass);
+  white-space: nowrap;
+}
+
+/* The subtotal rule — the adds end here and the multiplier applies to what is above it — and the
+   final rule, for the figure that actually entered the pot. Rendered only when each has work to
+   do (`ResolutionBreakdown.tsx`'s own docblock): a trick with no multiplier gets one closing rule,
+   never a subtotal and a final that would read identically. */
+.wc-resolve-rule {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: clamp(0.5rem, 1.1vmin, 0.6rem);
+  padding: 0.2rem 0;
+  border-top: 1px solid #ffffff1f;
+  margin-top: 0.1rem;
+}
+
+.wc-resolve-rule-what {
+  flex: 1;
+  color: var(--wc-chalk-dim);
+  font-size: 0.9em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.wc-resolve-rule-amt {
+  font-family: var(--wc-serif);
+  font-size: 1.15em;
+  color: var(--wc-chalk);
+}
+
+.wc-resolve-rule-final {
+  border-top-width: 2px;
+  margin-top: 0.15rem;
+}
+
+.wc-resolve-rule-final .wc-resolve-rule-amt {
+  color: var(--wc-brass);
+  font-size: 1.3em;
+}
+
+/* A HURT or ABSORBED trick's own note — no numeric "Added" cell, since nothing entered the pot
+   (`ResolutionBreakdown.tsx`'s own docblock explains why a 0 there would contradict its own label). */
+.wc-resolve-closing-note {
+  margin: 0.15rem 0 0;
+  padding-top: 0.2rem;
+  border-top: 1px solid #ffffff1f;
+  font-size: clamp(0.5rem, 1.1vmin, 0.6rem);
+  color: var(--wc-alarm);
+}
+
+/* DLR-160 AC3 — armed buffs that did NOT fire, told apart by opacity and a dashed rule rather
+   than by colour alone (`game-ux`'s greyscale rule): a dead row must read as dead in a screenshot
+   with no colour in it at all. A wrapped two-line note under an `✕` mark and NO value cell at all
+   — never a row with a dash where a number should be, so it can never read as "fired and paid
+   zero" (the session's own false-bug report). */
+.wc-resolve-dead-list {
+  margin: 0.3rem 0 0;
+  padding-top: 0.25rem;
+  border-top: 1px dashed #ffffff14;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  opacity: 0.7;
+}
+
+.wc-resolve-dead-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: clamp(0.44rem, 0.95vmin, 0.54rem);
+  color: var(--wc-chalk-dim);
+}
+
+.wc-resolve-dead-mark {
+  flex: none;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-resolve-dead-text {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* DLR-160 AC6 — the lethal marking. Reads without colour (`game-ux` hard floor): the WORD "Lethal"
+   carries the fact, the colour only reinforces it — a greyscale screenshot still says "Lethal —
+   ends the fight" in plain text. Also folded into the button's own `aria-label` in the component,
+   so a screen-reader user hears it in the control's name rather than only beside it. */
+.wc-resolve-lethal-tag {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.4rem, 0.85vmin, 0.48rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f0d9a0;
+  background: #5d1f14;
+  border: 1px solid #8c3323;
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+}

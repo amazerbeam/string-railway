@@ -13,18 +13,18 @@ rectangle's position into a **pure module that a unit test can assert against**,
 `RANK_FACE` in `cardFace.ts` is the one place a rank's face is decided. It is total over `RANKS`
 (1–11) and gives each rank a `faceClass`, a printed `name` or `null`, and a `figure` or `null`.
 
-| Class   | Ranks                                          | Printed                                                                         |
-| ------- | ---------------------------------------------- | ------------------------------------------------------------------------------- |
-| `Act`   | 1 Swan, 3 Fox, 5 Woodcutter, 9 Witch, 11 Monarch | a painting in the fixed art window, a **solid heavy** border, the printed name   |
-| `Inert` | 7 Treasure                                     | a painting too — but a **dashed** border and a printed "no rule" mark            |
-| `Plain` | 2, 4, 6, **8**, 10                             | a printed pip lattice, the default border, and the **mirrored bottom-right** index |
+| Class   | Ranks                                            | Printed                                                                            |
+| ------- | ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `Act`   | 1 Swan, 3 Fox, 5 Woodcutter, 9 Witch, 11 Monarch | a painting in the fixed art window, a **solid heavy** border, the printed name     |
+| `Inert` | 7 Treasure                                       | a painting too — but a **dashed** border and a printed "no rule" mark              |
+| `Plain` | 2, 4, 6, **8**, 10                               | a printed pip lattice, the default border, and the **mirrored bottom-right** index |
 
 The Treasure is the only `Inert` rank, and it is the card the ticket exists for: it is the one face
 that looks special and does nothing. Its figure differs by suit — harp (Bells), chalice (Keys),
 sword (Moons) — so `RankFace.figure` is either one `FigureKey` or a `Record<Suit, FigureKey>`,
 resolved in `CardFacePanel.tsx` by `typeof face.figure === 'string'`.
 
-### Rank 8 is deliberately a *plain* rank, not an inert one
+### Rank 8 is deliberately a _plain_ rank, not an inert one
 
 `.docs/game_rules/the-hunt.md` §1 names rank 8 **Timebomb** and §5 gives it "no effect at all" —
 mechanically the same nothing the Treasure does. The reference sheet followed that reading and gave
@@ -32,7 +32,7 @@ rank 8 a dashed border, a "no rule" chip and a printed corner label. **This code
 not**, and a future reader must not "fix" it:
 
 - AC2 names **only** the Treasure as dashed-plus-mark.
-- AC3's stated reason for rank 8 keeping pips is that it *has no settled name* — explicitly **"not
+- AC3's stated reason for rank 8 keeping pips is that it _has no settled name_ — explicitly **"not
   because it is inert"**. `the-hunt.md` itself records the Timebomb name as actively misleading and
   under an open rename question, in its Known tensions.
 - Giving 8 a dashed border while 6 gets none tells the player 8 is special. That is precisely the
@@ -40,7 +40,7 @@ not**, and a future reader must not "fix" it:
 
 So rank 8 gets `faceClass: Plain`, `name: null`, pips, and the mirrored index. Its tooltip prints
 the plain-number sentence rather than the ruleset's Timebomb row — a presentation choice about an
-unsettled *name*, not a claim about the rule (the rule, "no effect", is what both say). A spec pins
+unsettled _name_, not a claim about the rule (the rule, "no effect", is what both say). A spec pins
 it: `cardFace.test.ts` → "gives rank 8 the plain face, with no name and no mark".
 
 ### `hasAbility` is gone; "named" and "acts" are now two predicates
@@ -68,7 +68,7 @@ the component:
   the card's left/top edge, `1` its right/bottom, on each axis independently. This is
   **aspect-ratio independent on purpose** — the card is `2 / 3` today and the reference sheet is
   `5 / 7`, and which ships is the developer's.
-- `printedRects(rank)` returns what that rank *actually prints*, split into `corners` and `printed`.
+- `printedRects(rank)` returns what that rank _actually prints_, split into `corners` and `printed`.
   A `Plain` rank contributes a second corner (the mirrored bottom-right); an `Inert` rank
   contributes the "no rule" mark; a painting rank contributes the art window, a pip rank
   contributes one `pipCellRect` per spot on its lattice. Overlays (skull, primed, discard) are
@@ -76,7 +76,7 @@ the component:
   painting or a pip is intended and is not asserted against.
 - `rectsOverlap(a, b)` is a strict comparison with **no epsilon**: every coordinate is an
   exactly-representable decimal literal from one module rather than an accumulated float, and
-  touching edges count as *not* overlapping. A boundary case asserts that directly.
+  touching edges count as _not_ overlapping. A boundary case asserts that directly.
 - `cardFace.test.ts` runs in the **node** Vitest project and walks every rank asserting the one
   relation that matters.
 
@@ -124,7 +124,7 @@ the constant silently broke the primed mark's geometry.
 ## The skull's footprint follows the rank's own content
 
 DLR-148's small top-right skull disc is gone: a skull now **fills the rank's declared content
-window**, because DLR-148's own wording is that a skull *replaces the art*, and a corner disc over
+window**, because DLR-148's own wording is that a skull _replaces the art_, and a corner disc over
 an otherwise blank face was the reading that broke once a face had an art window.
 
 `skullFootprintFor(rank)` picks which window, and a late fix in this contract is why it is a
@@ -132,7 +132,7 @@ function rather than one constant:
 
 - an `Act`/`Inert` rank uses `CARD_FACE_GEOMETRY.skullFace` (identical to `artWindow`) — it has only
   the single top-left corner and clears it with room to spare;
-- a `Plain` rank uses `CARD_FACE_GEOMETRY.pipField` instead, because it *also* carries the mirrored
+- a `Plain` rank uses `CARD_FACE_GEOMETRY.pipField` instead, because it _also_ carries the mirrored
   bottom-right index, which the wider art-sized window runs straight into.
 
 No new rectangle was invented and **no `--wc-face-skull-*` property exists**: the CSS rule
@@ -163,11 +163,11 @@ text on any face.
 - the **anchor `DOMRect`** — and **what is measured is the card, not the host**. A hand card lifts:
   `translateY(-9%)` on hover, `-5%` while pressed, `-20%` plus `scale(1.05)` while armed
   (`warCouncilCards.css`). Those transforms sit on `button.wc-card`; the host `<span>` carries none
-  of them, so measuring the host anchored the bubble to where the card *would* be if it never
+  of them, so measuring the host anchored the bubble to where the card _would_ be if it never
   lifted, which put a growing gap between an armed card and its own tooltip. `cardElement(host)`
   takes the host's first element child — the card button — and `getBoundingClientRect()` reflects
   transforms, so the lifted position comes for free.
-- **when it is measured**: on each opening, *and* on the card's own **`transitionend`**. That single
+- **when it is measured**: on each opening, _and_ on the card's own **`transitionend`**. That single
   discrete event covers every lift state there is, because each one is reached by transitioning
   `transform` on the same element — hovering in or out, pressing, arming and disarming all end in a
   `transitionend` that re-measures. There is still **no `ResizeObserver`, no `requestAnimationFrame`
@@ -182,7 +182,7 @@ text on any face.
   its `click`, so the first bubble closes with no shared state between cards.
 - **a mouse moving off the host closes every channel** (`pointerover`, gated on
   `pointerType === 'mouse'`). Without it a bubble latched: tapping a card arms it, opens its tooltip
-  *and* focuses the button, so neither the `tap` nor the `focus` channel had any reason to drop while
+  _and_ focuses the button, so neither the `tap` nor the `focus` channel had any reason to drop while
   the player moved on to hover a different card — two bubbles stayed up, the armed card's over the
   hovered card's, and the stale one was the one being read. Pointing elsewhere is a clear statement
   about what the player is now looking at, so it outranks a stale focus. The mouse gate is why a
@@ -197,7 +197,7 @@ text on any face.
 
 - **All five handlers — `onClick`, `onPointerEnter`, `onPointerLeave`, `onFocus`, `onBlur` — sit on
   the host `<span>`, not on the button.** `.wc-card:disabled
-  { pointer-events: none }`, and `table`/`pile` cards and every illegal hand card are `disabled` —
+{ pointer-events: none }`, and `table`/`pile` cards and every illegal hand card are `disabled` —
   on the button the tooltip would be unreachable on exactly the cards a player most wants to
   inspect.
 - **The bubble is portalled to `document.body`** with `position: fixed`. The hand's own cards create
@@ -211,18 +211,59 @@ text on any face.
   the card" will be wrong.
 - **The anchor's centre travels through `--wc-tip-anchor-x`**, a custom property, rather than a
   plain inline `left`. `warCouncilCardTip.css` clamps it — `left: clamp(6rem,
-  var(--wc-tip-anchor-x), calc(100vw - 6rem))` — and an inline `left` would out-rank that. The
+var(--wc-tip-anchor-x), calc(100dvw - 6rem))` — and an inline `left` would out-rank that. The
   outermost cards of the hand sit close enough to the viewport edge that an unclamped centre renders
-  the bubble partly off-screen. `warCouncilCardTip.css` places the bubble `0.35rem` above the card's
-  **current** top edge — measured in-browser at 6px in the resting, hovered and armed states alike,
-  which is what re-measuring on `transitionend` buys.
+  the bubble partly off-screen. The bubble sits `0.35rem` above its anchor's **current** top edge —
+  measured in-browser at 6px in the resting, hovered and armed states alike, which is what
+  re-measuring on `transitionend` buys. **DLR-160 routed the vertical the same way**, and swapped
+  both `100vw`s for `100dvw` — see below.
+
 - **`:has()` was deliberately avoided**, which is how the ticket's "check `:has()` support" question
   was answered — by removing the dependency rather than accepting it. All three channels are
   resolved in React instead, and the reveal is the single-element rule `.wc-card-tip.wc-is-open` on
   the bubble itself — see [The reveal has to be a class on the bubble](#the-reveal-has-to-be-a-class-on-the-bubble)
   for why nothing else can work while the bubble is portalled.
 
-### A tap on a hand card opens the tooltip *and* arms it
+### DLR-160 AC4 — the rank bubble and the breakdown panel collided by construction
+
+The play session lost a trick to this: hovering the Witch to read what it does put the rule bubble
+**exactly on top of** the buff breakdown that explained the card's number, and the player filed a
+false bug report about the number instead.
+
+It was never intermittent. Both surfaces anchor to **the top edge of the same hovered card** —
+`useBuffBreakdownAnchor` sets the panel's `bottom` from the card's measured rect, `useCardTip` sets
+the bubble's `top` from the same rect — so they land on the same line every single time.
+
+The fix places the bubble above **whichever of the two is higher**, and it adds no measurement:
+
+1. `useBuffBreakdownAnchor` now **returns** the panel's resulting top edge in viewport coordinates,
+   derived arithmetically from the `zoneRect`, `bottom` and `panelRect` its `useLayoutEffect`
+   already computes to place the panel (`zoneRect.bottom - bottom - panelRect.height`). No second
+   `getBoundingClientRect()`, no `ResizeObserver`, no poll, no new listener — see
+   [the buff ride](buff-ride-and-the-card-breakdown.md#dlr-160-ac4--the-panel-publishes-its-own-top-edge).
+2. `CardBuffBreakdown` reports it upward through an `onTopChange` callback **from an effect, never
+   during render**, and `BuffRideZone` publishes it through `BreakdownTopContext`
+   (`breakdownRectContext.ts`) — one number crossing one boundary, `null` when no panel is open.
+3. `CardAbilityTip` reads it with `useBreakdownTop()` and writes
+   `Math.min(anchor.top, breakdownTop)` — or the card's own top when there is no panel — into
+   **`--wc-tip-anchor-y`**.
+
+**The custom property is what makes the placement safe**, for the same reason `--wc-tip-anchor-x` is
+one: `warCouncilCardTip.css` applies `top: max(6rem, var(--wc-tip-anchor-y))`, and an inline `top`
+would out-rank that floor with no `!important`. The floor reuses the `6rem` edge margin already
+shipped for the horizontal clamp rather than inventing a second number, so anchoring above a tall
+panel on a short viewport cannot push the bubble's own top off-screen. **It is a placeholder** —
+derived, not chosen, and worth retuning once someone has seen it against a real breakdown.
+
+The two `100vw`s in the same rule became `100dvw` in the same pass, per `game-ux`'s floor against the
+static viewport unit.
+
+Neither number can be proven correct under Vitest — jsdom has no layout engine, so the specs pin the
+contract (the context value reaching the bubble, the `min` being taken) rather than the geometry.
+The alternative fix — hiding the bubble while a breakdown is open — was rejected: the rank rule is
+exactly what a player hovering a Witch wants, and the criterion asks for no overlap, not for one of
+
+### A tap on a hand card opens the tooltip _and_ arms it
 
 Deliberate, and pinned by a test ("arms the card AND opens its tooltip on the same tap, with a real
 `onTap` handler wired"). `roundReducer` already makes tap-1 arm and tap-2 commit, and arming already

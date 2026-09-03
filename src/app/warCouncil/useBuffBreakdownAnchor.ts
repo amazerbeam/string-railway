@@ -24,8 +24,15 @@
  *
  * Re-measures on every anchor change and on window resize; the resize listener is released in
  * this effect's own cleanup, so no orphan survives a card losing its target between renders.
+ *
+ * DLR-160 AC4 — also RETURNS the panel's resulting top edge, in viewport coordinates, as React
+ * state. This is not a second measurement: the top edge is derived arithmetically from the SAME
+ * `zoneRect`/`bottom`/`panelRect` this effect already computes to write `panel.style.bottom`, so
+ * no new `getBoundingClientRect()` call, `ResizeObserver`, or poll is added. `CardBuffBreakdown`
+ * reports this value upward so `CardAbilityTip` can anchor its bubble above the panel instead of
+ * above the card whenever the panel is the higher of the two (`breakdownRectContext.ts`).
  */
-import { useLayoutEffect, type RefObject } from 'react'
+import { useLayoutEffect, useState, type RefObject } from 'react'
 import type { Card } from '../../warCouncil'
 import { cardKey } from './labels'
 
@@ -41,12 +48,20 @@ const TOP_MARGIN_PX = 16
 export function useBuffBreakdownAnchor(
   panelRef: RefObject<HTMLDivElement | null>,
   target: Card | null,
-): void {
+): number | null {
+  const [topEdge, setTopEdge] = useState<number | null>(null)
+
   useLayoutEffect(() => {
     const panel = panelRef.current
-    if (panel === null || target === null) return
+    if (panel === null || target === null) {
+      setTopEdge(null)
+      return
+    }
     const zone = panel.offsetParent as HTMLElement | null
-    if (zone === null) return
+    if (zone === null) {
+      setTopEdge(null)
+      return
+    }
 
     function measure() {
       if (panel === null || zone === null || target === null) return
@@ -72,10 +87,18 @@ export function useBuffBreakdownAnchor(
       const maxBottom = Math.max(0, zoneRect.bottom - panelRect.height - TOP_MARGIN_PX)
       const bottom = Math.max(0, Math.min(maxBottom, bottomWanted))
       panel.style.bottom = `${bottom}px`
+
+      // DLR-160 AC4 — the panel's own top edge, in viewport coordinates, derived from the SAME
+      // numbers above rather than a fresh measurement: `bottom` is the panel's distance from the
+      // zone's bottom edge, so the panel's viewport-space bottom is `zoneRect.bottom - bottom`,
+      // and subtracting its own height gives its top.
+      setTopEdge(zoneRect.bottom - bottom - panelRect.height)
     }
 
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [panelRef, target])
+
+  return topEdge
 }

@@ -3,7 +3,8 @@ Part of [War Council UI](README.md).
 # The riding buffs, the lit hand, and the per-card breakdown — DLR-153
 
 Before this ticket, activating a buff deleted a card from the pile and changed nothing else on
-screen. Nine of the sixteen live templates are gated on the **suit of the card you end up playing**,
+screen. Nine of the live templates are gated on the **suit of the card you end up playing** — nine of
+sixteen when this shipped, nine of eighteen since DLR-161 —
 and the screen never said which of your cards that was. DLR-153 makes activation legible: every
 legal-to-play card a riding buff could fire on lights up, a "riding this trick" list says how far
 each activated buff reaches and lets you take it back off, and a per-card panel breaks one card's
@@ -181,9 +182,9 @@ motion:
   `<rect>` strokes plus a `box-shadow` on the card itself. Its hue is `--wc-buff-halo: #ff3326` and
   `--wc-buff-halo-deep: #8e1409`, declared on `:root` in `warCouncil.css`. **Both were corrected in
   Phase 8**: the strokes had been borrowing `--wc-alarm` (`#d1705f`), which is the muted colour this
-  screen uses to mean *damage*, so a lit card was speaking in the damage vocabulary. The two
+  screen uses to mean _damage_, so a lit card was speaking in the damage vocabulary. The two
   replacements are **transcribed** from the mockup's own `--load-red` / `--load-red-deep`, not chosen.
-  This settles nothing about the epic's open red-versus-brass question — it corrects *which* red, and
+  This settles nothing about the epic's open red-versus-brass question — it corrects _which_ red, and
   the hue remains a placeholder. Each stroke's width and opacity **start
   non-zero and grow** with the count, because a stroke scaled purely by the count is invisible at one
   buff. The count saturates at five. There is no `filter: blur()` and no `mix-blend-mode` anywhere
@@ -291,6 +292,39 @@ single riding buff, whereupon the felt's own unshrunk content painted through an
 won every hit-test. Out of flow and anchored upward, that row competition is gone at its root — and
 the panel can never grow _downward_ into the hand or the action bar. It **can and does** grow over
 the live trick, which is the accepted trade below.
+
+### DLR-160 — the zone moved into `BuffRideZone.tsx`
+
+`WarCouncilTable.tsx` sat at 399 of its 400-line budget, so the whole `.wc-buff-ride-zone` block —
+`HandFan`, `BuffRidingList`, `CardBuffBreakdown` and the zone's own hover handlers — moved into
+`BuffRideZone.tsx` as a **pure move**, taking one `BuffRideBundle` prop rather than the eight
+individual values the block used to close over. Everything the section above says about where it
+mounts and why is unchanged; the only thing added in the move is the context provider below.
+
+### DLR-160 AC4 — the panel publishes its own top edge
+
+The rank tooltip and this panel both anchored to the hovered card's top edge and therefore collided
+every time — the full account, and the reading side of the fix, is in
+[the ability tooltip](card-faces-and-the-ability-tooltip.md#dlr-160-ac4--the-rank-bubble-and-the-breakdown-panel-collided-by-construction).
+What changes on this side is one number leaving the panel:
+
+- `useBuffBreakdownAnchor` **returns** the panel's top edge in viewport coordinates as React state.
+  It is **not a second measurement**: `zoneRect.bottom - bottom - panelRect.height` is arithmetic
+  over the three values its `useLayoutEffect` already computed to write `panel.style.bottom`. No new
+  `getBoundingClientRect()`, no `ResizeObserver`, no poll, no extra listener — the existing `resize`
+  listener and its cleanup are untouched, and the hook sets `null` on each of its own early returns
+  so a closing panel cannot leave a stale edge behind.
+- `CardBuffBreakdown` reports it through a new required `onTopChange` prop, **from an effect keyed on
+  the value** rather than during render.
+- `useBuffRide` holds it in `useState` and exposes `breakdownTop` plus `onBreakdownTopChange` — the
+  **`useState` setter itself**, which is referentially stable, so the effect above is not re-armed
+  every render.
+- `BuffRideZone` wraps the zone in `BreakdownTopContext.Provider` (`breakdownRectContext.ts`), and
+  `CardAbilityTip` — mounted inside `HandFan`, below the provider — reads it with `useBreakdownTop()`.
+
+A React context for one number is deliberate: the tooltip host is several levels below the zone and
+has no other reason to know the panel exists, and threading a prop through `HandFan` and every card
+would put a layout concern on the hand's own contract.
 
 ## The panel covers the live trick, and that is accepted
 

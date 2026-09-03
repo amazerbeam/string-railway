@@ -44,6 +44,10 @@ export const BuffKind = {
   Spyglass: 'spyglass',
   // DLR-110 — design doc §7a puts Shield alongside Cheat and Timebomb as an activated card.
   Shield: 'shield',
+  // DLR-161 — the two protective condition families. Their reward is neither damage nor
+  // multiplier: they keep one of the streak's two figures through a trick that hurt you.
+  SkullHelmet: 'skullHelmet',
+  SkullTether: 'skullTether',
 } as const
 export type BuffKind = (typeof BuffKind)[keyof typeof BuffKind]
 
@@ -69,6 +73,12 @@ export const BuffRewardAxis = {
   DiscardCharges: 'discardCharges',
   DamageAbsorbed: 'damageAbsorbed',
   None: 'none',
+  /** DLR-161 — the first reward that is neither flat damage nor multiplier. `REWARD_TIER_VALUE`'s
+   *  figure on this axis is the GOLD BONUS added to the SURVIVING figure (0 / 0 / 1), not the
+   *  protection itself: the protection is carried by the buff having fired at all. The zero at
+   *  bronze and silver is therefore real and not this codebase's "plausible zero that
+   *  type-checks" — `buffProtection.ts`'s docblock is where that reasoning is written down. */
+  Protection: 'protection',
 } as const
 export type BuffRewardAxis = (typeof BuffRewardAxis)[keyof typeof BuffRewardAxis]
 
@@ -187,6 +197,8 @@ export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
   [BuffKind.Spyglass]: BuffCadence.Activated,
   // DLR-110 — the player pulls Shield; it has no trigger.
   [BuffKind.Shield]: BuffCadence.Activated,
+  [BuffKind.SkullHelmet]: BuffCadence.Event,
+  [BuffKind.SkullTether]: BuffCadence.Event,
 }
 
 /**

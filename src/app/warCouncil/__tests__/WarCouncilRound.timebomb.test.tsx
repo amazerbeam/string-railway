@@ -168,23 +168,27 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     expect(screen.queryByRole('button', { name: /Timebomb \(/ })).toBeNull()
   })
 
-  it('stops a click inside the open gallery from bubbling to the felt and firing carry-on (stopPropagation)', () => {
-    // Quarry-to-lead is the one window where `.wc-table` itself carries an onClick
-    // (`handleCarryOn`, armed by `quarryToLead`) AND the gallery can legitimately be open at the
-    // same time — `loadoutDoorOpen` is `discardWindowOpen || canAct`, and both hold here, since
-    // `discardWindowOpen` doesn't care whose turn it is. Every other open-gallery state has no
-    // handler on `.wc-table` to bubble to at all, so this is the only state that can prove the
-    // gallery's own `onClick={(e) => e.stopPropagation()}` is doing anything.
+  it('DLR-160 AC1 — a click on `.wc-table` never commits the Quarry’s pending lead, in any state', () => {
+    // `.wc-table` carries no `onClick` at all now — the region click that used to fire
+    // `handleCarryOn` for any click landing in the play area while the Quarry's lead was pending
+    // is GONE (`WarCouncilTable.tsx`). This is the stronger property the old test only pinned a
+    // corner of: it used to prove a click on the OPEN GALLERY's heading didn't bubble and commit
+    // the lead via `stopPropagation`. Now there is nothing to bubble TO, so a click straight on
+    // the felt itself must be just as inert.
     const round = makeRound({ leader: PlayerSide.Cpu, currentTrick: [] })
-    renderRound({ initialState: round })
+    const { container } = renderRound({ initialState: round })
     openLoadout()
     expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeTruthy()
     expect(screen.getByText('4 held')).toBeTruthy() // the Cpu's opening hand size
 
     fireEvent.click(screen.getByRole('heading', { name: /your buffs/i }))
+    const table = container.querySelector('.wc-table')
+    expect(table).not.toBeNull()
+    fireEvent.click(table as Element)
 
-    // If the click had bubbled, `.wc-table`'s handleCarryOn would have committed the Quarry's
-    // pending lead, moving one card out of its hand and closing the quarry-to-lead window.
+    // No click anywhere in `.wc-table` — on the gallery's heading, or on the region itself —
+    // commits the Quarry's pending lead, moving one card out of its hand and closing the
+    // quarry-to-lead window.
     expect(screen.getByText('4 held')).toBeTruthy()
     expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeTruthy()
   })

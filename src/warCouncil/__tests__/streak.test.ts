@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BASE_DAMAGE, DAMAGE_PER_HIT, DuelSide } from '../../hunt'
 import {
-  potValue,
   incomingFrom,
   isTaken,
   resolveTrickBank,
@@ -10,6 +9,7 @@ import {
   type StreakState,
   type TrickFacts,
 } from '../streak'
+import { potValue } from '../pot'
 
 const START: StreakState = { total: 0, roll: 0 }
 

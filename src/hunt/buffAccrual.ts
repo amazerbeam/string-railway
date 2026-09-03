@@ -1,4 +1,4 @@
-import { narrowToCostAxis, type BuffCostAxis } from './buffCosts'
+import { isProtectiveAxis, narrowToCostAxis, type BuffCostAxis } from './buffCosts'
 import type { Buff } from './buffs'
 import {
   MAX_COIN_BONUS_PER_HAND,
@@ -169,6 +169,12 @@ export function resolveFiredBuffs(
   trickIsLoss: boolean,
 ): BuffBonusAccrual {
   let next = fired.reduce((running, buff) => {
+    // DLR-161 — a protective card pays into NO per-hand pool: its reward is the streak figure
+    // `resolveTrickBank` keeps through the reset. Excluded here rather than by widening
+    // `BuffCostAxis`, so the four accrual switches keep exactly the four cases they can answer.
+    // It is still counted by `overlapBonusFor` below — AC9's "the second card fired earns the
+    // Overlap Bonus exactly as any other pair would".
+    if (isProtectiveAxis(buff.reward.axis)) return running
     const axis = narrowToCostAxis(buff.reward.axis, 'Fired buff reward axis')
     return trickIsLoss && buff.kind === BuffKind.Feeder
       ? accrueCarry(running, axis, buff.reward.value)
@@ -215,6 +221,8 @@ export function trickBonusFor(fired: readonly Buff[], trickIsLoss: boolean): Tri
       // DLR-150 AC1 — carries out instead of paying this trick.
       return running
     }
+    // DLR-161 — see `resolveFiredBuffs`'s comment above: a protective card pays into no pool.
+    if (isProtectiveAxis(buff.reward.axis)) return running
     const axis = narrowToCostAxis(buff.reward.axis, 'Fired buff reward axis')
     switch (axis) {
       case BuffRewardAxis.Multiplier:

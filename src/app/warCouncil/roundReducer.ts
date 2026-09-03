@@ -115,15 +115,38 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
     // OWN `handleCarryOn` wrapper (`WarCouncilTable.tsx`) checks `encounterOver` FIRST and reports
     // `onComplete` directly, WITHOUT ever dispatching `CarryOn` — so the held reveal it reads to
     // offer that tap must survive here, exactly as it always has for the deciding trick.
+    // DLR-160 AC1 — these two used to tail-call `handleCarryOn`, which calls `advanceQuarryLead`
+    // in the SAME dispatch whenever the Quarry is next to lead. Dismissing the resolution screen
+    // therefore laid the Quarry's card before the player ever saw the felt, and the between-tricks
+    // window closed unseen. `the-hunt.md` §4 already grants that window — "activating is only
+    // available between tricks, the same window the Swap uses, before a trick's first card is
+    // laid" — so nothing about the RULE changes here; the code was closing it early. Both actions
+    // now close the resolution screen and stop, WITHOUT laying a card. `CarryOn`, reached only
+    // from the well's own explicit control, keeps sole responsibility for that.
+    //
+    // `resolvedTrick` still has to be cleared, which is the ONLY thing `handleCarryOn` did that
+    // these two needed — `applyPotAction`/`rollOverAction` clear `resolution` but not the felt's
+    // own held reveal — EXCEPT on the one case the comment above already carves out: when the
+    // choice itself ends the encounter, `resolvedTrick` must survive so the felt's OWN
+    // `handleCarryOn` wrapper (`WarCouncilTable.tsx`) still has a held reveal to read `encounterOver`
+    // from and report `onComplete`. Clearing it unconditionally here would strand a mid-hand kill —
+    // no button left to reach `onComplete` at all, since AC1 also deleted the felt's region click.
     case RoundUiActionKind.ApplyPot: {
       const applied = applyPotAction(state)
-      return isEncounterResolved(applied.encounter) ? applied : handleCarryOn(applied)
+      return isEncounterResolved(applied.encounter) ? applied : clearResolvedTrick(applied)
     }
     case RoundUiActionKind.RollOver: {
       const rolled = rollOverAction(state)
-      return isEncounterResolved(rolled.encounter) ? rolled : handleCarryOn(rolled)
+      return isEncounterResolved(rolled.encounter) ? rolled : clearResolvedTrick(rolled)
     }
   }
+}
+
+/** DLR-160 AC1 — the one thing `ApplyPot`/`RollOver` needed out of `handleCarryOn`: the felt's
+ *  held reveal is dropped so the table renders the between-tricks state. Deliberately does NOT
+ *  touch `currentTrick`, the turn, or the Quarry's pending lead. */
+function clearResolvedTrick(state: RoundUiState): RoundUiState {
+  return state.resolvedTrick === null ? state : { ...state, resolvedTrick: null }
 }
 
 function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {

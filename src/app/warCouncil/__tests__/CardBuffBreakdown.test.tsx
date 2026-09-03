@@ -76,6 +76,7 @@ function renderBreakdown(overrides: Partial<CardBuffBreakdownModel> = {}, onRemo
       onLeave={vi.fn()}
       onEscape={vi.fn()}
       onRemove={onRemove}
+      onTopChange={vi.fn()}
     />,
   )
 }
@@ -90,6 +91,7 @@ describe('CardBuffBreakdown', () => {
         onLeave={vi.fn()}
         onEscape={vi.fn()}
         onRemove={vi.fn()}
+        onTopChange={vi.fn()}
       />,
     )
     expect(container.firstChild).toBeNull()

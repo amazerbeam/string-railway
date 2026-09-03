@@ -23,8 +23,13 @@
  * `revocable` are read straight off the SAME `RidingBuffRow`s `BuffRidingList` renders, keyed by
  * buff id. A row whose buff has no matching `RidingBuffRow` (should not happen — every row here
  * is built from an activated buff) draws no control rather than guessing a reach.
+ *
+ * DLR-160 AC4 — `onTopChange` reports the panel's measured top edge (from `useBuffBreakdownAnchor`,
+ * which already computes it while placing the panel) up to `WarCouncilTable`, which publishes it
+ * through `BreakdownTopContext` so `CardAbilityTip` can anchor its bubble above the panel rather
+ * than colliding with it. No new measurement, listener, or timer — see that hook's own docblock.
  */
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import type { BuffId } from '../../hunt'
 import type { CardBuffBreakdown as Breakdown } from './buffBreakdownModel'
 import {
@@ -43,6 +48,9 @@ interface CardBuffBreakdownProps {
   readonly onLeave: () => void
   readonly onEscape: () => void
   readonly onRemove: (id: BuffId) => void
+  /** DLR-160 AC4 — the panel's measured top edge, or `null` while no panel is open. Called from an
+   *  effect, never during render. */
+  readonly onTopChange: (top: number | null) => void
 }
 
 export default function CardBuffBreakdown({
@@ -52,12 +60,17 @@ export default function CardBuffBreakdown({
   onLeave,
   onEscape,
   onRemove,
+  onTopChange,
 }: CardBuffBreakdownProps) {
   // Called unconditionally (React's own rule), even on a `null` breakdown — `useBuffBreakdownAnchor`
   // itself no-ops when either `panelRef.current` or `target` is `null`, which covers exactly the
   // render this component returns nothing on.
   const panelRef = useRef<HTMLDivElement | null>(null)
-  useBuffBreakdownAnchor(panelRef, breakdown?.card ?? null)
+  const topEdge = useBuffBreakdownAnchor(panelRef, breakdown?.card ?? null)
+
+  useEffect(() => {
+    onTopChange(topEdge)
+  }, [topEdge, onTopChange])
 
   if (breakdown === null) return null
 

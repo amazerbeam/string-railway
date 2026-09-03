@@ -1,3 +1,4 @@
+import type { AppScreen } from './screenFor'
 import type { RoundUiState } from './warCouncil/roundUiState'
 
 /**
@@ -13,8 +14,11 @@ import type { RoundUiState } from './warCouncil/roundUiState'
  */
 
 export interface DebugAppState {
-  /** Which top-level surface `App` is rendering — mirrors its own branch order. */
-  screen: 'start' | 'map' | 'shop' | 'manageBuffs' | 'vault' | 'verdict' | 'warCouncil'
+  /** Which top-level surface `App` is rendering — mirrors its own branch order. Imported from
+   *  `./screenFor` rather than restated (DLR-160 fix), so the two cannot drift apart again: both
+   *  are string-bound and the compiler cannot connect a restated literal union to `screenFor`'s
+   *  own return type. */
+  screen: AppScreen
   phase: string
   hand: number
   run: unknown

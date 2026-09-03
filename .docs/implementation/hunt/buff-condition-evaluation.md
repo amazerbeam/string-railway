@@ -18,10 +18,10 @@ trick_ (R1–R7), cited and never restated.
 
 `buffFires(buff, ctx)` in `buffEvaluation.ts` is a **total `switch` over `BuffConditionKind`**,
 guarded above the switch by `isConditionFamily(buff.kind)` (`buffCosts.ts`). Everything that is not
-one of the eleven condition families — all eight Activated consumables (Cheat, Timebomb, Ward,
+one of the thirteen condition families (eleven until DLR-161) — all eight Activated consumables (Cheat, Timebomb, Ward,
 Puppeteer, Second Thoughts, Foresight, Spyglass, Shield) and `BuffKind.Unassigned` — returns `false`
 through that guard rather than through a `default` case. The switch itself has no `default`, so a
-twelfth family added to `buffCosts.ts` fails to compile **here** rather than silently never firing.
+fourteenth family added to `buffCosts.ts` fails to compile **here** rather than silently never firing.
 
 The eleven, and what each reads:
 
@@ -204,5 +204,5 @@ skull term in it at all, so it pays on a dodge and on a clean loss alike — del
 What changed is what a Feeder may be *minted* as. DLR-145 had cut it to Blade-only because a
 multiplier raised on the loss half was wiped by that loss's own reset before it could be spent; the
 carry removes exactly that failure mode, so `TEMPLATE_FAMILIES`'s Feeder row is `BLADE_AND_MOMENTUM`
-again and `BUFF_TEMPLATE_COUNT` is **16**. The eight cut families and the two cut reward axes are
-untouched by this — one row came back, not the pruning. See [The Feeder carry](the-feeder-carry.md).
+again and `BUFF_TEMPLATE_COUNT` is **16** (**18** since DLR-161 added the two protective families).
+The eight cut families and the two cut reward axes are untouched by this — one row came back, not the pruning. See [The Feeder carry](the-feeder-carry.md).

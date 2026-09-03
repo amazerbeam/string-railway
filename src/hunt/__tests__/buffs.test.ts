@@ -14,11 +14,11 @@ import {
   type BuffCondition,
 } from '../buffs'
 
-describe('BuffKind (DLR-108/DLR-111 finding 1 — widened to 20 members on DLR-110)', () => {
-  it('carries all 20 members, pairwise distinct', () => {
+describe('BuffKind (DLR-108/DLR-111 finding 1 — widened to 22 members on DLR-161)', () => {
+  it('carries all 22 members, pairwise distinct', () => {
     const values = Object.values(BuffKind)
-    expect(values).toHaveLength(20)
-    expect(new Set(values).size).toBe(20)
+    expect(values).toHaveLength(22)
+    expect(new Set(values).size).toBe(22)
   })
 
   it('carries the three pre-existing members unchanged', () => {
@@ -52,13 +52,18 @@ describe('BuffKind (DLR-108/DLR-111 finding 1 — widened to 20 members on DLR-1
   it('DLR-110 — carries Shield', () => {
     expect(BuffKind.Shield).toBe('shield')
   })
+
+  it('DLR-161 — carries the two protective condition families', () => {
+    expect(BuffKind.SkullHelmet).toBe('skullHelmet')
+    expect(BuffKind.SkullTether).toBe('skullTether')
+  })
 })
 
-describe('BuffRewardAxis (DLR-108/DLR-111 finding 2 — widened to 11 members)', () => {
-  it('carries all 11 members, pairwise distinct', () => {
+describe('BuffRewardAxis (DLR-108/DLR-111 finding 2 — widened to 12 members on DLR-161)', () => {
+  it('carries all 12 members, pairwise distinct', () => {
     const values = Object.values(BuffRewardAxis)
-    expect(values).toHaveLength(11)
-    expect(new Set(values).size).toBe(11)
+    expect(values).toHaveLength(12)
+    expect(new Set(values).size).toBe(12)
   })
 
   it('carries the three pre-existing members unchanged', () => {
@@ -76,6 +81,10 @@ describe('BuffRewardAxis (DLR-108/DLR-111 finding 2 — widened to 11 members)',
     expect(BuffRewardAxis.DiscardCharges).toBe('discardCharges')
     expect(BuffRewardAxis.DamageAbsorbed).toBe('damageAbsorbed')
     expect(BuffRewardAxis.None).toBe('none')
+  })
+
+  it('DLR-161 — carries the Protection axis', () => {
+    expect(BuffRewardAxis.Protection).toBe('protection')
   })
 })
 
@@ -141,6 +150,11 @@ describe('BUFF_CADENCE — DLR-124 R4’s classification, transcribed', () => {
 
   it('classifies keepsake as terminal', () => {
     expect(BUFF_CADENCE[BuffKind.Keepsake]).toBe(BuffCadence.Terminal)
+  })
+
+  it('DLR-161 — classifies Skull Helmet and Skull Tether as event', () => {
+    expect(BUFF_CADENCE[BuffKind.SkullHelmet]).toBe(BuffCadence.Event)
+    expect(BUFF_CADENCE[BuffKind.SkullTether]).toBe(BuffCadence.Event)
   })
 
   it('classifies Cheat, Timebomb, Shield and the five consumables as activated', () => {

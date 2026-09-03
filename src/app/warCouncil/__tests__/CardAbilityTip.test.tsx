@@ -173,6 +173,11 @@ describe('CardAbilityTip', () => {
   // transform, so it stayed at the card's RESTING position while the card lifted out from under
   // it (hover -9%, press -5%, armed -20% plus scale). These two pin that the card element itself
   // is what gets measured, and that a lift which animates is picked up when it settles.
+  //
+  // DLR-160 AC4 — `top` moved to the `--wc-tip-anchor-y` custom property (mirroring
+  // `--wc-tip-anchor-x`'s existing pattern) so `warCouncilCardTip.css`'s vertical floor can
+  // actually apply; an inline `top` would out-rank a CSS floor with no `!important`. These two
+  // cases now read the custom property instead of `style.top`.
   it('anchors the bubble to the card, not to the untransformed host wrapper', () => {
     render(<PlayingCard card={CARD} variant="hand" />)
     const button = screen.getByRole('button', { name: /5 of Bells/i })
@@ -185,7 +190,7 @@ describe('CardAbilityTip', () => {
     fireEvent.pointerEnter(host, { pointerType: 'mouse' })
 
     const tooltip = screen.getByRole('tooltip')
-    expect((tooltip as HTMLElement).style.top).toBe('462px')
+    expect((tooltip as HTMLElement).style.getPropertyValue('--wc-tip-anchor-y')).toBe('462px')
   })
 
   it("re-measures on the card's transitionend, so the bubble follows a lift that animates", () => {
@@ -197,12 +202,16 @@ describe('CardAbilityTip', () => {
     // Measured at pointer-enter, before the 130ms lift transition has run.
     button.getBoundingClientRect = () => new DOMRect(100, 500, 60, 90)
     fireEvent.pointerEnter(host, { pointerType: 'mouse' })
-    expect((screen.getByRole('tooltip') as HTMLElement).style.top).toBe('500px')
+    expect(
+      (screen.getByRole('tooltip') as HTMLElement).style.getPropertyValue('--wc-tip-anchor-y'),
+    ).toBe('500px')
 
     // The card settles into its lifted position and says so.
     button.getBoundingClientRect = () => new DOMRect(100, 492, 60, 90)
     fireEvent.transitionEnd(button)
-    expect((screen.getByRole('tooltip') as HTMLElement).style.top).toBe('492px')
+    expect(
+      (screen.getByRole('tooltip') as HTMLElement).style.getPropertyValue('--wc-tip-anchor-y'),
+    ).toBe('492px')
   })
   // DLR-149 follow-up — a tap both arms the card and opens its tooltip (deliberate, pinned
   // above). Nothing dropped that tap channel until the next pointerdown, so the armed card's

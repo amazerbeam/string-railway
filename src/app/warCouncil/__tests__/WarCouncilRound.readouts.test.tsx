@@ -109,9 +109,10 @@ describe('WarCouncilRound', () => {
     fireEvent.click(bells9)
     advanceTrickDwell()
     // DLR-156 AC5 — a banked trick no longer pays the Quarry automatically; it only pays through
-    // an explicit Apply on the resolution screen (which replaces the felt the instant the trick
-    // resolves). Rolling over — never Apply — is what proves BOTH bars genuinely untouched.
-    expect(screen.getByText(/you took it/i)).toBeDefined()
+    // an explicit Apply on the resolution panel. Rolling over — never Apply — is what proves BOTH
+    // bars genuinely untouched. DLR-160 AC11 — the felt's own well and the panel now both say the
+    // outcome word at once, so this reads `getAllByText`.
+    expect(screen.getAllByText(/clean win/i).length).toBeGreaterThan(0)
     carryOnFromResolution()
     expect(healthMeter('Your health').getAttribute('aria-valuenow')).toBe(playerBefore)
     expect(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow')).toBe(quarryBefore)
@@ -142,7 +143,11 @@ describe('WarCouncilRound', () => {
     // DLR-156 AC7 — a hit pays the Quarry NOTHING now; there is no two-thirds consolation any
     // more, the whole streak is simply lost. The hurt branch offers no choice (its single exit is
     // "Onward"), so dismissing it changes nothing about either bar beyond the hit already dealt.
-    expect(screen.getByText(/streak is broken/i)).toBeDefined()
+    // DLR-160 (widened) — this wording now lives on the pot card's head (`BankMeter`'s own
+    // `TRICK_OUTCOME_MESSAGE[TrickOutcome.CleanLoss]`), not on a resolution-screen header of its
+    // own (retired along with the trick cards, the outcome word and the decree — see
+    // `TrickResolutionScreen.tsx`'s own docblock).
+    expect(screen.getByText(/streak is lost/i)).toBeDefined()
     carryOnFromResolution()
     expect(Number(healthMeter('Your health').getAttribute('aria-valuenow'))).toBe(
       PLAYER_START_HEALTH - DAMAGE_PER_HIT,
@@ -176,7 +181,7 @@ describe('WarCouncilRound', () => {
     fireEvent.click(bells9)
     fireEvent.click(bells9)
     advanceTrickDwell()
-    expect(screen.getByText(/you took it/i)).toBeDefined()
+    expect(screen.getAllByText(/clean win/i).length).toBeGreaterThan(0)
     // DLR-156 — rolling over (never Apply, which would deal the pot and reset both figures to
     // zero) is what proves the felt's own pot readout climbed rather than being reset by the
     // dismissal itself.

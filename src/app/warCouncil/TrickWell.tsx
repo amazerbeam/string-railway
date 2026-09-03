@@ -6,6 +6,7 @@ import { PlaceKind } from './cardPlacement'
 import { cardAccessibleName, cardKey, timebombBookedText } from './labels'
 import { useMotionAnchor, useMotionAnchors } from './motionAnchorContext'
 import PlayingCard from './PlayingCard'
+import { TRICK_OUTCOME_WHY, TRICK_OUTCOME_WORD, trickOutcomeKindFor } from './resolutionOutcome'
 import type { ResolvedTrick } from './roundUiState'
 
 // Copy, not an engine string leaking into the UI — "Them" is never PlayerSide.Cpu rendered raw.
@@ -28,6 +29,9 @@ interface TrickWellProps {
    *  same defaulting `skulledCards` and `primedCards` already carry, so a caller that predates
    *  this keeps compiling and simply narrates nothing. */
   readonly offeredBuffs?: readonly Buff[]
+  /** DLR-160 AC2 — the cards in THIS trick that carry a skull, so the well words the outcome on
+   *  the same two facts `TrickResolutionScreen` does. Defaults to `[]`. */
+  readonly skulledInTrick?: readonly Card[]
   readonly quarryToLead: boolean
   readonly onCarryOn: () => void
 }
@@ -45,6 +49,7 @@ export default function TrickWell({
   skulledCards = [],
   primedCards = [],
   offeredBuffs = [],
+  skulledInTrick = [],
   quarryToLead,
   onCarryOn,
 }: TrickWellProps) {
@@ -87,8 +92,14 @@ export default function TrickWell({
   const { arriving } = useMotionAnchors()
 
   if (resolvedTrick) {
-    const winnerLabel = resolvedTrick.winner === PlayerSide.Player ? 'You' : 'They'
     const firedText = buffFiredText(resolvedTrick.resolution.firedBuffIds, offeredBuffs)
+    // DLR-160 AC2 — the SAME two facts `TrickResolutionScreen` derives its own outcome word from,
+    // read out of the SAME module, so a skull trick cannot be worded one way on the felt and
+    // another on the panel.
+    const outcomeKind = trickOutcomeKindFor(
+      resolvedTrick.winner === PlayerSide.Player,
+      resolvedTrick.cards.some((played) => isSkulled(skulledInTrick, played.card)),
+    )
 
     return (
       <>
@@ -109,8 +120,12 @@ export default function TrickWell({
             </span>
           ))}
         </div>
+        {/* DLR-160 AC2 (developer red-line, 2026-09-02) — the well used to say only who
+            physically took it, which is exactly the half that misleads on a skull trick. Same
+            module the resolution panel reads, so one trick cannot be worded two ways. */}
+        <p className="wc-well-outcome">{TRICK_OUTCOME_WORD[outcomeKind]}</p>
         <p className="wc-table-line">
-          {winnerLabel} take the trick.
+          {TRICK_OUTCOME_WHY[outcomeKind]}.
           {resolvedTrick.resolution.damageToPlayer > 0 &&
             ` You take ${resolvedTrick.resolution.damageToPlayer}.`}
           {resolvedTrick.resolution.timebombTarget !== null && (
@@ -131,8 +146,8 @@ export default function TrickWell({
           )}
         </p>
         {firedText !== null && <p className="wc-buff-fired">{firedText}</p>}
-        <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
-          Tap the table to carry on
+        <button type="button" className="wc-carry-btn" onClick={handleHintClick}>
+          Carry on
         </button>
       </>
     )
@@ -150,7 +165,7 @@ export default function TrickWell({
         <div className="wc-trick-row" ref={trickWellRef} />
         {/* PLACEHOLDER COPY — the developer's to retune. */}
         <p className="wc-table-line">They are about to lead.</p>
-        <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
+        <button type="button" className="wc-carry-btn" onClick={handleHintClick}>
           Let them lead
         </button>
       </>

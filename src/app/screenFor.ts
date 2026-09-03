@@ -18,12 +18,16 @@ export const RunPhase = {
   Map: 'map',
   // DLR-118 — reachable ONLY from a terminal verdict's `Open the Vault` control.
   Vault: 'vault',
+  /** DLR-160 AC9 — reached ONLY from `leaveForNextFight`, left ONLY by starting the fight.
+   *  Checked before the `!encounterOver` branch, exactly as `Start` is, because the next
+   *  encounter is already live by the time this phase is set. */
+  PreFight: 'preFight',
 } as const
 export type RunPhase = (typeof RunPhase)[keyof typeof RunPhase]
 
 /** The screens `App` switches between, as the debug mirror already names them. */
 export type AppScreen =
-  'start' | 'map' | 'shop' | 'manageBuffs' | 'vault' | 'verdict' | 'warCouncil'
+  'start' | 'preFight' | 'map' | 'shop' | 'manageBuffs' | 'vault' | 'verdict' | 'warCouncil'
 
 /** Which screen the app is showing, as a pure function of the two values that decide it.
  *  Extracted from `App.tsx`'s inline ternary chain (DLR-150 — 400-line budget) so the derivation
@@ -31,6 +35,9 @@ export type AppScreen =
  *  property the chain's own comment already claims. */
 export function screenFor(phase: RunPhase, encounterOver: boolean): AppScreen {
   if (phase === RunPhase.Start) return 'start'
+  // DLR-160 AC9 — before the `!encounterOver` line, exactly as `Start` is, and for the same
+  // reason: the next encounter is already live by the time this phase is set.
+  if (phase === RunPhase.PreFight) return 'preFight'
   if (!encounterOver) return 'warCouncil'
   if (phase === RunPhase.Map) return 'map'
   if (phase === RunPhase.Shop) return 'shop'

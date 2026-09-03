@@ -126,6 +126,75 @@ describe('resolutionBeatsFor — edge shapes', () => {
     expect(beats[0]!.label).toContain('24')
   })
 
+  it('DLR-161 — a hurt trick a Helmet kept the total through reports the pot ACTUALLY lost, not the whole pre-trick pot', () => {
+    const before: StreakState = { total: 8, roll: 2 }
+    const resolution: TrickResolution = {
+      outcome: TrickOutcome.CleanLoss,
+      trickDamage: null,
+      cashOut: 0,
+      damageToPlayer: 1,
+      // The Helmet kept `total` at 8; `roll` still resets to 0.
+      total: 8,
+      roll: 0,
+      timebombTarget: DuelSide.Quarry,
+      timebombToQuarry: 0,
+      blastGuardSpent: false,
+      buffAccrual: null,
+      firedBuffIds: [],
+    }
+    const beats = resolutionBeatsFor(resolution, [], before)
+    expect(beats).toHaveLength(1)
+    expect(beats[0]!.kind).toBe(BeatKind.Hurt)
+    // Pre-trick pot 8 x 2 = 16, post-trick pot 8 x 0 = 0 — 16 actually lost.
+    expect(beats[0]!.label).toBe('Hurt — −1 health, 16 pot lost')
+  })
+
+  it('DLR-161 — a hurt trick both cards protected reports 0 lost, since the whole pot survived', () => {
+    const before: StreakState = { total: 8, roll: 2 }
+    const resolution: TrickResolution = {
+      outcome: TrickOutcome.CleanLoss,
+      trickDamage: null,
+      cashOut: 0,
+      damageToPlayer: 1,
+      // Both the Helmet and the Tether kept their figure.
+      total: 8,
+      roll: 2,
+      timebombTarget: DuelSide.Quarry,
+      timebombToQuarry: 0,
+      blastGuardSpent: false,
+      buffAccrual: null,
+      firedBuffIds: [],
+    }
+    const beats = resolutionBeatsFor(resolution, [], before)
+    expect(beats).toHaveLength(1)
+    expect(beats[0]!.kind).toBe(BeatKind.Hurt)
+    expect(beats[0]!.label).toBe('Hurt — −1 health, 0 pot lost')
+  })
+
+  it('DLR-161 — a hurt trick where a gold Helmet grows the total past the pre-trick pot clamps to 0, not negative', () => {
+    const before: StreakState = { total: 8, roll: 2 }
+    const resolution: TrickResolution = {
+      outcome: TrickOutcome.CleanLoss,
+      trickDamage: null,
+      cashOut: 0,
+      damageToPlayer: 1,
+      // A gold Skull Helmet adds its +1 to `total` on top of the Tether keeping `roll` alive —
+      // both figures survive AND grow: pre-trick pot 8 x 2 = 16, post-trick pot 9 x 2 = 18, a raw
+      // difference of -2. The beat must clamp this to 0, never print a negative "pot lost".
+      total: 9,
+      roll: 2,
+      timebombTarget: DuelSide.Quarry,
+      timebombToQuarry: 0,
+      blastGuardSpent: false,
+      buffAccrual: null,
+      firedBuffIds: [],
+    }
+    const beats = resolutionBeatsFor(resolution, [], before)
+    expect(beats).toHaveLength(1)
+    expect(beats[0]!.kind).toBe(BeatKind.Hurt)
+    expect(beats[0]!.label).toBe('Hurt — −1 health, 0 pot lost')
+  })
+
   it('DLR-156 B2 — a REPLACED clean loss (DLR-90 AC5, a primed card the Quarry wins cleanly) produces exactly one beat, Absorbed, not Hurt — nothing was actually lost', () => {
     const before: StreakState = { total: 12, roll: 2 }
     const resolution: TrickResolution = {

@@ -119,7 +119,7 @@ export {
 export type { ShieldAbsorption } from './shield'
 export { SHIELD_HEARTS, NO_SHIELD_HEARTS, absorbWithShield, shieldHeartsForTier } from './shield'
 
-export type { BuffCostAxis } from './buffCosts'
+export type { BuffCostAxis, BuffMintedAxis } from './buffCosts'
 export {
   AP_COST_MIN,
   AP_COST_MAX,
@@ -130,7 +130,18 @@ export {
   apCostOf,
   isConditionFamily,
   isConsumableKind,
+  narrowToMintedAxis,
+  isProtectiveAxis,
 } from './buffCosts'
+
+export type { StreakProtection, BuffProtectiveKind } from './buffProtection'
+export {
+  NO_STREAK_PROTECTION,
+  isProtectiveKind,
+  protectionCoversCleanLoss,
+  conditionIsWidened,
+  streakProtectionFor,
+} from './buffProtection'
 
 export type { BuffBonusAccrual, BuffCarry, TrickBuffBonus } from './buffAccrual'
 export {

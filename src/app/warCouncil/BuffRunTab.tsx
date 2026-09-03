@@ -1,24 +1,10 @@
-import { BuffTargetSuit } from '../../hunt'
 import { BuffRunKind } from './buffGalleryModel'
+import { RUN_LABEL, RUN_SUIT } from './buffRunLabels'
 import { SuitMark } from './SuitMark'
 
 interface BuffRunTabProps {
   readonly kind: BuffRunKind
   readonly held: number
-}
-
-const RUN_LABEL: Readonly<Record<BuffRunKind, string>> = {
-  [BuffRunKind.Bells]: 'Bells',
-  [BuffRunKind.Keys]: 'Keys',
-  [BuffRunKind.Moons]: 'Moons',
-  [BuffRunKind.Suitless]: 'No suit',
-  [BuffRunKind.Press]: 'Press',
-}
-
-const RUN_SUIT: Readonly<Partial<Record<BuffRunKind, BuffTargetSuit>>> = {
-  [BuffRunKind.Bells]: BuffTargetSuit.Bells,
-  [BuffRunKind.Keys]: BuffTargetSuit.Keys,
-  [BuffRunKind.Moons]: BuffTargetSuit.Moons,
 }
 
 const RUN_CLASS: Readonly<Record<BuffRunKind, string>> = {

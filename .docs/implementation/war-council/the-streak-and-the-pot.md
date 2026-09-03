@@ -21,10 +21,19 @@ pot          = total × roll
 `total` accumulates **damage** and `roll` counts the **tricks** it is multiplied by, so the pair no
 longer counts the same thing twice. `BankState` became `StreakState`, `cashValue` became `potValue`,
 `bank.ts` became `streak.ts`, and `voluntaryCashOut.ts` was deleted with its module — `applyPot` and
-`incomingFromPot` are what survived of it, and they live here.
+`incomingFromPot` are what survived of it.
+
+**Since DLR-161 those four pot symbols live next door, in `pot.ts`.** `streak.ts` stood at 390 lines
+and the protection work would have pushed it past this project's blocking 400-line budget, so
+`potValue`, `applyPot`, `incomingFromPot` and `PotApplication` — what a streak is worth when *cashed*,
+a separable concept from what one trick does to it — moved out verbatim, docblocks included, and are
+re-exported from `src/warCouncil/index.ts`. Of the 21 files that reference them, 19 import through
+that barrel and did not change; the two that import from `../streak` directly are spec files.
+`streak.ts` is 367 lines after the move.
 
 Nothing here imports React or touches the DOM; it imports `DAMAGE_PER_HIT`, `BASE_DAMAGE`,
-`DuelSide`, `IncomingDamage`, `resolveTrickBuffs` and `trickBonusFor` from `src/hunt/`. **It reads no
+`DuelSide`, `IncomingDamage`, `resolveTrickBuffs`, `trickBonusFor` and — since DLR-161 —
+`streakProtectionFor` from `src/hunt/`. **It reads no
 card at all** — PT-002 removed the last one, and with it the `TrickCard` import.
 
 ## The four outcomes — `trickOutcomeFor` and `isTaken`
@@ -134,10 +143,15 @@ them the codebase's only division in this file. That is the change that makes th
 real bet: losing a nine-trick streak now costs everything rather than a third, and it is expected to
 feel harsh.
 
-DLR-122's Swan ladder is the one exception and is unchanged in shape: on a **clean loss** only, a
-silver Swan spares the `roll` and a gold Swan spares `total` as well. Gold implies silver, folded in
-here rather than trusted from the caller, so "the total survives but the streak that valued it does
-not" is unexpressible.
+DLR-122's Swan ladder is one exception, and its rule is unchanged: on a **clean loss** only, a silver
+Swan spares the `roll` and a gold Swan spares `total` as well. Gold implies silver, folded in here
+rather than trusted from the caller.
+
+**DLR-161 added a second exception, and de-nested the guard to make room for it.** A Skull Helmet
+spares the `total` and a Skull Tether spares the `roll` through a trick that hurt the player — an
+eaten skull at bronze, either hurt outcome at silver and gold. See
+[Skull Helmet and Skull Tether](../hunt/protective-buffs.md) for the condition and the derivation;
+the reset block itself is below.
 
 ### There is no end-of-hand cash-out any more (DLR-156 AC8)
 
@@ -153,7 +167,7 @@ It is kept on the shape, and kept at `0`, because `incomingFrom` still sums it i
 side. Only the apply choice pays the Quarry now, and it pays through `applyPot`, never through a
 resolution.
 
-## The pot, and the one cash-out left — `potValue` and `applyPot`
+## The pot, and the one cash-out left — `potValue` and `applyPot` (in `pot.ts` since DLR-161)
 
 ```ts
 potValue(total, roll): number            // the plain product; replaces `cashValue`
@@ -193,12 +207,21 @@ const timebombResets = trick.timebombToPlayer > 0 && !trick.blastGuarded  // the
 // Owed whether or not the streak resets: a Guard buys back the streak, never the health.
 const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer
 
+const protection = streakProtectionFor(fired)   // DLR-161, derived from THIS trick's fired buffs
+
 if (trickHit || timebombResets) {
-  if (!swanKeepsBank) { total = 0; if (!swanKeepsMultiplier) roll = 0 }
+  const keepsTotal = swanKeepsBank || protection.keepsTotal
+  const keepsRoll  = swanKeepsBank || swanKeepsMultiplier || protection.keepsRoll
+
+  if (!keepsTotal) total = 0
+  else if (protection.keepsTotal) total += protection.totalBonus   // gold's +1, on the saved branch only
+
+  if (!keepsRoll) roll = 0
+  else if (protection.keepsRoll) roll += protection.rollBonus
 }
 ```
 
-Three things about that shape are the decisions, each chosen against a plausible alternative:
+Five things about that shape are the decisions, each chosen against a plausible alternative:
 
 - **Timebomb reaches the same branch rather than a branch of its own.** That is what makes "Timebomb
   behaves like any other damage" true _in code_ instead of asserted in a comment.
@@ -210,6 +233,18 @@ Three things about that shape are the decisions, each chosen against a plausible
   that trick still _cashed_ the larger figure; under DLR-156 it cashes nothing at all, because a hurt
   trick pays the Quarry nothing. The streak visibly climbing and then dying is what makes the
   Timebomb legible as the cause.
+- **The guard is two independent booleans, not one nested pair** (DLR-161). The old nesting encoded
+  gold-implies-silver as *structure*, and structure cannot express "the roll survives but the total
+  does not" — which is exactly what a Skull Tether does. Each figure now has its own guard, an OR of
+  the Swan's rungs and the protection. The rewrite is behaviour-identical for every Swan case and a
+  regression spec pins each one; it is also the highest-risk edit in that ticket, because a
+  transposed `keepsTotal`/`keepsRoll` type-checks cleanly and produces plausible numbers.
+- **The protection is derived here rather than handed in on `TrickFacts`** (DLR-161). The Swan's two
+  booleans come from a run permanent the caller genuinely knows about; the protection depends on
+  *which buffs fired on this very trick*, which is decided inside this function. Passing it in would
+  force the caller to evaluate the same conditions a second time. `TrickFacts` gained no field, so
+  none of its construction sites moved. Gold's `+1` is added **only** on the branch the protection
+  saved: a Swan that already spared a figure does not also pay the card's bonus.
 
 `TrickResolution` carries **`timebombToQuarry`** so `incomingFrom` can sum it, and
 **`blastGuardSpent`** so the reducer can flip the run's flag rather than re-deriving "did the Guard
@@ -318,3 +353,9 @@ null`; an eaten skull being identical to a clean loss; a dodge banking; `finalTr
 trick leaving both figures standing and paying nothing; and `baseDamageBonus` landing inside the
 base. `streak.integration.test.ts` buys two Whetstones through the real `buyFromShop` and proves a
 hit wipes the boosted total exactly as it would the bare one.
+
+`streak.buffs.test.ts` gained DLR-161's group: each protected figure surviving alone, both surviving
+together, both golds adding their `+1`, two gold Helmets adding 1 rather than 2, a silver Helmet
+protecting a clean loss where a bronze one does not, neither card touching a clean win or a dodge,
+and `DAMAGE_PER_HIT` landing on every one of those cases. The three Swan rungs sit immediately above
+it, unchanged, which is what pins the de-nesting as behaviour-preserving.

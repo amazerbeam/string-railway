@@ -7,6 +7,7 @@ import {
   BuffTier,
   buffTargetRankOf,
   buffTargetSuitOf,
+  conditionIsWidened,
   DuelSide,
   TIMEBOMB_DAMAGE,
   type Buff,
@@ -39,6 +40,9 @@ export const BUFF_FAMILY_WORD: Readonly<Record<BuffKind, string>> = {
   [BuffKind.Foresight]: 'Foresight',
   [BuffKind.Spyglass]: 'Spyglass',
   [BuffKind.Unassigned]: 'Blank card',
+  // DLR-161 — PLACEHOLDER copy, as this table's docblock already says of every non-transcribed row.
+  [BuffKind.SkullHelmet]: 'Skull Helmet',
+  [BuffKind.SkullTether]: 'Skull Tether',
 }
 
 /** The condition half, in sentence form. The eleven family rows are TRANSCRIBED from the same
@@ -66,6 +70,18 @@ export const BUFF_CONDITION_SENTENCE: Readonly<Record<BuffKind, string>> = {
   [BuffKind.Foresight]: 'look at the draw pile',
   [BuffKind.Spyglass]: "look at the Quarry's hand",
   [BuffKind.Unassigned]: 'nothing yet',
+  // DLR-161 — the BRONZE reading for both. PLACEHOLDER copy.
+  [BuffKind.SkullHelmet]: 'eat a skull with this card',
+  [BuffKind.SkullTether]: 'eat a skull with this card',
+}
+
+/** DLR-161 AC5 — silver and gold print a WIDER sentence than bronze, because they fire on a clean
+ *  loss as well as an eaten skull. A `Partial` beside the total table above, selected by
+ *  `conditionIsWidened`, so the tier rule is READ from `src/hunt/buffProtection.ts` and never
+ *  restated here — the drift this codebase repeatedly designs against. PLACEHOLDER copy. */
+export const BUFF_WIDENED_CONDITION_SENTENCE: Partial<Readonly<Record<BuffKind, string>>> = {
+  [BuffKind.SkullHelmet]: 'eat a skull, or lose a trick',
+  [BuffKind.SkullTether]: 'eat a skull, or lose a trick',
 }
 
 /** The reward suffix half. The four priced axes are TRANSCRIBED from the same document's
@@ -83,6 +99,7 @@ export const BUFF_REWARD_SUFFIX: Readonly<Record<BuffRewardAxis, string>> = {
   [BuffRewardAxis.DiscardCharges]: 'Reshape',
   [BuffRewardAxis.DamageAbsorbed]: 'Blast Guard',
   [BuffRewardAxis.None]: 'No reward',
+  [BuffRewardAxis.Protection]: 'Guard',
 }
 
 const SUIT_WORD: Readonly<Record<BuffTargetSuit, string>> = {
@@ -111,7 +128,13 @@ export function buffName(buff: Buff): string {
 export function buffConditionSentence(buff: Buff): string {
   const suit = buffTargetSuitOf(buff)
   const rank = buffTargetRankOf(buff)
-  return BUFF_CONDITION_SENTENCE[buff.kind]
+  // The `??` is safe rather than silent: `conditionIsWidened` is true only for the two kinds
+  // `BUFF_WIDENED_CONDITION_SENTENCE` names, so the fallback is unreachable and exists only to
+  // satisfy the index signature.
+  const sentence = conditionIsWidened(buff)
+    ? (BUFF_WIDENED_CONDITION_SENTENCE[buff.kind] ?? BUFF_CONDITION_SENTENCE[buff.kind])
+    : BUFF_CONDITION_SENTENCE[buff.kind]
+  return sentence
     .replace('{suit}', suit !== null ? SUIT_WORD[suit] : 'any suit')
     .replace('{rank}', rank !== null ? String(rank) : 'named rank')
 }
@@ -141,6 +164,13 @@ export function buffRewardPhrase(buff: Buff): string {
       return `+${v} ${v === 1 ? 'swap' : 'swaps'}`
     case BuffRewardAxis.None:
       return 'nothing'
+    // DLR-161 — one axis, two families, so the FIGURE saved comes from the kind. The value is
+    // AC6's gold bonus and is 0 below gold, which is why the phrase has two shapes rather than
+    // always printing "+0".
+    case BuffRewardAxis.Protection: {
+      const figure = buff.kind === BuffKind.SkullTether ? 'roll' : 'total'
+      return v > 0 ? `your ${figure} survives, +${v}` : `your ${figure} survives`
+    }
   }
 }
 
@@ -212,6 +242,11 @@ export const BUFF_EVENT_WORD: Partial<Readonly<Record<BuffKind, string>>> = {
   [BuffKind.Taker]: 'TAKE',
   [BuffKind.Feeder]: 'MISS',
   [BuffKind.Sidestep]: 'DODGE',
+  // DLR-161 — the mechanical word for the branch these fire on. Bronze fires on an eaten skull
+  // and silver/gold on any hurt trick; `HURT` covers both without claiming the wider one at
+  // bronze, and the card's own condition sentence states the difference. PLACEHOLDER copy.
+  [BuffKind.SkullHelmet]: 'HURT',
+  [BuffKind.SkullTether]: 'HURT',
 }
 
 /** The cadence word a buff's card states — never free text (AC9). */

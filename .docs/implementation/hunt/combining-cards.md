@@ -124,8 +124,9 @@ precisely how the writer and the reader would silently drift apart.
   nothing counts combines per visit.
 - **Nothing splits a card back down a tier.** The transition is one-way.
 - **Nothing combines across templates, suits, tiers or reward axes** — the key is the whole rule.
-- **The mintable pool is untouched at 16 templates.** No cut condition family and no cut reward axis
-  was restored or widened by this work.
+- **The mintable pool is untouched by this ticket, at 16 templates.** No cut condition family and no
+  cut reward axis was restored or widened by this work. (DLR-161 later took it to **18** with two new
+  families of its own; combining needed no edit for them, because the key is `(templateId, tier)`.)
 - **Nothing is persisted.** `RunState.buffs` and `nextBuffId` are never written to storage, so the
   produced card survives whatever the run survives by construction — no `SAVE_SCHEMA_VERSION` bump
   and no new storage access exists in this contract.

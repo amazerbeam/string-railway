@@ -32,6 +32,10 @@ afterEach(() => vi.useRealTimers())
 // DLR-80's full-hand, six-trick end-to-end pass — carved into its own file for the same reason
 // DLR-71 first split it off `WarCouncilRound.test.tsx`: the driving-loop apparatus for a full
 // hand pushes that file back over the 400-line budget if it lives beside every other spec.
+//
+// DLR-160 QA fix — the Quarry's at-risk-preview describe block that used to live here (DLR-86)
+// moved out to its own sibling, `WarCouncilRound.quarryAtRiskPreview.test.tsx`, once this file's
+// own Task 3 growth pushed it to 409 lines. Same precedent, same reason.
 
 // A deterministic RNG — never `Math.random()` in anything that must be reproducible.
 function lcg(seed: number): () => number {
@@ -108,8 +112,9 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
       // The dismissal can itself end the encounter, in which case the felt returns still
       // holding THIS SAME reveal (`roundReducer.ts`'s Task 15 chaining) — the outer loop's own
       // `stillHeld` branch is what reports `onComplete` for that case, so meters are read only
-      // once the felt is genuinely back and interactive.
-      if (screen.queryByRole('button', { name: /tap the table to carry on/i })) return
+      // once the felt is genuinely back and interactive. DLR-160 AC1 — the control is a real
+      // button named "Carry on" now, not a hint advertising a tap on the table.
+      if (screen.queryByRole('button', { name: /^carry on$/i })) return
       const after = {
         player: healthMeter('Your health').getAttribute('aria-valuenow'),
         quarry: healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'),
@@ -134,7 +139,8 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
       // DLR-156 — an Apply that killed the Quarry mid-hand leaves the reveal held; this SAME tap
       // reports `onComplete` directly (`WarCouncilTable.tsx`'s own `handleCarryOn`), so the loop
       // stops here rather than continuing to drive a component whose hand is already reported.
-      const stillHeld = screen.queryByRole('button', { name: /tap the table to carry on/i })
+      // DLR-160 AC1 — a real button named "Carry on" now.
+      const stillHeld = screen.queryByRole('button', { name: /^carry on$/i })
       if (stillHeld) {
         fireEvent.click(stillHeld)
         break
@@ -258,6 +264,10 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     fireEvent.click(bells2)
     advanceTrickDwell()
     withResolveHold(() => fireEvent.click(screen.getByRole('button', { name: /onward/i })))
+    // DLR-160 AC1b — `RollOver` no longer lays the Quarry's card in the same dispatch that closes
+    // the panel (`roundReducer.ts`), so the between-tricks arming window is genuinely open here.
+    // The felt's own "Let them lead" control is what commits it — a separate, explicit tap.
+    fireEvent.click(screen.getByRole('button', { name: /let them lead/i }))
 
     // Trick B — the player follows the Quarry's led 10 with the Moons 11 and takes it cleanly, so
     // `damageToPlayer` is zero for this event. DLR-156 AC5 — pressing Apply Damage is what pays
@@ -270,10 +280,11 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     withResolveHold(() => fireEvent.click(screen.getByRole('button', { name: /apply damage/i })))
 
     // Applying the pot killed the Quarry — the deciding trick's own reveal survives on the felt
-    // (`roundReducer.ts`'s Task 15 chaining preserves it exactly then), and its "tap the table to
-    // carry on" is what reports `onComplete` (encounterOver widens this same control's click
-    // target, so the tap that clears the reveal also reports upward).
-    const carryOn = screen.getByRole('button', { name: /tap the table to carry on/i })
+    // (`roundReducer.ts`'s Task 15 chaining preserves it exactly then), and its "Carry on" button
+    // is what reports `onComplete` (encounterOver widens this same control's click target, so the
+    // tap that clears the reveal also reports upward). DLR-160 AC1 — a real button now, not a
+    // hint advertising a tap on the table.
+    const carryOn = screen.getByRole('button', { name: /^carry on$/i })
     fireEvent.click(carryOn)
 
     expect(onComplete).toHaveBeenCalledTimes(1)
@@ -293,110 +304,5 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     const playerHandAfterTrickA = round.hands[PlayerSide.Player].length - 1
     const handSizeBeforeTrickB = Math.max(playerHandAfterTrickA, PLAYER_HAND_FLOOR)
     expect(unplayedAtResolve).toBe(handSizeBeforeTrickB - 1)
-  })
-})
-
-describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
-  function renderRound() {
-    return render(
-      <WarCouncilRound
-        initialState={dealRound(PlayerSide.Cpu, lcg(2026))}
-        hunt={huntFixture}
-        encounter={encounterFixture}
-        maxHealth={maxHealthFixture}
-        runLabel={runLabelFixture}
-        quarryLabel={quarryLabelFixture}
-        coins={coinsFixture}
-        blastGuardHeld={blastGuardHeldFixture}
-        baseDamageBonus={baseDamageBonusFixture}
-        discardsRemaining={discardsRemainingFixture}
-        buffs={[]}
-        onComplete={vi.fn()}
-      />,
-    )
-  }
-
-  function quarryHearts(container: HTMLElement, state: string) {
-    return container.querySelectorAll(`.wc-hp[data-side="quarry"] [data-state="${state}"]`)
-  }
-
-  /** `BankMeter`'s own accessible name carries `Roll N` (DLR-156 Task 15 Step 7 retitled it from
-   *  `Multiplier N`) — read it rather than restating the arithmetic here. */
-  function currentRoll(container: HTMLElement): number {
-    const label = container.querySelector('.wc-bank-figures')?.getAttribute('aria-label') ?? ''
-    const match = label.match(/Roll (\d+)/)
-    return match ? Number(match[1]) : 0
-  }
-
-  /** Drives real play — tap a legal card twice to take a trick, roll over its resolution screen
-   *  (never Apply, which would deal the pot and zero the very streak this loop exists to build),
-   *  let the Quarry's own lead through — until the roll reads above zero. Fails loudly, rather
-   *  than looping, if the hand ends first or a bounded attempt count is exhausted. */
-  function playUntilStreak(container: HTMLElement) {
-    let guard = 0
-    while (currentRoll(container) === 0) {
-      guard += 1
-      if (guard > 200) {
-        throw new Error('roll never rose above zero within the attempt budget')
-      }
-      if (screen.queryByRole('heading', { name: /the hand is over|the hunt is over/i })) {
-        throw new Error('the hand ended before the streak ever banked a roll')
-      }
-      const fault = screen.queryByRole('alert')
-      if (fault) {
-        throw new Error(`the engine rejected the Quarry's own move: ${fault.textContent}`)
-      }
-      const prompt = screen.queryByRole('group', { name: 'Choose what the card does' })
-      if (prompt) {
-        fireEvent.click(within(prompt).getAllByRole('button')[0])
-        advanceTrickDwell()
-        continue
-      }
-      const rollOver = screen.queryByRole('button', { name: /roll over/i })
-      if (rollOver) {
-        withResolveHold(() => fireEvent.click(rollOver))
-        continue
-      }
-      const onward = screen.queryByRole('button', { name: /onward/i })
-      if (onward) {
-        withResolveHold(() => fireEvent.click(onward))
-        continue
-      }
-      const letThemLead = screen.queryByRole('button', { name: /let them lead/i })
-      if (letThemLead) {
-        fireEvent.click(letThemLead)
-        continue
-      }
-      const hand = screen.getByRole('group', { name: /hand/i })
-      const legalCard = within(hand)
-        .getAllByRole('button')
-        .find((button) => !(button as HTMLButtonElement).disabled)
-      if (!legalCard) {
-        throw new Error('no legal card found in hand, and no other branch applied')
-      }
-      fireEvent.click(legalCard)
-      fireEvent.click(legalCard)
-      // DLR-156 play-test fix 1 — a commit here may have resolved a trick, and the resolution
-      // screen's own Roll over/Onward controls (checked at the top of the next pass) do not exist
-      // until `--wc-trick-dwell` has elapsed.
-      advanceTrickDwell()
-    }
-  }
-
-  it('AC3/AC5 — the Quarry’s at-risk hearts track the live streak and clear when it resets', () => {
-    const { container } = renderRound()
-    // Nothing banked at the deal: no preview at all.
-    expect(quarryHearts(container, 'atRisk')).toHaveLength(0)
-
-    // Drive real play until the reducer has banked a streak, then assert the preview equals
-    // total × roll clamped by the Quarry's own row length — derived from the rendered
-    // meter, never a restated literal, so a config retune cannot make this test lie.
-    playUntilStreak(container)
-    const meter = screen.getByRole('meter', { name: quarryLabelFixture })
-    const atRisk = quarryHearts(container, 'atRisk').length
-    expect(atRisk).toBeGreaterThan(0)
-    expect(meter.getAttribute('aria-valuetext')).toContain(`${atRisk} at risk.`)
-    // The rendered figure never exceeds what the Quarry actually has left.
-    expect(atRisk).toBeLessThanOrEqual(Number(meter.getAttribute('aria-valuenow')))
   })
 })

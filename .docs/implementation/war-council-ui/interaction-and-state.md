@@ -56,7 +56,7 @@ It deliberately does **not** key on "the current trick is empty", which would er
 the instant it was made. See
 [the action bar and the buff loadout](action-bar-and-loadout.md#the-per-trick-window-fires-when-a-trick-resolves-not-when-one-starts).
 
-What it buys is a place to state a rule of the form *"after every transition, observe X"* exactly
+What it buys is a place to state a rule of the form _"after every transition, observe X"_ exactly
 once. DLR-95 needed the player's hand size **at the instant the Quarry's bar empties**, to price the
 quick-kill payout. An encounter can currently become resolved in three different places —
 `applyPotAction` (`handleTapApplyDamage` until DLR-156), and `commit`'s two `applyResolution` calls — so writing the capture at each
@@ -80,7 +80,7 @@ Three properties are load-bearing:
 - **The null check IS the "already captured?" test**, which is why no `before` state is needed and
   why this stays a pure function of one argument. The reducer as a whole therefore stays pure, and
   StrictMode's development double-dispatch recomputes an identical value rather than double-writing.
-- **It is deliberately not gated on the winner.** A hand that ends with the *player* down freezes
+- **It is deliberately not gated on the winner.** A hand that ends with the _player_ down freezes
   the figure too. `recordEncounter` decides no payout is owed, because deciding that here would be a
   second reading of a rule `src/hunt/` already owns.
 - **The figure is frozen, not re-derived at `onComplete` time.** Reading the live hand length when
@@ -94,7 +94,7 @@ Three properties are load-bearing:
 > so `hands[Player].length` never falls below four during a hand and the frozen figure inflates: a
 > kill on the fifth trick of a fight's first hand goes from paying 2 coins to paying 8. Every
 > property above still holds — the capture is still once, still ungated on the winner, still frozen —
-> but the *quantity* it captures has stopped being a proxy for how fast the fight ended. The rule it
+> but the _quantity_ it captures has stopped being a proxy for how fast the fight ended. The rule it
 > feeds is `src/hunt/`'s, so changing it is that module's decision, not this reducer's. See
 > [../hunt/quick-kill-payout.md](../hunt/quick-kill-payout.md), and `the-hunt.md`'s Known tensions.
 
@@ -113,11 +113,11 @@ once per mount) or a handler fired by a tap, a keypress, or a callback from one 
 controls (`AbilityPrompt`'s `onChoose`, `RoundOverPanel`'s `onFinish`). Both the initializer and the
 reducer are pure functions of their arguments, so React StrictMode's development double-invocation
 simply recomputes an identical value rather than doing anything twice for real. Since DLR-53 the
-initializer is a *pure restructuring* of `initialState` with no engine call at all — it no longer
+initializer is a _pure restructuring_ of `initialState` with no engine call at all — it no longer
 plays the opponent's opening lead, which makes it trivially rather than arguably idempotent. See
 [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) for why that lead is now held.
 
-DLR-53 added `previewQuarryIntent` and `quarryIntent` calls *during render* — **both deleted from
+DLR-53 added `previewQuarryIntent` and `quarryIntent` calls _during render_ — **both deleted from
 this module by DLR-148**, whose own render-time call is `trickConsequence(trickConsequenceFacts(ui))`
 in `feltRailProps`, pure by the same argument — which is safe for the
 same reason: both are documented pure and neither mutates the state handed to it, so a StrictMode
@@ -163,7 +163,7 @@ A held trick disables every hand card (`interactive` is `false`), and `TrickWell
 felt `<section>` originally carried an `onClick`/`onKeyDown` pair but no `tabIndex`, so it could
 never receive focus and its key handler was dead code — a keyboard-only or switch-access player was
 stuck at the end of every trick. The fix is a real, focusable control inside `TrickWell` itself,
-reading "Tap the table to carry on". It shipped first as a `<span role="button" tabIndex={0}>` with a
+which read "Tap the table to carry on" until DLR-160 deleted the gesture it named. It shipped first as a `<span role="button" tabIndex={0}>` with a
 manual `onKeyDown`, on the reasoning that a native `<button>` paired with a manual key handler risks
 a double dispatch; a second review round tested that empirically and found it is only real _if_ you
 attach the manual handler, which nothing requires. `RoundOverPanel`'s semantically identical "Finish
@@ -177,9 +177,57 @@ hint text — neither value is a new visual decision, and `.wc-table-hint`'s own
 font-size/weight/letter-spacing/colour are untouched because the reset never sets the `font`
 shorthand.
 
-The surrounding felt keeps its own `onClick` too, for a pointer tap anywhere on the table. Both paths
-call the same `handleCarryOn`, and dispatching `CarryOn` a second time is a safe no-op in the reducer
-(see below), so bubbling between the two cannot double-fire.
+The surrounding felt kept its own `onClick` too, for a pointer tap anywhere on the table — **until
+DLR-160 deleted it; see the next section, which also retires the "Tap the table" copy above.**
+
+### DLR-160 — advancing the trick is an explicit press, and only an explicit press
+
+The play session this ticket came from reported the felt as unplayable for one reason: **the trick
+kept moving on without the player.** Two independent defects produced that, and both were removed
+rather than mitigated.
+
+1. **The felt's region click.** `<section className="wc-table">` carried an `onClick` calling
+   `handleCarryOn` whenever a trick was held, the Quarry was about to lead, or the encounter was
+   over — so **any** click landing in the play area committed the Quarry's lead. It is gone, along
+   with the `wc-is-waiting` class and the pulsing hint style that advertised it. Nothing was lost:
+   `TrickWell` has rendered a real, keyboard-reachable button for both states since the review round
+   documented above, and that button is now the only way to advance.
+2. **The two resolution-panel exits.** `ApplyPot` and `RollOver` both tail-called `handleCarryOn`,
+   which calls `advanceQuarryLead` whenever the Quarry is next to lead. Dismissing the panel
+   therefore laid the Quarry's card **in the same dispatch**, so the between-tricks window closed
+   before the player ever saw the felt again and no buff could be armed for the coming trick. Both
+   actions now close the panel and stop — see
+   [the resolution screen](the-resolution-screen.md#dlr-160-closing-the-panel-no-longer-lays-the-quarrys-card)
+   for the `clearResolvedTrick` carve-out that keeps a mid-hand kill reachable.
+
+**No game rule moved.** `../../game_rules/the-hunt.md` §4 already grants the between-tricks window;
+the code was closing it early.
+
+Both of `TrickWell`'s controls stopped being hint text dressed as a button (`wc-table-hint
+wc-is-carry-on`) and became real buttons with a ≥44px hit area (`.wc-carry-btn`, mirroring
+`run.css`'s `.run-btn` chrome), and their copy no longer names a gesture that does nothing: **"Carry
+on"** on a held trick, **"Let them lead"** on a pending Quarry lead. `handleHintClick`'s
+`event.stopPropagation()` survives the deletion of the handler it was guarding against — harmless,
+and correct if any ancestor ever gains one again.
+
+### DLR-160 — a Fox or a Woodcutter can be backed out of before it commits
+
+Playing an ability card opens `AbilityPrompt` **before the card leaves the hand**: the reducer arms
+it, opens the prompt, and only `ChooseAbility` actually commits. `CancelSelection` — which clears
+`armed` and `prompt` together — has always undone that cleanly, and `Escape` has always dispatched
+it. **What was missing was a control anyone could see**, so a player who opened the Fox prompt with
+the pointer had no visible way out and reasonably read the prompt as a commitment.
+
+Both branches now render a cancel button, worded from the card's own name — _"← Don't play the
+Fox"_ — and the hint line above it names all three exits, stating the distinction that is the whole
+of the criterion: **"Keep the decree" still plays the Fox; cancel does not.** The Woodcutter branch's
+hint gained the same clause ("or cancel to draw nothing").
+
+**Where the button sits is load-bearing.** `useRovingTabIndex.focusIndex` reads
+`groupRef.current.querySelectorAll('button')` over the whole prompt group **positionally**, so a
+button anywhere earlier in DOM order would shift every arrow-key index after it. The cancel control
+is therefore rendered last, outside `.wc-prompt-row`: no arrow-key index ever reaches it, and `Tab`
+reaches it in ordinary document order as a distinct stop.
 
 ### The deciding trick is held exactly like every other
 
@@ -191,7 +239,7 @@ cards won the round. The felt now branches on `resolvedTrick` before `roundCompl
 trick's cards and winner are always shown first; the round-over panel renders only once
 `resolvedTrick` is `null` again.
 
-**One case deliberately breaks that order: a resolved *encounter*.** `encounterOver` is checked ahead
+**One case deliberately breaks that order: a resolved _encounter_.** `encounterOver` is checked ahead
 of both, because DLR-80's cash-out can empty a bar on any trick — so the trick that finishes the
 encounter never gets its own reveal beat, and the terminal panel is what the player sees next. That
 is the one place a trick's cards are traded away for stating the outcome immediately.
@@ -203,7 +251,7 @@ order:
 1. **`encounterOver` → `onComplete`, unconditionally.** Checked first because once a bar has emptied
    the felt shows the terminal panel rather than a held reveal, so there is nothing left to clear; a
    `CarryOn` dispatch here would only clear something nothing renders.
-2. **Something held *or* a Quarry lead pending → dispatch `CarryOn`**, clearing and/or committing,
+2. **Something held _or_ a Quarry lead pending → dispatch `CarryOn`**, clearing and/or committing,
    even when the round is already complete.
 3. **Otherwise, `roundComplete` → `onComplete`.**
 

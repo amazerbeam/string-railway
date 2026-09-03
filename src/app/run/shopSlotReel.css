@@ -120,6 +120,12 @@
   color: var(--wc-timebomb-edge);
 }
 
+/* DLR-161 — Skull Helmet and Skull Tether share one colour; separated by shape, not tint. */
+.shop-reel-glyph[data-glyph='skullHelmet'],
+.shop-reel-glyph[data-glyph='skullTether'] {
+  color: var(--wc-guard);
+}
+
 .shop-reel-glyph-mark {
   width: 100%;
   height: 100%;
@@ -153,6 +159,55 @@
     #ffffff00 74%,
     #0000002e 100%
   );
+}
+
+/* ---- AC10: the tier badge -------------------------------------------------------------- */
+
+/* Wraps one window plus its badge, so the badge can be positioned against the window it names
+   without SlotReel needing to know about tiers at all. */
+.shop-reel-slot {
+  position: relative;
+  flex: 0 1 var(--reel-window-w);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.2rem, 0.7vmin, 0.35rem);
+}
+
+/* The tier word plus a metal swatch — never a swatch alone (`game-ux`'s no-colour-alone floor), so
+   a greyscale screenshot still names the tier. Shares the same `--wc-m-*` metal tokens the buff
+   card's own tier frame reads (`warCouncilBuffCard.css`), rather than inventing a second palette
+   for the same three tiers. */
+.shop-reel-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 3px;
+  background: #0f1315;
+  color: var(--wc-chalk);
+  font-family: var(--wc-serif);
+  font-size: clamp(0.5rem, 1.2vmin, 0.62rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.shop-reel-tier-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.shop-reel-tier-dot-bronze {
+  background: var(--wc-m-bronze);
+}
+.shop-reel-tier-dot-silver {
+  background: var(--wc-m-silver);
+}
+.shop-reel-tier-dot-gold {
+  background: var(--wc-m-gold);
 }
 
 /* ---- Reduced motion -------------------------------------------------------------------- */

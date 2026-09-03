@@ -17,7 +17,12 @@ const reel = BUFF_TEMPLATES.slice(0, REEL_POOL_SIZE)
 
 function viewFor(symbols: readonly (typeof reel)[number][]): SlotPullView {
   const pull = resolvePull(symbols)
-  return { symbols: pull.symbols, outcome: pull.outcome, awards: mintPullAwards(pull, 1) }
+  return {
+    symbols: pull.symbols,
+    outcome: pull.outcome,
+    awards: mintPullAwards(pull, 1),
+    rawAwards: pull.awards,
+  }
 }
 
 const twoMatch = viewFor([reel[0], reel[0], reel[1]])

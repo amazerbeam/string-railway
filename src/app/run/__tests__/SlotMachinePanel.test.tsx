@@ -37,6 +37,7 @@ const twoMatchView: SlotPullView = {
   symbols: twoMatchPull.symbols,
   outcome: twoMatchPull.outcome,
   awards: mintPullAwards(twoMatchPull, 1),
+  rawAwards: twoMatchPull.awards,
 }
 
 const threeMatchPull = resolvePull([reel[2], reel[2], reel[2]])
@@ -44,6 +45,7 @@ const threeMatchView: SlotPullView = {
   symbols: threeMatchPull.symbols,
   outcome: threeMatchPull.outcome,
   awards: mintPullAwards(threeMatchPull, 1),
+  rawAwards: threeMatchPull.awards,
 }
 
 const baseProps = {
@@ -168,11 +170,31 @@ describe('SlotMachinePanel', () => {
     const group = screen.getByRole('group', { name: SLOT_RESULT_GROUP_LABEL })
     expect(group.textContent).toContain(SLOT_OUTCOME_LABEL[twoMatchView.outcome])
     expect(twoMatchView.symbols).toHaveLength(3)
+    // Each award row's text ENDS WITH `buffLine(award)` rather than equalling it exactly — Task 20
+    // prefixes each row with a tier badge, so the row's sentence is unchanged but not the row's
+    // whole text content any more.
     const awardItems = screen
       .getAllByRole('listitem')
-      .filter((item) => twoMatchView.awards.some((award) => item.textContent === buffLine(award)))
+      .filter((item) =>
+        twoMatchView.awards.some((award) => item.textContent?.endsWith(buffLine(award))),
+      )
     expect(awardItems).toHaveLength(twoMatchView.awards.length)
     expect(twoMatchView.awards).toHaveLength(2)
+  })
+
+  it('AC10 — badges the two matched reel windows Silver and the odd one Bronze', () => {
+    render(<SlotMachinePanel {...baseProps} lastPull={twoMatchView} />)
+    const badges = document.querySelectorAll(
+      '.shop-cabinet-window > .shop-reel-slot > .shop-reel-tier',
+    )
+    expect(badges).toHaveLength(3)
+    const tiers = Array.from(badges).map((badge) => badge.getAttribute('data-tier'))
+    expect(tiers).toEqual(['silver', 'silver', 'bronze'])
+  })
+
+  it('AC10 — nothing is badged before a pull resolves', () => {
+    render(<SlotMachinePanel {...baseProps} />)
+    expect(document.querySelectorAll('.shop-reel-tier')).toHaveLength(0)
   })
 
   it('shows exactly one gold award row for a three-match pull, with no duplicate tier prefix', () => {
@@ -182,12 +204,12 @@ describe('SlotMachinePanel', () => {
     const expectedText = buffLine(award)
     const group = screen.getByRole('group', { name: SLOT_RESULT_GROUP_LABEL })
     expect(group.textContent).toContain(expectedText)
-    // `buffLine` now states the tier word itself — the award row's exact text must equal it, with
-    // no separate `SLOT_TIER_LABEL` prefix prepended in front (the duplication this test guards
-    // against, e.g. "Silver — Silver Bell-Taker (Momentum) — ...").
+    // `buffLine` states the tier word itself as part of the sentence — the award row's text ends
+    // with it, exactly once, with no separate duplicate tier prefix ahead of the sentence
+    // (the duplication this test used to guard against, e.g. "Silver — Silver Bell-Taker …").
     const awardItem = screen
       .getAllByRole('listitem')
-      .find((item) => item.textContent === expectedText)
+      .find((item) => item.textContent?.endsWith(expectedText))
     expect(awardItem).toBeDefined()
   })
 

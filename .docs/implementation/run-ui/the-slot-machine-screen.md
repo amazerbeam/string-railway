@@ -9,14 +9,14 @@ The engine is [../hunt/the-slot-machine.md](../hunt/the-slot-machine.md).
 **On 2026-09-01 it became an actual slot machine** — a cabinet with a marquee, three framed windows
 whose reels travel and stop one after another, a payline, and a lever you pull. Before that it was a
 radio group, a paragraph of odds, an eight-row text list and a `Pull` button; the developer's brief
-was *"the slot machine needs to be an actual slot machine, 2 seconds for the whole animation is
-fine"*, with a reference photograph of a classic cabinet. The anatomy came from that photograph; the
+was _"the slot machine needs to be an actual slot machine, 2 seconds for the whole animation is
+fine"_, with a reference photograph of a classic cabinet. The anatomy came from that photograph; the
 palette did not — it is the game's own brass and chamber-dark rather than casino red and yellow.
 
 Eight files now. `SlotMachinePanel.tsx` (renders), `useShopSlot.ts` (seeds, derives, commits),
 `slotLabels.ts` (every string), and five added by the cabinet: `SlotReel.tsx` (one window and its
 drum), `useSlotSpin.ts` (the animation clock), `slotSpinConfig.ts` (its timings), `slotSymbols.ts`
-(a template reduced to a reel face) and `SlotGlyph.tsx` (the three non-suit marks), plus
+(a template reduced to a reel face) and `SlotGlyph.tsx` (the five non-suit marks), plus
 `SlotStripChips.tsx` for the strip. `ShopPanel` mounts the panel and passes its props straight
 through without reading one.
 
@@ -69,7 +69,7 @@ onRun((live) => {
 `onRun` is typed as a functional updater and `App.tsx` passes `setRun` straight into it. The first
 implementation checked the refusal against the render's own closed-over `run` and committed the same
 way — which reads like the stale-closure guard `handleBuy` and `handleDrinkFlask` use but is not one,
-because both halves read the *same* closure. It was harmless only because everything downstream is a
+because both halves read the _same_ closure. It was harmless only because everything downstream is a
 pure function of `run` and the pull index, which is an accidental safety net rather than a structural
 one. The Defender caught it; the fix makes the check and the commit happen against whatever state
 React has live. `pullSlotMachine` throws a deliberate `RangeError` on a refused pull, and this is what
@@ -83,16 +83,16 @@ Top to bottom inside one `<section aria-label={SLOT_SECTION_LABEL}>`:
    nameplate**: a `<span class="shop-cabinet-name is-plate">`, no radiogroup, no radios, no tab stop.
    **At two or more it is the chooser again** — `role="radiogroup"` with the group label on the
    container, one `<button role="radio" aria-checked>` per machine, **roving tabindex** with the
-   selected control the lone `tabIndex={0}`, arrow keys moving *and* selecting, `Home`/`End` jumping
+   selected control the lone `tabIndex={0}`, arrow keys moving _and_ selecting, `Home`/`End` jumping
    to the ends. It does **not** reuse `useRovingTabIndex` from `src/app/warCouncil/`: that hook
-   implements the WAI-ARIA *tabs* pattern, where arrow keys move focus and activation is manual, and
+   implements the WAI-ARIA _tabs_ pattern, where arrow keys move focus and activation is manual, and
    a `radiogroup`'s correct behaviour is the opposite — arrowing selects immediately. Selection reads
    without colour alone (a lit plate, a brass edge, a marker glyph). The branch is on
    `machineIds.length`, so restoring a machine restores the control with no further edit, and
    `SlotMachinePanel.test.tsx` **keeps testing the keyboard model against an explicit two-machine
    roster** rather than letting it rot while nothing exercises it.
 2. **The case** — three `SlotReel` windows with the payline laid over them, the price plate beneath,
-   and the lever on the right shoulder. See *The cabinet* below.
+   and the lever on the right shoulder. See _The cabinet_ below.
 3. **The strip** — `SlotStripChips.tsx`, eight glyph chips rather than eight sentences.
 4. **The payout table** — `slotOddsRows()`, three rows best-first, plus `slotStripSummaryText()`.
 5. **The last pull** — a `role="group"` showing the outcome and one row per award at its tier.
@@ -185,12 +185,24 @@ the rendering agree rather than one of them animating alone. `matchMedia` is cal
 `SlotStripChips.tsx` renders each of the eight templates as a chip carrying the same three facts a
 reel window carries — **suit glyph, family word, reward axis** — in the same shape, so the strip is
 **compared** against the three windows rather than read. `slotSymbols.ts`'s `slotSymbolFace` is the
-one reduction both use, and `SlotGlyph.tsx` holds the three non-suit marks so a chip and a window can
+one reduction both use, and `SlotGlyph.tsx` holds the five non-suit marks so a chip and a window can
 never disagree about what a symbol looks like. The suits still come from `SuitMark`; redrawing them
 would be a second source of truth for what a suit is.
 
+> **DLR-161 added the fourth and fifth marks, and they are told apart by shape rather than tint.**
+> Skull Helmet and Skull Tether share **one** colour token, `--wc-guard`, in both glyph stylesheets —
+> so the Helmet is drawn as a dome over a skull (the blow lands, the dome takes it) and the Tether as
+> a taut line to an anchor (the roll stays tied on), and each must also read distinctly from
+> Sidestep's three chevrons with colour removed. `slotSymbols.ts` picks between them through
+> `conditionGlyphFor`, a **total `switch`** over the kinds a condition template can carry, so a sixth
+> suitless family fails to compile here rather than rendering a blank window. The two `[data-glyph]`
+> values bind by string with no compiler check, in `shopSlot.css` and `shopSlotReel.css` alike, which
+> is why a final grep over both files is part of that ticket's verification. **The colour, both
+> drawings, and the reel words `Helmet` / `Tether` and the axis word `Guard` are placeholders nobody
+> has judged at reel-window size.**
+
 Eight rows of `Moon-Taker (Momentum) — win a trick with Moons` was a large part of what the developer
-meant by *"a huge amount of info"*. **The compression hides nothing a decision needs**: each chip
+meant by _"a huge amount of info"_. **The compression hides nothing a decision needs**: each chip
 carries the full `slotSymbolText` sentence on both its `title` and its `aria-label`, so the long form
 is reachable by pointer and by screen reader, and it is not hover-only — the glyph, the family and
 the axis are all on the chip's face. `game-ux` forbids putting a decision's inputs behind hover, and
@@ -217,19 +229,43 @@ rather than two.
 prepend its own `SLOT_TIER_LABEL[award.tier]` in front of `buffLine(...)` — a leftover from before
 `buffLine` stated its own tier word — which read as `"Silver — Silver Bell-Taker..."` once `buffLine`
 gained the `BUFF_TIER_WORD` prefix in the same ticket. The existing test only asserted the row's
-text *contained* `buffLine(...)`'s output, which stayed true even duplicated, so it caught nothing.
+text _contained_ `buffLine(...)`'s output, which stayed true even duplicated, so it caught nothing.
 `SLOT_TIER_LABEL` was removed from `slotLabels.ts` entirely (it had no other consumer) and the award
 row now renders `buffLine(award)` alone; the test was rewritten to assert the row's
 exact text so a reintroduced duplicate fails loudly.
+
+## DLR-160 AC10 — the tier is stated where a tier exists
+
+The session's complaint was that the machine never says what tier a card is. The answer turns on a
+fact the section above already states: **a strip symbol is a `BuffTemplate` and carries no tier at
+all.** The tier is decided by `resolvePull`'s match rule, from how the three reels landed. So there
+is no tier to state on the face-up strip, and its chips stay untiered; the tier is stated in the two
+places one exists — **the landed reel windows, and the award rows**.
+
+`slotTier.ts`'s `reelTiers(symbols, awards)` reads it **off the pull's own awards**, matching each
+landed symbol back to the award naming its template id and returning that award's tier. It **never
+re-derives the match rule**, so a retuned `resolvePull` keeps this correct for free. A symbol with no
+matching award returns `null` rather than a guess — unreachable with today's rule, where every symbol
+appears in exactly one award, but that is not this function's assumption to make.
+
+Reading it requires one field that was being thrown away: `SlotPullView.rawAwards` keeps
+`resolved.awards` **before minting**, because `mintPullAwards`'s minted `Buff`s carry a tier but no
+template id, and the id is what the match is on.
+
+`TierBadge` in `SlotMachinePanel.tsx` renders a metal swatch dot **plus the tier word** — never the
+swatch alone, per the greyscale floor this screen already holds itself to — and it is local to that
+file because the reel windows and the award rows are its only two consumers. **The badge appears only
+once the pull is decided** (`showResult`), never mid-spin, when nothing has landed to state a tier
+for. `slotTier.test.ts` pins the mapping and the `null` case.
 
 ## The three interaction rules DLR-116 decided
 
 - **The odds are surfaced, and derived.** The strip is face-up and the payout table states all three
   outcome probabilities, with the expected cards per pull in the strip summary beside it. DLR-112 chose a flat-uniform spin expressly
-  so a player *can* read the strip and compute their own odds; hiding them throws away the reason the
+  so a player _can_ read the strip and compute their own odds; hiding them throws away the reason the
   model is shaped that way. Deriving rather than transcribing stops a retuned `REEL_POOL_SIZE`
-  leaving the screen quoting `1.6%` forever. *Whether four figures reads as clarity or as clutter is a
-  copy judgement and the developer's; the fallback is to drop the expected-cards figure.*
+  leaving the screen quoting `1.6%` forever. _Whether four figures reads as clarity or as clutter is a
+  copy judgement and the developer's; the fallback is to drop the expected-cards figure._
 - **An unaffordable pull is disabled and explained, never hidden.** The strip and the odds stay
   readable, so a player can see what they are saving for. `game-ux`: a decision's inputs stay on the
   face of the thing.

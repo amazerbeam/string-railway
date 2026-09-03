@@ -3,10 +3,14 @@ import { PlayerSide, Suit, TrickOutcome, type WarCouncilState } from '../../../w
 import {
   applyDamage,
   BASE_DAMAGE,
+  BuffKind,
+  BuffTier,
   DuelSide,
   isEncounterResolved,
+  mintFromTemplate,
   quarryHealthForEncounter,
   startEncounter,
+  templatesForFamily,
   type EncounterState,
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
@@ -18,6 +22,7 @@ import {
   type RoundUiState,
 } from '../roundUiState'
 import { card, discardsRemainingFixture, makeRound } from './roundFixture'
+import { discardWindowOpen } from '../roundUiState'
 
 // DLR-156 AC3/AC5/AC6/AC7/AC14 — the resolution screen's reducer-side state, and the two new
 // player choices. The screen ITSELF does not exist yet (Task 15) — nothing renders `ui.resolution`
@@ -31,6 +36,7 @@ const rollOver = { kind: RoundUiActionKind.RollOver } as const
 function uiFrom(
   round: WarCouncilState,
   encounter: EncounterState = startEncounter(0),
+  buffs: RoundUiState['buffs'] = [],
 ): RoundUiState {
   return createRoundUiState({
     round,
@@ -38,7 +44,7 @@ function uiFrom(
     blastGuardHeld: false,
     baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
-    buffs: [],
+    buffs,
   })
 }
 
@@ -89,6 +95,55 @@ describe('AC14 — a banked trick sets ui.resolution to a non-null view', () => 
     expect(view.beats.map((beat) => beat.kind)).toEqual([BeatKind.Base, BeatKind.Banked])
     // AC2 — the bare-rule floor: potValue(1 + BASE_DAMAGE, 1 + 1) = 2 x 2 = 4.
     expect(view.nextPotFloor).toBe((1 + BASE_DAMAGE) * 2)
+  })
+})
+
+describe('DLR-160 AC2/AC3/AC6/AC7 — the widened resolution view', () => {
+  it('carries the skulled cards in this trick, the decree, and a dead buff', () => {
+    // A Feeder pays only on a trick the player LOSES — `!playerWon && suit matches`, with no
+    // skull term in its condition at all (`CLAUDE.md`'s win/lose axis note). Playing the skulled
+    // card here WINS the trick (Bells 9 beats Bells 2), so the Feeder is armed and dies — it is
+    // not "corrected" into firing on the eaten skull.
+    const [feederTemplate] = templatesForFamily(BuffKind.Feeder)
+    const feeder = mintFromTemplate(feederTemplate, BuffTier.Bronze, 101)
+    const skulledCard = card(Suit.Bells, 9)
+    const round = winningRound(0, 0)
+
+    let ui = uiFrom({ ...round, skulledCards: [skulledCard] }, startEncounter(0), [feeder])
+    ui = roundReducer(ui, { kind: RoundUiActionKind.ToggleLoadout })
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: feeder.id })
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: feeder.id })
+    ui = roundReducer(ui, tap(skulledCard))
+    ui = roundReducer(ui, tap(skulledCard))
+
+    const view = ui.resolution as ResolutionView
+    expect(view).not.toBeNull()
+    expect(view.skulledInTrick).toEqual([skulledCard])
+    expect(view.decree).toEqual(ui.round.decree)
+    expect(view.deadBuffs.map((buff) => buff.id)).toContain(feeder.id)
+  })
+
+  it('marks the pot lethal when applying it would end the fight, through applyDamage/isEncounterResolved', () => {
+    // The Quarry is left at 1 health — anything this trick's pot pays is lethal.
+    const nearDeadEncounter = applyDamage(startEncounter(0), {
+      [DuelSide.Player]: 0,
+      [DuelSide.Quarry]: quarryHealthForEncounter(0) - 1,
+    })
+    let ui = uiFrom(winningRound(0, 0), nearDeadEncounter)
+    ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
+
+    const view = ui.resolution as ResolutionView
+    expect(view.potIsLethal).toBe(true)
+  })
+
+  it('does not mark the pot lethal when the Quarry has plenty of health left', () => {
+    let ui = uiFrom(winningRound(0, 0), startEncounter(0))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
+
+    const view = ui.resolution as ResolutionView
+    expect(view.potIsLethal).toBe(false)
   })
 })
 
@@ -145,6 +200,37 @@ describe('AC7 — the hurt branch has nothing to decide', () => {
   })
 })
 
+describe('DLR-160 AC1b — ApplyPot/RollOver close the panel but lay no card', () => {
+  // `losingRound` is the fixture that puts the QUARRY next to lead after the trick resolves: the
+  // player leads Bells 2 under trump Keys, the Cpu's Bells 9 wins it, so the Cpu — not the player —
+  // leads next. That is the exact shape `handleCarryOn` used to advance in the SAME dispatch that
+  // dismissed the resolution screen, closing the between-tricks arming window before the player
+  // ever saw the felt (`the-hunt.md` §4 already grants that window).
+  it('RollOver leaves the Quarry’s lead uncommitted — the arming window stays open', () => {
+    let ui = uiFrom(losingRound(0, 0))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
+
+    ui = roundReducer(ui, rollOver)
+
+    expect(ui.resolution).toBeNull()
+    expect(ui.round.currentTrick).toEqual([])
+    expect(discardWindowOpen(ui)).toBe(true)
+  })
+
+  it('ApplyPot leaves the Quarry’s lead uncommitted — the arming window stays open', () => {
+    let ui = uiFrom(losingRound(0, 0))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
+
+    ui = roundReducer(ui, applyPot)
+
+    expect(ui.resolution).toBeNull()
+    expect(ui.round.currentTrick).toEqual([])
+    expect(discardWindowOpen(ui)).toBe(true)
+  })
+})
+
 describe('the two actions are TOTAL and GUARDED — never a throw', () => {
   it('ApplyPot/RollOver on a null resolution are no-ops returning the SAME state', () => {
     const state = uiFrom(winningRound(0, 0))
@@ -183,6 +269,10 @@ describe('the two actions are TOTAL and GUARDED — never a throw', () => {
       beats: [],
       trickNumber: 1,
       nextPotFloor: 0,
+      skulledInTrick: [],
+      decree: card(Suit.Bells, 1),
+      deadBuffs: [],
+      potIsLethal: false,
     }
     const state: RoundUiState = { ...base, resolution: fakeView }
 

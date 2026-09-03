@@ -41,7 +41,7 @@ was left in `src/`; `git status --porcelain` was confirmed clean both times.
 `startRun` / `recordEncounter` / `advanceRun` / `buyFromShop` / `drinkFlask`
 (`src/hunt/runTransitions.ts`, `src/hunt/run.ts`), `dealRound` / `playCard` / `chooseCpuMove` /
 `cashBankNow` (`src/warCouncil/deal.ts`, `playCard.ts`, `cpuPlayer.ts`, `voluntaryCashOut.ts` — that
-module and function were deleted by DLR-156; `applyPot` in `streak.ts` is what a re-run would call),
+module and function were deleted by DLR-156; `applyPot` in `pot.ts` is what a re-run would call),
 `primeCard` (`src/warCouncil/timebomb.ts`), `applyDiscard` (`src/warCouncil/discard.ts`),
 `addCheat` / `removeCheat` / `hasCheat` (`src/hunt/cheats.ts`), `legalMoves` called with
 `{ ignoreFollowSuit: true }` when a Cheat was armed (`src/warCouncil/legalMoves.ts`).

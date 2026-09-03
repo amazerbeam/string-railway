@@ -206,8 +206,11 @@ describe('BuffGallery — AC4 Cheat and Timebomb sit under Press, not Suitless',
     renderGallery({
       buffs: [mint(cheatTemplate), mint(timebombTemplate), mint(sidestepTemplate)],
     })
-    expect(screen.getByText('Press')).toBeTruthy()
-    expect(screen.getByText('No suit')).toBeTruthy()
+    // DLR-160 AC8 — scoped to the grid: the new suit filter row (outside the grid) renders its
+    // own "Press" chip, so an unscoped `getByText` now matches two nodes.
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    expect(within(grid).getByText('Press')).toBeTruthy()
+    expect(within(grid).getByText('No suit')).toBeTruthy()
   })
 })
 
@@ -249,5 +252,65 @@ describe('BuffGallery — the tier filter narrows the grid and the fence follows
 
     const fenceRow = screen.getByText('NOT USABLE NOW').closest('.wc-fence') as HTMLElement
     expect(within(fenceRow).getAllByRole('button')).toHaveLength(1)
+  })
+})
+
+describe('BuffGallery — the follow-up layout fix (suit rail beside the grid)', () => {
+  it('both filter navs stay outside the roving-tabindex grid, regardless of how the rail is styled', () => {
+    renderGallery({ buffs: [mint(bellTakerBladeTemplate)] })
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    const tierNav = screen.getByRole('navigation', { name: 'Filter by tier' })
+    const suitNav = screen.getByRole('navigation', { name: 'Filter by suit' })
+    expect(grid.contains(tierNav)).toBe(false)
+    expect(grid.contains(suitNav)).toBe(false)
+  })
+})
+
+describe('BuffGallery — AC8 the suit filter composes with the tier filter', () => {
+  it('pressing a suit chip narrows the grid to that suit alone', () => {
+    renderGallery({
+      buffs: [mint(bellTakerBladeTemplate), mint(keyTakerBladeTemplate), mint(sidestepTemplate)],
+    })
+
+    const suitNav = screen.getByRole('navigation', { name: 'Filter by suit' })
+    fireEvent.click(within(suitNav).getByRole('button', { name: /Keys/ }))
+
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    expect(within(grid).getAllByRole('button')).toHaveLength(1)
+    expect(within(grid).getByText('Key-Taker (Blade)')).toBeTruthy()
+  })
+
+  it('pressing a tier chip and a suit chip together shows only their intersection', () => {
+    const silverKeys = mint(keyTakerBladeTemplate, BuffTier.Silver)
+    const bronzeKeys = mint(keyTakerBladeTemplate, BuffTier.Bronze)
+    const silverBells = mint(bellTakerBladeTemplate, BuffTier.Silver)
+    renderGallery({ buffs: [silverKeys, bronzeKeys, silverBells] })
+
+    fireEvent.click(screen.getByRole('button', { name: /^Silver/ }))
+    const suitNav = screen.getByRole('navigation', { name: 'Filter by suit' })
+    fireEvent.click(within(suitNav).getByRole('button', { name: /Keys/ }))
+
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    const buttons = within(grid).getAllByRole('button')
+    expect(buttons).toHaveLength(1)
+    expect(buttons[0].className).toContain('wc-buffcard-silver')
+    expect(buttons[0].getAttribute('aria-label')).toContain('Key-Taker')
+  })
+
+  it('an empty intersection renders its own line rather than an empty grid', () => {
+    renderGallery({
+      buffs: [
+        mint(bellTakerBladeTemplate, BuffTier.Silver),
+        mint(keyTakerBladeTemplate, BuffTier.Bronze),
+      ],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /^Silver/ }))
+    const suitNav = screen.getByRole('navigation', { name: 'Filter by suit' })
+    fireEvent.click(within(suitNav).getByRole('button', { name: /Keys/ }))
+
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    expect(within(grid).queryAllByRole('button')).toHaveLength(0)
+    expect(screen.getByText('No buffs match this filter.')).toBeTruthy()
   })
 })

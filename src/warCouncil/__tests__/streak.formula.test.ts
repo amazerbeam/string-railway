@@ -10,13 +10,8 @@ import {
   type Buff,
   type BuffTrickInput,
 } from '../../hunt'
-import {
-  potValue,
-  resolveTrickBank,
-  TrickOutcome,
-  type StreakState,
-  type TrickFacts,
-} from '../streak'
+import { resolveTrickBank, TrickOutcome, type StreakState, type TrickFacts } from '../streak'
+import { potValue } from '../pot'
 
 /**
  * DLR-156 — pins `spec.md`'s own worked examples against the real `resolveTrickBank`, not a

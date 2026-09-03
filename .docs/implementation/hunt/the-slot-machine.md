@@ -145,11 +145,20 @@ that either.
   > inventing one would be inventing tuning values. ~~**Whether the two machines still feel different
   > is an open developer question, unmeasured and unobserved.**~~ **Measured and answered on
   > 2026-09-01: they did not, and Strongbox was cut — see the note above.**
-  > `REEL_POOL_SIZE` is 8 and the pool is 16 (13 until DLR-150 restored Feeder's Momentum row), so
+  > `REEL_POOL_SIZE` is 8 and the pool is 18 (13 until DLR-150 restored Feeder's Momentum row, 16
+  > until DLR-161 added Skull Helmet and Skull Tether), so
   > `drawReelPool`'s distinct draw still succeeds on
   > both machines with every surviving family weighted ≥ 1 — but the strip is now a much larger
   > share of the whole pool than it was at 73 templates, which shrinks how much two pulls can
   > differ.
+  > **DLR-161 added two rows to each table, and all five numbers are placeholders, 2026-09-02.**
+  > `SLOT_FAMILY_WEIGHTS` is now **seven** rows per machine — Skull Helmet and Skull Tether join the
+  > five above, at 3 / 2 on Skirmisher and 1 / 1 on Strongbox — and `SLOT_AXIS_WEIGHTS` is **three**,
+  > with `Protection` at 3 on Skirmisher and 1 on Strongbox. **Nobody has chosen any of them.** The
+  > axis row is also **inert today**: each protective family holds exactly one template, so
+  > `familyAxisTotal` equals that family's axis weight and it cancels out of `templateWeightFor`. The
+  > row exists to keep `SlotAxisWeights` total over `MintableRewardAxis`; a second protective axis is
+  > what would make it bite. See [Skull Helmet and Skull Tether](protective-buffs.md).
 - **The 7 consumable/activated templates are still absent from `BUFF_TEMPLATES`, and this is now a
   known gap rather than a deferral** (DLR-120). DLR-126 landed and answered AC6 **affirmatively** —
   a consumable is an ordinary `Buff` and the draw mechanism needs no change at all — but no template

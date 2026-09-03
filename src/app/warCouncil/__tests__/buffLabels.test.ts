@@ -8,7 +8,9 @@ import {
   BuffTargetSuit,
   BuffTier,
   cheatBuff,
+  mintFromTemplate,
   shieldBuff,
+  templateById,
   timebombBuff,
   TIMEBOMB_DAMAGE,
   DuelSide,
@@ -31,6 +33,12 @@ import {
   buffRewardPhrase,
   buffRowAccessibleName,
 } from '../buffLabels'
+
+function mintedBuff(id: string, tier: BuffTier, buffId = 1): Buff {
+  const template = templateById(id)
+  if (template === undefined) throw new Error(`No template for id '${id}'`)
+  return mintFromTemplate(template, tier, buffId)
+}
 
 function stackOf(buff: Buff, count = 1): BuffStack {
   return {
@@ -157,6 +165,34 @@ describe('buffCadenceWord — AC9, derived from BUFF_CADENCE, never authored per
     for (const kind of Object.values(BuffKind)) {
       expect(buffCadenceWord({ ...template, kind }).length).toBeGreaterThan(0)
     }
+  })
+
+  it("DLR-161 — resolves 'HURT' for Skull Helmet and Skull Tether, not 'WHEN'", () => {
+    expect(buffCadenceWord(mintedBuff('skullHelmet:protection', BuffTier.Bronze))).toBe('HURT')
+    expect(buffCadenceWord(mintedBuff('skullTether:protection', BuffTier.Bronze))).toBe('HURT')
+  })
+})
+
+describe('DLR-161 — Skull Helmet and Skull Tether copy', () => {
+  it('a bronze gold-minted pair reads the bronze condition sentence', () => {
+    const bronzeHelmet = mintedBuff('skullHelmet:protection', BuffTier.Bronze)
+    expect(buffLine(bronzeHelmet)).toBe(
+      'Bronze Skull Helmet (Guard) — eat a skull with this card: your total survives.',
+    )
+  })
+
+  it('a silver Tether uses the widened sentence', () => {
+    const silverTether = mintedBuff('skullTether:protection', BuffTier.Silver)
+    expect(buffLine(silverTether)).toBe(
+      'Silver Skull Tether (Guard) — eat a skull, or lose a trick: your roll survives.',
+    )
+  })
+
+  it('a gold Helmet ends with the +1 gold bonus', () => {
+    const goldHelmet = mintedBuff('skullHelmet:protection', BuffTier.Gold)
+    expect(buffLine(goldHelmet)).toBe(
+      'Gold Skull Helmet (Guard) — eat a skull, or lose a trick: your total survives, +1.',
+    )
   })
 })
 

@@ -205,6 +205,32 @@ A multiplier with nothing to multiply is dead, so half the reward pool is dead u
 Independent human confirmation of what the simulator says by never choosing it. The cost is always a
 card you wanted; the benefit rarely clears it.
 
+**The Woodcutter is read as redundant with Swap, and threw it away for that reason.**
+> "I don't think the 5 is really good to keep, because I can just swap cards out from the deck, so
+> that power's pointless."
+
+> "I don't want the 5 because I don't think it's any use."
+
+> "I get rid of the 2, the 5, because I don't think the 5 is any good at all."
+
+He discarded it in the first hand he was offered one, reasoning that the Swap control on the action
+bar already exchanges cards with the pile. **It is not redundant, and the difference is the whole
+point of the card.** Swap throws cards and draws **blind**; the Woodcutter draws **first** and then
+buries any card in hand, including the one it just drew. It is the only look-then-choose exchange in
+the game, against a control that is a bet every time — and the Swap budget is three a fight, where a
+Woodcutter is one per copy dealt.
+
+None of that reaches the player. Two fights in, the card reads as a worse version of a button he
+already has. So this is a legibility failure rather than a design one, and the levers are the card's
+own wording and how its prompt presents the drawn card against the hand — neither is a rules change.
+**Whose decision:** the developer's.
+
+This is a **different complaint from the Fox's**, and the two should not be merged. The Fox is
+rejected for costing too much; the Woodcutter is rejected for appearing to do nothing. Between them
+they are the two strongest levers in the deck — one changes trump outright, the other is the only
+non-blind card exchange — and the headless simulator has never chosen either, so neither has ever
+been measured.
+
 **Playing the Fox is a one-way door with no cancel.**
 > "I clicked the three twice. Now it's choosing a decree. Actually I don't want to do that. I want to
 > go back. But now I can't go back."

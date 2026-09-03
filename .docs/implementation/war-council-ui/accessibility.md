@@ -21,6 +21,14 @@ native `<button>`. Swapping `PlayingCard`'s or the decline control's root elemen
 would silently stop arrow-key navigation — the call is optional-chained, so nothing throws, no test
 fails differently, and TypeScript cannot see it. A comment in the hook states this.
 
+**The same positional indexing is why DLR-160's cancel control sits where it does.** Both prompt
+branches gained a visible _"← Don't play the …"_ button (see
+[interaction and state](interaction-and-state.md#dlr-160--a-fox-or-a-woodcutter-can-be-backed-out-of-before-it-commits)),
+and it is rendered **last, outside `.wc-prompt-row`** — the query above spans the whole group, not
+just the row, so a button anywhere earlier in DOM order would shift every index after it. Placed
+after everything `count` addresses, no arrow-key index ever reaches it, and `Tab` reaches it in
+ordinary document order as a distinct stop.
+
 ### `AbilityPrompt` focuses its group on mount without re-stealing focus every render
 
 `AbilityPrompt.tsx`'s wrapping `<div>` focuses itself via a callback ref (`attachGroup`) the instant
@@ -118,18 +126,18 @@ review of the stylesheet rather than by a test.
 one step earlier.** It was four states until that ticket. A committed hit is static by decision —
 `atRisk` flashes because it is conditional and evaporates if the streak breaks — so there is no
 animation to suppress, and the state loses nothing when motion is off. It binds to the **solid**
-`<symbol>`, the same one `whole` uses, so it reads as *standing*, which it is; only fill and opacity
+`<symbol>`, the same one `whole` uses, so it reads as _standing_, which it is; only fill and opacity
 separate it. **Whether it separates from `atRisk` and `whole` at a glance is unverified visually** —
 QA could not reach a live primed trick in a browser (see [README.md](README.md)'s Deferred list),
 and the opacity that carries much of the distinction is an unchosen placeholder.
 
 **The meter's text was split rather than extended** (DLR-101). `healthBarValueText` now emits the
 booked figure as its own clause — `14 of 14. 3 at risk. 4 ticking.` — instead of folding Timebomb into
-the at-risk figure, for the reason above: the spoken text would otherwise have called *committed*
+the at-risk figure, for the reason above: the spoken text would otherwise have called _committed_
 damage "at risk", which is the picture-versus-text failure this section already names. Either clause
 is omitted at zero, so a bar with neither reads exactly as it did before. The wording is placeholder.
 
-**`IntentTelegraph` used the same technique and was deleted by DLR-148** (2026-08-26): it hid *all*
+**`IntentTelegraph` used the same technique and was deleted by DLR-148** (2026-08-26): it hid _all_
 its visible text behind one `aria-label` built by `intentAccessibleName`, so the eyebrow and the
 line were heard as one sentence rather than two fragments, with `role="status"` announcing a changed
 intent without stealing focus from the hand. **The technique survives it.** DLR-148's replacement,

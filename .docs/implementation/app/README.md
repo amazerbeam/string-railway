@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159, DLR-160
 
 ## Responsibility
 
@@ -34,12 +34,12 @@ import React, and `src/app/warCouncil/` does.
 
 ## Key types & exports
 
-| Export                  | Purpose                                                                                                                                                                                                                                                                                                                                                                                 | File                 |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83), a required `coins: Coins` (DLR-84), a required `discardsRemaining: number` (DLR-100) and a required `buffs: readonly Buff[]` (DLR-114) in; `onComplete` out | `warCouncilMount.ts` |
-| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100 and, since DLR-125, `coinsEarned: Coins` — the Purse coins this hand's fired buffs earned, already clipped at `MAX_COIN_BONUS_PER_HAND` by the accrual, required, with both construction sites in `WarCouncilRound.tsx`                                                                                                                                | `warCouncilMount.ts` |
-| `ErrorBoundary` (default) | DLR-131 — the only class in `src/`. Catches a render/lifecycle throw beneath it, `getDerivedStateFromError` normalises whatever was thrown into an `Error`, `render` returns `children` untouched while `state.error` is `null` and a full-viewport fallback panel otherwise. No `componentDidCatch` — React already logs the error and its component stack, and `console.log`/`console.debug` are forbidden in shipped code. | `ErrorBoundary.tsx` |
-| `ERROR_FALLBACK_*` (six constants) | Every string the fallback renders — title, the two body sentences (run lost / Vault should still be there), the detail label, and the two control labels — following `runLabels.ts`/`vaultLabels.ts`'s named-constant pattern. | `errorLabels.ts` |
+| Export                             | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | File                 |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `WarCouncilMountProps`             | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83), a required `coins: Coins` (DLR-84), a required `discardsRemaining: number` (DLR-100) and a required `buffs: readonly Buff[]` (DLR-114) in; `onComplete` out                                                                                          | `warCouncilMount.ts` |
+| `WarCouncilRoundResult`            | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100 and, since DLR-125, `coinsEarned: Coins` — the Purse coins this hand's fired buffs earned, already clipped at `MAX_COIN_BONUS_PER_HAND` by the accrual, required, with both construction sites in `WarCouncilRound.tsx` | `warCouncilMount.ts` |
+| `ErrorBoundary` (default)          | DLR-131 — the only class in `src/`. Catches a render/lifecycle throw beneath it, `getDerivedStateFromError` normalises whatever was thrown into an `Error`, `render` returns `children` untouched while `state.error` is `null` and a full-viewport fallback panel otherwise. No `componentDidCatch` — React already logs the error and its component stack, and `console.log`/`console.debug` are forbidden in shipped code.                                                    | `ErrorBoundary.tsx`  |
+| `ERROR_FALLBACK_*` (six constants) | Every string the fallback renders — title, the two body sentences (run lost / Vault should still be there), the detail label, and the two control labels — following `runLabels.ts`/`vaultLabels.ts`'s named-constant pattern.                                                                                                                                                                                                                                                   | `errorLabels.ts`     |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
 `{ quarry, demand, loseCredits }` and then **narrowed by DLR-67 to `{ quarry }`** when the Demand and
@@ -117,8 +117,8 @@ hand's damage twice **unexpressible** rather than merely unlikely.
 
 **DLR-150 added `screenFor.ts`, and moved `RunPhase` into it.** `screenFor(phase, encounterOver)` is
 `App.tsx`'s seven-branch screen ternary as a pure, unit-testable function returning
-`AppScreen` (`'start' | 'map' | 'shop' | 'manageBuffs' | 'vault' | 'verdict' | 'warCouncil'` since
-DLR-159), so the render and
+`AppScreen` (`'start' | 'preFight' | 'map' | 'shop' | 'manageBuffs' | 'vault' | 'verdict' |
+'warCouncil'` since DLR-160), so the render and
 `debugState`'s mirror cannot disagree about which screen is up — the property the inline chain's own
 comment already claimed. `RunPhase` moved with it because `screenFor` is the only reader that needs
 the union outside the component; it is deliberately **not** re-exported through `../hunt`, since
@@ -206,6 +206,20 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   - **No persistence.** A page reload starts a new run; nothing is saved. That is also why DLR-159's
     combined cards need no persistence work of their own: `RunState.buffs` and `nextBuffId` are never
     written to storage, so a produced card survives exactly what the rest of the run survives.
+- **DLR-160 added an eighth screen, and it sits between the shop and the felt**
+  (`RunPhase.PreFight`). It is the first member since `Start` gated **before** the `!encounterOver`
+  branch rather than behind it, and for the same reason: `leaveForNextFight` deals the next hand in
+  the same handler, so the encounter is already live by the time the phase is set, and a branch
+  placed after `!encounterOver` would never render. It is set only by `leaveForNextFight` (which set
+  `RunPhase.Verdict` until this ticket) and left only by the screen's own control — so **the fight
+  now begins on the player's press.** `App.tsx` was at 399 lines, so its three path branches became
+  three thin wrappers in `run/PathScreens.tsx`; the screen itself is
+  [run-ui's third path surface](../run-ui/run-map-and-the-path-screen.md). **Whether the stop earns
+  its place is the developer's judgement**, and is recorded under Deferred there.
+- **`DebugAppState.screen` no longer restates the union** (DLR-160). It imports `AppScreen` from
+  `./screenFor` instead. The two had been two string-bound literal unions with nothing connecting
+  them, so the mirror could silently fall behind the switch — which is exactly what a mirror must
+  not do.
 - **DLR-159 added a seventh screen, and it is the shop's only child** (`RunPhase.ManageBuffs`). It is
   guarded `encounterOver && phase === RunPhase.ManageBuffs`, exactly like `Shop`, `Map` and `Vault`;
   it is set only by `ShopPanel`'s `onManageBuffs` and returns only to `RunPhase.Shop`. Making it a
@@ -230,8 +244,8 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   > extracting the hand-maintained shop-`refusals` literal to `src/app/run/shopRefusals.ts` and
   > dropping the now-dead `apCapacity` prop from two mounts took it to **399**. It is still not a
   > reducer, and the advice above still stands with less room than it had. DLR-93 added a fourth click-handler
-  transition (`handleDrinkFlask`) and three props to the `ShopPanel` mount without adding state, which
-  is why it did not force the question; the ticket after it may not be so cheap.
+  > transition (`handleDrinkFlask`) and three props to the `ShopPanel` mount without adding state, which
+  > is why it did not force the question; the ticket after it may not be so cheap.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted
   `TestModeVanguardHost.tsx`, `TrickEntryForm.tsx`, `appMode.ts`, and `isValidTricksWon` along with
   the rest of the Vanguard UI — there is currently no manual-entry mechanism at all, campaign or

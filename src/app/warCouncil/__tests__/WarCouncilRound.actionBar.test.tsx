@@ -175,8 +175,9 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
     advanceTrickDwell()
 
     // DLR-156 — a two-card trick resolves the instant the player leads (the Quarry's follow is
-    // committed in the same reducer transition), so it hands off to the resolution screen rather
-    // than showing a held reveal on the felt.
-    expect(screen.getByText(/took it|streak is broken/i)).toBeTruthy()
+    // committed in the same reducer transition). DLR-160 AC11 — the felt's own well and the
+    // resolution panel now say the same outcome word at once (both read `resolutionOutcome.ts`),
+    // so this reads `getAllByText` rather than `getByText`.
+    expect(screen.getAllByText(/took it|streak is broken/i).length).toBeGreaterThan(0)
   })
 })

@@ -29,9 +29,15 @@ interface BankMeterProps {
  * DLR-156 — the pending-buff-bonus and forced-cash-out readouts are GONE: a buff no longer pools
  * across the hand into a spendable balance (`buffAccrual.ts`'s `trickBonusFor` pays only the
  * trick it fired on), and a hit no longer pays a reduced share. `carriedIn`/`carryOut` survive
- * unchanged — the coin, AP-refund and Feeder-carry axes are untouched by this ticket. Full copy
- * for the pot readout is Phase 5's (`plan.md` Task 15); this keeps the meter compiling and
- * truthful in the meantime.
+ * unchanged — the coin, AP-refund and Feeder-carry axes are untouched by this ticket.
+ *
+ * DLR-160 — this is now the HEAD of `PotCard.tsx`'s merged card (mockup-left-damage-block-v2.html):
+ * the pot figure (`cash`) is the big headline, and total×roll — restyled to a small sub-line via
+ * `warCouncilBankMeter.css` — reads "N banked × M streak" underneath it. No DOM node was removed or
+ * renamed: `.wc-bank-figures` keeps the SAME full `aria-label` it always has (the developer's own
+ * red-line — `PotCard.tsx`'s docblock), and `.wc-bank-cash` keeps the SAME class a still-passing
+ * `BankMeter.test.tsx` reads by. Only the visible text inside each and their relative emphasis
+ * changed — a restyle and a reorder, not a rename.
  */
 export default function BankMeter({
   total,
@@ -58,8 +64,13 @@ export default function BankMeter({
 
   return (
     <section className="wc-bank" aria-label={`${TOTAL_LABEL} and ${ROLL_LABEL}`}>
+      {/* PLACEHOLDER COPY — "The pot" eyebrow, matching mockup-left-damage-block-v2.html. The
+          developer's to retune, exactly as every other string in this file already is. */}
       <p className="wc-bank-eyebrow" aria-hidden="true">
-        {TOTAL_LABEL}
+        The pot
+      </p>
+      <p className="wc-bank-cash" aria-hidden="true">
+        <b>{cash}</b>
       </p>
       <p
         className="wc-bank-figures"
@@ -76,15 +87,18 @@ export default function BankMeter({
         <span className="wc-bank-num" aria-hidden="true">
           {total}
         </span>
+        <span className="wc-bank-suffix" aria-hidden="true">
+          banked
+        </span>
         <span className="wc-bank-op" aria-hidden="true">
           ×
         </span>
         <span className="wc-bank-mult" aria-hidden="true">
           {roll}
         </span>
-      </p>
-      <p className="wc-bank-cash" aria-hidden="true">
-        Pot stands at <b>{cash}</b>
+        <span className="wc-bank-suffix" aria-hidden="true">
+          streak
+        </span>
       </p>
       {hasCarriedIn && (
         <p className="wc-bank-carried-in" aria-hidden="true">

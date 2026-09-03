@@ -141,6 +141,47 @@
   margin-top: 0.4rem;
 }
 
+/* DLR-160 AC9 — the pre-fight review's read-only tray. Transcribed from
+   `.claude/contract/DLR-160-play-session-readability-fixes/mockup.html` tab "9 · Pre-fight
+   review". `undefined` on the start and map screens, which never mount this section at all
+   (`RunPathScreen.tsx`'s own `stacks === null` guard) — this file states only what the section
+   looks like once it exists. Every clamp() bound and colour below is the DEVELOPER'S to retune. */
+.run-path-tray {
+  width: 100%;
+  max-width: 46rem;
+  border-top: 1px solid #ffffff1a;
+  padding-top: clamp(0.5rem, 1.6vmin, 0.9rem);
+}
+
+.run-path-tray-head {
+  margin: 0 0 0.4rem;
+  font-family: var(--wc-serif);
+  font-size: clamp(0.7rem, 1.7vmin, 0.85rem);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-brass);
+}
+
+.run-path-tray-empty {
+  margin: 0;
+  font-size: clamp(0.7rem, 1.6vmin, 0.85rem);
+  font-style: italic;
+  color: var(--wc-chalk-dim);
+}
+
+/* Wraps rather than scrolling sideways (`shop-held-cards`' own choice) — this screen has a whole
+   viewport of vertical room below the map and nothing else competing for it. */
+.run-path-tray-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.35rem, 1.2vmin, 0.6rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  justify-content: center;
+}
+
 /* The unspent-coin warning. Bracketed rather than merely tinted, so it reads as a held
    decision in greyscale too. */
 .run-warning {

@@ -47,23 +47,16 @@ export { assignSkulls, isSkulled, skullableCards, suitShape, trickIsSkulled } fr
 export { isPrimed, trickIsPrimed, primeCard, unprimeCard } from './timebomb'
 export type { SuitShape } from './skulls'
 export {
-  potValue,
-  applyPot,
   incomingFrom,
-  incomingFromPot,
   isTaken,
   resolveTrickBank,
   TrickOutcome,
   trickOutcomeFor,
   EMPTY_STREAK,
 } from './streak'
-export type {
-  PotApplication,
-  StreakState,
-  TrickDamage,
-  TrickFacts,
-  TrickResolution,
-} from './streak'
+export type { StreakState, TrickDamage, TrickFacts, TrickResolution } from './streak'
+export { potValue, applyPot, incomingFromPot } from './pot'
+export type { PotApplication } from './pot'
 export { DiscardRefusal, discardRefusalFor, applyDiscard } from './discard'
 export type { DiscardStock } from './discard'
 export { chooseCpuMove, commitQuarryMove, quarryIntent, QuarryIntentStance } from './cpuPlayer'

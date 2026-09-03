@@ -11,14 +11,16 @@ import {
 import { mintableBuffKinds, unreachableBuffKinds, unshelvedShopItems } from '../reachability'
 
 describe('reachability — the DLR-120 audit', () => {
-  it('DLR-145 — mints exactly the 3 surviving condition families plus DLR-132s two activated cards', () => {
+  it('DLR-161 — mints exactly the 5 surviving condition families plus DLR-132s two activated cards', () => {
     const mintable = mintableBuffKinds()
-    expect(mintable.size).toBe(5)
+    expect(mintable.size).toBe(7)
     expect([...mintable].sort()).toEqual(
       [
         BuffKind.Taker,
         BuffKind.Feeder,
         BuffKind.Sidestep,
+        BuffKind.SkullHelmet,
+        BuffKind.SkullTether,
         BuffKind.Cheat,
         BuffKind.Timebomb,
       ].sort(),
@@ -69,7 +71,7 @@ describe('reachability — the DLR-120 audit', () => {
   })
 
   it('partitions the BuffKind union with mintable and unreachable, less Unassigned', () => {
-    expect(BUFF_TEMPLATES.length).toBe(16)
+    expect(BUFF_TEMPLATES.length).toBe(18)
     const total = Object.values(BuffKind).length
     expect(mintableBuffKinds().size + unreachableBuffKinds().size + 1).toBe(total)
   })

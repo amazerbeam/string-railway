@@ -52,6 +52,12 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     // matter within one machine's table. UNIT: relative weight, >= 0, unitless.
     [BuffKind.Cheat]: 3,
     [BuffKind.Timebomb]: 3,
+    // DLR-161 — NOBODY CHOSE THESE FOUR NUMBERS. Both cards are in-hand tactical plays like
+    // Cheat and Timebomb, and the Helmet is the stronger of the pair by design, so it is
+    // weighted no higher than the Tether. Only RATIOS matter within one machine's table.
+    // UNIT: relative weight, >= 0, unitless. See `tasks.md` → Developer decides or observes.
+    [BuffKind.SkullHelmet]: 3,
+    [BuffKind.SkullTether]: 2,
   },
   [SlotMachineId.Strongbox]: {
     [BuffKind.Taker]: 2,
@@ -60,6 +66,9 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     // DLR-132 — see the Skirmisher table's comment above; same nobody-approved status.
     [BuffKind.Cheat]: 1,
     [BuffKind.Timebomb]: 1,
+    // DLR-161 — see the Skirmisher table's comment above; same nobody-approved status.
+    [BuffKind.SkullHelmet]: 1,
+    [BuffKind.SkullTether]: 1,
   },
 }
 
@@ -71,10 +80,17 @@ export const SLOT_AXIS_WEIGHTS: Readonly<Record<SlotMachineId, SlotAxisWeights>>
   [SlotMachineId.Skirmisher]: {
     [BuffRewardAxis.Magnitude]: 3,
     [BuffRewardAxis.Multiplier]: 3,
+    // DLR-161 — NOBODY CHOSE THIS NUMBER. Inert today: each protective family has exactly one
+    // axis, so `familyAxisTotal` equals the axis weight and it cancels out of `templateWeightFor`.
+    // The row exists to keep `SlotAxisWeights` total; a second protective axis is what would make
+    // it bite.
+    [BuffRewardAxis.Protection]: 3,
   },
   [SlotMachineId.Strongbox]: {
     [BuffRewardAxis.Magnitude]: 1,
     [BuffRewardAxis.Multiplier]: 1,
+    // DLR-161 — see the Skirmisher table's comment above; same inert, nobody-approved status.
+    [BuffRewardAxis.Protection]: 1,
   },
 }
 

@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Option A, annotated — what every part of the damage block does</title>
+    <style>
+      :root {
+        --wc-felt-line: #2b4038;
+        --wc-brass: #c99a4e;
+        --wc-brass-dim: #7d6132;
+        --wc-chalk: #cdd6d2;
+        --wc-chalk-dim: #6f7d78;
+        --wc-alarm: #d1705f;
+        --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia,
+          serif;
+        --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --pin: #e0a33f;
+        --bad: #d1705f;
+        --ok: #7fae7a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0b0f0e;
+        color: var(--wc-chalk);
+        font-family: var(--wc-sans);
+        font-size: 15px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--wc-serif);
+        font-weight: 500;
+        color: var(--wc-brass);
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 0.3rem;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin: 2.4rem 0 0.8rem;
+        padding-top: 1.4rem;
+        border-top: 1px solid #ffffff14;
+      }
+      h3 {
+        font-size: 0.95rem;
+        color: var(--wc-chalk);
+        margin: 1.4rem 0 0.35rem;
+      }
+      p {
+        margin: 0 0 0.8rem;
+      }
+      code {
+        font-size: 0.9em;
+        color: var(--wc-brass);
+      }
+      b {
+        color: #fff;
+        font-weight: 600;
+      }
+      .wrap {
+        max-width: 66rem;
+        margin: 0 auto;
+        padding: 1.6rem 1.2rem 4rem;
+      }
+      .lede {
+        color: #a9b6b1;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 22rem minmax(0, 1fr);
+        gap: 1.6rem;
+        align-items: start;
+      }
+      @media (max-width: 56rem) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+        .sticky {
+          position: static !important;
+        }
+      }
+      .sticky {
+        position: sticky;
+        top: 1rem;
+      }
+
+      /* ---------- the block itself ---------- */
+      .pot {
+        border: 1px solid var(--wc-brass-dim);
+        border-radius: 9px;
+        background: linear-gradient(180deg, #141d21, #0f1518);
+        overflow: hidden;
+        font-size: 14px;
+      }
+      .pot-head {
+        padding: 0.7rem 0.8rem 0.6rem;
+        border-bottom: 1px solid #ffffff10;
+      }
+      .pot-body {
+        padding: 0.6rem 0.8rem;
+      }
+      .pot-foot {
+        padding: 0.6rem 0.8rem 0.7rem;
+        border-top: 1px solid #ffffff10;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .eyebrow {
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+        display: block;
+        margin-bottom: 0.35rem;
+      }
+      .figure {
+        font-family: var(--wc-serif);
+        color: var(--wc-brass);
+        font-size: 2.7rem;
+        line-height: 1;
+      }
+      .sub {
+        font-size: 0.74rem;
+        color: var(--wc-chalk-dim);
+        margin: 0.35rem 0 0;
+      }
+      .sub b {
+        color: var(--wc-chalk);
+      }
+      .consequence {
+        font-size: 0.74rem;
+        color: var(--wc-brass);
+        margin: 0.5rem 0 0;
+        padding-top: 0.5rem;
+        border-top: 1px dashed #ffffff14;
+      }
+      .rows {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .row {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        font-size: 0.76rem;
+        padding: 0.28rem 0;
+        border-bottom: 1px dashed #ffffff0d;
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .row .what {
+        flex: 1;
+        min-width: 0;
+        color: var(--wc-chalk);
+      }
+      .row .amt {
+        color: var(--wc-brass);
+        font-family: var(--wc-serif);
+        font-size: 1.1em;
+        white-space: nowrap;
+      }
+      .row.dead .what {
+        color: var(--wc-chalk-dim);
+        text-decoration: line-through;
+      }
+      .row.dead .amt {
+        color: var(--wc-chalk-dim);
+      }
+      .row.total {
+        border-top: 1px solid #ffffff14;
+        border-bottom: 0;
+        margin-top: 0.35rem;
+        padding-top: 0.5rem;
+      }
+      .row.total .what {
+        color: var(--wc-chalk-dim);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.9em;
+      }
+      .btn {
+        font: inherit;
+        display: block;
+        width: 100%;
+        min-height: 44px;
+        border-radius: 7px;
+        padding: 0.45rem 0.6rem;
+        text-align: center;
+        background: #16211f;
+        color: var(--wc-chalk);
+        border: 1px solid var(--wc-brass-dim);
+        cursor: pointer;
+      }
+      .btn.roll {
+        border-style: dashed;
+      }
+      .btn .lbl {
+        font-family: var(--wc-serif);
+        font-size: 1rem;
+        color: var(--wc-brass);
+        display: block;
+      }
+      .btn .big {
+        font-family: var(--wc-serif);
+        font-size: 1.5rem;
+        color: var(--wc-chalk);
+        display: block;
+        line-height: 1.1;
+      }
+      .btn .hint {
+        display: block;
+        font-size: 0.63rem;
+        color: var(--wc-chalk-dim);
+        margin-top: 0.15rem;
+      }
+
+      /* ---------- pins ---------- */
+      .pin {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 50%;
+        background: var(--pin);
+        color: #17110a;
+        font-size: 0.7rem;
+        font-weight: 700;
+        font-family: var(--wc-sans);
+        vertical-align: middle;
+        margin-left: 0.35rem;
+        flex: none;
+      }
+      .pin.on-dark {
+        outline: 2px solid #0f1518;
+      }
+
+      /* ---------- legend ---------- */
+      .entry {
+        display: grid;
+        grid-template-columns: 1.6rem minmax(0, 1fr);
+        gap: 0.6rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #ffffff0d;
+      }
+      .entry:last-child {
+        border-bottom: 0;
+      }
+      .entry .n {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.35rem;
+        height: 1.35rem;
+        border-radius: 50%;
+        background: var(--pin);
+        color: #17110a;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+      .entry h4 {
+        margin: 0 0 0.2rem;
+        font-size: 0.92rem;
+        color: #fff;
+        font-weight: 600;
+      }
+      .entry p {
+        margin: 0 0 0.35rem;
+        font-size: 0.87rem;
+        color: #a9b6b1;
+      }
+      .src {
+        font-size: 0.76rem;
+        color: var(--wc-chalk-dim);
+      }
+      .src code {
+        color: #b98f4a;
+      }
+
+      .flag {
+        display: inline-block;
+        font-size: 0.63rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.08rem 0.4rem;
+        border-radius: 4px;
+        border: 1px solid currentColor;
+        margin-left: 0.3rem;
+        vertical-align: 1px;
+      }
+      .flag.overlap {
+        color: var(--bad);
+      }
+      .flag.clear {
+        color: var(--ok);
+      }
+
+      /* ---------- findings ---------- */
+      .find {
+        border: 1px solid #ffffff14;
+        border-left: 3px solid var(--bad);
+        border-radius: 0 8px 8px 0;
+        padding: 0.9rem 1rem;
+        margin: 0 0 0.9rem;
+        background: #10161a;
+      }
+      .find.low {
+        border-left-color: var(--wc-brass-dim);
+      }
+      .find h4 {
+        margin: 0 0 0.3rem;
+        font-size: 0.97rem;
+        color: #fff;
+        font-weight: 600;
+      }
+      .find .freq {
+        font-size: 0.72rem;
+        color: var(--wc-chalk-dim);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 0.45rem;
+      }
+      .find p {
+        font-size: 0.88rem;
+        margin: 0 0 0.5rem;
+      }
+      .find p:last-child {
+        margin-bottom: 0;
+      }
+      .fix {
+        font-size: 0.85rem;
+        color: #a9b6b1;
+        border-top: 1px dashed #ffffff14;
+        padding-top: 0.5rem;
+        margin-top: 0.6rem;
+      }
+      .fix b {
+        color: var(--wc-brass);
+        font-weight: 600;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.85rem;
+        margin: 0.5rem 0 1rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.45rem 0.6rem;
+        border-bottom: 1px solid #ffffff12;
+        vertical-align: top;
+      }
+      th {
+        color: var(--wc-chalk-dim);
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .warn {
+        border: 1px solid var(--bad);
+        border-radius: 8px;
+        padding: 0.9rem 1rem;
+        background: #1a1113;
+        margin: 0 0 1.2rem;
+      }
+      .warn h3 {
+        margin-top: 0;
+        color: var(--bad);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Option A, annotated</h1>
+      <p class="lede">
+        Every element numbered, with what it is, where its number comes from, and what you do with
+        it. Then the overlaps — the same fact said twice — and the places the information is not as
+        clear as it looks.
+      </p>
+
+      <div class="warn">
+        <h3>First: the numbers in the earlier mockup were wrong, and the error is instructive</h3>
+        <p>
+          I invented that data, and it broke the game's own rules in two places. A
+          <b>Key-Taker</b> was shown firing on a <b>Dodge</b> — but a Taker pays for
+          <i>winning</i> a trick, and a dodge is a trick you lost. And a <b>Bell-Feeder</b> was
+          shown struck through as unfired on that same dodge — but a Feeder pays for
+          <i>losing</i>, so on a dodge it would have paid, unless the suit did not match.
+        </p>
+        <p>
+          The arithmetic was wrong too: <code>+1</code> then <code>×2</code> should add 2 to the
+          total, and the row beneath claimed it added 1.
+        </p>
+        <p style="margin-bottom: 0">
+          Worth saying out loud because it is the exact confusion this panel exists to prevent —
+          and because it means <b>a mockup's sample data has to obey the rules</b>, or it teaches
+          the wrong thing during review. The block below uses a corrected scenario, spelled out
+          under the legend.
+        </p>
+      </div>
+
+      <div class="split">
+        <div class="sticky">
+          <section class="pot" aria-label="The pot">
+            <div class="pot-head">
+              <span class="eyebrow">The pot <span class="pin on-dark">1</span></span>
+              <span class="figure">4</span><span class="pin on-dark">2</span>
+              <p class="sub">
+                <b>4</b> banked <span style="color: var(--wc-chalk-dim)">×</span> <b>1</b> streak
+                <span class="pin on-dark">3</span>
+              </p>
+              <p class="consequence">
+                Skull dodged. The streak climbs. <span class="pin on-dark">4</span>
+              </p>
+            </div>
+            <div class="pot-body">
+              <span class="eyebrow">This trick added <span class="pin on-dark">5</span></span>
+              <ul class="rows">
+                <li class="row">
+                  <span class="what">Base damage</span><span class="amt">+1</span>
+                  <span class="pin on-dark">6</span>
+                </li>
+                <li class="row">
+                  <span class="what">Sidestep (Blade)</span><span class="amt">+1</span>
+                  <span class="pin on-dark">7</span>
+                </li>
+                <li class="row">
+                  <span class="what">Key-Feeder (Momentum)</span><span class="amt">×2</span>
+                  <span class="pin on-dark">8</span>
+                </li>
+                <li class="row dead">
+                  <span class="what">Moon-Taker — needed you to take a trick with Moons</span
+                  ><span class="amt">—</span>
+                  <span class="pin on-dark">9</span>
+                </li>
+                <li class="row total">
+                  <span class="what">Banked</span><span class="amt">total 0→4 · roll 0→1</span>
+                  <span class="pin on-dark">10</span>
+                </li>
+              </ul>
+            </div>
+            <div class="pot-foot">
+              <button class="btn" type="button">
+                <span class="lbl">Apply damage</span><span class="big">4</span>
+                <span class="hint">dealt now · total and roll reset</span>
+              </button>
+              <span class="pin">11</span>
+              <button class="btn roll" type="button">
+                <span class="lbl">Roll over</span><span class="big">10+</span>
+                <span class="hint">if you take trick 4 · 0 if you do not</span>
+              </button>
+              <span class="pin">12</span>
+            </div>
+          </section>
+        </div>
+
+        <div>
+          <h3 style="margin-top: 0">The scenario this shows</h3>
+          <p class="src">
+            Trick 3. You held <b>total 0, roll 0</b> going in. They led a 2 carrying a skull; you
+            played a 7 and did <i>not</i> take it — a <b>dodge</b>, which banks and costs you
+            nothing. Base damage is 1. A <b>Sidestep</b> (pays when you dodge a skull) adds 1. A
+            <b>Key-Feeder</b> (pays when you lose a trick in Keys) doubles it. A
+            <b>Moon-Taker</b> was armed and could not pay, because you did not take the trick.
+            So the trick adds <code>(1 + 1) × 2 = 4</code>, the streak climbs to 1, and the pot is
+            <code>4 × 1 = 4</code>.
+          </p>
+
+          <h3>What each part is</h3>
+
+          <div class="entry">
+            <span class="n">1</span>
+            <div>
+              <h4>“The pot” — the label <span class="flag clear">clear</span></h4>
+              <p>
+                Names the block. The pot is the money on the table: what you would deal to the
+                Quarry if you chose to cash out right now.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">2</span>
+            <div>
+              <h4>The pot figure <span class="flag overlap">said twice</span></h4>
+              <p>
+                <code>total × roll</code>. The single number the whole block is about, and the
+                largest thing on it — that inversion was one of the twelve fixes, because this
+                figure used to be set smaller than the trick's own contribution.
+              </p>
+              <p class="src">
+                Source: <code>potValue(total, roll)</code>. Also printed on the Apply button
+                <span class="pin">11</span> — see finding 4.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">3</span>
+            <div>
+              <h4>“4 banked × 1 streak” <span class="flag overlap">said twice</span></h4>
+              <p>
+                The two figures the pot multiplies. <b>Banked</b> is your running damage total;
+                <b>streak</b> is how many tricks in a row you have banked without being hurt.
+              </p>
+              <p class="src">
+                Source: <code>RoundState.total</code> and <code>RoundState.roll</code>. Restated as
+                a transition by row <span class="pin">10</span> — see findings 1 and 3.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">4</span>
+            <div>
+              <h4>The consequence line <span class="flag overlap">said twice</span></h4>
+              <p>
+                What just happened to your running state, in words: the streak survived and grew.
+                It is the only line here that speaks to the <i>outcome</i> axis rather than the
+                arithmetic.
+              </p>
+              <p class="src">
+                Source: the existing bank meter's consequence text. The felt says the same event
+                in different words at the same moment — see finding 8.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">5</span>
+            <div>
+              <h4>“This trick added” — the breakdown's heading</h4>
+              <p>
+                Separates the running state above from this one trick's contribution below.
+                Past tense, deliberately: this has already happened and is already inside the pot
+                figure. Nothing below this line is still pending.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">6</span>
+            <div>
+              <h4>Base damage <span class="flag clear">clear</span></h4>
+              <p>
+                Every banked trick is worth 1 before anything modifies it. Shown so the other rows
+                have something to visibly modify, rather than a number appearing from nowhere.
+              </p>
+              <p class="src">Source: <code>BASE_DAMAGE</code>.</p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">7</span>
+            <div>
+              <h4>A buff that paid, on the damage axis</h4>
+              <p>
+                <b>Sidestep</b> pays when you lose a trick that carried a skull — a dodge. It is
+                the only condition in the game that can never fire on a bad outcome.
+                <b>(Blade)</b> is the reward axis: Blade adds damage, Momentum multiplies it.
+              </p>
+              <p class="src">Source: a fired row from the resolution beats.</p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">8</span>
+            <div>
+              <h4>A buff that paid, on the multiplier axis <span class="flag overlap">unclear</span></h4>
+              <p>
+                <b>Key-Feeder</b> pays when you lose a trick in Keys — which a dodge is. Momentum
+                means it multiplies rather than adds, so it applies to the sum of everything above
+                it: <code>(1 + 1) × 2</code>.
+              </p>
+              <p class="src">
+                This row's <code>×2</code> sits in the same column as <code>+1</code>, and the
+                order it applies in is invisible — see finding 2.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">9</span>
+            <div>
+              <h4>A buff that was armed and did not pay</h4>
+              <p>
+                Struck through, with the condition it needed. This row is the whole reason the play
+                session produced a false bug report: a Feeder correctly paid nothing, and nothing
+                on screen said why, so it read as a broken multiplier.
+              </p>
+              <p class="src">
+                Source: armed minus fired. The <code>—</code> means “paid nothing”, which is not
+                quite the same as zero — see finding 7.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">10</span>
+            <div>
+              <h4>The “Banked” row <span class="flag overlap">said twice</span></h4>
+              <p>
+                Where the two running figures moved to. <code>total 0→4</code> is this trick's
+                4 damage entering the bank; <code>roll 0→1</code> is the streak ticking up.
+              </p>
+              <p class="src">
+                Both destinations are already stated by <span class="pin">3</span>, in different
+                words — see findings 1 and 3.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">11</span>
+            <div>
+              <h4>Apply damage — cash out</h4>
+              <p>
+                Deals the pot to the Quarry now. Your total and streak reset to zero afterwards, so
+                this is the moment you decide the run is worth banking rather than growing.
+                The number on it is the pot <span class="pin">2</span>.
+              </p>
+              <p class="src">
+                When the pot would end the fight this control gains a lethal tag. Otherwise it
+                never says what the Quarry can survive — see finding 6.
+              </p>
+            </div>
+          </div>
+
+          <div class="entry">
+            <span class="n">12</span>
+            <div>
+              <h4>Roll over — let it ride <span class="flag overlap">unclear</span></h4>
+              <p>
+                Decline to cash out. If you bank the next trick the pot grows; if you are hurt, the
+                whole thing goes to zero. That is the game's core gamble, and these two buttons are
+                where it is actually made.
+              </p>
+              <p class="src">
+                <code>10+</code> is the floor, not a forecast — see finding 5.
+              </p>
+            </div>
+          </div>
+
+          <h2 style="margin-top: 2rem">What overlaps, and what is not clear</h2>
+          <p class="lede">
+            Ranked by how often a player meets them. Every trick beats once a fight; the frequency
+            sets the order, not how annoying any one of them looks.
+          </p>
+
+          <div class="find">
+            <h4>1. “Banked” means two different things, four lines apart</h4>
+            <div class="freq">Every trick · vocabulary collision</div>
+            <p>
+              In the header <span class="pin">3</span>, <b>“4 banked”</b> is a noun — your running
+              damage total. In the row label <span class="pin">10</span>, <b>“Banked”</b> is a
+              verb in the past tense — this trick was banked rather than hurting you. Same word,
+              two grammatical roles, one small panel.
+            </p>
+            <p>
+              This is the same trap the project already documents around <i>win</i> and
+              <i>lose</i>: one word doing duty on both the mechanical axis and the outcome axis. It
+              is worth not repeating it with a second word.
+            </p>
+            <p class="fix">
+              <b>Fix:</b> rename one of them. The header's could read
+              <code>4 damage × 1 streak</code>, leaving “banked” to mean only the outcome. Copy is
+              yours — but they should not both be “banked”.
+            </p>
+          </div>
+
+          <div class="find">
+            <h4>2. The value column mixes addends, multipliers and nothings</h4>
+            <div class="freq">Every trick with a multiplier buff · you cannot read down and sum</div>
+            <p>
+              The column reads <code>+1</code>, <code>+1</code>, <code>×2</code>, <code>—</code>.
+              Three different kinds of arithmetic in one right-aligned stack, with the order of
+              operations invisible. A player summing the column gets 2; the answer is 4.
+            </p>
+            <p>
+              The multiplier's scope is the real problem: <code>×2</code> applies to everything
+              above it, and nothing on screen says so. It looks like a row, but it is an operation
+              on the other rows.
+            </p>
+            <p class="fix">
+              <b>Two ways out, differing in kind.</b> Either <b>group them</b> — adds in one
+              cluster with a subtotal, then the multipliers applied to that subtotal beneath a
+              rule, so the arithmetic is visible as a shape; or <b>drop the column entirely</b> and
+              write each row as a sentence with its own running result on the right
+              (<code>2</code>, then <code>4</code>), so you read a sequence rather than a sum.
+              The first keeps the table; the second admits it is not really a table.
+            </p>
+          </div>
+
+          <div class="find">
+            <h4>3. The header and the “Banked” row are the same two numbers</h4>
+            <div class="freq">Every trick · redundancy</div>
+            <p>
+              <span class="pin">3</span> says total is 4 and streak is 1. <span class="pin">10</span>
+              says total went <code>0→4</code> and roll went <code>0→1</code>. The second is the
+              first plus where it came from. One of them is carrying no new information.
+            </p>
+            <p class="fix">
+              <b>Fix:</b> keep the transition and drop the restatement, or the reverse. The
+              transition is more useful on the trick it changes and useless on a trick that
+              changed nothing — which argues for keeping the header stable and showing the
+              transition only when it moved.
+            </p>
+          </div>
+
+          <div class="find low">
+            <h4>4. The pot figure appears twice, 200px apart</h4>
+            <div class="freq">Every trick · arguably fine</div>
+            <p>
+              The headline <span class="pin">2</span> and the Apply button
+              <span class="pin">11</span> both read <code>4</code>. I do not think this is a defect
+              — a control that states what it will do is good practice, and the two are far enough
+              apart to read as confirmation rather than repetition. Flagging it so the decision is
+              deliberate rather than accidental.
+            </p>
+          </div>
+
+          <div class="find">
+            <h4>5. “10+” — the plus is unexplained</h4>
+            <div class="freq">Every trick · the number the gamble turns on</div>
+            <p>
+              Roll over shows the pot you would hold after banking the next trick — but only its
+              <i>floor</i>, because next trick's base damage is known while any buffs you arm are
+              not. So the true figure is “at least 10”. The <code>+</code> carries all of that, and
+              a player who has not been told will read it as “10 or so”.
+            </p>
+            <p class="fix">
+              <b>Two ways out.</b> Either <b>say it in the hint</b> — “at least 10, before any buff
+              you arm” — which costs a line; or <b>drop the number to a range or a caret glyph</b>
+              and let the hint carry the meaning alone. The first is clearer, the second is
+              quieter. Both beat an unexplained plus.
+            </p>
+          </div>
+
+          <div class="find">
+            <h4>6. You only learn the Quarry's health when the pot is already lethal</h4>
+            <div class="freq">Every trick · asymmetric information</div>
+            <p>
+              The lethal state names what Aoife holds. The ordinary state does not — so
+              <code>4</code> is a number with no scale attached, and the question the button exists
+              to answer (“is this worth cashing?”) needs a glance up to the top-right health bar
+              and back.
+            </p>
+            <p>
+              Strictly the health <i>is</i> on screen, so this is not a hidden-information failure
+              — it is a distance one. The two figures you are comparing sit at opposite corners.
+            </p>
+            <p class="fix">
+              <b>Fix:</b> state the target's remaining health on the Apply control in every state,
+              not only the lethal one. Then the lethal tag becomes an emphasis of something already
+              there rather than the only time the figure appears.
+            </p>
+          </div>
+
+          <div class="find low">
+            <h4>7. The dead row truncates, and its “—” is ambiguous</h4>
+            <div class="freq">Only when a buff misses · minor</div>
+            <p>
+              “Moon-Taker — needed you to take a trick with Moons” is already near this column's
+              width, and a longer condition will clip. The <code>—</code> in the value column reads
+              as “nothing” but sits where numbers live, so it can be read as zero — which is a
+              subtly different claim (it fired and paid nothing, versus it never fired).
+            </p>
+            <p class="fix">
+              <b>Fix:</b> let the dead row wrap to two lines rather than truncating, and drop its
+              value cell entirely — a row with no number does not need an empty numeric column.
+            </p>
+          </div>
+
+          <div class="find low">
+            <h4>8. The consequence line and the felt say the same event, differently</h4>
+            <div class="freq">Every trick · cross-surface</div>
+            <p>
+              Here: <i>“Skull dodged. The streak climbs.”</i> On the felt at the same moment:
+              <i>“Dodge — they took it, and it carried a skull, so it banks and costs you
+              nothing.”</i> Same event, two vocabularies, both visible at once.
+            </p>
+            <p>
+              I would leave this. They are in different zones doing different jobs — the felt
+              explains the outcome, this line explains what it did to your running state — and the
+              felt's version disappears when you carry on while this one persists. Worth knowing it
+              is deliberate rather than missed.
+            </p>
+          </div>
+
+          <h2>What I would change, and what I would leave</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Change</th>
+                <th>Why</th>
+                <th>Whose call</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Stop “banked” meaning two things</td>
+                <td>A vocabulary collision in a game that already has one</td>
+                <td>Copy — yours</td>
+              </tr>
+              <tr>
+                <td>Make the multiplier's scope visible</td>
+                <td>The arithmetic is currently unreadable; a player summing gets the wrong answer</td>
+                <td>Pick one of the two shapes</td>
+              </tr>
+              <tr>
+                <td>Show the transition or the result, not both</td>
+                <td>Same two numbers twice</td>
+                <td>Pick one</td>
+              </tr>
+              <tr>
+                <td>Explain the “+” on roll over</td>
+                <td>It is the number the core gamble turns on</td>
+                <td>Copy — yours</td>
+              </tr>
+              <tr>
+                <td>Put the Quarry's health on Apply always</td>
+                <td>Otherwise the figure has no scale except when fatal</td>
+                <td>Straightforward</td>
+              </tr>
+              <tr>
+                <td>Wrap the dead row, drop its empty value cell</td>
+                <td>Truncation, and “—” reading as zero</td>
+                <td>Straightforward</td>
+              </tr>
+              <tr>
+                <td><b>Leave</b> the pot appearing on the button too</td>
+                <td>Confirmation, not repetition</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><b>Leave</b> the felt/panel wording overlap</td>
+                <td>Different zones, different jobs, different lifetimes</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="lede" style="margin-top: 1.4rem">
+            Nothing here is built. Tell me which of the eight you want and I will fold them into a
+            second mockup before any code changes.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

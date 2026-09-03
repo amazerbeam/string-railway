@@ -150,7 +150,9 @@ describe('WarCouncilRound', () => {
       // reliably observe a timer that a still-in-flight effect has not scheduled yet.
       act(() => vi.advanceTimersByTime(1000))
       advanceTrickDwell()
-      expect(screen.getByText(/you took it/i)).toBeDefined()
+      // DLR-160 AC11 — the felt's own well and the resolution panel now both say the outcome word
+      // at once (both read `resolutionOutcome.ts`), so this reads `getAllByText`.
+      expect(screen.getAllByText(/clean win/i).length).toBeGreaterThan(0)
       carryOnFromResolution()
       // The hand is back, interactive, and the played card is gone — not a permanently locked
       // felt, which is the actual failure this defect causes when the landing depends on
@@ -192,7 +194,7 @@ describe('WarCouncilRound', () => {
       // `setTimeout` is not created until the flight's landing dispatch has already re-rendered.
       act(() => vi.advanceTimersByTime(1000))
       advanceTrickDwell()
-      expect(screen.getByText(/you took it/i)).toBeDefined()
+      expect(screen.getAllByText(/clean win/i).length).toBeGreaterThan(0)
       carryOnFromResolution()
       // 7 of Bells committed as the player's original intent — gone from the hand; 2 of Bells,
       // never touched, is still held.
@@ -278,9 +280,9 @@ describe('WarCouncilRound', () => {
     fireEvent.click(last)
     advanceTrickDwell()
     // DLR-156 — the deciding trick resolves and completes the hand in the same commit, but its
-    // cards and winner must be visible — on the resolution screen now, replacing the old felt-side
-    // reveal — before the hand-over panel replaces them.
-    expect(screen.getByText(/you took it/i)).toBeDefined()
+    // cards and winner must be visible — on the resolution panel now, overlaid on the felt
+    // (DLR-160 AC11) — before the hand-over panel replaces the whole tree.
+    expect(screen.getAllByText(/clean win/i).length).toBeGreaterThan(0)
     expect(screen.queryByRole('heading', { name: 'The hand is over' })).toBeNull()
     carryOnFromResolution()
     // `roundReducer.ts`'s Task 15 chaining clears the held reveal and finds the hand already
@@ -325,7 +327,8 @@ describe('WarCouncilRound', () => {
     // the felt (the SAME held-reveal affordance the hand's actual sixth trick uses below), since
     // the felt's own `handleCarryOn` reports `onComplete` on that tap without ever reaching a
     // sixth trick.
-    const carryOn = screen.getByRole('button', { name: /tap the table to carry on/i })
+    // DLR-160 AC1 — a real button named "Carry on" now (the "tap the table" copy is gone).
+    const carryOn = screen.getByRole('button', { name: /^carry on$/i })
     fireEvent.click(carryOn)
     expect(onComplete).toHaveBeenCalledTimes(1)
     expect(onComplete.mock.calls[0][0].finalState.phase).not.toBe(RoundPhase.Complete)
@@ -349,10 +352,10 @@ describe('WarCouncilRound', () => {
     expect(screen.queryByRole('button', { name: /roll over/i })).toBeNull()
   })
 
-  it('DLR-148 — the dossier holds three panels now the intent telegraph is gone', () => {
+  it('the dossier holds two panels now the Quarry identity card is gone', () => {
     const { container } = renderRound()
     const dossier = container.querySelector('.wc-dossier')
-    expect(dossier?.children.length).toBe(3)
+    expect(dossier?.children.length).toBe(2)
   })
 
   it('DLR-148 — opening the buff gallery leaves the decree, the spent pile and the Quarry’s played card in the document (AC1, jsdom half)', () => {

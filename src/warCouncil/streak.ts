@@ -4,6 +4,7 @@ import {
   DAMAGE_PER_HIT,
   DuelSide,
   resolveTrickBuffs,
+  streakProtectionFor,
   trickBonusFor,
   type Buff,
   type BuffBonusAccrual,
@@ -160,37 +161,23 @@ function safeBonus(bonus: number): number {
 }
 
 /**
- * The figure a total of `total` at a roll of `roll` is worth IN FULL — the plain
- * product. THE one statement of it: `applyPot` is now the only cash-out this game has, so there
- * is only one caller left to disagree about what it is a share OF.
- *
- * Floors a non-integer, non-positive, NaN or infinite input to 0 rather than propagating it, for
- * the reason `safeBonus`'s own guard above states: this figure feeds damage, then a rendered heart
- * row, so a NaN would vanish into a health bar with nothing logged anywhere
- * (`web-project.md` → "NaN propagates silently"). Every real input is a non-negative integer, so
- * this is a guard rather than a live path.
- *
- * Renamed from `cashValue`. Guard and reasoning kept verbatim.
- */
-export function potValue(total: number, roll: number): number {
-  if (!Number.isInteger(total) || !Number.isInteger(roll) || total <= 0 || roll <= 0) {
-    return 0
-  }
-  return total * roll
-}
-
-/**
  * DLR-156 AC1/AC7 — one trick's whole effect on the streak and both health bars.
  *
  * A BANKED trick (`isTaken(outcome)`) computes its own damage as `(base + buffDamage) x buffMult`
  * from the buffs fired ON THIS TRICK ONLY (AC11), adds it to `total`, and climbs `roll` by one. A
  * HURT trick pays the Quarry nothing and wipes both to zero — there is no two-thirds consolation
- * (AC7). Neither branch cashes anything: `cashOut` is always 0 now, and the only place the pot can
- * be paid is the apply choice, through `applyPot` below (AC3/AC5).
+ * (AC7), UNLESS a fired Skull Helmet or Skull Tether saves one of the two figures (DLR-161, see
+ * below). Neither branch cashes anything: `cashOut` is always 0 now, and the only place the pot
+ * can be paid is the apply choice, through `applyPot` in `pot.ts` (AC3/AC5).
  *
  * The end-of-hand fold is GONE (AC8): `total` and `roll` cross a hand boundary untouched, and
  * `finalTrick` no longer folds a cash-out in — Unbloodied still reads it as a hand-scoped
  * condition, and `HAND_SIZE` still ends the hand elsewhere.
+ *
+ * DLR-161 — Skull Helmet spares `total` and Skull Tether spares `roll` through a hurt trick,
+ * exactly as the Swan ladder already spares both at gold; a card's own gold rung then adds one to
+ * whichever figure it saved. Neither card ever spares the health: `damageToPlayer` is computed
+ * above the reset block and this rule never reaches it (AC7).
  *
  * Pure arithmetic — there is no division anywhere here, so no epsilon is needed and no `NaN` is
  * producible from the inputs this takes.
@@ -280,6 +267,13 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
       ? []
       : trick.buffs.active.filter((buff) => buffOutcome.firedIds.includes(buff.id))
 
+  // DLR-161 — derived HERE, from the buffs this trick actually fired, rather than handed in on
+  // `TrickFacts` the way the Swan's two booleans are. The Swan comes from a run permanent the
+  // caller genuinely knows about; this depends on condition evaluation that happens inside this
+  // function, so passing it in would force the caller to evaluate the conditions a second time —
+  // the second copy of the rules `buffProjection.ts`'s docblock exists to prevent.
+  const protection = streakProtectionFor(fired)
+
   if (taken) {
     // AC1/AC11 — the trick's OWN damage. `bd` and `bm` come from the buffs fired on THIS trick
     // and nothing else. The Overlap Bonus joins `bm` here, and is carried out separately on
@@ -315,13 +309,26 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     // trigger, not a second implementation of it: `replaced` above already skips the hit for the
     // same reason, and this skips the reset one branch below it. The DAMAGE is untouched either
     // way — it was booked into `damageToPlayer` above and no Swan rung insures against it.
-    if (!swanKeepsBank) {
+    // DLR-161 — the nested Swan guard becomes two INDEPENDENT guards. The old nesting encoded
+    // "gold implies silver" as structure, and structure cannot express "the roll survives but the
+    // total does not" — which is exactly Skull Tether. Behaviour-identical for all four Swan
+    // cases (DLR-122 AC4: silver spares the roll only; AC5: gold spares both), and a regression
+    // spec pins each of them.
+    const keepsTotal = swanKeepsBank || protection.keepsTotal
+    const keepsRoll = swanKeepsBank || swanKeepsMultiplier || protection.keepsRoll
+
+    if (!keepsTotal) {
       total = 0
-      // DLR-122 AC4 — silver spares the ROLL, not the total: the total above still resets to
-      // zero, and only the streak length survives.
-      if (!swanKeepsMultiplier) {
-        roll = 0
-      }
+    } else if (protection.keepsTotal) {
+      // AC6 — the gold bonus is added only where the PROTECTION saved the figure. A Swan that
+      // already spared it does not also pay the card's +1: one save, one bonus.
+      total += protection.totalBonus
+    }
+
+    if (!keepsRoll) {
+      roll = 0
+    } else if (protection.keepsRoll) {
+      roll += protection.rollBonus
     }
   }
 
@@ -356,35 +363,5 @@ export function incomingFrom(resolution: TrickResolution): IncomingDamage {
   return {
     [DuelSide.Player]: resolution.damageToPlayer,
     [DuelSide.Quarry]: resolution.cashOut + resolution.timebombToQuarry,
-  }
-}
-
-/** DLR-156 AC5 — the apply choice: deals `potValue(total, roll)` to the Quarry and zeroes both.
- *  Cannot fail — a `StreakState` in, a dealt figure and `EMPTY_STREAK` out. Lifted from
- *  `voluntaryCashOut.ts`'s `cashBankNow`, and renamed to `applyPot`/`incomingFromPot` to match:
- *  there is no longer a second, forced cash-out for this to be a VOLUNTARY alternative to. */
-export interface PotApplication {
-  readonly streak: StreakState
-  readonly dealt: number
-}
-
-export function applyPot(streak: StreakState): PotApplication {
-  return {
-    streak: EMPTY_STREAK,
-    dealt: potValue(streak.total, streak.roll),
-  }
-}
-
-/**
- * The `PlayerSide` -> `DuelSide` crossing for the apply choice, in one named place for the reason
- * `incomingFrom`'s docblock gives: a caller assembling this record by hand is one transposition
- * away from depleting the wrong bar forever.
- *
- * The player's entry is a hard 0 — AC5's "deals no damage to the player" is this line.
- */
-export function incomingFromPot(dealt: number): IncomingDamage {
-  return {
-    [DuelSide.Player]: 0,
-    [DuelSide.Quarry]: dealt,
   }
 }

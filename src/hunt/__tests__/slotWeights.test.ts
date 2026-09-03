@@ -40,6 +40,28 @@ describe('templateWeightFor', () => {
     },
   )
 
+  it.each(SLOT_MACHINE_IDS)(
+    'DLR-161 — every template in BUFF_TEMPLATES weighs a finite positive amount on %s',
+    (machineId) => {
+      for (const template of BUFF_TEMPLATES) {
+        expect(templateWeightFor(machineId, template)).toBeGreaterThan(0)
+      }
+    },
+  )
+
+  it("DLR-161 — the two new templates' weight on Skirmisher equals their family weight exactly", () => {
+    const helmet = templateById('skullHelmet:protection')!
+    const tether = templateById('skullTether:protection')!
+    expect(templateWeightFor(SlotMachineId.Skirmisher, helmet)).toBeCloseTo(
+      SLOT_FAMILY_WEIGHTS[SlotMachineId.Skirmisher][BuffKind.SkullHelmet],
+      10,
+    )
+    expect(templateWeightFor(SlotMachineId.Skirmisher, tether)).toBeCloseTo(
+      SLOT_FAMILY_WEIGHTS[SlotMachineId.Skirmisher][BuffKind.SkullTether],
+      10,
+    )
+  })
+
   // DLR-145 — the "leans the two machines in opposite directions" case this file used to carry is
   // GONE, not broken: it compared `Glutton`'s event-family share against `Hoarder`/`Unbloodied`'s
   // threshold-family share, and all three families were cut from `SLOT_FAMILY_WEIGHTS` along with

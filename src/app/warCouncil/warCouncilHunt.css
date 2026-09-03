@@ -1,5 +1,7 @@
-/* War Council — the Hunt screen's readouts: the dossier zone (the Quarry's card, the shape
-   readout and the bank meter — DLR-148 deleted the intent telegraph, both halves).
+/* War Council — the Hunt screen's readouts: the dossier zone (the shape readout and the bank
+   meter — DLR-148 deleted the intent telegraph, and a later pass removed the Quarry identity
+   card that used to sit above them; the Quarry's name and tricks-taken count now live entirely
+   in `RoundStatusBand`/`DuelHealthBars`, not here).
    Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because
    the shell stylesheet is at its 400-line budget; import both from the mount component.
    Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
@@ -13,7 +15,7 @@
    Standing multiplier they scored — none of that machinery has a place in the bank-and-skull
    loop that replaced it. */
 
-/* ---------- the dossier zone: the Quarry's card, then the shape and bank readouts ---------- */
+/* ---------- the dossier zone: the shape and bank readouts ---------- */
 
 .wc-dossier {
   grid-area: dossier;
@@ -26,42 +28,6 @@
      never be allowed to force the grid wider than the viewport. */
   min-width: 0;
   overflow: hidden;
-}
-
-.wc-dossier-card {
-  background: var(--wc-chamber-lift);
-  border: 1px solid #23303a;
-  border-left: 3px solid var(--wc-brass-dim);
-  border-radius: 0.4rem;
-  padding: 0.6rem 0.7rem;
-}
-
-.wc-dossier-eyebrow {
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--wc-chalk-dim);
-}
-
-.wc-dossier-name {
-  font-family: var(--wc-serif);
-  font-size: 1.15rem;
-  font-weight: 400;
-  color: var(--wc-parchment);
-  margin: 0.1rem 0 0.35rem;
-}
-
-.wc-dossier-tricks {
-  margin-top: 0.45rem;
-  font-size: 0.72rem;
-  color: var(--wc-chalk-dim);
-}
-
-.wc-dossier-tricks b {
-  font-family: var(--wc-serif);
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--wc-parchment);
 }
 
 /* ---------- the shape readout (DLR-80, AC11): what the Quarry holds, never a rank ---------- */
@@ -288,7 +254,16 @@
      `grid-template-areas` carries an 'actions' row for the action bar (`.wc-bar` sets
      `grid-area: actions`), and this override must keep the same set of named areas or the
      bar falls out of its slot into implicit auto-placement. Maintain the two together: a row
-     added to one belongs in the other in the same change. */
+     added to one belongs in the other in the same change.
+
+     DLR-162 — the wide layout now names 'dossier' twice (it spans the table row AND the hand
+     row, so the pot card fills the left column's full height instead of stopping at the felt's
+     bottom edge). CHECKED, not changed here: the named-area SET is unchanged (still exactly
+     status/dossier/table/hand/actions) and the wide layout's row COUNT is unchanged (still four
+     tracks), so nothing here falls out of its slot. This override does not merge 'dossier' and
+     'hand' into one column-spanning block, because at this width there is no second column for
+     the pot card to extend into — `.wc-dossier` already renders as its own full-width wrapping
+     row above `.wc-table`, so the empty-space problem the wide fix solves does not exist here. */
   .wc-shell {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -301,9 +276,9 @@
   }
 
   /* DLR-119 — bounded, and given its own scroll. At this breakpoint the dossier stops being a
-     narrow column and becomes a wrapping ROW of panels (dossier card, shape readout, bank meter —
-     DLR-148 removed the intent telegraph, the fourth) with no ceiling on how tall it wraps.
-     `.wc-shell` clips rather than scrolls
+     narrow column and becomes a wrapping ROW of panels (the shape readout and the bank meter —
+     DLR-148 removed the intent telegraph, and a later pass removed the Quarry identity card) with
+     no ceiling on how tall it wraps. `.wc-shell` clips rather than scrolls
      and its felt row is `minmax(0, 1fr)`, so the felt collapses to zero first and every further
      pixel pushes the `hand` and `actions` rows off the bottom edge — the rows that hold every
      control the player has. This is `game-ux`'s stated exception ("if some region genuinely must
@@ -316,6 +291,19 @@
     flex-wrap: wrap;
     max-height: var(--wc-dossier-narrow-max);
     overflow-y: auto;
+  }
+
+  /* `.wc-resolve` (`warCouncilResolvePanel.css`) is now mounted as the last child of this row
+     rather than as a fixed corner panel. At the row-wrapping width its own build-up (trick cards,
+     the ledger, the apply/roll buttons) is too tall to sit inline beside the shape and bank
+     readouts, so it forces its own line (`flex-basis: 100%`) instead of trying to share one with
+     them, and its own scroll is dropped in favour of the row's single `overflow-y: auto` above —
+     nesting two independent scroll regions at this width is worse than one. */
+  .wc-resolve {
+    flex: 1 1 100%;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
   }
 
   /* .wc-status (defined in warCouncil.css) holds .wc-plate and .wc-score in a row with no

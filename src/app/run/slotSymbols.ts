@@ -3,6 +3,7 @@ import {
   BuffRewardAxis,
   type BuffTargetSuit,
   type BuffTemplate,
+  type ConditionBuffTemplate,
   type MintableRewardAxis,
 } from '../../hunt'
 
@@ -19,12 +20,15 @@ import {
  */
 
 /** What the window paints in its glyph slot. `suit` covers the two suit-parameterised families;
- *  Sidestep and the two activated templates carry no suit and take their own mark instead. */
+ *  Sidestep, Skull Helmet, Skull Tether and the two activated templates carry no suit and take
+ *  their own mark instead. */
 export type SlotGlyph =
   | { readonly kind: 'suit'; readonly suit: BuffTargetSuit }
   | { readonly kind: 'sidestep' }
   | { readonly kind: 'cheat' }
   | { readonly kind: 'timebomb' }
+  | { readonly kind: 'skullHelmet' }
+  | { readonly kind: 'skullTether' }
 
 export interface SlotSymbolFace {
   /** `template.id` — already unique across the strip, so it is the React key AND what a
@@ -48,13 +52,38 @@ const FAMILY_WORD: Readonly<Record<BuffTemplate['kind'], string>> = {
   [BuffKind.Sidestep]: 'Sidestep',
   [BuffKind.Cheat]: 'Cheat',
   [BuffKind.Timebomb]: 'Timebomb',
+  // DLR-161 — short forms, for a moving reel window; the full card name is `slotLabels.ts`'s job.
+  [BuffKind.SkullHelmet]: 'Helmet',
+  [BuffKind.SkullTether]: 'Tether',
 }
 
-/** The two mintable axes, in the same words `BUFF_REWARD_SUFFIX` uses — restated as a narrowed
+/** The mintable axes, in the same words `BUFF_REWARD_SUFFIX` uses — restated as a narrowed
  *  table rather than imported wholesale so a cut axis cannot leak onto a reel face. */
 const AXIS_WORD: Readonly<Record<MintableRewardAxis, string>> = {
   [BuffRewardAxis.Magnitude]: 'Blade',
   [BuffRewardAxis.Multiplier]: 'Momentum',
+  // DLR-161
+  [BuffRewardAxis.Protection]: 'Guard',
+}
+
+/** DLR-161 — the glyph a condition template carries. A total switch over the kinds a condition
+ *  template can be, so a sixth family is a compile error here rather than a blank or a borrowed
+ *  mark in a reel window. Throws on a suit-parameterised family that arrived without a suit —
+ *  `mintFromTemplate`'s discipline: a plausible-looking wrong glyph is the bug that type-checks. */
+function conditionGlyphFor(template: ConditionBuffTemplate): SlotGlyph {
+  const suit = template.target?.suit
+  if (suit !== undefined) return { kind: 'suit', suit }
+  switch (template.kind) {
+    case BuffKind.Sidestep:
+      return { kind: 'sidestep' }
+    case BuffKind.SkullHelmet:
+      return { kind: 'skullHelmet' }
+    case BuffKind.SkullTether:
+      return { kind: 'skullTether' }
+    case BuffKind.Taker:
+    case BuffKind.Feeder:
+      throw new RangeError(`Template ${template.id} is suit-parameterised but carries no suit`)
+  }
 }
 
 /** One template's reel face. Total over the `form` union, so a third template shape is a compile
@@ -68,10 +97,9 @@ export function slotSymbolFace(template: BuffTemplate): SlotSymbolFace {
       axis: null,
     }
   }
-  const suit = template.target?.suit
   return {
     id: template.id,
-    glyph: suit === undefined ? { kind: 'sidestep' } : { kind: 'suit', suit },
+    glyph: conditionGlyphFor(template),
     family: FAMILY_WORD[template.kind],
     axis: AXIS_WORD[template.axis],
   }

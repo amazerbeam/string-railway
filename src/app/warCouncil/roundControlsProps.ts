@@ -23,6 +23,7 @@ import type { Buff, BuffActivationRefusal } from '../../hunt'
 import {
   CardRank,
   isPrimed,
+  isSkulled,
   RoundPhase,
   sameCard,
   type AbilityChoice,
@@ -182,6 +183,11 @@ export function feltStageProps({
       skulledCards: ui.round.skulledCards,
       primedCards: ui.round.primedCards,
       offeredBuffs: offered,
+      // DLR-160 AC2 — the ONE reading of skull membership for THIS trick, filtered from the
+      // round's own list through the SAME `isSkulled` predicate every other reader here uses.
+      skulledInTrick: ui.resolvedTrick.cards
+        .map((played) => played.card)
+        .filter((card) => isSkulled(ui.round.skulledCards, card)),
       quarryToLead,
       onCarryOn,
     })

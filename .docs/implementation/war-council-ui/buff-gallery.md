@@ -58,8 +58,8 @@ greyscale, never as bronze/silver/gold, so the numeral is the carrier that survi
 > duplication real — a new suit or tier meant three synchronised edits with no compiler check tying
 > them together. They now live once in `buffCardVisuals.ts`, a pure lookup table and **not** a
 > component: all three files still render their own card face. The tier
-*word* is deliberately not rendered — it is what pushed the condition text into the payoff bar on
-the mockup.
+> _word_ is deliberately not rendered — it is what pushed the condition text into the payoff bar on
+> the mockup.
 
 **The cadence word is derived, never authored per card.** `buffLabels.ts`'s `buffCadenceWord(buff)`
 reads `BUFF_EVENT_WORD[buff.kind]` first and falls back to `BUFF_CADENCE_WORD[BUFF_CADENCE[kind]]`.
@@ -69,7 +69,7 @@ Event families, and the eight cut families fall through to the cadence table rat
 `undefined`. The words are **`TAKE` / `MISS` / `DODGE` / `WHEN` / `HAND END` / `PRESS`**.
 
 > **Those words are the mechanical axis, on purpose.** Every buff condition reads `playerWon` —
-> *did the player physically take the cards* — while the bank, the multiplier and the damage read
+> _did the player physically take the cards_ — while the bank, the multiplier and the damage read
 > the outcome axis. The mockup said `WIN` / `LOSE`, which would have put outcome words on a
 > mechanical test right beside a consequence readout speaking the outcome axis in the same felt.
 > `CLAUDE.md` names that collision as the single most common source of wrong statements about this
@@ -97,7 +97,7 @@ second tap is irreversible.
   `minmax(…, 1fr)`, so **a card's size does not encode how many there are** and a tier-filtered
   gallery does not stretch three cards across the panel.
 - **The card and the duplicate pile must each be their own stacking context.** Neither creates one
-  by default, so both contests get resolved in the *grid's* context and both lose the same way: on
+  by default, so both contests get resolved in the _grid's_ context and both lose the same way: on
   the mockup's first render the hover sheen swept across the whole card and its neighbours instead
   of travelling the rim, and every stacked buff rendered as a blank slab of metal with no face at
   all, because the pile painted over its own card. The second one does not read as a z-order bug, it
@@ -141,18 +141,46 @@ The panel's outer `onClick={(e) => e.stopPropagation()}` is **load-bearing**, no
 mounts inside `.wc-table`, which fires `handleCarryOn` on click whenever the felt is waiting.
 `ActionBar`'s identical-looking stop is the defensive one — the two are not interchangeable.
 
-## The tier filter is component-local, and the fence's note follows the filter
+## The filters are component-local, and the fence's note follows them
 
-`BuffGallery` holds `tierFilter` in a `useState` that is created and destroyed with the panel —
+`BuffGallery` holds the filter in a `useState` that is created and destroyed with the panel —
 ephemeral view state, not round state, so it does not belong in `roundReducer`. `buildBuffGallery`
 is **not** re-run when the filter changes: the component filters the view it was handed.
 
+**Since DLR-160 there are two axes, held as ONE value.** `BuffGalleryFilter` in
+`buffSuitFilterModel.ts` is `{ tier, run }`, each either a value or `'all'`, and `matchesFilter`
+requires **both** to agree — the intersection, never either filter alone. A single object rather than
+two independent `useState` calls is the same argument `roundUiState.ts` makes for `discardSelection`
+and `loadout` being single nullable fields: it makes an inconsistent pair — a stale tier beside a
+suit the counts were never recomputed over — unexpressible rather than merely unlikely.
+
+`BuffSuitFilter.tsx` renders the second row: six real `<button>`s — `all`, the three suits,
+`No suit` and `Press` — carrying a `SuitMark` glyph **plus the run's word**, never a colour alone.
+It renders **outside** `groupRef` for the same positional-indexing reason `BuffTierFilter` does (see
+the keyboard section above). The five run words and the three suits come from `buffRunLabels.ts`,
+split out of `BuffRunTab.tsx` so the grid's run headers and the filter chips cannot name the same
+five runs two ways — and split into a file exporting no component at all, because a component file
+that also exports a plain constant trips `react-refresh/only-export-components`.
+
+**The suit chips' own counts follow the tier filter.** `runCountsFor(view, tier)` sums the held
+counts per run over the stacks the tier filter already allows, so picking _Gold_ narrows what the
+suit row reports before a suit is even picked — rather than the suit chips advertising figures for
+cards a tier pick has already hidden.
+
+**Two filters can produce an empty intersection a single filter never could**, so there is a line —
+"No buffs match this filter." — where an empty grid would otherwise read as broken. It is shown only
+while at least one axis is filtered: an empty pile keeps its own quiet empty grid rather than being
+told a filter is to blame.
+
 One subtlety worth stating because it looks like duplication: the fence's shared reason is
-**recomputed over the filtered stacks** rather than read from `view.fence.reason`. A tier filter can
+**recomputed over the filtered stacks** rather than read from `view.fence.reason`. Either filter can
 narrow a mixed-reason fence down to one that shares a single reason, or the reverse, and the fence's
 own note has to describe what is actually on screen. The sentence itself reuses
 `BUFF_ACTIVATION_REFUSAL_MESSAGE` rather than authoring a second copy of the same wording, and falls
 back to "for different reasons" when the fenced stacks do not agree.
+
+`buffSuitFilterModel.test.ts` pins the intersection, the tier-scoped run counts and the `'all'`
+rows, with no renderer.
 
 ## The 4.5:1 contrast floor is enforced by a test that parses the real stylesheet
 
@@ -181,8 +209,13 @@ Every other colour and size token DLR-148 added is a transcribed placeholder the
 as a ticket anecdote: **a pure `.ts` view-model and its `.tsx` component may not have names that
 differ only by case.** This toolchain's Vite/Vitest module resolution folds two source files whose
 names differ only by case into **one cached module id**, even though the filesystem underneath is
-case-sensitive — so `import BuffGallery from './BuffGallery'` silently resolved to the *model's*
+case-sensitive — so `import BuffGallery from './BuffGallery'` silently resolved to the _model's_
 exports, which have no default export, and the component rendered as `undefined` the moment both
 were in one module graph. It is not a test-only artefact: the same collision would recur in the app
 bundle as soon as `WarCouncilRound.tsx` imported both. The `Model` suffix is the convention that
 avoids it; nothing about either module's behaviour changed with the rename.
+
+**DLR-160 hit the same wall a third time and confirmed the mechanism at the compiler.** The plan
+named the suit filter's model `buffSuitFilter.ts` beside `BuffSuitFilter.tsx`, and `tsc -b` failed
+with TS1149/TS1192 the moment both files existed side by side. It ships as
+`buffSuitFilterModel.ts`; only the filename differs from the plan.

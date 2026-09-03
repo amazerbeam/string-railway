@@ -7,6 +7,7 @@ import {
   overlapBonusFor,
   resolveFiredBuffs,
   startHandAccrual,
+  trickBonusFor,
   type BuffBonusAccrual,
 } from '../buffAccrual'
 import { ACTIVATED_BUFF_CONDITION, BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
@@ -23,6 +24,25 @@ function firedBuff(
     reward: { axis, value },
   }
 }
+
+describe('DLR-161 — a protective card pays into no per-hand pool', () => {
+  it('resolveFiredBuffs leaves all four counters at zero and does not throw', () => {
+    const goldHelmet = firedBuff(BuffRewardAxis.Protection, 1)
+    const accrual = resolveFiredBuffs(EMPTY_BUFF_ACCRUAL, [{ ...goldHelmet, kind: BuffKind.SkullHelmet }], false)
+    expect(accrual.multiplierBonus).toBe(0)
+    expect(accrual.flatDamageBonus).toBe(0)
+    expect(accrual.coinBonus).toBe(0)
+    expect(accrual.apRefunded).toBe(0)
+  })
+
+  it('trickBonusFor reports the Blades flatDamageBonus and an overlapBonus of 1 — AC9', () => {
+    const goldHelmet = { ...firedBuff(BuffRewardAxis.Protection, 1), kind: BuffKind.SkullHelmet }
+    const blade = firedBuff(BuffRewardAxis.Magnitude, 3)
+    const result = trickBonusFor([goldHelmet, blade], false)
+    expect(result.flatDamageBonus).toBe(3)
+    expect(result.overlapBonus).toBe(1)
+  })
+})
 
 describe('startHandAccrual', () => {
   it('equals EMPTY_BUFF_ACCRUAL, all four fields 0', () => {

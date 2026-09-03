@@ -308,6 +308,7 @@ describe('ShopPanel — M21, a slot win flies into the tray', () => {
             symbols: [BUFF_TEMPLATES[0]],
             outcome: SlotOutcome.ThreeMatch,
             awards: [award],
+            rawAwards: [{ template: BUFF_TEMPLATES[0], tier: BuffTier.Gold }],
           },
         })}
       />,

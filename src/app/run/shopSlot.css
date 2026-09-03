@@ -113,6 +113,12 @@
   color: var(--wc-timebomb);
 }
 
+/* DLR-161 — Skull Helmet and Skull Tether share one colour; separated by shape, not tint. */
+.shop-strip-chip-glyph[data-glyph='skullHelmet'],
+.shop-strip-chip-glyph[data-glyph='skullTether'] {
+  color: var(--wc-guard);
+}
+
 .shop-strip-chip-family {
   font-family: var(--wc-serif);
   font-size: clamp(0.5rem, 1.2vmin, 0.64rem);

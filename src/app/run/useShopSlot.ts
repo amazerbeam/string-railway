@@ -85,6 +85,9 @@ export function useShopSlot(
       outcome: resolved.outcome,
       // The SAME ids `pullSlotMachine` mints below, because both read `run.nextBuffId`.
       awards: mintPullAwards(resolved, run.nextBuffId),
+      // DLR-160 AC10 — `resolved.awards` themselves, before minting, so `reelTiers` can read a
+      // tier by template id without `SlotMachinePanel` re-deriving `resolvePull`'s match rule.
+      rawAwards: resolved.awards,
     }
     setLastPull({ machineId, visitIndex: run.encounterIndex, view })
     onRun((live) => {

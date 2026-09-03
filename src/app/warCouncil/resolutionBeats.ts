@@ -62,8 +62,10 @@ function resolveFired(firedBuffIds: readonly BuffId[], fired: readonly Buff[]): 
  *
  *  A HURT trick (`resolution.trickDamage === null`) produces exactly ONE beat. Two shapes:
  *  ordinarily `Hurt`, stating the health taken and the pot that was lost with it (AC7: no
- *  two-thirds consolation, so the pot lost is computed from `before`, the streak this trick
- *  wiped) — but a REPLACED clean loss (DLR-90 AC5, a primed card the Quarry wins cleanly)
+ *  two-thirds consolation, so the pot lost is the DIFFERENCE between the pre-trick pot and the
+ *  post-trick pot — DLR-161: a Skull Helmet, a Skull Tether or a Swan rung can carry a figure
+ *  through the reset, and reporting the whole pre-trick pot would narrate a streak as wiped when
+ *  it in fact survived) — but a REPLACED clean loss (DLR-90 AC5, a primed card the Quarry wins cleanly)
  *  resets NOTHING: `resolution.damageToPlayer === 0` is then a total and reliable test (§
  *  `streak.ts`'s own `trickHit`/`timebombResets` gate: either one being true always makes
  *  `damageToPlayer` positive, so `0` here can only mean neither fired), and the beat is
@@ -97,7 +99,21 @@ export function resolutionBeatsFor(
         },
       ]
     }
-    const potLost = potValue(before.total, before.roll)
+    // DLR-161 — the pot ACTUALLY lost, not the whole pre-trick pot. A Skull Helmet, a Skull
+    // Tether or a Swan rung can carry a figure through the reset, and the old expression narrated
+    // the full pot as gone on a trick where most of it survived. The raw difference CAN be
+    // negative: a gold protective save adds its bonus to a figure that survives the reset
+    // alongside the other figure also surviving, so the post-trick pot can come out higher than
+    // the pre-trick one on a hurt trick (worked case: `before = { total: 8, roll: 2 }`, a gold
+    // Skull Helmet and a Skull Tether both fire — `potValue(8, 2) = 16`, `potValue(9, 2) = 18`,
+    // raw difference `-2`). This beat reports LOSS and has no vocabulary for a hurt trick that
+    // grew the streak, so it clamps to zero rather than print a negative "pot lost". This module
+    // still runs no rule of its own beyond that clamp — it subtracts two figures the engine
+    // decided.
+    const potLost = Math.max(
+      0,
+      potValue(before.total, before.roll) - potValue(resolution.total, resolution.roll),
+    )
     return [
       {
         kind: BeatKind.Hurt,

@@ -48,7 +48,8 @@ describe('seedStartingBuffPile', () => {
     expect(pile).toHaveLength(20)
     expect(pile.every((buff) => buff.tier === BuffTier.Bronze)).toBe(true)
     expect(pile.map((buff) => buff.id)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1))
-    expect(new Set(pile.map((buff) => buff.kind)).size).toBeLessThanOrEqual(5)
+    // DLR-161 widened MintableConditionKind from 5 to 7 members (Skull Helmet, Skull Tether).
+    expect(new Set(pile.map((buff) => buff.kind)).size).toBeLessThanOrEqual(7)
   })
 
   it('is reproducible from the same seed', () => {

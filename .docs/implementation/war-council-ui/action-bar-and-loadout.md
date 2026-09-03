@@ -5,7 +5,7 @@ _Part of [War Council UI](README.md)._
 > [The buff gallery](buff-gallery.md). **Everything below about the gate is unchanged and still
 > current**: `loadoutDoorOpen` still gates opening, `loadoutRefusalFor` still gates activating,
 > `openWindowOnTrickResolved` is still the per-trick boundary, and the two-tap grammar is still the
-> grammar. What changed is what a buff *looks* like, that duplicates collapse, that the unusable are
+> grammar. What changed is what a buff _looks_ like, that duplicates collapse, that the unusable are
 > fenced rather than listed inline — and that `Escape` now unwinds **one level** (poise first, panel
 > second) rather than closing outright. Read the names `BuffLoadoutPanel` / `BuffLoadoutPanelProps`
 > below as historical.
@@ -117,9 +117,9 @@ for the cadence change and why `capacity` exists.
 
 Two different questions, two different gates, and the separation is load-bearing:
 
-| Question                         | Gate                                                                                            | Where                        |
-| -------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------- |
-| May the panel be **opened**?     | `loadoutDoorOpen(state) = discardWindowOpen(state) \|\| canAct(state)`                          | `buffHandlers.ts`            |
+| Question                         | Gate                                                                                                                                                                    | Where                                                    |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| May the panel be **opened**?     | `loadoutDoorOpen(state) = discardWindowOpen(state) \|\| canAct(state)`                                                                                                  | `buffHandlers.ts`                                        |
 | May a **buff row** be activated? | `buffActivationRefusalFor(buffActivationStock(...))`, whose `windowOpen` is `buffActivationWindowOpen` — `canAct` for a Cheat, `discardWindowOpen` for every other card | `src/hunt/buffActivation.ts`, fed from `roundUiState.ts` |
 
 The reason the door is wider: **Cheat and Timebomb moved inside the panel**. Before DLR-114 both were
@@ -132,7 +132,7 @@ what broke that promise, so the gate is what widened back. **The regression was 
 inside the ticket.**
 
 **2026-08-26 — the row gate narrowed back to Cheat alone.** A Timebomb takes the ordinary
-between-tricks window now: arming it *after* seeing the Quarry's lead let the player buy a read the
+between-tricks window now: arming it _after_ seeing the Quarry's lead let the player buy a read the
 card was never meant to sell, and unlike a Cheat's follow-suit break, a Timebomb has nothing to do
 with what was led. The door is untouched. See
 [the activation window](../hunt/cheat-and-timebomb-buffs.md#the-activation-window-cheat-mid-trick-timebomb-between-tricks-2026-08-26).
@@ -161,7 +161,7 @@ change under a poised row, and re-reading is what stops a poise made while the r
 committing after it stopped being. `Escape` (via `handleCancelLoadout`) drops the poise unspent.
 
 ~~**There is no un-activate**~~ — true of DLR-114 and **overturned by DLR-153, 2026-08-27**. The
-reasoning still holds for *where* the rule belongs: the engine had no removal path, and inventing a
+reasoning still holds for _where_ the rule belongs: the engine had no removal path, and inventing a
 refund in the UI would have been writing a rule `src/hunt/` does not own. DLR-153 wrote it in
 `src/hunt/buffActivation.ts` instead — `isRevocableBuff` plus `deactivateFromPile` — and only for
 the three condition families; **Cheat, Ward and Shield are still irreversible**, because their
@@ -197,12 +197,24 @@ exist. See [hunt/buff-activation-and-ap-costs.md](../hunt/buff-activation-and-ap
 ## The copy is transcribed, and one string serves both surfaces
 
 `buffLabels.ts` holds three `Record`s keyed over the **closed** `BuffKind` and `BuffRewardAxis`
-unions — `BUFF_FAMILY_WORD`, `BUFF_CONDITION_SENTENCE`, `BUFF_REWARD_SUFFIX` — with the eleven
-condition families' words, sentences and the four reward suffixes (Blade / Purse / Second Wind /
-Momentum) taken verbatim from `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` →
+unions — `BUFF_FAMILY_WORD`, `BUFF_CONDITION_SENTENCE`, `BUFF_REWARD_SUFFIX` — with the thirteen
+condition families' words, sentences and the five reward suffixes (Blade / Purse / Second Wind /
+Momentum / Guard) taken verbatim from `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` →
 _How a card is named_. Keying over the closed unions means a `BuffKind` added later fails to compile
 here rather than rendering `undefined`. The activated/consumable kinds and `Unassigned` have no row in
 that document, so their words are this ticket's own placeholder copy.
+
+**One card's condition sentence depends on its tier, and only one pair of families does that**
+(DLR-161). A Skull Helmet and a Skull Tether print `eat a skull with this card` at bronze and
+`eat a skull, or lose a trick` at silver and gold, because the condition genuinely widens. That is a
+fifth `Record`, `BUFF_WIDENED_CONDITION_SENTENCE` — a `Partial` beside the total one — and
+`buffConditionSentence` chooses between them by calling `conditionIsWidened` from
+`src/hunt/buffProtection.ts`. **The tier rule is read from the engine, never restated here**, which is
+the same discipline the reward figures already follow. The reward phrase is the mirror case: one axis
+(`Protection`) serves two families, so `buffRewardPhrase`'s case reads `buff.kind` to decide whether
+the sentence names the `total` or the `roll`. Every one of those strings, and the `HURT` cadence pill
+that goes with them, is **placeholder copy the developer may overrule** — including the two card
+names themselves.
 
 `buffLine(buff)` composes the one glanceable line:
 
@@ -235,7 +247,7 @@ also wires `activateShield` into the `encounter` field alongside the pre-existin
 Shield's effect had never fired from the app layer before this ticket.
 
 > **DLR-145 did the same to Taker, Feeder and Sidestep** (`CONDITION_CARD_SINGLE_USE`), and this
-> time the app layer *did* have to change. A condition card fires at **trick resolution**, not at
+> time the app layer _did_ have to change. A condition card fires at **trick resolution**, not at
 > the tap, and by then `activateFromPile` has already removed it from `state.buffs` — so
 > `buffHandInputFor`, which builds the trick's active set by filtering the pile, would have found
 > nothing and the card would have paid nothing, silently. Both it and `firedOncePerHandIds`
@@ -253,8 +265,8 @@ deleting the two plates rewrote no copy. `queuedPayoutText(pending)` is the queu
 
 > **DLR-145 stripped the AP clauses from both composed names.** `applyBuffAccessibleName` lost its
 > `apPool` parameter (`Apply Buff — 4 action points left, 3 buffs held.` → `Apply Buff — 3 buffs
-> held.`) and `applyDamageBarAccessibleName` lost its `apCost` parameter (`Apply Damage — cash 12
-> for 1 action point.` → `Apply Damage — cash 12.`). The poise hint, the refusal sentence and the
+held.`) and `applyDamageBarAccessibleName` lost its `apCost` parameter (`Apply Damage — cash 12
+for 1 action point.` → `Apply Damage — cash 12.`). The poise hint, the refusal sentence and the
 > queued-payout sentence are untouched and still appended in the same order. `LOADOUT_EMPTY_MESSAGE`
 > was rewritten from "No priced buffs held. Cheats and Timebomb charges are below." — which had
 > described a divider DLR-132 deleted — to **"Nothing left to spend."**, which is what an emptied

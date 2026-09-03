@@ -77,6 +77,33 @@
   align-self: center;
 }
 
+/* AC12 — the visible "back out entirely" exit. Secondary to `.wc-decline`: no border, dimmer
+   text, so it reads as the lesser-used escape hatch rather than competing with the two real
+   choices for attention. Same 44px hit area and focus treatment as every other prompt control. */
+.wc-prompt-cancel {
+  font: inherit;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.62rem, 1.3vmin, 0.72rem);
+  min-height: 44px;
+  padding: 0 clamp(0.5rem, 1.6vmin, 0.9rem);
+  background: transparent;
+  color: var(--wc-chalk-dim);
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  align-self: center;
+}
+
+@media (hover: hover) {
+  .wc-prompt-cancel:hover {
+    color: var(--wc-chalk);
+  }
+}
+
+.wc-prompt-cancel:active {
+  color: var(--wc-chalk);
+}
+
 /* ---------- the card ---------- */
 
 .wc-card {
@@ -287,30 +314,16 @@
   z-index: 20;
 }
 
-:is(.wc-card, .wc-decline, .wc-is-carry-on):focus-visible {
+:is(.wc-card, .wc-decline, .wc-prompt-cancel):focus-visible {
   outline: 2px solid var(--wc-brass);
   outline-offset: 2px;
   z-index: 30;
 }
 
-/* The resolved trick's own keyboard-reachable carry-on control (Critical accessibility fix:
-   nothing else is focusable while a trick is held, since every hand card is disabled). Padding
-   plus a matching negative margin grows the hit area toward the ≥44px floor without changing
-   the element's visual footprint — the text still renders at `.wc-table-hint`'s own size.
-   This is now a native `<button>` rather than a `<span role="button">` — `font-family`,
-   `background`, and `border` are reset to neutral values (not new visual values of their own)
-   so the browser's default button chrome doesn't reappear around what is still meant to read
-   as plain hint text; `.wc-table-hint`'s own font-size/weight/letter-spacing/color are
-   untouched since this rule never sets the `font` shorthand. */
-.wc-is-carry-on {
-  font-family: inherit;
-  background: none;
-  border: 0;
-  cursor: pointer;
-  touch-action: manipulation;
-  padding: 0.6rem 0.9rem;
-  margin: -0.6rem -0.9rem;
-}
+/* DLR-160 AC1 — `.wc-is-carry-on` is GONE. The resolved trick's carry-on control is a real,
+   fully-chromed button now (`.wc-carry-btn`, `warCouncilTable.css`) rather than a hint line
+   dressed up as one, so it needs no neutral-reset rule of its own here — its border, background
+   and `:focus-visible` outline are `.wc-carry-btn`'s own. */
 
 @media (prefers-reduced-motion: reduce) {
   .wc-card {

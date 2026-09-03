@@ -9,6 +9,7 @@ import {
   type BuffId,
   type BuffTargetSuit,
 } from './buffs'
+import { protectionCoversCleanLoss } from './buffProtection'
 import { conditionThresholdOf } from './buffTemplates'
 import { PLAYER_START_HEALTH } from './config'
 
@@ -92,6 +93,19 @@ export function buffFires(buff: Buff, ctx: BuffTrickContext): boolean {
     // Integer both sides — no division, so no NaN can reach a rendered heart row.
     case 'cornered':
       return threshold !== null && ctx.playerHealth * 100 < threshold * PLAYER_START_HEALTH
+    // DLR-161 AC2/AC5 — bronze fires on an EATEN SKULL only, which is `glutton`'s predicate; the
+    // family is NOT restored, these two carry their own case. Silver and gold widen it to any
+    // trick that HURT the player, and the union of a skull win and a clean loss is exactly
+    // `skullTrick === playerWon` on the mechanical axis this context reads:
+    //   skull win   true  === true   -> fires
+    //   clean loss  false === false  -> fires
+    //   dodge       true  === false  -> does not
+    //   clean win   false === true   -> does not
+    case 'skullHelmet':
+    case 'skullTether':
+      return protectionCoversCleanLoss(buff.tier)
+        ? ctx.skullTrick === ctx.playerWon
+        : ctx.skullTrick && ctx.playerWon
   }
 }
 

@@ -36,4 +36,11 @@ describe('screenFor', () => {
     expect(screenFor(RunPhase.ManageBuffs, true)).toBe('manageBuffs')
     expect(screenFor(RunPhase.ManageBuffs, false)).toBe('warCouncil')
   })
+
+  it('shows the pre-fight screen even though the next encounter is already live', () => {
+    expect(screenFor(RunPhase.PreFight, false)).toBe('preFight')
+  })
+  it('shows the pre-fight screen when the encounter reads over too', () => {
+    expect(screenFor(RunPhase.PreFight, true)).toBe('preFight')
+  })
 })

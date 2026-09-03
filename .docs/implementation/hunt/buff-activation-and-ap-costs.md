@@ -74,8 +74,9 @@ tuning-value override, and **never played**.
 apCost = clamp(REWARD_BASE[axis][tier] + CONDITION_MODIFIER[family], AP_COST_MIN, AP_COST_MAX)
 ```
 
-`REWARD_BASE` prices the four reward axes per tier — flat damage 1/2/3, coin 2/3/4, AP refund
-1/1/1, multiplier 2/3/5. Multiplier costs most because `the-hunt.md` §7 cashes the bank as a
+`REWARD_BASE` prices the five mintable reward axes per tier — flat damage 1/2/3, coin 2/3/4, AP
+refund 1/1/1, multiplier 2/3/5, and — since DLR-161 — protection 2/3/4, a row **nobody has chosen**
+(no source document prices a protective axis; the ladder shape is copied from the coin row). Multiplier costs most because `the-hunt.md` §7 cashes the bank as a
 _product_, so a bought multiplier point is multiplied by the bank and a bought damage point is not;
 coin carries a smaller surcharge because coins are run-permanent. `CONDITION_MODIFIER` prices **how
 often a family actually fires**, and runs the opposite way to intuition — Feeder is `+1` because
@@ -96,6 +97,15 @@ DLR-135. Returning a plausible small integer there is the bug that type-checks.
 `narrowToCostAxis` throws for the same class of reason on a condition family minted on an axis
 `REWARD_BASE` does not price (`heartCount`, say) rather than defaulting to zero, which would price
 it at the clamp floor and look entirely reasonable.
+
+> **DLR-161 split the narrowing in two, and the split is the point.** `REWARD_BASE` and
+> `REWARD_TIER_VALUE` are now keyed by `BuffMintedAxis` (the four cost axes **plus** `Protection`) and
+> `buffApCost` narrows through `narrowToMintedAxis`, while `BuffCostAxis` and `narrowToCostAxis` keep
+> exactly the four members the per-hand accrual switches can answer for. A protective card has a price
+> and a reward ladder but **no accrual counter**, because it pays into the streak's reset rather than
+> into a pool — so `resolveFiredBuffs` and `trickBonusFor` skip it through the named `isProtectiveAxis`
+> guard placed **above** the throw, rather than the throw being softened. See
+> [Skull Helmet and Skull Tether](protective-buffs.md).
 
 > **This does not implement the ticket's own AC2, and the divergence is deliberate.** AC2 specifies
 > `BUFF_ACTIVATION_COST = { bronze: 3, silver: 5, gold: 8 }`. It predates DLR-111's pool, and a

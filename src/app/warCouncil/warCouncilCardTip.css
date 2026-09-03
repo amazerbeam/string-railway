@@ -2,8 +2,8 @@
    on DLR-149 (round-2 fix loop) because the combined file exceeded the 400-line budget — the same
    reason `warCouncilCardFace.css` itself split from `warCouncilCards.css`, and `warCouncilCards.css`
    split from `warCouncil.css` before that. Import alongside the other card stylesheets from the
-   mount component; this file reads `--wc-card-w` (`warCouncil.css`) and `--wc-tip-anchor-x`
-   (written inline by `CardAbilityTip.tsx`). */
+   mount component; this file reads `--wc-card-w` (`warCouncil.css`) and `--wc-tip-anchor-x` /
+   `--wc-tip-anchor-y` (both written inline by `CardAbilityTip.tsx`). */
 
 /* ---------- tooltip (AC8) — hover, focus AND tap, resolved in React (`useCardTip`) into one
    `open` boolean expressed as `.wc-card-tip.wc-is-open` — no :has() ---------- */
@@ -17,22 +17,25 @@
   display: block;
 }
 
-/* Portalled to `document.body` (`position: fixed`), so `left`/`top` are viewport coordinates
-   written inline by `CardAbilityTip`, not offsets from this host. The bubble carries no id and
-   is never linked from `aria-describedby` — the rule text is already unconditionally in the
-   accessible tree via the hidden span inside the button. */
+/* Portalled to `document.body` (`position: fixed`), so `left`/`top` resolve against the viewport,
+   from the `--wc-tip-anchor-x`/`--wc-tip-anchor-y` custom properties `CardAbilityTip` writes
+   inline, not offsets from this host. The bubble carries no id and is never linked from
+   `aria-describedby` — the rule text is already unconditionally in the accessible tree via the
+   hidden span inside the button. */
 .wc-card-tip {
   position: fixed;
   z-index: 90;
   /* CRIT-1 (round-2 defender review) — this element is `position: fixed` with no ancestor
      between it and the initial containing block that carries a `transform`/`filter`/
      `perspective`, so a PERCENTAGE width here resolves against the viewport, not against the
-     card and not against the `11rem` floor. The old `150%` therefore meant `150vw` on every
-     open, which always exceeded `max-width: calc(100vw - 1rem)` below and made the bubble a
-     near-full-width banner every single time — not a rare edge case, as the previous version of
-     this comment claimed. `calc(var(--wc-card-w) * 1.5)` says the same "1.5x the card's own
-     width" in a real length instead, built from the already-shipped `--wc-card-w` tunable
-     (`warCouncil.css`) rather than a new invented number. */
+     card and not against the `11rem` floor. The old `150%` therefore meant a viewport-relative
+     150% on every open, which always exceeded the `max-width` below (a viewport-relative width
+     minus `1rem`, DLR-160 — the unit is now the DYNAMIC viewport width, per `game-ux`'s hard
+     floor against the static one) and made the bubble a near-full-width banner every single time
+     — not a rare edge case, as the previous version of this comment claimed.
+     `calc(var(--wc-card-w) * 1.5)` says the same "1.5x the card's own width" in a real length
+     instead, built from the already-shipped `--wc-card-w` tunable (`warCouncil.css`) rather than a
+     new invented number. */
   width: max(11rem, calc(var(--wc-card-w) * 1.5));
   /* D-W2 (defender fix-loop) — clamp the bubble's centre into the viewport rather than letting
      `left` (set from `--wc-tip-anchor-x`, the anchor card's own centre) run off either edge, which
@@ -41,12 +44,20 @@
      new invented one. A CSS clamp is used deliberately instead of measuring the bubble's own
      rendered width after mount, per the runtime contract's "measured once on open" rule — no
      `ResizeObserver`, no per-frame reflow. */
-  max-width: calc(100vw - 1rem);
-  left: clamp(6rem, var(--wc-tip-anchor-x), calc(100vw - 6rem));
-  /* `top` is the card's CURRENT, visible top edge (`useCardTip` measures `button.wc-card`, which
-     carries the lift transform), so `-100%` puts the bubble's bottom edge exactly on it and the
-     extra `0.35rem` is the gap. The closed state starts `0.25rem` lower so opening reads as a
-     small rise. */
+  max-width: calc(100dvw - 1rem);
+  left: clamp(6rem, var(--wc-tip-anchor-x), calc(100dvw - 6rem));
+  /* `--wc-tip-anchor-y` is the CURRENT anchor's top edge (`CardAbilityTip.tsx` — the card's own
+     top, or the breakdown panel's measured top when one is open and higher, DLR-160 AC4), so
+     `-100%` puts the bubble's bottom edge exactly on it and the extra `0.35rem` is the gap. The
+     closed state starts `0.25rem` lower so opening reads as a small rise.
+     DLR-160 AC4 — PLACEHOLDER floor, the developer's to retune: reuses the SAME `6rem` edge
+     margin already shipped for the horizontal clamp above (derived, not a new invented number)
+     rather than a new vertical bound, so anchoring above a tall breakdown panel on a short
+     viewport cannot push the bubble's top edge off-screen. `top` is routed through a custom
+     property here — the same reason `left` is above it — rather than a plain inline value, which
+     is what lets this floor actually apply; an inline `top` would out-rank it with no
+     `!important`. */
+  top: max(6rem, var(--wc-tip-anchor-y));
   transform: translate(-50%, calc(-100% - 0.1rem));
   padding: 0.5rem 0.6rem;
   border-radius: 8px;

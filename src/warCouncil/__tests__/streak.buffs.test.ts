@@ -4,6 +4,7 @@ import {
   BuffRewardAxis,
   BuffTargetSuit,
   BuffTier,
+  DAMAGE_PER_HIT,
   EMPTY_BUFF_CARRY,
   mintFromTemplate,
   startHandAccrual,
@@ -133,5 +134,163 @@ describe('resolveTrickBank — DLR-125/DLR-124 R5/R6 at resolution level', () =>
     expect(r.buffAccrual?.flatDamageBonus).toBe(1)
     // AC11 — the SAME Feeder also pays this trick's own damage, since a Dodge is banked.
     expect(r.trickDamage?.buffDamage).toBe(1)
+  })
+})
+
+describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure', () => {
+  describe('regression — the de-nesting is behaviour-neutral for every existing Swan case', () => {
+    it('neither rung: both figures zero on a clean loss', () => {
+      const r = resolveTrickBank(
+        { total: 8, roll: 2 },
+        facts({ playerWon: false, skullTrick: false }),
+      )
+      expect(r.total).toBe(0)
+      expect(r.roll).toBe(0)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('silver only: the roll survives, the total zeroes', () => {
+      const r = resolveTrickBank(
+        { total: 8, roll: 2 },
+        facts({ playerWon: false, skullTrick: false, swanKeepsMultiplier: true }),
+      )
+      expect(r.total).toBe(0)
+      expect(r.roll).toBe(2)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('gold only, and gold-implies-silver: both figures survive', () => {
+      const r = resolveTrickBank(
+        { total: 8, roll: 2 },
+        facts({ playerWon: false, skullTrick: false, swanKeepsBank: true }),
+      )
+      expect(r.total).toBe(8)
+      expect(r.roll).toBe(2)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('gold-implies-silver holds even when only swanKeepsBank is set (no separate silver flag)', () => {
+      const r = resolveTrickBank(
+        { total: 8, roll: 2 },
+        facts({
+          playerWon: false,
+          skullTrick: false,
+          swanKeepsBank: true,
+          swanKeepsMultiplier: false,
+        }),
+      )
+      expect(r.total).toBe(8)
+      expect(r.roll).toBe(2)
+    })
+  })
+
+  describe('new — a Skull Helmet or Skull Tether on a skull the player took', () => {
+    const START = { total: 8, roll: 2 }
+    const skullTaken = (over: Partial<TrickFacts> = {}) =>
+      facts({ playerWon: true, skullTrick: true, ...over })
+
+    it('a bronze Helmet keeps the total, zeroes the roll', () => {
+      const helmet = buff('skullHelmet:protection', BuffTier.Bronze, 1)
+      const r = resolveTrickBank(
+        START,
+        skullTaken({ buffs: input({ active: [helmet] }) }),
+      )
+      expect(r.total).toBe(8)
+      expect(r.roll).toBe(0)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('a bronze Tether keeps the roll, zeroes the total', () => {
+      const tether = buff('skullTether:protection', BuffTier.Bronze, 1)
+      const r = resolveTrickBank(
+        START,
+        skullTaken({ buffs: input({ active: [tether] }) }),
+      )
+      expect(r.total).toBe(0)
+      expect(r.roll).toBe(2)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('both bronze together keep both figures, unchanged', () => {
+      const helmet = buff('skullHelmet:protection', BuffTier.Bronze, 1)
+      const tether = buff('skullTether:protection', BuffTier.Bronze, 2)
+      const r = resolveTrickBank(
+        START,
+        skullTaken({ buffs: input({ active: [helmet, tether] }) }),
+      )
+      expect(r.total).toBe(8)
+      expect(r.roll).toBe(2)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('both gold add their +1 to each surviving figure', () => {
+      const helmet = buff('skullHelmet:protection', BuffTier.Gold, 1)
+      const tether = buff('skullTether:protection', BuffTier.Gold, 2)
+      const r = resolveTrickBank(
+        START,
+        skullTaken({ buffs: input({ active: [helmet, tether] }) }),
+      )
+      expect(r.total).toBe(9)
+      expect(r.roll).toBe(3)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('AC8 — two gold Helmets do not stack: +1, not +2', () => {
+      const helmetA = buff('skullHelmet:protection', BuffTier.Gold, 1)
+      const helmetB = buff('skullHelmet:protection', BuffTier.Gold, 2)
+      const r = resolveTrickBank(
+        START,
+        skullTaken({ buffs: input({ active: [helmetA, helmetB] }) }),
+      )
+      expect(r.total).toBe(9)
+      expect(r.roll).toBe(0)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('AC5 — a silver Helmet also protects on a clean loss', () => {
+      const helmet = buff('skullHelmet:protection', BuffTier.Silver, 1)
+      const r = resolveTrickBank(
+        START,
+        facts({ playerWon: false, skullTrick: false, buffs: input({ active: [helmet] }) }),
+      )
+      expect(r.total).toBe(8)
+      expect(r.roll).toBe(0)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('a bronze Helmet does NOT protect on the same clean loss', () => {
+      const helmet = buff('skullHelmet:protection', BuffTier.Bronze, 1)
+      const r = resolveTrickBank(
+        START,
+        facts({ playerWon: false, skullTrick: false, buffs: input({ active: [helmet] }) }),
+      )
+      expect(r.total).toBe(0)
+      expect(r.roll).toBe(0)
+      expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
+    })
+
+    it('a gold Helmet does not fire and cannot protect a clean win, which banks anyway', () => {
+      const helmet = buff('skullHelmet:protection', BuffTier.Gold, 1)
+      const r = resolveTrickBank(
+        { total: 0, roll: 0 },
+        facts({ playerWon: true, skullTrick: false, buffs: input({ active: [helmet] }) }),
+      )
+      // A clean win banks; the reset block is never reached.
+      expect(r.damageToPlayer).toBe(0)
+      expect(r.total).toBeGreaterThan(0)
+      expect(r.roll).toBe(1)
+    })
+
+    it('a gold Tether does not fire and cannot protect a dodge, which banks anyway', () => {
+      const tether = buff('skullTether:protection', BuffTier.Gold, 1)
+      const r = resolveTrickBank(
+        { total: 0, roll: 0 },
+        facts({ playerWon: false, skullTrick: true, buffs: input({ active: [tether] }) }),
+      )
+      // A dodge banks; the reset block is never reached.
+      expect(r.damageToPlayer).toBe(0)
+      expect(r.total).toBeGreaterThan(0)
+      expect(r.roll).toBe(1)
+    })
   })
 })

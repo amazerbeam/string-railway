@@ -2,15 +2,17 @@ import { Fragment, useState, type KeyboardEvent } from 'react'
 import { BuffActivationRefusal, BuffTier, type BuffId } from '../../hunt'
 import { LOADOUT_PANEL_LABEL } from './actionBarLabels'
 import BuffCard from './BuffCard'
-import {
-  buffStackKey,
-  type BuffGalleryView,
-  type BuffRun,
-  type BuffStack,
-} from './buffGalleryModel'
+import { buffStackKey, type BuffGalleryView, type BuffRun } from './buffGalleryModel'
 import { BUFF_ACTIVATION_REFUSAL_MESSAGE } from './buffLabels'
 import BuffRunTab from './BuffRunTab'
+import BuffSuitFilter from './BuffSuitFilter'
 import BuffTierFilter from './BuffTierFilter'
+import {
+  ALL_FILTERS,
+  matchesFilter,
+  runCountsFor,
+  type BuffGalleryFilter,
+} from './buffSuitFilterModel'
 import { PlaceKind } from './cardPlacement'
 import { anchorKeyFor, useMotionAnchors } from './motionAnchorContext'
 import { useRovingTabIndex } from './useRovingTabIndex'
@@ -30,10 +32,6 @@ export interface BuffGalleryProps {
  *  Module-level rather than recreated per render, mirroring the retired `BuffLoadoutPanel`'s
  *  identical precaution. */
 function noop() {}
-
-function matchesTier(stack: BuffStack, tier: BuffTier | 'all'): boolean {
-  return tier === 'all' || stack.buff.tier === tier
-}
 
 /** "3 cards — not between tricks" / "5 cards — for different reasons" when the fenced stacks
  *  do not share one reason. Reuses `BUFF_ACTIVATION_REFUSAL_MESSAGE` rather than authoring a
@@ -58,14 +56,17 @@ function fenceReasonText(count: number, reason: BuffActivationRefusal | null): s
  * `onClick={(e) => e.stopPropagation()}` too — this mounts inside `.wc-table`, which fires
  * `handleCarryOn` on click whenever the felt is waiting.
  *
- * The tier filter is component-local `useState` — ephemeral view state that dies with the panel,
- * not round state — so `buildBuffGallery` is never re-run here: this component only FILTERS the
- * `BuffGalleryView` it was given by tier, locally, once per render.
+ * The tier and suit filters are ONE component-local `useState<BuffGalleryFilter>` — ephemeral view
+ * state that dies with the panel, not round state — so `buildBuffGallery` is never re-run here:
+ * this component only FILTERS the `BuffGalleryView` it was given, locally, once per render. A
+ * single filter object rather than two independent `useState` calls means a pair the counts were
+ * never recomputed over is unexpressible — the same argument `roundUiState.ts` makes for
+ * `discardSelection` and `loadout` being single nullable fields (DLR-160 AC8).
  *
  * The roving collection is the GRID's cards and nothing else. `useRovingTabIndex` indexes
  * `groupRef.current.querySelectorAll('button')` POSITIONALLY with no typed contract, so every
  * focusable control inside `groupRef` must be a native `<button>` in DOM order — which is why the
- * run tabs are `<div>`s and the tier chips render ABOVE this element, outside the ref.
+ * run tabs are `<div>`s and BOTH filter rows render ABOVE this element, outside the ref.
  */
 export default function BuffGallery({
   view,
@@ -74,7 +75,7 @@ export default function BuffGallery({
   onCancelPoise,
   onClose,
 }: BuffGalleryProps) {
-  const [tierFilter, setTierFilter] = useState<BuffTier | 'all'>('all')
+  const [filter, setFilter] = useState<BuffGalleryFilter>(ALL_FILTERS)
   // DLR-157 — one anchor per gallery card, slotted by the id a tap actually activates
   // (`stack.ids[0]`, the same id `BuffCard`'s own `onClick` uses). `register`, not the
   // `useMotionAnchor` hook: this component attaches one per stack inside a `.map`.
@@ -91,17 +92,21 @@ export default function BuffGallery({
   }
   for (const stack of view.fence.stacks) counts[stack.buff.tier] += stack.count
 
+  // The suit chips' own counts follow the TIER filter alone (`runCountsFor`'s contract) — picking
+  // Gold narrows what the suit row reports before a suit is even picked.
+  const runCounts = runCountsFor(view, filter.tier)
+
   const runs: readonly BuffRun[] = view.runs
     .map((run) => ({
       ...run,
-      stacks: run.stacks.filter((stack) => matchesTier(stack, tierFilter)),
+      stacks: run.stacks.filter((stack) => matchesFilter(stack, filter)),
     }))
     .filter((run) => run.stacks.length > 0)
-  const fenceStacks = view.fence.stacks.filter((stack) => matchesTier(stack, tierFilter))
+  const fenceStacks = view.fence.stacks.filter((stack) => matchesFilter(stack, filter))
   const fenceHeld = fenceStacks.reduce((sum, stack) => sum + stack.count, 0)
-  // Recomputed over the FILTERED stacks, not read from `view.fence.reason` — the tier filter can
-  // narrow a mixed-reason fence down to one that shares a single reason, or the reverse, and the
-  // fence's own note must follow what is actually on screen.
+  // Recomputed over the FILTERED stacks, not read from `view.fence.reason` — the tier and suit
+  // filters together can narrow a mixed-reason fence down to one that shares a single reason, or
+  // the reverse, and the fence's own note must follow what is actually on screen under BOTH axes.
   const fenceReasons = new Set(fenceStacks.map((stack) => stack.refusal))
   const fenceReason = fenceReasons.size === 1 ? (fenceStacks[0]?.refusal ?? null) : null
 
@@ -147,7 +152,16 @@ export default function BuffGallery({
         </span>
       </header>
       <div className="wc-gallery-body">
-        <BuffTierFilter counts={counts} selected={tierFilter} onSelect={setTierFilter} />
+        <BuffTierFilter
+          counts={counts}
+          selected={filter.tier}
+          onSelect={(tier) => setFilter({ ...filter, tier })}
+        />
+        <BuffSuitFilter
+          counts={runCounts}
+          selected={filter.run}
+          onSelect={(run) => setFilter({ ...filter, run })}
+        />
         <div className="wc-gallery-scroll">
           <div
             className="wc-gallery-grid"
@@ -178,6 +192,15 @@ export default function BuffGallery({
               </Fragment>
             ))}
           </div>
+          {/* Two filters together can narrow to an intersection a single filter could not reach
+              on its own — say a line rather than an empty grid, which reads as broken rather than
+              deliberate. Never shown for the unfiltered view: an empty pile has its own quiet
+              empty grid, per `game-ux`'s rule against a panel that reports nothing every turn. */}
+          {cards.length === 0 &&
+            fenceStacks.length === 0 &&
+            (filter.tier !== 'all' || filter.run !== 'all') && (
+              <p className="wc-gallery-empty">No buffs match this filter.</p>
+            )}
           {fenceStacks.length > 0 && (
             <div className="wc-fence">
               <div className="wc-fence-row">

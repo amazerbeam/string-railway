@@ -1,8 +1,16 @@
-/* DLR-156 — the trick resolution screen: the build-up and the apply-or-roll choice, on a screen
-   of its own (`ui-notes.md` §1/§3). Adapted from `.claude/contract/DLR-156-roll-over-damage-model/
-   mockup.html`'s `.resolve` section, which is the approved article — this file is that CSS made
-   real, not a fresh design pass. Shares `warCouncil.css`'s `:root` tokens (the two files are always
-   imported together, via `WarCouncilRound.tsx`). */
+/* DLR-156 — the trick resolution's own build-up and apply-or-roll choice. Adapted from
+   `.claude/contract/DLR-156-roll-over-damage-model/mockup.html`'s `.resolve` section, which is the
+   approved article — this file is that CSS made real, not a fresh design pass. Shares
+   `warCouncil.css`'s `:root` tokens (the two files are always imported together, via
+   `WarCouncilRound.tsx`). Card chrome (border, background, radius) is `warCouncilResolvePanel.css`'s
+   own `.wc-resolve` rule — this file owns only the prompt/buttons.
+
+   DLR-160 (widened) retired this file's head, trick, outcome, ledger and register rules along with
+   the markup they styled: the head is now `BankMeter`'s (`warCouncilBankMeter.css`), the trick's
+   cards and the outcome word moved to the felt (`TrickWell.tsx`), the decree chip is the felt
+   rail's own permanent one (`DecreePile.tsx`), and the flat scrolling ledger is retired in favour
+   of `ResolutionBreakdown.tsx`'s arithmetic shape (`warCouncilResolvePanel.css`). What survives
+   here is the apply-or-roll prompt, unchanged in substance. */
 
 :root {
   /* PLACEHOLDER — transcribed from mockup.html; the developer's to set by playing.
@@ -11,14 +19,14 @@
   /* PLACEHOLDER — ui-notes.md §1/§7: "how long the resolution screen holds after a choice before
      returning to the table". Read by `useResolveHold.ts`'s own `holdMs`. */
   --wc-resolve-hold: 700ms;
-  --wc-ledger-row: 2.5rem;
   /* PLACEHOLDER — the developer's to set by playing, not a chosen value: how long the felt stays
-     showing the just-played card in the trick well AFTER a commit before the resolution screen
-     replaces it (DLR-156 play-test fix 1 — "the card goes up in the air then the next screen just
-     appears"). Read by `useTrickDwell.ts`'s own `dwellMs`, following this file's other three
-     duration tokens' pattern exactly. 800ms is long enough to register the trick after a 380ms
-     `--wc-flight`, and no more considered than that. */
-  --wc-trick-dwell: 800ms;
+     showing the just-played card in the trick well AFTER a commit before the pot card's own
+     body/foot replace its resting head (DLR-156 play-test fix 1 — "the card goes up in the air
+     then the next screen just appears"). Read by `useTrickDwell.ts`'s own `dwellMs`. 800ms is long
+     enough to register the trick after a 380ms `--wc-flight`, and no more considered than that.
+     DLR-160, 2026-09-02: raised 800ms -> 1000ms on the developer's own words at the approval
+     gate, "wait a second before moving to the resolution screen". */
+  --wc-trick-dwell: 1000ms;
 }
 
 .wc-resolve,
@@ -26,286 +34,23 @@
   box-sizing: border-box;
 }
 
-/* A second full-viewport shell, not a modal over the felt (`ui-notes.md` §1) — the header, the
-   trick, the verdict and the ledger sit in ONE grid child (`.wc-resolve-main`) so they read as one
-   sentence rather than being spread evenly down the screen by a grid that does not know they are
-   one thought (`ui-notes.md` §3). */
-.wc-resolve {
-  height: 100dvh;
-  width: 100%;
-  overflow: hidden;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  justify-items: center;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-  color-scheme: dark;
-  background:
-    radial-gradient(90% 70% at 50% 42%, #14201d 0%, #080c0e 62%, #05070800 100%), var(--wc-chamber);
-  color: var(--wc-chalk);
-  font-family: var(--wc-sans);
-  -webkit-font-smoothing: antialiased;
-}
-
-.wc-resolve-head {
-  padding: clamp(0.5rem, 1.6vh, 1rem) 1rem clamp(0.2rem, 0.6vh, 0.4rem);
-  font-size: clamp(0.44rem, 0.95vmin, 0.55rem);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--wc-chalk-dim);
-}
-
-/* the whole cluster — trick, verdict, readout — as one grid child (`ui-notes.md` §3) */
-.wc-resolve-main {
-  align-self: center;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(0.5rem, 2.2vh, 1.4rem);
-  min-height: 0;
-}
-
-/* DLR-156 play-test fix — `container-type: size` contains BOTH axes, and this element has no
-   explicit height: with nothing but its own (contained-away) content to size from, it collapsed
-   to zero height. The cards then overflowed onto `.wc-resolve-verdict` beneath (the "cards sit on
-   top of the words" defect) AND `.wc-resolve-card-slot`'s `7cqh` resolved against that zero height,
-   pinning every card at its 3.2rem floor (the "tiny cards" defect — one bug, two symptoms).
-   `container-type: inline-size` contains only the axis this stage actually needs to query (the
-   card slot below sizes off width, not height) — block size is left to flow from content exactly
-   as it would with no container at all, so there is no dimension left to collapse. Smaller and more
-   robust than giving the stage an explicit height: an explicit height is one more number to keep in
-   sync with the card bounds it would have to be sized to fit, where this fix removes the coupling
-   entirely. */
-.wc-resolve-trick {
-  display: flex;
-  align-items: flex-start;
-  gap: clamp(1rem, 4vw, 2.4rem);
-  container-type: inline-size;
-  container-name: wc-resolve-stage;
-}
-
-.wc-resolve-card {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-/* Sized against the CONTAINER, never `vw`/`vh` — a `vw` bound is blind to the viewport that
-   breaks it, and `vh` prices the card against a height the stage does not have (`ui-notes.md`
-   §6, carried from DLR-147). `cqi` (the stage's inline size, i.e. its width) rather than `cqh` —
-   the stage above now contains only the inline axis, so a height-based unit here would query a
-   dimension the container never establishes. The 3.2rem/5.2rem floor and cap are unchanged from
-   the mockup; only the axis the preferred term reads was wrong. */
-.wc-resolve-card-slot {
-  width: clamp(3.2rem, 8cqi, 5.2rem);
-  aspect-ratio: 2 / 3;
-  position: relative;
-}
-
-.wc-resolve-card-slot > * {
-  position: absolute;
-  inset: 0;
-}
-
-.wc-resolve-card figcaption {
-  font-size: clamp(0.38rem, 0.85vmin, 0.48rem);
-  letter-spacing: 0.1em;
-  color: var(--wc-chalk-dim);
-}
-
-.wc-resolve-card.wc-is-winner .wc-resolve-card-slot {
-  outline: 2px solid var(--wc-brass);
-  outline-offset: 3px;
-  border-radius: 6px;
-}
-
-.wc-resolve-verdict {
-  font-family: var(--wc-serif);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: clamp(0.7rem, 1.7vmin, 1rem);
-  color: var(--wc-brass);
-}
-
-.wc-resolve-verdict.wc-is-hurt {
-  color: var(--wc-alarm);
-}
-
-/* ---------- the ledger, per `ResolutionLedger.tsx` ---------- */
-
-.wc-resolve-figures {
-  width: min(calc(100% - 1rem), 68rem);
-  border-radius: 12px;
-  border: 1px solid var(--wc-brass-dim);
-  background: linear-gradient(180deg, #141d21, #10171a);
-  box-shadow: 0 8px 26px #0000008c;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
-  overflow: hidden;
-}
-
-.wc-resolve-ledger {
-  padding: clamp(0.4rem, 1.1vh, 0.7rem) clamp(0.55rem, 1.4vw, 1rem);
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  min-width: 0;
-}
-
-.wc-resolve-ledger-heading {
-  margin: 0 0 0.12rem;
-  font-size: clamp(0.42rem, 0.9vmin, 0.52rem);
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--wc-chalk-dim);
-  font-weight: 600;
-}
-
-/* THE TWO-ROW WINDOW. Fixed to the token, never to content — `ui-notes.md` §3/§6: it does not
-   grow with the sixth beat and does not collapse on the first, and this is the file's ONE
-   scrolling region. */
-.wc-resolve-ledger-scroll {
-  height: calc(2 * var(--wc-ledger-row));
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: var(--wc-brass-dim) transparent;
-}
-
-/* A scrolled-away row must not simply vanish — only applied while the box actually overflows. */
-.wc-resolve-ledger-scroll.wc-is-overflowing {
-  mask-image: linear-gradient(180deg, #0000 0, #000 var(--wc-ledger-row));
-}
-
-.wc-resolve-lrow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.4rem;
-  height: var(--wc-ledger-row);
-  box-sizing: border-box;
-  font-size: clamp(0.5rem, 1.1vmin, 0.66rem);
-  line-height: 1.25;
-}
-
-.wc-resolve-lrow-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--wc-chalk);
-}
-
-.wc-resolve-lrow-run {
-  font-family: var(--wc-serif);
-  color: var(--pot, var(--wc-brass));
-  min-width: 3.2rem;
-  text-align: right;
-}
-
-.wc-resolve-lrow-hurt .wc-resolve-lrow-name {
-  color: var(--wc-alarm);
-}
-
-/* ---------- the registers: damage, mult, this trick, and the pot line ---------- */
-
-.wc-resolve-registers {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.5rem, 1.6vw, 1.2rem);
-  padding: clamp(0.35rem, 1vh, 0.6rem) clamp(0.7rem, 1.8vw, 1.3rem);
-  border-left: 1px solid #222e33;
-  background: #0d1417;
-}
-
-.wc-resolve-figure-value {
-  font-family: var(--wc-serif);
-  font-variant-numeric: tabular-nums;
-}
-
-.wc-resolve-potline {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding-left: clamp(0.4rem, 1.2vw, 0.9rem);
-  border-left: 1px dashed #2b383e;
-}
-
-/* THE BIG ONE — "this trick", the only figure allowed this size, and the impact animation's
-   home. `ResolutionScreen` gives its value span `key={landed}`, so React remounts a fresh node
-   on every beat and the animation below replays on mount with no extra JS state to own
-   (`ui-notes.md` §3's "each term lands on its own beat"). */
-.wc-resolve-big {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.05rem;
-  position: relative;
-}
-
-.wc-resolve-big-value {
-  font-family: var(--wc-serif);
-  line-height: 0.95;
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(2.1rem, 6.2vmin, 3.6rem);
-  color: var(--pot, var(--wc-brass));
-  animation: wc-resolve-impact var(--wc-beat) cubic-bezier(0.2, 1.5, 0.35, 1);
-}
-
-.wc-resolve-big.wc-is-hurt .wc-resolve-big-value {
-  color: var(--wc-alarm);
-}
-
-@keyframes wc-resolve-impact {
-  0% {
-    transform: scale(1);
-  }
-  18% {
-    transform: scale(1.42);
-  }
-  38% {
-    transform: scale(0.94);
-  }
-  60% {
-    transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wc-resolve-big-value {
-    animation: wc-resolve-flash calc(var(--wc-beat) * 0.5) steps(2, end);
-  }
-
-  @keyframes wc-resolve-flash {
-    0%,
-    49% {
-      filter: brightness(2.1);
-    }
-    50%,
-    100% {
-      filter: none;
-    }
-  }
-}
-
 /* ---------- the apply-or-roll prompt ---------- */
 
+/* DLR-160 readability fix — a single-column grid, not a wrapping flex row: the ~250px dossier
+   column always wrapped the two buttons onto separate lines, and a wrapped flex row sizes each
+   child to its own content, which is why "Apply damage" and "Roll over" ended up two different
+   widths (`.wc-resolve-pbtn`'s stale `min-width` below was sized for the old 22rem-wide corner
+   panel, not this column). A grid of one column makes every child full width by default, so the
+   two controls are identical without either needing a chosen width — matching
+   `mockup-left-damage-block-v2.html`'s `.pot-foot`. Also given `flex: none` as a child of
+   `.wc-resolve`'s own column, alongside the head — see `warCouncilBankMeter.css`'s `.wc-bank`. */
 .wc-resolve-prompt {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: stretch;
-  gap: clamp(0.5rem, 2vmin, 1.25rem);
+  flex: none;
+  display: grid;
+  gap: clamp(0.5rem, 2vmin, 0.9rem);
   width: 100%;
-  padding: clamp(0.4rem, 1.2vh, 0.8rem) clamp(0.6rem, 2vw, 1.5rem);
-  background: var(--wc-chamber-lift);
+  padding-top: clamp(0.4rem, 1.2vh, 0.8rem);
+  margin-top: clamp(0.4rem, 1.2vh, 0.8rem);
   border-top: 1px solid #232c33;
 }
 
@@ -316,7 +61,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.12rem;
-  min-width: clamp(9rem, 22vmin, 14rem);
+  width: 100%;
   min-height: 3.4rem;
   padding: 0.5rem 1rem;
   border-radius: 10px;
@@ -377,11 +122,7 @@
   letter-spacing: 0.02em;
 }
 
-/* ---------- reduced motion ----------
-   The beat still HAPPENS — one term at a time is information, not decoration, and removing the
-   stagger would remove the derivation (AC18). What goes is the travel, the scale and the ring;
-   the impact becomes a colour-and-weight flash. Nothing here yet animates on the beat — Task 16
-   wires the flight and the impact — so this block reserves the rule the flight will need. */
+/* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .wc-resolve-pbtn {
     transition: none;

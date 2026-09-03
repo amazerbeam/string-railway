@@ -51,19 +51,11 @@ import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
 import ShopPanel from './app/run/ShopPanel'
 import { shopRefusalsFor } from './app/run/shopRefusals'
 import { shopPricesFor } from './app/run/shopPrices'
-import RunPathScreen from './app/run/RunPathScreen'
 import { useShopSlot } from './app/run/useShopSlot'
 import { useManageBuffs } from './app/run/useManageBuffs'
 import ManageBuffsPanel from './app/run/ManageBuffsPanel'
-import {
-  fightLabel,
-  runGoalText,
-  runPositionLabel,
-  runProgressText,
-  MAP_BACK_LABEL,
-  MAP_TITLE,
-  START_TITLE,
-} from './app/run/runLabels'
+import { MapScreen, PreFightScreen, StartScreen } from './app/run/PathScreens'
+import { fightLabel, runGoalText, runPositionLabel, runProgressText } from './app/run/runLabels'
 import { RunPhase, screenFor } from './app/screenFor'
 
 // Built once at module scope because its only half is a configuration constant — it holds no
@@ -202,7 +194,9 @@ function App() {
   function leaveForNextFight() {
     const advanced = advanceRun(run)
     setRun(advanced)
-    setPhase(RunPhase.Verdict)
+    // DLR-160 AC9 — the pre-fight review, not the felt, straight off the shop. Its own control
+    // moves the phase on to `RunPhase.Verdict`, where this used to land, once the fight begins.
+    setPhase(RunPhase.PreFight)
     setTricks(NO_TRICKS)
     // AC10 — a new fight always begins on a fresh 33.
     dealNextHand(advanced, FRESH_ENCOUNTER_DECK)
@@ -277,8 +271,7 @@ function App() {
 
   if (phase === RunPhase.Start) {
     return (
-      <RunPathScreen
-        title={START_TITLE}
+      <StartScreen
         stages={stages}
         goalText={goalText}
         actionLabel={fightLabel(currentName)}
@@ -287,15 +280,22 @@ function App() {
     )
   }
 
-  if (encounterOver && phase === RunPhase.Map) {
+  // DLR-160 AC9 — checked BEFORE `!encounterOver`: the next encounter is already live by now.
+  if (phase === RunPhase.PreFight) {
     return (
-      <RunPathScreen
-        title={MAP_TITLE}
+      <PreFightScreen
         stages={stages}
         goalText={goalText}
-        actionLabel={MAP_BACK_LABEL}
+        actionLabel={fightLabel(currentName)}
         onAction={() => setPhase(RunPhase.Verdict)}
+        heldBuffs={run.buffs}
       />
+    )
+  }
+
+  if (encounterOver && phase === RunPhase.Map) {
+    return (
+      <MapScreen stages={stages} goalText={goalText} onAction={() => setPhase(RunPhase.Verdict)} />
     )
   }
 

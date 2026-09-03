@@ -6,12 +6,16 @@
    block moves here rather than pushing the sheet over. Imported from the mount AFTER
    `warCouncilHunt.css`. Tokens live in `warCouncil.css`; nothing here redeclares `:root`. */
 
+/* DLR-160 — no longer its own bordered panel: this is now `.wc-resolve`'s HEAD
+   (`warCouncilResolvePanel.css`), which owns the card's border/background/radius. Padding stays,
+   so the head keeps the same inset it always had.
+
+   DLR-160 readability fix — `flex: none` so the head can never be squeezed by
+   `.wc-resolve`'s column: only `.wc-resolve-body` (the middle child) shrinks and scrolls; the
+   head and the foot (`.wc-resolve-prompt`) always get their own full content height. */
 .wc-bank {
-  background: var(--wc-chamber-lift);
-  border: 1px solid #23303a;
-  border-left: 3px solid var(--wc-brass-dim);
-  border-radius: 0.4rem;
-  padding: 0.6rem 0.7rem;
+  flex: none;
+  padding: 0.6rem 0.7rem 0.5rem;
 }
 
 .wc-bank-eyebrow {
@@ -22,31 +26,33 @@
   margin: 0 0 0.3rem;
 }
 
+/* DLR-160 — restyled from the headline to a sub-line: `.wc-bank-cash` below carries the pot
+   figure now (the developer's own "keep the pot figure on the headline" call). The element and
+   its `aria-label` are unchanged — see `BankMeter.tsx`'s own docblock. */
 .wc-bank-figures {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.35rem;
-  margin: 0;
+  gap: 0.3rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
 }
 
-.wc-bank-num {
+.wc-bank-num,
+.wc-bank-mult {
   font-family: var(--wc-serif);
-  font-size: 1.5rem;
-  line-height: 1;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
-  color: var(--wc-brass);
+  color: var(--wc-parchment);
 }
 
 .wc-bank-op {
   color: var(--wc-chalk-dim);
-  font-size: 1rem;
 }
 
-.wc-bank-mult {
-  font-family: var(--wc-serif);
-  font-size: 1.1rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--wc-parchment);
+.wc-bank-suffix {
+  color: var(--wc-chalk-dim);
 }
 
 /* 2026-08-25 — the unpaid Momentum bonus a fired buff has queued for the next cash-out, folded
@@ -59,14 +65,18 @@
   margin-left: 0.15rem;
 }
 
+/* DLR-160 — the headline now: the pot figure, the number the Apply control restates
+   (mockup-left-damage-block-v2.html's `.figure`). PLACEHOLDER size, the developer's. */
 .wc-bank-cash {
-  margin: 0.3rem 0 0;
-  font-size: 0.72rem;
-  color: var(--wc-chalk-dim);
+  margin: 0.15rem 0 0;
+  font-family: var(--wc-serif);
+  font-size: clamp(1.6rem, 4vmin, 2.4rem);
+  line-height: 1;
+  color: var(--wc-brass);
 }
 
 .wc-bank-cash b {
-  color: var(--wc-parchment);
+  font-weight: inherit;
   font-variant-numeric: tabular-nums;
 }
 

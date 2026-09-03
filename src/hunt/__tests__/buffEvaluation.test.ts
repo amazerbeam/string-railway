@@ -125,6 +125,38 @@ describe('buffFires — one case per condition family (AC5)', () => {
     expect(buffFires(glutton, ctx({ skullTrick: true, playerWon: false }))).toBe(false)
   })
 
+  it('DLR-161 — Skull Helmet bronze fires on an eaten skull only', () => {
+    const bronzeHelmet = fromTemplate('skullHelmet:protection', BuffTier.Bronze, 20)
+    expect(buffFires(bronzeHelmet, ctx({ skullTrick: true, playerWon: true }))).toBe(true) // skull win
+    expect(buffFires(bronzeHelmet, ctx({ skullTrick: true, playerWon: false }))).toBe(false) // dodge
+    expect(buffFires(bronzeHelmet, ctx({ skullTrick: false, playerWon: false }))).toBe(false) // clean loss
+    expect(buffFires(bronzeHelmet, ctx({ skullTrick: false, playerWon: true }))).toBe(false) // clean win
+  })
+
+  it('DLR-161 — Skull Helmet silver fires on the skull win AND the clean loss', () => {
+    const silverHelmet = fromTemplate('skullHelmet:protection', BuffTier.Silver, 21)
+    expect(buffFires(silverHelmet, ctx({ skullTrick: true, playerWon: true }))).toBe(true)
+    expect(buffFires(silverHelmet, ctx({ skullTrick: false, playerWon: false }))).toBe(true)
+    expect(buffFires(silverHelmet, ctx({ skullTrick: true, playerWon: false }))).toBe(false) // dodge
+    expect(buffFires(silverHelmet, ctx({ skullTrick: false, playerWon: true }))).toBe(false) // clean win
+  })
+
+  it('DLR-161 — Skull Tether bronze fires on an eaten skull only', () => {
+    const bronzeTether = fromTemplate('skullTether:protection', BuffTier.Bronze, 22)
+    expect(buffFires(bronzeTether, ctx({ skullTrick: true, playerWon: true }))).toBe(true)
+    expect(buffFires(bronzeTether, ctx({ skullTrick: true, playerWon: false }))).toBe(false)
+    expect(buffFires(bronzeTether, ctx({ skullTrick: false, playerWon: false }))).toBe(false)
+    expect(buffFires(bronzeTether, ctx({ skullTrick: false, playerWon: true }))).toBe(false)
+  })
+
+  it('DLR-161 — Skull Tether silver fires on the skull win AND the clean loss', () => {
+    const silverTether = fromTemplate('skullTether:protection', BuffTier.Silver, 23)
+    expect(buffFires(silverTether, ctx({ skullTrick: true, playerWon: true }))).toBe(true)
+    expect(buffFires(silverTether, ctx({ skullTrick: false, playerWon: false }))).toBe(true)
+    expect(buffFires(silverTether, ctx({ skullTrick: true, playerWon: false }))).toBe(false)
+    expect(buffFires(silverTether, ctx({ skullTrick: false, playerWon: true }))).toBe(false)
+  })
+
   it("Hoarder — the bank after this trick reaches bronze's threshold (2) (DLR-145: still declared, no longer mintable)", () => {
     const hoarder = directBuff(BuffKind.Hoarder, 6, BuffRewardAxis.Magnitude)
     expect(buffFires(hoarder, ctx({ bankAfterTrick: 2 }))).toBe(true)

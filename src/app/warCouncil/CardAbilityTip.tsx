@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { Card } from '../../warCouncil'
+import { useBreakdownTop } from './breakdownRectContext'
 import { RANK_RULE_TEXT, cardTipTitle } from './cardRuleText'
 import { useCardTip } from './useCardTip'
 
@@ -52,6 +53,7 @@ interface CardAbilityTipProps {
 export default function CardAbilityTip({ card, fuseNote = null, children }: CardAbilityTipProps) {
   const { open, anchor, hostRef, onClick, onPointerEnter, onPointerLeave, onFocus, onBlur } =
     useCardTip()
+  const breakdownTop = useBreakdownTop()
 
   return (
     <span
@@ -79,7 +81,15 @@ export default function CardAbilityTip({ card, fuseNote = null, children }: Card
                 // The outermost cards of a fan sit close enough to the viewport edge that an
                 // unclamped centre would render the bubble partly off-screen.
                 '--wc-tip-anchor-x': `${anchor.left + anchor.width / 2}px`,
-                top: anchor.top,
+                // DLR-160 AC4 — anchor above whichever is higher: the card, or the breakdown
+                // panel describing it. Both are anchored to the card's own top edge, so with no
+                // adjustment the bubble lands exactly on the panel every time — the ticket's
+                // fourth screenshot. Routed through a custom property, same as `--wc-tip-anchor-x`
+                // above, rather than a plain `top` value, so `warCouncilCardTip.css`'s own vertical
+                // floor (`max(…, var(--wc-tip-anchor-y))`) is what actually places the bubble.
+                '--wc-tip-anchor-y': `${
+                  breakdownTop === null ? anchor.top : Math.min(anchor.top, breakdownTop)
+                }px`,
               } as CSSProperties
             }
           >

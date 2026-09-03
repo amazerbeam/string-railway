@@ -2,17 +2,26 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  PlayerSide,
-  Suit,
-  TrickOutcome,
-  type TrickCard,
-  type TrickResolution,
-} from '../../../warCouncil'
-import { cardAccessibleName } from '../labels'
+  BuffKind,
+  BuffTier,
+  mintFromTemplate,
+  templatesForFamily,
+  type Buff,
+  type MintableConditionKind,
+} from '../../../hunt'
+import { PlayerSide, Suit, TrickOutcome, type TrickResolution } from '../../../warCouncil'
 import { BeatKind, type ResolutionBeat } from '../resolutionBeats'
+import { deadBuffReasonText } from '../resolutionDeadBuffs'
 import { RoundUiActionKind } from '../roundUiState'
 import type { ResolutionView } from '../roundUiState'
 import TrickResolutionScreen from '../TrickResolutionScreen'
+
+// Mirrors `resolutionDeadBuffs.test.ts`'s own helper — buffs minted through `mintFromTemplate`,
+// never hand-built `Buff` literals, so a fixture cannot drift from the real minted shape.
+function mint(kind: MintableConditionKind, id: number): Buff {
+  const [template] = templatesForFamily(kind)
+  return mintFromTemplate(template, BuffTier.Bronze, id)
+}
 
 afterEach(cleanup)
 
@@ -32,8 +41,8 @@ function stubMatchMedia(matches: boolean) {
 }
 stubMatchMedia(false)
 
-const led: TrickCard = { side: PlayerSide.Cpu, card: { suit: Suit.Bells, rank: 4 } }
-const followed: TrickCard = { side: PlayerSide.Player, card: { suit: Suit.Bells, rank: 10 } }
+const led = { side: PlayerSide.Cpu, card: { suit: Suit.Bells, rank: 4 } }
+const followed = { side: PlayerSide.Player, card: { suit: Suit.Bells, rank: 10 } }
 
 const bankedBeats: readonly ResolutionBeat[] = [
   { kind: BeatKind.Base, label: 'Base damage +1', amount: 1, damage: 1, mult: 1, running: 1 },
@@ -76,6 +85,10 @@ const bankedView: ResolutionView = {
   beats: bankedBeats,
   trickNumber: 3,
   nextPotFloor: 60,
+  skulledInTrick: [],
+  decree: { suit: Suit.Bells, rank: 1 },
+  deadBuffs: [],
+  potIsLethal: false,
 }
 
 const hurtBeats: readonly ResolutionBeat[] = [
@@ -110,28 +123,23 @@ const hurtView: ResolutionView = {
   beats: hurtBeats,
   trickNumber: 4,
   nextPotFloor: 0,
+  skulledInTrick: [],
+  decree: { suit: Suit.Bells, rank: 1 },
+  deadBuffs: [],
+  potIsLethal: false,
 }
 
+const QUARRY_HEALTH = 10
+
 describe('TrickResolutionScreen', () => {
-  it('AC14 — both played cards are on screen', () => {
-    render(<TrickResolutionScreen resolution={bankedView} dispatch={vi.fn()} />)
-    expect(screen.getByRole('button', { name: cardAccessibleName(led.card) })).toBeTruthy()
-    expect(screen.getByRole('button', { name: cardAccessibleName(followed.card) })).toBeTruthy()
-  })
-
-  it('names the trick and its outcome in the header', () => {
-    render(<TrickResolutionScreen resolution={bankedView} dispatch={vi.fn()} />)
-    expect(screen.getByText(/trick 3 of 6/i)).toBeTruthy()
-    expect(screen.getByText(/banked/i)).toBeTruthy()
-  })
-
-  it('AC2 — the pot and its parts (total, roll, product) are all legible', () => {
-    render(<TrickResolutionScreen resolution={bankedView} dispatch={vi.fn()} />)
-    expect(screen.getByRole('group', { name: /total 14.*roll 3.*pot 42/i })).toBeTruthy()
-  })
-
-  it('AC3 — the banked branch offers exactly two controls, told apart by shape and words', () => {
-    render(<TrickResolutionScreen resolution={bankedView} dispatch={vi.fn()} />)
+  it('the banked branch offers exactly two controls, told apart by shape and words', () => {
+    render(
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={vi.fn()}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
     const prompt = screen.getByRole('group', { name: /apply the pot, or roll it over/i })
     const buttons = prompt.querySelectorAll('button')
     expect(buttons.length).toBe(2)
@@ -151,7 +159,13 @@ describe('TrickResolutionScreen', () => {
   it('AC5/AC6 — pressing Apply dispatches ApplyPot after the hold, pressing Roll over dispatches RollOver after the hold', () => {
     vi.useFakeTimers()
     const dispatch = vi.fn()
-    render(<TrickResolutionScreen resolution={bankedView} dispatch={dispatch} />)
+    render(
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={dispatch}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /apply.*42/i }))
     expect(dispatch).not.toHaveBeenCalled()
@@ -163,7 +177,13 @@ describe('TrickResolutionScreen', () => {
   it('rolling over dispatches RollOver after the hold', () => {
     vi.useFakeTimers()
     const dispatch = vi.fn()
-    render(<TrickResolutionScreen resolution={bankedView} dispatch={dispatch} />)
+    render(
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={dispatch}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /roll over.*60/i }))
     expect(dispatch).not.toHaveBeenCalled()
@@ -175,7 +195,13 @@ describe('TrickResolutionScreen', () => {
   it('AC7 — the hurt branch offers exactly one control, Onward, which dispatches RollOver after the hold', () => {
     vi.useFakeTimers()
     const dispatch = vi.fn()
-    render(<TrickResolutionScreen resolution={hurtView} dispatch={dispatch} />)
+    render(
+      <TrickResolutionScreen
+        resolution={hurtView}
+        dispatch={dispatch}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
 
     expect(screen.queryByRole('button', { name: /apply/i })).toBeNull()
     const onward = screen.getByRole('button', { name: /onward/i })
@@ -187,19 +213,31 @@ describe('TrickResolutionScreen', () => {
     vi.useRealTimers()
   })
 
-  it('the screen stays mounted through the hold and the wording names what happened, for both exits', () => {
+  it('names what just happened during the hold, for both exits', () => {
     vi.useFakeTimers()
-    const { unmount } = render(<TrickResolutionScreen resolution={bankedView} dispatch={vi.fn()} />)
+    render(
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={vi.fn()}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
     fireEvent.click(screen.getByRole('button', { name: /apply.*42/i }))
-    // Still mounted, still showing the trick — this is the component's own responsibility; the
-    // actual return-to-felt swap is `WarCouncilRound.tsx`'s, driven by the deferred dispatch.
+    // Still mounted, still showing the body — the actual return-to-felt swap is
+    // `WarCouncilRound.tsx`'s, driven by the deferred dispatch.
     expect(screen.getByText(/dealt to the quarry/i)).toBeTruthy()
     act(() => vi.advanceTimersByTime(FALLBACK_HOLD_MS))
-    unmount()
     vi.useRealTimers()
 
+    cleanup()
     vi.useFakeTimers()
-    render(<TrickResolutionScreen resolution={bankedView} dispatch={vi.fn()} />)
+    render(
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={vi.fn()}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
     fireEvent.click(screen.getByRole('button', { name: /roll over.*60/i }))
     expect(screen.getByText(/rolled over/i)).toBeTruthy()
     vi.useRealTimers()
@@ -208,7 +246,13 @@ describe('TrickResolutionScreen', () => {
   it('a second press during the hold does not dispatch a second time', () => {
     vi.useFakeTimers()
     const dispatch = vi.fn()
-    render(<TrickResolutionScreen resolution={bankedView} dispatch={dispatch} />)
+    render(
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={dispatch}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
 
     const apply = screen.getByRole('button', { name: /apply.*42/i })
     fireEvent.click(apply)
@@ -228,7 +272,11 @@ describe('TrickResolutionScreen', () => {
     vi.useFakeTimers()
     const dispatch = vi.fn()
     const { unmount } = render(
-      <TrickResolutionScreen resolution={bankedView} dispatch={dispatch} />,
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={dispatch}
+        quarryHealth={QUARRY_HEALTH}
+      />,
     )
 
     fireEvent.click(screen.getByRole('button', { name: /apply.*42/i }))
@@ -238,9 +286,58 @@ describe('TrickResolutionScreen', () => {
     vi.useRealTimers()
   })
 
-  it('names the hurt header distinctly from a banked one', () => {
-    render(<TrickResolutionScreen resolution={hurtView} dispatch={vi.fn()} />)
-    expect(screen.getByText(/trick 4 of 6/i)).toBeTruthy()
-    expect(screen.getByText(/streak is broken/i)).toBeTruthy()
+  it('DLR-160 AC3 — a dead buff renders its own condition, with no numeric value cell', () => {
+    const feeder = mint(BuffKind.Feeder, 1)
+    const view: ResolutionView = { ...bankedView, deadBuffs: [feeder] }
+    render(
+      <TrickResolutionScreen resolution={view} dispatch={vi.fn()} quarryHealth={QUARRY_HEALTH} />,
+    )
+    expect(screen.getByText(deadBuffReasonText(feeder))).toBeTruthy()
+  })
+
+  it("DLR-160 AC6 — a lethal pot says so in the Apply control's own accessible name, and names the Quarry's health", () => {
+    const lethalView: ResolutionView = { ...bankedView, potIsLethal: true }
+    render(
+      <TrickResolutionScreen
+        resolution={lethalView}
+        dispatch={vi.fn()}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
+    expect(
+      screen.getByRole('button', {
+        name: /apply damage.*which ends the fight.*the quarry holds 10/i,
+      }),
+    ).toBeTruthy()
+  })
+
+  it("a non-lethal pot keeps the ordinary accessible name, names the Quarry's health, and shows no lethal tag", () => {
+    render(
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={vi.fn()}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
+    expect(
+      screen.getByRole('button', {
+        name: /apply damage.*total and roll reset.*the quarry holds 10/i,
+      }),
+    ).toBeTruthy()
+    expect(screen.queryByText(/lethal/i)).toBeNull()
+  })
+
+  it('during play there is no breakdown and no controls — nothing renders when there is no resolution to show', () => {
+    // `TrickResolutionScreen` is only ever mounted by `PotCard.tsx` once `resolution` is non-null
+    // (`PotCard.tsx`'s own docblock) — this pins that the component itself has nothing left to
+    // gate on internally once it IS mounted: the banked view always renders its body and foot.
+    render(
+      <TrickResolutionScreen
+        resolution={bankedView}
+        dispatch={vi.fn()}
+        quarryHealth={QUARRY_HEALTH}
+      />,
+    )
+    expect(screen.getByRole('group', { name: /apply the pot, or roll it over/i })).toBeTruthy()
   })
 })

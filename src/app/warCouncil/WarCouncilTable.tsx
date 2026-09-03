@@ -1,11 +1,4 @@
-import {
-  isEncounterResolved,
-  quarryCharacterInfo,
-  type Coins,
-  type DuelSide,
-  type Health,
-  type Hunt,
-} from '../../hunt'
+import { DuelSide, isEncounterResolved, type Coins, type Health } from '../../hunt'
 import {
   discardRefusalFor,
   CardRank,
@@ -19,25 +12,20 @@ import {
 } from '../../warCouncil'
 import type { WarCouncilRoundResult } from '../warCouncilMount'
 import ActionBar from './ActionBar'
-import BankMeter from './BankMeter'
 import { loadoutBarRefusalFor, loadoutDoorOpen } from './buffHandlers'
 import BuffGallery from './BuffGallery'
-import BuffRidingList from './BuffRidingList'
 import { ridingTimebombId } from './buffRideModel'
 import { useBuffRide } from './buffRideProps'
-import CardBuffBreakdown from './CardBuffBreakdown'
-import { cardDamagePreview } from './cardDamage'
+import BuffRideZone from './BuffRideZone'
 import FeltRail from './FeltRail'
 import FeltStage from './FeltStage'
-import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
-import { cardKey } from './labels'
-import QuarryDossier from './QuarryDossier'
 import { telegraphedLeadSuit } from './quarryTelegraph'
 import QuarryShape from './QuarryShape'
 import { barsForRound } from './roundBars'
 import { handSummaryFor } from './roundHandSummary'
 import { deriveHint } from './roundHint'
+import PotCard from './PotCard'
 import { roundResultFor } from './roundResult'
 import {
   actionBarProps,
@@ -55,6 +43,7 @@ import {
   timebombArmed,
   timebombLive,
   RoundUiActionKind,
+  type ResolutionView,
   type RoundUiAction,
   type RoundUiState,
 } from './roundUiState'
@@ -67,7 +56,6 @@ import './warCouncilCards.css'
 import './warCouncilCardFace.css'
 import './warCouncilCardTip.css'
 import './warCouncilHunt.css'
-import './warCouncilBankMeter.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
 import './warCouncilActionBar.css'
@@ -77,11 +65,14 @@ import './warCouncilBuffGallery.css'
 export interface WarCouncilTableProps {
   readonly ui: RoundUiState
   readonly dispatch: (action: RoundUiAction) => void
-  readonly hunt: Hunt
   readonly maxHealth: Readonly<Record<DuelSide, Health>>
   readonly runLabel: string
   readonly coins: Coins
   readonly quarryLabel: string
+  /** DLR-160 (widened) — the resolution to show on the pot card, or `null` while the felt is up.
+   *  `WarCouncilRound.tsx` is what gates this on `ui.resolution !== null && showResolution` (the
+   *  trick dwell): this component decides nothing about WHEN a resolution is shown, only HOW. */
+  readonly resolution: ResolutionView | null
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 
@@ -96,11 +87,11 @@ export interface WarCouncilTableProps {
 export default function WarCouncilTable({
   ui,
   dispatch,
-  hunt,
   maxHealth,
   runLabel,
   coins,
   quarryLabel,
+  resolution,
   onComplete,
 }: WarCouncilTableProps) {
   const encounterOver = isEncounterResolved(ui.encounter)
@@ -288,24 +279,22 @@ export default function WarCouncilTable({
         quarryLabel={quarryLabel}
       />
       <aside className="wc-dossier">
-        <QuarryDossier
-          info={quarryCharacterInfo(hunt.quarry.character)}
-          tricksWon={ui.round.tricksWon[PlayerSide.Cpu]}
-        />
         <QuarryShape shape={shape} leadSuit={leadSuit} />
-        <BankMeter
+        <PotCard
           total={ui.round.total}
           roll={ui.round.roll}
           lastResolution={ui.round.lastResolution}
           carriedIn={ui.buffHand.accrual.carriedIn}
           carryOut={ui.buffHand.accrual.carryOut}
+          resolution={resolution}
+          dispatch={dispatch}
+          quarryHealth={ui.encounter.health[DuelSide.Quarry]}
         />
       </aside>
-      <section
-        className={`wc-table${ui.resolvedTrick || quarryToLead || encounterOver ? ' wc-is-waiting' : ''}`}
-        aria-live="polite"
-        onClick={ui.resolvedTrick || quarryToLead || encounterOver ? handleCarryOn : undefined}
-      >
+      {/* DLR-160 AC1 — the region click is GONE (it fired `handleCarryOn` for any click in the
+          play area while a trick was held or the Quarry pending, costing the buff-arming window).
+          `TrickWell.tsx` has a real button for both states. `wc-is-waiting` went with it. */}
+      <section className="wc-table" aria-live="polite">
         {/* `loadoutOpen(ui)` alone is not enough: the panel's OWN toggle state survives a trick
             resolving under it (nothing clears `ui.loadout`), but `loadoutDoorOpen` — the same
             gate `handleToggleLoadout` reads — goes false on exactly the four states the gallery
@@ -338,51 +327,19 @@ export default function WarCouncilTable({
           />
         )}
       </section>
-      {/* DLR-153 Assumption 6 — outside `.wc-table` deliberately: `BuffGallery` replaces the
-          stage and unmounts the moment the door closes, but the hand zone renders unconditionally,
-          so anchoring the riding list and the (hover-only, Phase 8) breakdown here is what keeps
-          them reachable across the gallery closing.
-          DLR-153 Fix 2 — a REAL positioning class, not an unclassed div: the panel's nearest
-          positioned ancestor used to be `.wc-table`, a SIBLING rather than a parent. */}
-      <div
-        className="wc-buff-ride-zone"
-        onMouseEnter={buffRide.breakdownTarget.onEnterPanel}
-        onMouseLeave={buffRide.breakdownTarget.onLeaveCard}
-      >
-        <HandFan
-          hand={displayHand}
-          legal={legal}
-          armed={ui.armed}
-          interactive={handInteractive}
-          hint={buffRide.removedAnnouncement ?? hint}
-          rejected={ui.rejection !== null}
-          promptOpen={ui.prompt !== null}
-          primedCards={ui.round.primedCards}
-          timebombFuseRemaining={ui.timebombFuseRemaining}
-          timebombArmed={timebombArmed(ui)}
-          discardSelecting={discardSelecting(ui)}
-          discardSelection={ui.discardSelection ?? []}
-          damageForCard={(card) => cardDamagePreview(ui, card)}
-          buffLightForCard={(card) => buffRide.lights.get(cardKey(card)) ?? null}
-          onCardEnter={buffRide.breakdownTarget.onEnterCard}
-          onCardLeave={buffRide.breakdownTarget.onLeaveCard}
-          onTap={handleTap}
-          onCancel={handleCancel}
-        />
-        <BuffRidingList
-          rows={buffRide.riding}
-          onRemove={buffRide.handleRemoveBuff}
-          disabled={buffRide.buffMotionInFlight}
-        />
-        <CardBuffBreakdown
-          breakdown={buffRide.breakdown}
-          riding={buffRide.riding}
-          onEnter={buffRide.breakdownTarget.onEnterPanel}
-          onLeave={buffRide.breakdownTarget.onLeavePanel}
-          onEscape={buffRide.breakdownTarget.onEscape}
-          onRemove={buffRide.handleRemoveBuff}
-        />
-      </div>
+      {/* DLR-160 Task 14 — the hand/riding/breakdown zone, split into `BuffRideZone.tsx` to keep
+          this file under its 400-line budget; see that file's own docblock for why it sits
+          outside `.wc-table` and for its `BreakdownTopContext` provider. */}
+      <BuffRideZone
+        ui={ui}
+        legal={legal}
+        displayHand={displayHand}
+        handInteractive={handInteractive}
+        hint={hint}
+        buffRide={buffRide}
+        onTap={handleTap}
+        onCancel={handleCancel}
+      />
       <ActionBar
         {...actionBarProps({
           ui,

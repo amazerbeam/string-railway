@@ -6,12 +6,15 @@ import {
   CONSUMABLE_AP_COST,
   apCostOf,
   buffApCost,
+  isConditionFamily,
   isConsumableKind,
+  isProtectiveAxis,
+  narrowToMintedAxis,
 } from '../buffCosts'
 import { BuffKind, BuffRewardAxis, BuffTier } from '../buffs'
 
 const { Bronze, Silver, Gold } = BuffTier
-const { Magnitude, Coins, ApRefund, Multiplier } = BuffRewardAxis
+const { Magnitude, Coins, ApRefund, Multiplier, Protection, HeartCount } = BuffRewardAxis
 
 // DLR-111 → *AP costs, per family and reward*, transcribed cell for cell. `Blade` = magnitude,
 // `Purse` = coins, `Second Wind` = apRefund, `Momentum` = multiplier. `undefined` marks a cell the
@@ -204,6 +207,37 @@ describe('apCostOf throws on placeholder content', () => {
       reward: { axis: Magnitude, value: 0 },
     }
     expect(() => apCostOf(placeholder)).toThrow(RangeError)
+  })
+})
+
+describe('DLR-161 — the two protective families price on the Protection axis', () => {
+  it('buffApCost prices SkullHelmet at the clamped REWARD_BASE + CONDITION_MODIFIER (0) at all three tiers', () => {
+    expect(buffApCost(BuffKind.SkullHelmet, Protection, Bronze)).toBe(2)
+    expect(buffApCost(BuffKind.SkullHelmet, Protection, Silver)).toBe(3)
+    expect(buffApCost(BuffKind.SkullHelmet, Protection, Gold)).toBe(4)
+  })
+
+  it('buffApCost prices SkullTether identically', () => {
+    expect(buffApCost(BuffKind.SkullTether, Protection, Bronze)).toBe(2)
+    expect(buffApCost(BuffKind.SkullTether, Protection, Silver)).toBe(3)
+    expect(buffApCost(BuffKind.SkullTether, Protection, Gold)).toBe(4)
+  })
+
+  it('isConditionFamily is true for both new kinds', () => {
+    expect(isConditionFamily(BuffKind.SkullHelmet)).toBe(true)
+    expect(isConditionFamily(BuffKind.SkullTether)).toBe(true)
+  })
+
+  it('isProtectiveAxis is true only for Protection', () => {
+    expect(isProtectiveAxis(Protection)).toBe(true)
+    expect(isProtectiveAxis(Magnitude)).toBe(false)
+    expect(isProtectiveAxis(Coins)).toBe(false)
+  })
+
+  it('narrowToMintedAxis accepts Protection and every BuffCostAxis, and still throws on HeartCount', () => {
+    expect(narrowToMintedAxis(Protection, 'Reward axis')).toBe(Protection)
+    expect(narrowToMintedAxis(Magnitude, 'Reward axis')).toBe(Magnitude)
+    expect(() => narrowToMintedAxis(HeartCount, 'Reward axis')).toThrow(RangeError)
   })
 })
 

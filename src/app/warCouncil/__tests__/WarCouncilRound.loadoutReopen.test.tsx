@@ -66,11 +66,14 @@ describe('WarCouncilRound — the loadout drawer deliberately remembers it was o
     fireEvent.click(bells7)
     fireEvent.click(bells7)
     advanceTrickDwell()
-    // DLR-156 — the resolution screen REPLACES the felt the instant the trick resolves, so the
-    // gallery is gone along with the rest of the felt, not merely hidden behind
-    // `loadoutDoorOpen`'s own gate — this half is already pinned by the timebomb spec; restated
-    // here so the sequence reads whole.
-    expect(screen.getByText(/took it|streak is broken/i)).toBeDefined()
+    // DLR-160 AC11 — the table (and the gallery it can open) stays MOUNTED behind the resolution
+    // panel now, so the gallery being gone is `loadoutDoorOpen`'s own `canAct` gate going false
+    // while a trick is held, not the felt being torn down — this half is already pinned by the
+    // timebomb spec; restated here so the sequence reads whole. Both the well's own outcome line
+    // and the panel's now say the same thing, so this reads `getAllByText` rather than
+    // `getByText` — the wording exists on both surfaces at once by design (`resolutionOutcome.ts`
+    // is read by both), not a duplicate rendering bug.
+    expect(screen.getAllByText(/took it|streak is broken/i).length).toBeGreaterThan(0)
     expect(gallery()).toBeNull()
 
     // Dismiss the resolution screen. Neither `applyPotAction`/`rollOverAction` nor the

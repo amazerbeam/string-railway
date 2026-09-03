@@ -14,6 +14,7 @@ import {
   containsCard,
   incomingFrom,
   incomingFromPot,
+  isSkulled,
   playCard,
   potValue,
   PlayerSide,
@@ -48,6 +49,8 @@ import { buffHandInputFor } from './buffRoundState'
 import { advanceQuarryFollow, deriveResolvedTrick } from './quarryAdvance'
 import { resolutionBeatsFor } from './resolutionBeats'
 import { liftDetonatedMark, liftExpiredMarks } from './timebombMarks'
+import { deadBuffsFor } from './resolutionDeadBuffs'
+import { potIsLethal } from './resolutionLethal'
 
 /**
  * Every `PlayCardOptions` field a resolving trick needs: D1's Timebomb owed from EARLIER tricks, read
@@ -158,6 +161,9 @@ function resolutionViewFor(
   state: RoundUiState,
   resolvedTrick: ResolvedTrick,
   trickNumber: number,
+  /** DLR-160 AC6 — the encounter AFTER this trick's damage was folded in, never `state.encounter`.
+   *  The pot has not been dealt yet (only `applyPot` deals it), but the trick's own damage has. */
+  encounterAfterFold: EncounterState,
 ): ResolutionView {
   const before: StreakState = { total: state.round.total, roll: state.round.roll }
   // DLR-145 — the pile AND the cards spent out of it this trick, the same union
@@ -174,6 +180,20 @@ function resolutionViewFor(
     // AC2 — the bare rule: the player may fire nothing next trick, so this is a FLOOR, not a
     // prediction of what the next trick will actually pay.
     nextPotFloor: potValue(resolution.total + BASE_DAMAGE, resolution.roll + 1),
+    // AC2 — the cards in THIS trick carrying a skull, filtered from the round's own list.
+    skulledInTrick: resolvedTrick.cards
+      .map((played) => played.card)
+      .filter((card) => isSkulled(state.round.skulledCards, card)),
+    // AC7 — the decree in force as the trick resolved.
+    decree: state.round.decree,
+    // AC3 — armed minus fired, against the SAME candidate union the beats resolve against.
+    deadBuffs: deadBuffsFor(
+      state.buffActivation.activatedThisTrick,
+      resolution.firedBuffIds,
+      candidates,
+    ),
+    // AC6 — asked of the same path `applyPotAction` takes, never a comparison of two numbers.
+    potIsLethal: potIsLethal(encounterAfterFold, potValue(resolution.total, resolution.roll)),
   }
 }
 
@@ -246,7 +266,12 @@ export function commit(
       : resolvedTrick
   const resolution: ResolutionView | null =
     resolvedTrickWithTimebomb !== null
-      ? resolutionViewFor(state, resolvedTrickWithTimebomb, result.state.tricksPlayed)
+      ? resolutionViewFor(
+          state,
+          resolvedTrickWithTimebomb,
+          result.state.tricksPlayed,
+          folded?.encounter ?? state.encounter,
+        )
       : state.resolution
   const settled: RoundUiState = {
     ...state,
@@ -306,7 +331,12 @@ export function commit(
       : advanced.resolvedTrick
   const advancedResolution: ResolutionView | null =
     advancedResolvedTrickWithTimebomb !== null
-      ? resolutionViewFor(settled, advancedResolvedTrickWithTimebomb, advanced.round.tricksPlayed)
+      ? resolutionViewFor(
+          settled,
+          advancedResolvedTrickWithTimebomb,
+          advanced.round.tricksPlayed,
+          quarryFolded?.encounter ?? settled.encounter,
+        )
       : settled.resolution
   return {
     ...settled,

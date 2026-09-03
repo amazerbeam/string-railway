@@ -90,10 +90,6 @@
   cursor: default;
 }
 
-.wc-table.wc-is-waiting {
-  cursor: pointer;
-}
-
 .wc-table-inner {
   grid-column: 2;
   display: flex;
@@ -173,15 +169,48 @@
   margin: 0;
 }
 
-.wc-table.wc-is-waiting .wc-table-hint {
+/* DLR-160 AC2 — the outcome word, sitting above `.wc-table-line`'s own reason clause. Reuses
+   `.wc-table-line`'s serif family; the size is its own, larger, since this is the headline the
+   session found missing. */
+.wc-well-outcome {
+  font-family: var(--wc-serif);
+  font-size: clamp(1.05rem, 2.6vmin, 1.4rem);
   color: var(--wc-brass);
-  animation: wc-pulse 2.2s ease-in-out infinite;
+  margin: 0;
 }
 
-@keyframes wc-pulse {
-  50% {
-    opacity: 0.42;
+/* DLR-160 AC1 — both carry-on controls (`TrickWell.tsx`'s held-reveal and Quarry-to-lead
+   branches) are real buttons now, not a hint line dressed as one. Mirrors `.run-btn`'s own
+   chrome (`run.css`) — the same ≥44px/`:focus-visible`/hover-media/`touch-action` shape, restated
+   here because this file owns the felt's own controls and `run.css` is a different screen. */
+.wc-carry-btn {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.78rem, 1.9vmin, 0.92rem);
+  letter-spacing: 0.02em;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.55rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid var(--wc-brass);
+  background: transparent;
+  color: var(--wc-brass);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.wc-carry-btn:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .wc-carry-btn:hover {
+    background: #2b3f31;
   }
+}
+
+.wc-carry-btn:active {
+  transform: translateY(1px);
 }
 
 .wc-fault {

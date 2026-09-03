@@ -11,7 +11,7 @@ import {
   type BuffId,
   type BuffTarget,
 } from './buffs'
-import type { BuffCostAxis } from './buffCosts'
+import type { BuffMintedAxis } from './buffCosts'
 import { cheatBuff, timebombBuff } from './buffCatalog'
 
 /**
@@ -39,6 +39,14 @@ import { cheatBuff, timebombBuff } from './buffCatalog'
  * failure mode by diverting a Loss-fired Feeder's reward out of the hand before the reset runs, so
  * Momentum is safe to mint again. The eight cut families and the two cut reward axes (Purse, Second
  * Wind) stay unreachable — this ticket restores one row, not the pruning itself.
+ *
+ * DLR-161 ADDS two more condition families, Skull Helmet and Skull Tether, taking the pool to 18 —
+ * the same 14 generated condition templates as DLR-150 plus 2 new one-template families (no suit
+ * parameter) plus the same 2 activated ones. Their reward axis is `Protection`, the first reward
+ * that is neither damage nor multiplier: the card keeps one of the streak's two figures through a
+ * trick that hurt the player rather than paying into a per-hand pool. This restores the
+ * "eat a skull with this card" condition for these two families ONLY — `BuffKind.Glutton` and the
+ * other seven cut families are NOT restored and gain no row here.
  *
  * The five consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are still absent —
  * DLR-120's scope boundary, unrelated to this pruning.
@@ -68,12 +76,22 @@ export interface ConditionBuffTemplate {
  *  `BUFF_CADENCE` row; they are simply unreachable, exactly as DLR-116 left Cheat, Timebomb, Blast
  *  Guard and Whetstone priced but off the shelf. Restoring one is a row in `TEMPLATE_FAMILIES`. */
 export type MintableConditionKind =
-  typeof BuffKind.Taker | typeof BuffKind.Feeder | typeof BuffKind.Sidestep
+  | typeof BuffKind.Taker
+  | typeof BuffKind.Feeder
+  | typeof BuffKind.Sidestep
+  // DLR-161 — the two protective families. This is the widening the ticket names as the
+  // mechanism; the other eight cut families stay unconstructible and Glutton in particular is
+  // NOT restored — these two carry their own `buffFires` cases (AC2).
+  | typeof BuffKind.SkullHelmet
+  | typeof BuffKind.SkullTether
 
 /** DLR-145 AC5 — Blade and Momentum. `coins` and `apRefund` stay on `BuffRewardAxis` and keep
  *  their `REWARD_BASE` and `REWARD_TIER_VALUE` ladders; narrowing HERE is what makes a
- *  coins-paying card unconstructible rather than merely unweighted. */
-export type MintableRewardAxis = typeof BuffRewardAxis.Magnitude | typeof BuffRewardAxis.Multiplier
+ *  coins-paying card unconstructible rather than merely unweighted. DLR-161 adds `Protection`. */
+export type MintableRewardAxis =
+  | typeof BuffRewardAxis.Magnitude
+  | typeof BuffRewardAxis.Multiplier
+  | typeof BuffRewardAxis.Protection
 
 /** The two kinds an ACTIVATED template can mint. A closed pair, not `BuffConsumableKind`: the
  *  five consumable items and Shield have no template and no slot weight yet (DLR-132 scope). */
@@ -118,6 +136,8 @@ interface TemplateFamily {
   readonly param?: 'suit'
 }
 
+const PROTECTION_ONLY: readonly MintableRewardAxis[] = [BuffRewardAxis.Protection]
+
 const TEMPLATE_FAMILIES: readonly TemplateFamily[] = [
   { kind: BuffKind.Taker, axes: BLADE_AND_MOMENTUM, param: 'suit' },
   // DLR-150 AC5 — Momentum restored. Feeder was Blade-only because `buffFires` reads it as
@@ -126,6 +146,11 @@ const TEMPLATE_FAMILIES: readonly TemplateFamily[] = [
   // half the bonus leaves the hand before the reset, and the dodge half never had the problem.
   { kind: BuffKind.Feeder, axes: BLADE_AND_MOMENTUM, param: 'suit' },
   { kind: BuffKind.Sidestep, axes: BLADE_AND_MOMENTUM },
+  // DLR-161 — no `param`: neither card targets a suit. One template each, three tiers apiece
+  // decided at draw time by the reel-match rules, exactly like Sidestep. Persisted ids:
+  // `skullHelmet:protection`, `skullTether:protection`, composed by `templateIdFor`.
+  { kind: BuffKind.SkullHelmet, axes: PROTECTION_ONLY },
+  { kind: BuffKind.SkullTether, axes: PROTECTION_ONLY },
 ]
 
 const ALL_TARGET_SUITS: readonly BuffTargetSuit[] = [
@@ -168,10 +193,10 @@ function makeTemplate(
     : { form: 'condition', id, kind, axis, target }
 }
 
-/** DLR-150's widened pool: 16 templates — 14 GENERATED condition templates (6 Taker + 6 Feeder +
- *  2 Sidestep) plus the 2 activated ones (`ACTIVATED_TEMPLATES`). The 5 consumable templates (Ward
- *  and its four siblings) are still absent — see this file's own docblock above for why that is a
- *  scope boundary, not a gap. */
+/** DLR-161's widened pool: 18 templates — 16 GENERATED condition templates (6 Taker + 6 Feeder +
+ *  2 Sidestep + 1 Skull Helmet + 1 Skull Tether) plus the 2 activated ones (`ACTIVATED_TEMPLATES`).
+ *  The 5 consumable templates (Ward and its four siblings) are still absent — see this file's own
+ *  docblock above for why that is a scope boundary, not a gap. */
 export const BUFF_TEMPLATES: readonly BuffTemplate[] = [
   ...TEMPLATE_FAMILIES.flatMap(templatesForTemplateFamily),
   ...ACTIVATED_TEMPLATES,
@@ -239,13 +264,18 @@ export function mintGrants(grants: readonly TemplateGrant[], firstId: BuffId): r
 /** DLR-111 → *Reward master tier list*, transcribed. Blade 1/3/5, Purse 2/5/10, Second Wind 1/2/3,
  *  Momentum 2/3/5. This is the reward VALUE ladder — distinct from `buffCosts.ts`'s `REWARD_BASE`,
  *  which is the AP COST base. UNIT: per axis (damage, coins, action points, multiplier points). */
-export const REWARD_TIER_VALUE: Readonly<Record<BuffCostAxis, Readonly<Record<BuffTier, number>>>> =
-  {
-    [BuffRewardAxis.Magnitude]: { [BuffTier.Bronze]: 1, [BuffTier.Silver]: 3, [BuffTier.Gold]: 5 },
-    [BuffRewardAxis.Coins]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 5, [BuffTier.Gold]: 10 },
-    [BuffRewardAxis.ApRefund]: { [BuffTier.Bronze]: 1, [BuffTier.Silver]: 2, [BuffTier.Gold]: 3 },
-    [BuffRewardAxis.Multiplier]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 5 },
-  }
+export const REWARD_TIER_VALUE: Readonly<
+  Record<BuffMintedAxis, Readonly<Record<BuffTier, number>>>
+> = {
+  [BuffRewardAxis.Magnitude]: { [BuffTier.Bronze]: 1, [BuffTier.Silver]: 3, [BuffTier.Gold]: 5 },
+  [BuffRewardAxis.Coins]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 5, [BuffTier.Gold]: 10 },
+  [BuffRewardAxis.ApRefund]: { [BuffTier.Bronze]: 1, [BuffTier.Silver]: 2, [BuffTier.Gold]: 3 },
+  [BuffRewardAxis.Multiplier]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 5 },
+  // DLR-161 AC6, TRANSCRIBED, not chosen: the figure added to the SURVIVING streak figure.
+  // Zero below gold because protection at bronze and silver is the survival itself.
+  // UNIT: damage for the Helmet's total, tricks for the Tether's roll.
+  [BuffRewardAxis.Protection]: { [BuffTier.Bronze]: 0, [BuffTier.Silver]: 0, [BuffTier.Gold]: 1 },
+}
 
 /** The four families whose CONDITION is parameterised by tier rather than by suit or rank —
  *  Hoarder N (2/3/4 bank), Unbloodied N (2/3/4 tricks), Miser N (5/10/20 coins), Cornered N%

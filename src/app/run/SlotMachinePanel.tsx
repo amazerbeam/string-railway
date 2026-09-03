@@ -1,9 +1,11 @@
 import { useRef, type KeyboardEvent } from 'react'
 import {
+  BuffTier,
   REEL_COUNT,
   type Buff,
   type BuffTemplate,
   type Coins,
+  type SlotAward,
   type SlotMachineId,
   type SlotOutcome,
   type SlotPullRefusal,
@@ -26,6 +28,7 @@ import {
   slotPullPriceText,
   slotStripSummaryText,
 } from './slotLabels'
+import { reelTiers } from './slotTier'
 import SlotReel from './SlotReel'
 import SlotStripChips from './SlotStripChips'
 import { SpinPhase, useSlotSpin } from './useSlotSpin'
@@ -39,6 +42,35 @@ export interface SlotPullView {
   readonly symbols: readonly BuffTemplate[]
   readonly outcome: SlotOutcome
   readonly awards: readonly Buff[]
+  /** DLR-160 AC10 — the SAME awards `resolvePull` produced, before minting. Kept only so
+   *  `reelTiers` can read each landed window's tier by template id, never by re-deriving the
+   *  match rule itself — `mintPullAwards`'s minted `Buff`s carry a tier but no template id. */
+  readonly rawAwards: readonly SlotAward[]
+}
+
+/** The tier word plus a metal swatch — never a swatch alone (`game-ux`'s no-colour-alone floor).
+ *  Local to this file: the only two consumers of a bare tier badge on this screen are the reel
+ *  windows and the award rows, both here. */
+const REEL_TIER_WORD: Readonly<Record<BuffTier, string>> = {
+  [BuffTier.Bronze]: 'Bronze',
+  [BuffTier.Silver]: 'Silver',
+  [BuffTier.Gold]: 'Gold',
+}
+const REEL_TIER_DOT_CLASS: Readonly<Record<BuffTier, string>> = {
+  [BuffTier.Bronze]: 'shop-reel-tier-dot-bronze',
+  [BuffTier.Silver]: 'shop-reel-tier-dot-silver',
+  [BuffTier.Gold]: 'shop-reel-tier-dot-gold',
+}
+
+/** The tier badge itself — a metal swatch dot plus the tier word, so a greyscale screenshot still
+ *  names the tier rather than relying on hue alone. */
+function TierBadge({ tier }: { readonly tier: BuffTier }) {
+  return (
+    <span className="shop-reel-tier" data-tier={tier}>
+      <span className={`shop-reel-tier-dot ${REEL_TIER_DOT_CLASS[tier]}`} aria-hidden="true" />
+      {REEL_TIER_WORD[tier]}
+    </span>
+  )
 }
 
 export interface SlotMachinePanelProps {
@@ -127,6 +159,9 @@ export default function SlotMachinePanel({
   }
 
   const matched = lastPull === null ? [] : matchedReels(lastPull.symbols)
+  // AC10 — read off the pull's own awards by template id, never by re-deriving `resolvePull`'s
+  // match rule (`slotTier.ts`'s own docblock).
+  const tiers = lastPull === null ? [] : reelTiers(lastPull.symbols, lastPull.rawAwards)
   const showResult = lastPull !== null && spin.resultVisible
   const leverLabel = spinning ? SLOT_SPINNING_LABEL : slotPullAccessibleName(pullPrice, pullRefusal)
 
@@ -186,19 +221,26 @@ export default function SlotMachinePanel({
 
           <div className="shop-cabinet-case">
             <div className="shop-cabinet-window">
-              {Array.from({ length: REEL_COUNT }, (_, index) => (
-                <SlotReel
-                  key={index}
-                  strip={reel}
-                  landed={lastPull?.symbols[index] ?? null}
-                  index={index}
-                  reelCount={REEL_COUNT}
-                  spinning={spinning}
-                  settled={spin.settled(index)}
-                  matched={showResult && matched[index] === true}
-                  spinId={spin.spinId}
-                />
-              ))}
+              {Array.from({ length: REEL_COUNT }, (_, index) => {
+                // AC10 — the badge appears only once the pull is DECIDED, never mid-spin, when
+                // nothing has landed yet to state a tier for.
+                const tier = showResult ? (tiers[index] ?? null) : null
+                return (
+                  <div className="shop-reel-slot" key={index}>
+                    <SlotReel
+                      strip={reel}
+                      landed={lastPull?.symbols[index] ?? null}
+                      index={index}
+                      reelCount={REEL_COUNT}
+                      spinning={spinning}
+                      settled={spin.settled(index)}
+                      matched={showResult && matched[index] === true}
+                      spinId={spin.spinId}
+                    />
+                    {tier !== null && <TierBadge tier={tier} />}
+                  </div>
+                )
+              })}
               {/* The payline sits over the windows, not between them, so the three symbols read as
                   one row. Its pips are what carries the match in greyscale. */}
               <span
@@ -272,7 +314,10 @@ export default function SlotMachinePanel({
                 </p>
                 <ul className="shop-slot-awards">
                   {lastPull.awards.map((award) => (
-                    <li key={award.id}>{buffLine(award)}</li>
+                    <li key={award.id}>
+                      <TierBadge tier={award.tier} />
+                      {buffLine(award)}
+                    </li>
                   ))}
                 </ul>
               </>

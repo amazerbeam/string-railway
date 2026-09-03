@@ -73,6 +73,12 @@ export interface BuffRideBundle {
    *  disables its remove buttons while this is true, so a second tap cannot supersede — and
    *  silently re-target — a removal whose commit is still in flight. */
   readonly buffMotionInFlight: boolean
+  /** DLR-160 AC4 — the breakdown panel's measured top edge, published via `BreakdownTopContext` so
+   *  `CardAbilityTip` can anchor above it. `null` while no panel is open. */
+  readonly breakdownTop: number | null
+  /** Passed to `CardBuffBreakdown` as `onTopChange` — a stable `useState` setter, not a new
+   *  function per render. */
+  readonly onBreakdownTopChange: (top: number | null) => void
 }
 
 /** AC9/AC10/AC13/AC14 bundled behind one hook call. Reads `ui`/`legal` the same way
@@ -90,6 +96,10 @@ export function useBuffRide(options: BuffRideOptions): BuffRideBundle {
   // `aria-live="polite"` hint region rather than a second live region. Component-local: it names
   // no rule and dies with the next ordinary hand action.
   const [removedAnnouncement, setRemovedAnnouncement] = useState<string | null>(null)
+
+  // DLR-160 AC4 — the breakdown panel's measured top edge, reported up by `CardBuffBreakdown`
+  // itself (via `onTopChange`) rather than re-measured here.
+  const [breakdownTop, setBreakdownTop] = useState<number | null>(null)
 
   // DLR-157 Task 13 (M15/M16) — the buff going up to the riding strip and coming back. Neither
   // movement is a card in `RoundState`, so the felt's own diff-driven `useCardMotionDriver`
@@ -147,5 +157,7 @@ export function useBuffRide(options: BuffRideOptions): BuffRideBundle {
     handleRemoveBuff,
     clearRemovedAnnouncement: () => setRemovedAnnouncement(null),
     buffMotionInFlight,
+    breakdownTop,
+    onBreakdownTopChange: setBreakdownTop,
   }
 }

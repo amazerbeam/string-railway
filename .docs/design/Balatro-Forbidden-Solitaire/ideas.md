@@ -1729,6 +1729,196 @@ strict gain. Every other family in the game rewards hoarding duplicates, because
 counts cards — which is why the Manage Buffs screen is currently a trap. This pair breaks that on
 purpose, and is the first evidence that the screen can be worth using.
 
+### The wildcard — a card you spend to take the suit off another card
+
+**Developer's idea, worked through 2026-09-02.** A new card. On the Manage Buffs screen you spend it
+on a buff card you own, and that card loses its suit condition: a **Bell-Taker (Blade)** becomes a
+**wild Taker (Blade)** — same family, same reward, same tier, but it now pays on a trick of any suit.
+The wildcard is consumed; the card it was spent on is not.
+
+#### The problem it answers
+
+The complaint it comes from is the developer's own, in the first narrated session, looking at a pile
+of 21 cards: _"I have two Moon-Takers and I have one moon… the rest of them are not useful to me at
+all."_ Three suits times two families means that on any given trick most of what you own cannot
+legally pay, so the pile reads as clutter rather than as a build.
+
+#### Why the arithmetic works
+
+A trick pays `(BASE + flat damage) × (1 + multiplier + Overlap Bonus)`, and the Overlap Bonus is one
+point per _extra_ card that paid — so card count enters the payoff twice and halving the pile is
+normally a large loss. It is not a loss here, because usability climbs faster than count falls:
+
+| | cards that can pay on one trick | trick pays |
+| --- | --- | --- |
+| 21 suit-locked cards, one suit's worth live | 7 | `(1 + 7) × (1 + 6)` = **56** |
+| 10 wild cards, every one live | 10 | `(1 + 10) × (1 + 9)` = **110** |
+
+Trading two cards for one that fires three times as often clears the Overlap Bonus comfortably.
+
+#### Why it is the right fix and not merely a strong one
+
+**It deletes the bookkeeping half of the aiming decision and keeps the judgement half.** The game
+already states this principle for the skull readout — counting suits is bookkeeping and the panel
+does it for you, reading ranks is judgement and it refuses to. A suit-locked buff puts bookkeeping
+back: you match a card's suit to the trick's suit, which is clerical. A wild card still has to be
+armed on the right **outcome** — take the trick, duck it, or dodge a skull — and that is the half the
+strategy guide measures as worth taking the win rate from 0% to 20%.
+
+**And it gives the Manage Buffs screen a reason to exist.** That screen currently offers only the
+tier combine, which is dominated at every pile size measured, so there is nothing on it worth doing.
+
+#### The variant that was tried and dropped
+
+Combining a Blade card (flat damage) with a Momentum card (multiplier) of the **same suit and
+family** to get one card that pays both. It does not work: the two components share a condition, so
+if either fires both fire, and two cards firing pay `(1 + 1) × (1 + 2 + 1) = 8` against the hybrid's
+`(1 + 1) × (1 + 2) = 6`. Cross-combining only pays when it changes **when** a card can fire, not what
+it pays — which is exactly and only what the wildcard does.
+
+#### Decided
+
+- **Spent on the Manage Buffs screen, between fights** — not in the loadout mid-fight. That makes it
+  a build decision taken before you know what you will need, rather than a rescue spent only once you
+  already know it works. The mid-fight version is much the stronger card and was rejected for that
+  reason.
+- **The converted card keeps its family, its reward axis and its tier.** Only the suit condition goes.
+- **It applies only to a suit-specific card**, so Sidestep — which already asks for no suit — is
+  outside it entirely and needs nothing in return.
+- **It comes from the slot machine**, like every other card.
+- **Its appearance is low for now.** A rarity *system* is wanted and does not exist; until it does,
+  the only dial is the machine's stocking weight, so set that low. See the note below on what that
+  actually buys.
+
+#### The combine rule this adds
+
+**A wild card tier-combines with a suited card of the same family, and the result stays wild.** A
+wild Taker merges with a Bell-Taker; a bronze pair makes a silver, a silver pair makes a gold, as
+today. The existing rule — two cards combine only when identical in every respect — is widened by
+exactly one clause: **the suits may differ when one of the two is wild.**
+
+Two things it must never do:
+
+- **Wildness is never lost.** A wild card cannot be absorbed into a suit, so there is no way to
+  accidentally merge a wild Taker down into a Bell-Taker. If either input is wild, the output is wild.
+- **The family and the reward axis still have to match.** A Taker never merges with a Feeder, and a
+  Blade never merges with a Momentum. Only the suit is relaxed.
+
+**The consequence worth costing before pricing the wildcard.** Because wildness is absorbing, one
+wildcard seeds an entire wild line: convert a bronze, then feed it suited bronzes of the same family
+and reward, and you climb the tiers without spending a second wildcard. A gold wild Taker costs one
+wildcard and four suited Takers. That makes the wildcard's scarcity matter **less** than it looks —
+what is actually being rationed is not the number of wild cards you can own, it is the number of
+independent wild lines you can start. Worth checking against whatever rarity system replaces the
+stocking weight.
+
+#### Still open
+
+- **The rarity system.** The machine has no per-card rarity: eight symbols are stocked onto a strip
+  from weights, and once a card is on the strip every reel is equally likely to land on it. So a low
+  stocking weight makes the wildcard rarely *appear*, but on a visit where it does appear it is as
+  common as anything else on that strip. That is a coarse, near-binary rarity rather than a smooth
+  one, and it is why a real system is wanted.
+- **How much of a pile should end up wild.** If every suited card is eventually raw material for a
+  wild line, the suit stops mattering to the buff layer entirely. Whether that is the intent or the
+  failure mode is the thing to watch in play. **The developer's, after playing.**
+
+### Rewriting the 3, the 5 and the 7 — making three named ranks worth playing
+
+**Developer's design, 2026-09-03**, out of the first narrated play session, where two of the three
+were explicitly thrown away and the third has never done anything.
+
+#### What each one does today, and why it fails
+
+| Rank | Today | Why it is not played |
+| --- | --- | --- |
+| **3 Fox** | On playing it, you may exchange the decree for a card from your hand; the exchanged card becomes the decree and its suit becomes trump | The cost is always a card you wanted. _"I feel like I always have to give up a good card… I usually just keep the decree, because it doesn't seem all that beneficial."_ |
+| **5 Woodcutter** | On playing it, draw the top card, then bury any one card from hand at the bottom of the pile | Reads as a worse version of the Swap button. _"I can just swap cards out from the deck, so that power's pointless."_ |
+| **7 Treasure** | Nothing at all | It has never had a rule |
+
+Both the 3 and the 5 also open a choice prompt the headless simulator cannot answer, so it plays
+around them — which is why the two strongest levers in the deck have never been measured.
+
+#### The three replacements
+
+**The 3 — choose the trump suit outright, giving up nothing.** On playing it you name any suit and
+that becomes trump. **The decree stops being a card at that moment and becomes a placeholder showing
+the suit** — a decree of the 5 of Bells, switched to Bells, simply reads "Bells". You may decline.
+Timing is unchanged: it resolves the instant the card is played, before the winner is decided, so the
+new trump decides the current trick.
+
+**The 5 — raise the Swap pile and fill it.** Playing it adds **1 to your Swap cap and 1 to your
+remaining Swaps**, for the rest of the fight, so 3 of 3 becomes 4 of 4 and 0 of 3 becomes 1 of 4. The
+Swap pile must **highlight and then take the addition** so the player sees where it went. This is the
+same grammar as the shop's max-health purchase, which raises the ceiling and leaves you full at the
+new one — so the card's text can read the same way.
+
+**The 7 — winning it raises base damage for the fight.** A trick you were **victorious** on that
+carried a 7 adds **+1 base damage** for the rest of the fight. Base damage is the `1` a Whetstone
+raises, so this is a Whetstone you win rather than buy, bounded to one fight.
+
+**Victorious means the outcome axis, not the mechanical one.** The developer's own example: the
+Quarry plays a skulled 7 of Bells, you answer with the 9 of Bells and take the trick — you ate the
+skull, so **you get no +1**. Physically taking the cards is not enough; the trick has to have banked.
+
+#### What the Quarry gets
+
+Left alone, the new 5 and 7 would be inert in the Quarry's hand — it has no Swap pile and its damage
+to you is a flat 1. So each gets a mirrored effect rather than none:
+
+- **Its 3** picks a new trump or leaves it, choosing **the suit it holds most of**. This is very close
+  to `chooseCpuFoxChoice`'s existing behaviour, which already picks its strongest suit and declines
+  when that suit is already trump.
+- **Its 7** deals **2 damage instead of 1** on a trick it was victorious on. It does **not** raise the
+  Quarry's damage generally — this is a per-trick amount, not an accumulating base.
+- **Its 5** swaps a card, with a **40% chance the drawn card is skulled**. The skull must be
+  **animated** as it lands, and it obeys the same rank restriction the deal does — **rank 1 never
+  carries a skull.**
+
+#### Two rules currently marked settled that this breaks
+
+Both are deliberate, and both need saying out loud before anything is built:
+
+- **"Damage to the player, per event: 1, every time"** (`the-hunt.md` §8, `[settled]`). The Quarry's
+  7 makes it 2. Every readout, every projection and every simulator figure that assumes a hurt trick
+  costs exactly 1 has to stop assuming it.
+- **"A drawn card is never skulled — skulls are a property of the deal"** (`the-hunt.md` §5,
+  `[settled]`). The Quarry's 5 mints one mid-hand. This also removes the reasoning behind the current
+  no-skull-on-a-drawn-card rule, so the rule has to be rewritten rather than excepted.
+
+A third rule quietly simplifies rather than breaking: once the decree can become a placeholder, **no
+card is ever moved onto the decree**, so the case where a skulled card ends up sitting on the decree
+and has to keep its skull through the change of hands stops arising.
+
+#### The finding worth costing before this is built
+
+**This pass strengthens the Quarry on the axis that actually kills you, and strengthens the player on
+the axis that is already in surplus.**
+
+The player's three gains are a free trump change, an extra Swap, and more base damage — and damage is
+the resource the run has two to six times more of than it needs by fight 2. The Quarry's three gains
+are a free trump change, doubled damage on a 7, and a mid-hand skull generator running at 40% against
+a deal density of about 30%. Both of the Quarry's are **health**, which is the only thing runs
+actually die to.
+
+That may be exactly right — the run is winnable about a quarter of the time and nobody has argued it
+should be easier. But it is a real shift in difficulty arriving as a side effect of three cards being
+made interesting, so it should be measured rather than discovered. **Whose decision:** the
+developer's, after the simulator can see it — which it now can, because the new 3 and 5 have prompts
+a policy can answer where the old ones did not.
+
+#### Still open
+
+- **Whose 7 counts.** The stated example fails on two grounds at once — it was the Quarry's card
+  _and_ the trick was skulled — so it does not settle whether taking the Quarry's clean 7 pays you,
+  or only your own 7 does.
+- **Stacking.** Winning with three 7s in a fight — +3 base damage? Playing two 5s — a cap of 5?
+  Presumably yes to both; nothing says so.
+- **Where the replaced decree card goes** when a 3 turns it into a placeholder: to the resolved pile,
+  or back into the draw pile.
+- **Whether the Quarry's 5 can mint a skull onto a card the player will later draw**, or only onto its
+  own hand.
+
 ## Promoted
 
 ### Health replaces the Demand — became `hybrid-design.md` §5 and the opening section, 2026-08-11

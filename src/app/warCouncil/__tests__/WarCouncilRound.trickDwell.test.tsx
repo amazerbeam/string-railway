@@ -51,13 +51,17 @@ describe('WarCouncilRound — the trick dwell (DLR-156 play-test fix 1)', () => 
   it('keeps the felt showing the played card in the well for the dwell, not interactive, before handing off to the resolution screen', () => {
     vi.useFakeTimers()
     try {
-      renderRound()
+      const { container } = renderRound()
       const bells7 = screen.getByRole('button', { name: '7 of Bells' })
       fireEvent.click(bells7)
       fireEvent.click(bells7)
 
-      // Still the felt, immediately after the commit — the resolution screen has not appeared.
-      expect(screen.queryByText(/you took it/i)).toBeNull()
+      // Still the felt, immediately after the commit — the pot card has not grown its body/foot
+      // yet (`WarCouncilRound.tsx`'s table is now always mounted, so absence of the body — not
+      // absence of the felt — is what this checks). `.wc-resolve-body` is the pot card's own
+      // class, rendered only once a resolution is showing, so this cannot collide with the felt's
+      // own outcome wording (`TrickWell.tsx`, which can share a word like "Clean win").
+      expect(container.querySelector('.wc-resolve-body')).toBeNull()
       // The played card landed in the well (`ui.resolvedTrick`), condensed rather than gone.
       expect(
         within(screen.getByRole('group', { name: /hand/i })).queryByRole('button', {
@@ -69,10 +73,10 @@ describe('WarCouncilRound — the trick dwell (DLR-156 play-test fix 1)', () => 
       expect(anotherCard).toHaveProperty('disabled', true)
 
       act(() => vi.advanceTimersByTime(FALLBACK_DWELL_MS - 1))
-      expect(screen.queryByText(/you took it/i)).toBeNull()
+      expect(container.querySelector('.wc-resolve-body')).toBeNull()
 
       act(() => vi.advanceTimersByTime(1))
-      expect(screen.getByText(/you took it/i)).toBeDefined()
+      expect(container.querySelector('.wc-resolve-body')).not.toBeNull()
     } finally {
       vi.useRealTimers()
     }
@@ -81,16 +85,16 @@ describe('WarCouncilRound — the trick dwell (DLR-156 play-test fix 1)', () => 
   it('unmounting mid-dwell clears the timer and renders nothing further', () => {
     vi.useFakeTimers()
     try {
-      const { unmount } = renderRound()
+      const { container, unmount } = renderRound()
       const bells7 = screen.getByRole('button', { name: '7 of Bells' })
       fireEvent.click(bells7)
       fireEvent.click(bells7)
-      expect(screen.queryByText(/you took it/i)).toBeNull()
+      expect(container.querySelector('.wc-resolve-body')).toBeNull()
 
       unmount()
 
       expect(() => act(() => vi.advanceTimersByTime(FALLBACK_DWELL_MS * 5))).not.toThrow()
-      expect(screen.queryByText(/you took it/i)).toBeNull()
+      expect(screen.queryByText(/clean win/i)).toBeNull()
     } finally {
       vi.useRealTimers()
     }
@@ -131,7 +135,8 @@ describe('WarCouncilRound — the trick dwell (DLR-156 play-test fix 1)', () => 
 
       // Applying the pot killed the Quarry mid-hand — the deciding trick's own reveal survives on
       // the felt (`roundReducer.ts`'s Task 15 chaining), and THIS tap reports `onComplete`.
-      fireEvent.click(screen.getByRole('button', { name: /tap the table to carry on/i }))
+      // DLR-160 AC1 — a real button named "Carry on" now.
+      fireEvent.click(screen.getByRole('button', { name: /^carry on$/i }))
 
       expect(onComplete).toHaveBeenCalledTimes(1)
       expect(onComplete.mock.calls[0][0].finalState.phase).not.toBe(RoundPhase.Complete)

@@ -15,13 +15,20 @@ import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
 import { apCostOf, isConditionFamily } from '../buffCosts'
 
 describe('BUFF_TEMPLATES', () => {
-  it('holds exactly the 16 templates DLR-150 AC5 names', () => {
-    expect(BUFF_TEMPLATES).toHaveLength(16)
-    expect(BUFF_TEMPLATE_COUNT).toBe(16)
+  it('holds exactly the 18 templates DLR-161 names', () => {
+    expect(BUFF_TEMPLATES).toHaveLength(18)
+    expect(BUFF_TEMPLATE_COUNT).toBe(18)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Taker)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Sidestep)).toHaveLength(2)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullHelmet)).toHaveLength(1)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullTether)).toHaveLength(1)
     expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(2)
+  })
+
+  it('DLR-161 — resolves both new template ids through templateById', () => {
+    expect(templateById('skullHelmet:protection')).toBeDefined()
+    expect(templateById('skullTether:protection')).toBeDefined()
   })
 
   it('resolves the three Momentum Feeder ids DLR-150 restored, persisted by the Vault', () => {
@@ -33,7 +40,11 @@ describe('BUFF_TEMPLATES', () => {
   it('mints no card on a cut reward axis', () => {
     for (const template of BUFF_TEMPLATES) {
       if (template.form !== 'condition') continue
-      expect([BuffRewardAxis.Magnitude, BuffRewardAxis.Multiplier]).toContain(template.axis)
+      expect([
+        BuffRewardAxis.Magnitude,
+        BuffRewardAxis.Multiplier,
+        BuffRewardAxis.Protection,
+      ]).toContain(template.axis)
     }
   })
 
@@ -72,6 +83,10 @@ describe('REWARD_TIER_VALUE', () => {
     expect(REWARD_TIER_VALUE[BuffRewardAxis.Coins]).toEqual({ bronze: 2, silver: 5, gold: 10 })
     expect(REWARD_TIER_VALUE[BuffRewardAxis.ApRefund]).toEqual({ bronze: 1, silver: 2, gold: 3 })
     expect(REWARD_TIER_VALUE[BuffRewardAxis.Multiplier]).toEqual({ bronze: 2, silver: 3, gold: 5 })
+  })
+
+  it('DLR-161 AC6 — Protection is 0/0/1', () => {
+    expect(REWARD_TIER_VALUE[BuffRewardAxis.Protection]).toEqual({ bronze: 0, silver: 0, gold: 1 })
   })
 })
 

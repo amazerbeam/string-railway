@@ -1,7 +1,7 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156,
+**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156, DLR-161,
 play-tester 2026-09-02
 
 ## Responsibility
@@ -22,7 +22,8 @@ not exist: `playHandWindows.ts`'s seed now passes `run.feederCarry`, `playHand.t
 hand-built `WarCouncilRoundResult` literal in favour of the shared `roundResultFor(ui)` — the same
 one `WarCouncilRound.tsx` uses, so a field added to the result can no longer reach the felt and miss
 the simulator — and `playRun.ts` hands `outcome.result.feederCarry` to `recordEncounter`. The
-reachability audit's pool figure moved 13 → 16 with the restored Feeder Momentum row. See
+reachability audit's pool figure moved 13 → 16 with the restored Feeder Momentum row, and 16 → 18
+with DLR-161's two protective families. See
 [hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md) for the mechanic itself.
 
 ## Key types & exports

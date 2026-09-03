@@ -44,9 +44,12 @@ filters it out of every offer. `reachability.ts`'s own docblocks say exactly tha
 > the size of the `BuffKind` union.
 
 `BUFF_TEMPLATES` held **73** templates as of DLR-132 (71 condition families plus
-`ACTIVATED_TEMPLATES`'s two activated cards) — up from 71. It held **13** after DLR-145, and holds
-**16 since DLR-150** restored Feeder's Momentum row: 6 Taker (3 suits × Blade/Momentum) + 6 Feeder
-(3 suits × Blade/Momentum) + 2 Sidestep (Blade/Momentum) + the same 2 activated cards. `mintFromTemplate`'s `form: 'activated'` branch delegates to
+`ACTIVATED_TEMPLATES`'s two activated cards) — up from 71. It held **13** after DLR-145, **16** after
+DLR-150 restored Feeder's Momentum row, and holds **18 since DLR-161**: 6 Taker (3 suits ×
+Blade/Momentum) + 6 Feeder (3 suits × Blade/Momentum) + 2 Sidestep (Blade/Momentum) + 1 Skull Helmet
++ 1 Skull Tether (one template each, since each family has exactly one reward axis) + the same 2
+activated cards. The audit's identity moved with it: **7** mintable kinds, **14** unreachable, and
+`mintable + unreachable + 1` still equals the `BuffKind` union's size. `mintFromTemplate`'s `form: 'activated'` branch delegates to
 `cheatBuff`/`timebombBuff`, and both templates carry a positive slot weight on both machines
 (`SLOT_FAMILY_WEIGHTS`), so both are drawable by a pull like any condition family. **`cheatBuff` and
 `timebombBuff` now have production callers**: DLR-107's migration recorded that its intermediate

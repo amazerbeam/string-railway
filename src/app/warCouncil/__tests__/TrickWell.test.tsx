@@ -88,14 +88,18 @@ describe('TrickWell — a resolved trick', () => {
     expect(screen.queryByText(/Claiming credits/)).toBeNull()
   })
 
-  it('names the winning side and reports the damage figure — DLR-156 AC7 pays the Quarry nothing', () => {
+  it('DLR-160 AC2 — names the four-outcome word and reports the damage figure — DLR-156 AC7 pays the Quarry nothing', () => {
     renderWell({
       currentTrick: [],
       resolvedTrick,
       quarryToLead: false,
       onCarryOn: vi.fn(),
     })
-    expect(screen.getByText(/They take the trick/)).toBeDefined()
+    // `resolvedTrick` fixture: the Cpu (Quarry) won, no skull in the trick — a clean loss.
+    expect(screen.getByText('Clean loss')).toBeDefined()
+    expect(
+      screen.getByText(/they took it, and it carried no skull — your streak resets/),
+    ).toBeDefined()
     expect(screen.queryByText(/They take \d+\./)).toBeNull()
     expect(screen.getByText(/You take 1\./)).toBeDefined()
   })

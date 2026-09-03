@@ -30,7 +30,7 @@ pattern for both new files.
 ## The path is a status display, not a control group
 
 Nothing on the path is clickable. Route choice — branching, picking between nodes — is explicitly out
-of scope for DLR-85, so there was nothing for a node to *do*.
+of scope for DLR-85, so there was nothing for a node to _do_.
 
 That decision is what keeps the accessibility right rather than merely present. The path is an `<ol
 className="run-path">` carrying `aria-label={RUN_MAP_GROUP_LABEL}`, with a nested `<ol
@@ -41,7 +41,7 @@ most one.
 There are **no tab stops at all**, and a spec asserts it
 (`RunMap.test.tsx` → "adds no tab stops — the path is a status display, not a control group", which
 queries `button, a, [tabindex]` and expects zero). `game-ux`'s roving-tabindex rule is about
-navigating a *collection of controls*; twenty-five tab stops on unclickable glyphs would breach its
+navigating a _collection of controls_; twenty-five tab stops on unclickable glyphs would breach its
 interaction-cost threshold rather than satisfy its keyboard one.
 
 > **The nesting is `ol > li > ol > li`, and it has to be.** An `<li>` cannot directly contain another
@@ -54,12 +54,12 @@ interaction-cost threshold rather than satisfy its keyboard one.
 `game-ux` requires each state distinguishable in **form**, not only in tone, so a greyscale screenshot
 still tells them apart:
 
-| State                | Carried by                                                                   |
-| -------------------- | ---------------------------------------------------------------------------- |
-| ordinary vs **boss** | a thin `.run-path-tick` against a filled `.run-path-block`                   |
-| **beaten**           | the name sits inside an `<s>` element — struck out, and still present         |
+| State                | Carried by                                                                                                             |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| ordinary vs **boss** | a thin `.run-path-tick` against a filled `.run-path-block`                                                             |
+| **beaten**           | the name sits inside an `<s>` element — struck out, and still present                                                  |
 | **current**          | a taller glyph plus a caret (`.run-path-node[data-status='current'] .run-path-glyph::after`) that no upcoming node has |
-| the **final** boss   | `data-final='true'` draws the last block differently from the other four      |
+| the **final** boss   | `data-final='true'` draws the last block differently from the other four                                               |
 
 AC6's "struck out, not removed" is structural rather than stylistic: the beaten node stays in the list
 and gains an `<s>`, and the spec counts `.run-path-name s` rather than checking a colour.
@@ -80,6 +80,39 @@ screen — matching `ShopPanel`'s contract. It is an `onKeyDown` on an element R
 a document listener**, so there is nothing to register and therefore nothing to release. **Neither new
 file contains a `useEffect`, a timer, an observer or a `requestAnimationFrame`**, and neither contains
 `memo`, `useMemo` or `useCallback`.
+
+## DLR-160 AC9 — a third surface: the stop before the fight starts
+
+Leaving the shop used to drop the player straight onto the felt, because `screenFor` returns
+`warCouncil` for any phase once the encounter is live. **There is now a stop in between**, and the
+fight begins on the player's press rather than on their leaving the shop:
+
+- A new **`RunPhase.PreFight`**, checked **before** the `!encounterOver` branch exactly as
+  `RunPhase.Start` already is — and for the same reason: the next encounter is already live by the
+  time the phase is set. `leaveForNextFight` in `App.tsx` now sets it, where it used to set
+  `RunPhase.Verdict`; the screen's own control moves the phase on.
+- The same `RunPathScreen`, with an optional **`heldBuffs`** prop. One component now serves
+  **three** surfaces rather than two, which is the same argument the file made at two: they are the
+  same layout differing in a title, an action label, and whether there is anything to review.
+
+**The tray is read-only, and it reuses the shop's own card.** `heldBuffStacks` does the piling and
+the ordering — the identical rule the shop's "What you hold" tray uses — and `HeldBuffCard` renders
+every word and every visual, so this screen states nothing about a buff in its own voice.
+`shopHeld.css` is imported here for that card's sizing rather than the rule being restated.
+**`ShopHeld` itself is deliberately not reused**: it carries the shop's Manage Buffs control and a
+motion anchor resolved against a provider `ShopPanel` mounts, and neither belongs on a screen that
+can activate nothing and receives no flying card.
+
+The tray region is absent entirely on the start and map screens (`heldBuffs` undefined), per
+`game-ux`'s rule against a panel that renders to say it has nothing to report. On the pre-fight
+screen it is always present — including at zero holdings, where it says "You hold nothing yet." —
+because _what you hold_ is the exact question this screen exists to answer.
+
+`App.tsx` was at 399 of its 400-line budget, so the three branches became three thin wrappers in
+`PathScreens.tsx` — `StartScreen`, `MapScreen`, `PreFightScreen` — none holding logic of its own.
+Both the head and the tray's two strings are **placeholder copy**, and **whether this stop earns the
+extra screen it adds to the run flow is the developer's judgement**: the smaller alternative is
+making the review reachable _from_ the fight instead.
 
 ## The shell is reused, not redefined
 
@@ -134,15 +167,15 @@ edge are **cropped, not scrolled**, with nothing on screen to say so.
 
 Measured by QA against `getBoundingClientRect()` on all twenty-five nodes:
 
-| Viewport      | Nodes visible | Also lost                                    |
-| ------------- | ------------- | -------------------------------------------- |
-| 1280 × 800    | 25 / 25       | —                                            |
-| 1024 × 768    | 21 / 25       | —                                            |
-| 768 × 1024    | 16 / 25       | —                                            |
-| 500 × 844     | 14 / 25       | **Diarmuid**, the title, and half the button |
+| Viewport   | Nodes visible | Also lost                                    |
+| ---------- | ------------- | -------------------------------------------- |
+| 1280 × 800 | 25 / 25       | —                                            |
+| 1024 × 768 | 21 / 25       | —                                            |
+| 768 × 1024 | 16 / 25       | —                                            |
+| 500 × 844  | 14 / 25       | **Diarmuid**, the title, and half the button |
 
 Round 1 of review did **not** catch this, and the reason is worth recording: the broken vertical-stack
-layout happened to be *more compact* than the intended one, so it fitted. Fixing AC3 is what made
+layout happened to be _more compact_ than the intended one, so it fitted. Fixing AC3 is what made
 AC11 fail.
 
 The plan named this as its top AC11 risk in advance, and named the three honest fixes — **a smaller
@@ -158,7 +191,11 @@ Vitest project: `src/app/run/__tests__/RunMap.test.tsx` (names on every node, th
 labelled group, tick-vs-block counts, beaten nodes struck out and still present, exactly one
 `aria-current` node, zero tab stops, a flat run rendering one stage with no block, and the
 node-list structure) and `src/app/run/__tests__/RunPathScreen.test.tsx` (title, goal, path, exactly one
-button named by its prop, the action firing on click, and the action firing on `Escape`).
+button named by its prop, the action firing on click, and the action firing on `Escape`; and, since
+DLR-160, that **no** tray region renders without `heldBuffs`, one card renders per held stack with
+it, and the empty line renders at zero holdings). `src/app/__tests__/screenFor.test.ts` pins that
+`RunPhase.PreFight` resolves to the `preFight` screen whether or not the encounter reads as over —
+the ordering that the branch must sit ahead of `!encounterOver`.
 
 Both files pair `render` with `afterEach(cleanup)`, matching every sibling spec in this repo — there is
 no global auto-cleanup configured, so without it DOM nodes from earlier `it()` blocks accumulate and

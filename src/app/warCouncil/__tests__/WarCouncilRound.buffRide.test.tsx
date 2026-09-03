@@ -2,7 +2,10 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BuffTier, mintFromTemplate, templateById } from '../../../hunt'
+import { Suit } from '../../../warCouncil'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
+import { BreakdownTopContext } from '../breakdownRectContext'
+import PlayingCard from '../PlayingCard'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   baseDamageBonusFixture,
@@ -201,5 +204,45 @@ describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+// DLR-160 AC4 — the tooltip stops covering the breakdown panel it is describing. jsdom has no
+// layout engine, so `useBuffBreakdownAnchor`'s real measurement (through `.wc-buff-ride-zone`'s
+// `offsetParent`) cannot be exercised end to end here — the round-level tests above cover that the
+// context is wired at all (`buffRide.breakdownTop` reaches `BreakdownTopContext.Provider`). This
+// pins `CardAbilityTip`'s own contract directly, the same way `CardAbilityTip.test.tsx` pins its
+// other placement rules: given a published top, the bubble anchors to whichever of the card and
+// the panel is higher.
+describe('CardAbilityTip anchors above the breakdown panel when one is open (DLR-160 AC4)', () => {
+  const card = { suit: Suit.Bells, rank: 5 } as const
+
+  function openTooltip(breakdownTop: number | null, cardTop: number) {
+    render(
+      <BreakdownTopContext.Provider value={breakdownTop}>
+        <PlayingCard card={card} variant="hand" />
+      </BreakdownTopContext.Provider>,
+    )
+    const button = screen.getByRole('button', { name: /5 of Bells/i })
+    button.getBoundingClientRect = () => new DOMRect(100, cardTop, 60, 90)
+    const host = button.closest('.wc-card-tip-host')
+    if (host === null) throw new Error('host span not found')
+    fireEvent.pointerEnter(host, { pointerType: 'mouse' })
+    return screen.getByRole('tooltip') as HTMLElement
+  }
+
+  it('anchors to the card itself when no breakdown is published', () => {
+    const tooltip = openTooltip(null, 400)
+    expect(tooltip.style.getPropertyValue('--wc-tip-anchor-y')).toBe('400px')
+  })
+
+  it('anchors to the breakdown panel when its published top is higher (a smaller number) than the card', () => {
+    const tooltip = openTooltip(150, 400)
+    expect(tooltip.style.getPropertyValue('--wc-tip-anchor-y')).toBe('150px')
+  })
+
+  it('anchors to the card when the published breakdown top is lower (further down) than the card', () => {
+    const tooltip = openTooltip(500, 400)
+    expect(tooltip.style.getPropertyValue('--wc-tip-anchor-y')).toBe('400px')
   })
 })

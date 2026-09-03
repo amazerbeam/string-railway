@@ -151,7 +151,7 @@ be held and activated and pays nothing. The machine filling the pile with real c
 that gap from theoretical into visible.
 
 > **That second half stopped being true on 2026-08-24 (DLR-125).** A `BuffCondition` **is** now
-> evaluated, for the eleven shipping condition families, and a `BuffReward` **is** applied — into the
+> evaluated, for the eleven shipping condition families (thirteen since DLR-161), and a `BuffReward` **is** applied — into the
 > cash-out's multiplier and flat damage, into the action-point pool, and into the run's purse. So an
 > activated buff genuinely changes what a hand pays. The paragraph above is left standing because it
 > is the accurate record of what DLR-116 shipped; read it with this correction. See

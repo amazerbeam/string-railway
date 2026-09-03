@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The left damage block — v2</title>
+    <style>
+      :root {
+        --wc-felt-line: #2b4038;
+        --wc-brass: #c99a4e;
+        --wc-brass-dim: #7d6132;
+        --wc-chalk: #cdd6d2;
+        --wc-chalk-dim: #6f7d78;
+        --wc-alarm: #d1705f;
+        --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia,
+          serif;
+        --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --ok: #7fae7a;
+
+        /* PLACEHOLDER — the left column's width. Yours. */
+        --wc-dossier-w: 21rem;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0b0f0e;
+        color: var(--wc-chalk);
+        font-family: var(--wc-sans);
+        font-size: 15px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2 {
+        font-family: var(--wc-serif);
+        font-weight: 500;
+        color: var(--wc-brass);
+        line-height: 1.25;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 0.3rem;
+      }
+      h2 {
+        font-size: 1.1rem;
+        margin: 2.2rem 0 0.7rem;
+        padding-top: 1.3rem;
+        border-top: 1px solid #ffffff14;
+      }
+      p {
+        margin: 0 0 0.8rem;
+      }
+      code {
+        font-size: 0.9em;
+        color: var(--wc-brass);
+      }
+      b {
+        color: #fff;
+        font-weight: 600;
+      }
+      .wrap {
+        max-width: 68rem;
+        margin: 0 auto;
+        padding: 1.6rem 1.2rem 4rem;
+      }
+      .lede {
+        color: #a9b6b1;
+      }
+
+      .states {
+        display: flex;
+        gap: 1.4rem;
+        flex-wrap: wrap;
+        align-items: start;
+        margin: 1rem 0 0;
+      }
+      .state {
+        width: var(--wc-dossier-w);
+        flex: none;
+      }
+      .state > h3 {
+        font-family: var(--wc-sans);
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+        margin: 0 0 0.45rem;
+        font-weight: 600;
+      }
+      .state > .when {
+        font-size: 0.78rem;
+        color: #8d9a95;
+        margin: 0.5rem 0 0;
+      }
+
+      /* ---------- the block ---------- */
+      .pot {
+        border: 1px solid var(--wc-brass-dim);
+        border-radius: 9px;
+        background: linear-gradient(180deg, #141d21, #0f1518);
+        overflow: hidden;
+        font-size: 14px;
+      }
+      .pot.resting {
+        border-color: var(--wc-felt-line);
+      }
+      .pot-head {
+        padding: 0.7rem 0.8rem 0.65rem;
+      }
+      .pot-head + .pot-body,
+      .pot-head + .pot-foot {
+        border-top: 1px solid #ffffff10;
+      }
+      .pot-body {
+        padding: 0.6rem 0.8rem;
+      }
+      .pot-foot {
+        padding: 0.6rem 0.8rem 0.7rem;
+        border-top: 1px solid #ffffff10;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .eyebrow {
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+        display: block;
+        margin-bottom: 0.35rem;
+      }
+      .figure {
+        font-family: var(--wc-serif);
+        color: var(--wc-brass);
+        font-size: 2.7rem;
+        line-height: 1;
+      }
+      .sub {
+        font-size: 0.75rem;
+        color: var(--wc-chalk-dim);
+        margin: 0.35rem 0 0;
+      }
+      .sub b {
+        color: var(--wc-chalk);
+        font-weight: 600;
+      }
+      .times {
+        padding: 0 0.15em;
+      }
+      .consequence {
+        font-size: 0.75rem;
+        color: var(--wc-brass);
+        margin: 0.5rem 0 0;
+        padding-top: 0.5rem;
+        border-top: 1px dashed #ffffff14;
+      }
+
+      /* the ledger */
+      .rows {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .row {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        font-size: 0.78rem;
+        padding: 0.3rem 0;
+      }
+      .row .what {
+        flex: 1;
+        min-width: 0;
+        color: var(--wc-chalk);
+      }
+      .row .amt {
+        color: var(--wc-brass);
+        font-family: var(--wc-serif);
+        font-size: 1.15em;
+        white-space: nowrap;
+      }
+      /* the subtotal rule — the adds end here and the multiplier applies to what is above it */
+      .rule {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        font-size: 0.78rem;
+        padding: 0.28rem 0;
+        border-top: 1px solid #ffffff1f;
+        margin-top: 0.15rem;
+      }
+      .rule .what {
+        flex: 1;
+        color: var(--wc-chalk-dim);
+        font-size: 0.9em;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .rule .amt {
+        color: var(--wc-chalk);
+        font-family: var(--wc-serif);
+        font-size: 1.15em;
+      }
+      .rule.final {
+        border-top-width: 2px;
+        margin-top: 0.2rem;
+      }
+      .rule.final .amt {
+        color: var(--wc-brass);
+        font-size: 1.35em;
+      }
+      /* a buff that was armed and did not pay — wraps, and has no value cell at all */
+      .dead {
+        font-size: 0.74rem;
+        color: var(--wc-chalk-dim);
+        padding: 0.3rem 0 0.1rem;
+        display: flex;
+        gap: 0.45rem;
+      }
+      .dead .mark {
+        color: var(--wc-chalk-dim);
+      }
+      .dead s {
+        color: var(--wc-chalk-dim);
+      }
+      .dead .why {
+        text-decoration: none;
+        display: block;
+        color: #5f6c68;
+      }
+      .deadwrap {
+        border-top: 1px dashed #ffffff14;
+        margin-top: 0.45rem;
+        padding-top: 0.25rem;
+      }
+
+      .btn {
+        font: inherit;
+        display: block;
+        width: 100%;
+        min-height: 44px;
+        border-radius: 7px;
+        padding: 0.45rem 0.6rem;
+        text-align: center;
+        background: #16211f;
+        color: var(--wc-chalk);
+        border: 1px solid var(--wc-brass-dim);
+        cursor: pointer;
+      }
+      .btn:focus-visible {
+        outline: 2px solid var(--wc-brass);
+        outline-offset: 2px;
+      }
+      @media (hover: hover) {
+        .btn:hover {
+          border-color: var(--wc-brass);
+        }
+      }
+      .btn.roll {
+        border-style: dashed;
+      }
+      .btn .lbl {
+        font-family: var(--wc-serif);
+        font-size: 1rem;
+        color: var(--wc-brass);
+        display: block;
+      }
+      .btn .big {
+        font-family: var(--wc-serif);
+        font-size: 1.5rem;
+        color: var(--wc-chalk);
+        display: block;
+        line-height: 1.1;
+      }
+      .btn .hint {
+        display: block;
+        font-size: 0.65rem;
+        color: var(--wc-chalk-dim);
+        margin-top: 0.15rem;
+        line-height: 1.35;
+      }
+      .btn.lethal {
+        border-color: var(--wc-alarm);
+      }
+      .btn.lethal .tag {
+        display: block;
+        font-size: 0.6rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--wc-alarm);
+        margin-bottom: 0.1rem;
+      }
+      .btn.lethal .big {
+        color: var(--wc-alarm);
+      }
+
+      /* ---------- notes ---------- */
+      .change {
+        border: 1px solid #ffffff14;
+        border-left: 3px solid var(--ok);
+        border-radius: 0 8px 8px 0;
+        padding: 0.85rem 1rem;
+        margin: 0 0 0.8rem;
+        background: #10161a;
+      }
+      .change.kept {
+        border-left-color: var(--wc-brass-dim);
+      }
+      .change h4 {
+        margin: 0 0 0.3rem;
+        font-size: 0.95rem;
+        color: #fff;
+        font-weight: 600;
+      }
+      .change p {
+        font-size: 0.88rem;
+        margin: 0 0 0.4rem;
+      }
+      .change p:last-child {
+        margin-bottom: 0;
+      }
+      .before {
+        font-size: 0.8rem;
+        color: var(--wc-chalk-dim);
+        border-top: 1px dashed #ffffff14;
+        padding-top: 0.45rem;
+        margin-top: 0.5rem;
+      }
+      .before b {
+        color: #a9b6b1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>The left damage block — v2</h1>
+      <p class="lede">
+        Your calls applied: the transition row is gone, the pot figure still appears on the Apply
+        control, and the rest is tidied. Three states, because the block does not look the same
+        during play as it does when there is a decision to make.
+      </p>
+
+      <div class="states">
+        <div class="state">
+          <h3>During play</h3>
+          <section class="pot resting" aria-label="The pot">
+            <div class="pot-head">
+              <span class="eyebrow">The pot</span>
+              <span class="figure">4</span>
+              <p class="sub"><b>4</b> banked <span class="times">×</span> <b>1</b> streak</p>
+              <p class="consequence">Skull dodged. The streak climbs.</p>
+            </div>
+          </section>
+          <p class="when">
+            No breakdown, no controls — there is no decision open, so the block says only what you
+            are holding. It stops being a frame with buttons greyed out in it.
+          </p>
+        </div>
+
+        <div class="state">
+          <h3>Trick resolved — the decision</h3>
+          <section class="pot" aria-label="The pot">
+            <div class="pot-head">
+              <span class="eyebrow">The pot</span>
+              <span class="figure">4</span>
+              <p class="sub"><b>4</b> banked <span class="times">×</span> <b>1</b> streak</p>
+              <p class="consequence">Skull dodged. The streak climbs.</p>
+            </div>
+            <div class="pot-body">
+              <span class="eyebrow">This trick added</span>
+              <ul class="rows">
+                <li class="row"><span class="what">Base damage</span><span class="amt">+1</span></li>
+                <li class="row">
+                  <span class="what">Sidestep (Blade)</span><span class="amt">+1</span>
+                </li>
+              </ul>
+              <div class="rule"><span class="what">Damage</span><span class="amt">2</span></div>
+              <ul class="rows">
+                <li class="row">
+                  <span class="what">Key-Feeder (Momentum)</span><span class="amt">×2</span>
+                </li>
+              </ul>
+              <div class="rule final"><span class="what">Added</span><span class="amt">4</span></div>
+              <div class="deadwrap">
+                <p class="dead">
+                  <span class="mark" aria-hidden="true">✕</span>
+                  <span>
+                    <s>Moon-Taker (Blade)</s>
+                    <span class="why">needed you to take a trick with Moons</span>
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div class="pot-foot">
+              <button class="btn" type="button">
+                <span class="lbl">Apply damage</span><span class="big">4</span>
+                <span class="hint">Aoife holds 10 · your total and streak reset</span>
+              </button>
+              <button class="btn roll" type="button">
+                <span class="lbl">Roll over</span><span class="big">10+</span>
+                <span class="hint">at least 10 if you take trick 4, before any buff you arm · 0 if you do not</span>
+              </button>
+            </div>
+          </section>
+          <p class="when">
+            The adds are summed under a rule, then the multiplier applies to that subtotal, then
+            the final figure. The arithmetic is a shape now, not a column you have to know the
+            rules to read.
+          </p>
+        </div>
+
+        <div class="state">
+          <h3>Trick resolved — lethal</h3>
+          <section class="pot" aria-label="The pot">
+            <div class="pot-head">
+              <span class="eyebrow">The pot</span>
+              <span class="figure">10</span>
+              <p class="sub"><b>5</b> banked <span class="times">×</span> <b>2</b> streak</p>
+              <p class="consequence">Clean trick, taken. The streak climbs.</p>
+            </div>
+            <div class="pot-body">
+              <span class="eyebrow">This trick added</span>
+              <ul class="rows">
+                <li class="row"><span class="what">Base damage</span><span class="amt">+1</span></li>
+                <li class="row">
+                  <span class="what">Moon-Taker (Blade)</span><span class="amt">+2</span>
+                </li>
+              </ul>
+              <div class="rule final"><span class="what">Added</span><span class="amt">3</span></div>
+            </div>
+            <div class="pot-foot">
+              <button class="btn lethal" type="button">
+                <span class="tag">Lethal — ends the fight</span>
+                <span class="lbl">Apply damage</span><span class="big">10</span>
+                <span class="hint">Aoife holds 10</span>
+              </button>
+              <button class="btn roll" type="button">
+                <span class="lbl">Roll over</span><span class="big">18+</span>
+                <span class="hint">at least 18 if you take trick 5, before any buff you arm · 0 if you do not</span>
+              </button>
+            </div>
+          </section>
+          <p class="when">
+            No multiplier fired and nothing missed, so there is no subtotal rule and no struck-through
+            row — those appear only when there is something for them to say.
+          </p>
+        </div>
+      </div>
+
+      <h2>What changed</h2>
+
+      <div class="change">
+        <h4>The transition row is gone — and it took the word collision with it</h4>
+        <p>
+          Deleting <code>Banked · total 0→4 · roll 0→1</code> removed the only place “banked” was a
+          past-tense verb. It now means one thing in this block: your running damage total, in the
+          header line you kept. So the two findings closed with one deletion rather than a rename.
+        </p>
+        <p class="before"><b>Before:</b> the header said the result, the row said the same result as a journey, and “banked” did two jobs four lines apart.</p>
+      </div>
+
+      <div class="change">
+        <h4>The multiplier's scope is now visible as a shape</h4>
+        <p>
+          The adds sit together and are ruled off into a <b>Damage</b> subtotal. The multiplier row
+          then sits below that rule, so it plainly applies to the number above it, and a second rule
+          gives the figure that actually entered the pot.
+        </p>
+        <p>
+          The rules render only when they have work to do: a trick with no multiplier gets one
+          closing rule, not a subtotal and a final that read the same — the lethal state shows that.
+        </p>
+        <p class="before"><b>Before:</b> <code>+1</code>, <code>+1</code>, <code>×2</code> in one column. Summing it gave 2; the answer was 4.</p>
+      </div>
+
+      <div class="change">
+        <h4>Roll over says what the “+” means</h4>
+        <p>
+          “at least 10 if you take trick 4, before any buff you arm · 0 if you do not”. The floor,
+          why it is only a floor, and the downside, in one line. The number stays large because it
+          is the figure the gamble turns on.
+        </p>
+        <p class="before"><b>Before:</b> <code>10+</code> with no account of the plus, readable as “ten or so”.</p>
+      </div>
+
+      <div class="change">
+        <h4>Apply names the Quarry's health in every state</h4>
+        <p>
+          “Aoife holds 10” now sits on the control whether or not the pot is fatal, so the pot
+          figure always has a scale attached. The lethal tag becomes emphasis on something already
+          there rather than the one time the number appears.
+        </p>
+        <p class="before"><b>Before:</b> you learned what the Quarry could survive only when the pot already killed them.</p>
+      </div>
+
+      <div class="change">
+        <h4>The unfired buff wraps, and lost its empty value cell</h4>
+        <p>
+          It is a two-line note under a dashed rule with an <code>✕</code>, not a table row with a
+          dash where a number should be — so it can never be misread as “fired and paid zero”, and
+          a long condition wraps instead of truncating.
+        </p>
+        <p class="before"><b>Before:</b> a struck-through row with <code>—</code> in the numeric column, clipping at this width.</p>
+      </div>
+
+      <div class="change kept">
+        <h4>Kept: the pot figure on both the headline and the Apply control</h4>
+        <p>
+          Your call, and the lifecycle argument settles it — Apply only exists once the damage is
+          calculated and disappears during play, so the two never sit there together as idle
+          furniture. During play the headline stands alone; when the control appears it confirms
+          what it will spend.
+        </p>
+      </div>
+
+      <div class="change kept">
+        <h4>Kept: the felt and this block wording the same event differently</h4>
+        <p>
+          Different zones, different jobs, different lifetimes — the felt explains the outcome and
+          goes away, this line explains what it did to your running state and stays.
+        </p>
+      </div>
+
+      <h2>Still yours</h2>
+      <p class="lede">
+        The column width (<code>--wc-dossier-w</code>), whether “Lethal — ends the fight” is the
+        right wording, whether “banked” is the word you want now that it means only one thing, and
+        whether the two hint lines are too wordy at the real column width — they are the longest
+        copy in the block and the first thing that would wrap badly if the column narrows.
+      </p>
+      <p class="lede">
+        Say the word and I will build it. The four files the stopped agent half-converted should be
+        reset first so this lands on a clean base.
+      </p>
+    </div>
+  </body>
+</html>
