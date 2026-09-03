@@ -18,11 +18,11 @@ import {
   type BuffCondition,
 } from '../buffs'
 
-describe('BuffKind (DLR-166 left 21; DLR-162 added the wildcard, making 22)', () => {
-  it('carries all 22 members, pairwise distinct', () => {
+describe('BuffKind (DLR-166 left 21; DLR-162 added the wildcard; DLR-167 adds Curse, making 23)', () => {
+  it('carries all 23 members, pairwise distinct', () => {
     const values = Object.values(BuffKind)
-    expect(values).toHaveLength(22)
-    expect(new Set(values).size).toBe(22)
+    expect(values).toHaveLength(23)
+    expect(new Set(values).size).toBe(23)
   })
 
   it('carries the two surviving pre-existing members unchanged', () => {

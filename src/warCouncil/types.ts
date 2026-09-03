@@ -69,6 +69,17 @@ export interface RoundState {
    *  every state spread thereafter, so a skull cannot appear or vanish mid-hand. A card that
    *  changes hands keeps its skull, which is what `trickIsSkulled` tests against. */
   readonly skulledCards: readonly Card[]
+  /** DLR-167 AC3/AC7 — cards the PLAYER has cursed for the COMING TRICK. Unlike `skulledCards`
+   *  above, which `dealRound` writes once and nothing changes mid-hand, this list is written
+   *  mid-hand by `curseCard` and CLEARED by `playCard` at every trick's resolution: the mark is
+   *  for one trick and lapses whether or not the card was played (AC7). That is exactly why it
+   *  is a SEPARATE list and not an append to `skulledCards` — inside one list nothing could tell
+   *  a dealt skull from a curse, so nothing would know what to lift.
+   *
+   *  `skullsOn` (`curse.ts`) is the ONE place this and `skulledCards` are read as one. Two
+   *  readers deliberately do NOT use it — `cpuPlayer`'s card choice and `suitShape`'s readout —
+   *  because both reason about the QUARRY's own dealt skulls, which a curse is not. */
+  readonly cursedCards: readonly Card[]
   /** DLR-123 AC3 — cards resolved to a trick this ENCOUNTER, face-down and never inspectable
    *  (AC8). Grows by exactly two at each trick's resolution, in `playCard`, and by nothing else;
    *  seeded by `dealRound` from the encounter's carried deck, so it climbs ACROSS the hands of a

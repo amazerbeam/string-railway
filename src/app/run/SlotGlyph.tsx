@@ -17,7 +17,10 @@ import { WildMark } from '../warCouncil/WildMark'
  * the dome takes it), the Tether is a taut line to an anchor (the roll stays tied on). Each also
  * reads distinctly from Sidestep's three chevrons with colour removed.
  */
-export type SlotGlyphKind = 'sidestep' | 'cheat' | 'skullHelmet' | 'skullTether' | 'wildcard'
+// DLR-167 — Curse's mark is an arrow coming DOWN onto a skull: the player puts the skull there,
+// which is what tells it apart from the Helmet's dome-over-skull with colour removed.
+export type SlotGlyphKind =
+  'sidestep' | 'cheat' | 'skullHelmet' | 'skullTether' | 'wildcard' | 'curse'
 
 interface SlotGlyphProps {
   readonly kind: SlotGlyphKind
@@ -56,6 +59,16 @@ export default function SlotGlyph({ kind, className }: SlotGlyphProps) {
             />
             <circle cx="10" cy="17" r="1" opacity=".8" />
             <circle cx="14" cy="17" r="1" opacity=".8" />
+          </>
+        )}
+        {kind === 'curse' && (
+          <>
+            <path d="M12 2.5v5.5" />
+            <path d="M9.5 5.8 12 8.4l2.5-2.6" />
+            <path d="M6 15.2a6 6 0 1 1 12 0v1.6a1.6 1.6 0 0 1-1.6 1.6H7.6A1.6 1.6 0 0 1 6 16.8z" />
+            <circle cx="9.7" cy="15" r="1.1" opacity=".8" />
+            <circle cx="14.3" cy="15" r="1.1" opacity=".8" />
+            <path d="M9.5 21h5" opacity=".45" />
           </>
         )}
         {kind === 'skullTether' && (

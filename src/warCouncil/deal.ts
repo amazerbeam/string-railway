@@ -44,6 +44,9 @@ export function dealRound(
     trumpSuit: decree.suit,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
     skulledCards: assignSkulls(cpuHand, rng),
+    // DLR-167 AC7 — a fresh deal carries no curse. The mark is written mid-hand by `curseCard`
+    // and lapses at every trick's resolution, so nothing survives into a new hand.
+    cursedCards: [],
     // DLR-123 AC3/AC8 — the spent pile CLIMBS ACROSS the hands of a fight and empties only when a
     // reshuffle folds it back into the draw pile. `FRESH_ENCOUNTER_DECK.spentPile` is `[]`, so the
     // new-encounter case needs no branch of its own.

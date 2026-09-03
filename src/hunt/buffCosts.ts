@@ -68,6 +68,7 @@ export type BuffConsumableKind =
   | typeof BuffKind.Spyglass
   | typeof BuffKind.Shield
   | typeof BuffKind.Wildcard
+  | typeof BuffKind.Curse
 
 // DLR-111 → The formula. UNIT: action points, per tier, before the condition modifier.
 export const REWARD_BASE: Readonly<Record<BuffMintedAxis, Readonly<Record<BuffTier, number>>>> = {
@@ -131,6 +132,13 @@ export const CONSUMABLE_AP_COST: Readonly<
   // default: action points left the buff layer on DLR-145, and `BuffActivationRefusal.ShopOnly`
   // refuses this card ahead of `InsufficientAp` in any case. UNIT: action points.
   [BuffKind.Wildcard]: { [BuffTier.Bronze]: 0, [BuffTier.Silver]: 0, [BuffTier.Gold]: 0 },
+  // DLR-167 AC2 — "a tiered action-point cost from the existing cost table". That table had no
+  // Curse row, and `apCostOf` THROWS on an unpriced kind, so a row is forced by the type system:
+  // the choice could only be made invisibly or made visibly. Made visibly.
+  // NOBODY CHOSE THESE THREE NUMBERS. The ladder shape is copied from Shield's. Worth pricing
+  // against the card's own asymmetry: a misread Curse costs the card, the AP and the whole streak
+  // at once. See `tasks.md` -> Developer decides or observes. UNIT: action points.
+  [BuffKind.Curse]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 4 },
 }
 
 const CONDITION_FAMILY_KINDS: ReadonlySet<BuffKind> = new Set(

@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { containsCard, sameCard, type Card } from '../../warCouncil'
+import { containsCard, isSkulled, sameCard, type Card } from '../../warCouncil'
 import type { CardDamagePreview } from './cardDamage'
 import type { CardBuffLight } from './buffRideModel'
 import { PlaceKind } from './cardPlacement'
@@ -22,6 +22,14 @@ interface HandFanProps {
   readonly discardSelecting: boolean
   /** DLR-100 — the cards currently toggled into the open selection, so the fan can mark them. */
   readonly discardSelection: readonly Card[]
+  /** DLR-167 AC4 — the cards in this hand that SHOW a skull, from `skullsOn(round)`: the Quarry's
+   *  dealt skulls and the player's own curses as one list. Passed rather than derived, exactly as
+   *  `legal` and `discardSelection` are — this component computes nothing about a card's state. */
+  readonly skulledCards: readonly Card[]
+  /** DLR-167 AC3 — a Curse is armed, so a hand-card tap MARKS rather than plays and EVERY held
+   *  card is a valid target, including one illegal to play. Mirrors `discardSelecting`'s role
+   *  exactly; read from the reducer's own `curseArmed` predicate, never re-derived here. */
+  readonly curseArmed: boolean
   /** DLR-117 — this card's win/lose preview, or `null` when there is nothing to preview.
    *  REQUIRED and deliberately NOT defaulted, for the reason `projectedDepletion`'s fifth
    *  parameter is required (`duelHealthBars.ts`): a defaulted stub is exactly how a preview
@@ -92,6 +100,8 @@ export default function HandFan({
   promptOpen,
   discardSelecting,
   discardSelection,
+  skulledCards,
+  curseArmed,
   damageForCard,
   buffLightForCard,
   onCardEnter,
@@ -104,10 +114,14 @@ export default function HandFan({
   // While discardSelecting, every held card is a valid target — including one
   // illegal to play — so the `containsCard` term drops out rather than gating focusability a
   // second way.
+  // DLR-167 — `curseArmed` joins `discardSelecting` here for the identical reason: while a Curse is
+  // armed every held card is a valid target, so the legality term drops out. A `disabled` button
+  // cannot take focus, so failing to widen this would make an illegal-but-markable card
+  // unreachable by keyboard.
   const isFocusable = (index: number) =>
     hand[index] !== undefined &&
     interactive &&
-    (discardSelecting || containsCard(legal, hand[index]))
+    (discardSelecting || curseArmed || containsCard(legal, hand[index]))
 
   const { groupRef, tabStopIndex, handleKeyDown } = useRovingTabIndex(
     hand.length,
@@ -165,7 +179,11 @@ export default function HandFan({
           // light, the buff count/estimate, and the hover/focus breakdown target all gate on now;
           // `illegal` still folds in `interactive` for `PlayingCard`'s own tappability, unchanged.
           const playable = discardSelecting || containsCard(legal, card)
-          const illegal = !interactive || !playable
+          // DLR-167 AC3 — while a Curse is armed EVERY held card is a valid TAP TARGET, including
+          // one illegal to play, because marking is not a move. Deliberately a separate term from
+          // `playable` above: the buff light and the breakdown still ask "may this be PLAYED",
+          // which an armed Curse does not change.
+          const illegal = !interactive || !(playable || curseArmed)
           const light = buffLightForCard(card)
 
           return (
@@ -199,6 +217,11 @@ export default function HandFan({
                 variant="hand"
                 armed={isArmed}
                 illegal={illegal}
+                // DLR-167 AC4 — the full skull card face on a card in your own hand, identical to a
+                // skulled Quarry card: `PlayingCard`'s existing `skulled` branch and its
+                // `wc-is-skulled` class hide the art window and keep the corner index, because the
+                // trick is still won on the rank and suit. No new rendering, no new CSS.
+                skulled={isSkulled(skulledCards, card)}
                 discardSelected={containsCard(discardSelection, card)}
                 tabIndex={index === tabStopIndex ? 0 : -1}
                 describedBy={damage === null ? undefined : damageId}

@@ -12,7 +12,7 @@
  * DLR-153 Fix 2 — a REAL positioning class, not an unclassed div: the panel's nearest positioned
  * ancestor used to be `.wc-table`, a SIBLING rather than a parent.
  */
-import type { Card } from '../../warCouncil'
+import { skullsOn, type Card } from '../../warCouncil'
 import { BreakdownTopContext } from './breakdownRectContext'
 import type { BuffRideBundle } from './buffRideProps'
 import BuffRidingList from './BuffRidingList'
@@ -20,7 +20,7 @@ import { cardDamagePreview } from './cardDamage'
 import CardBuffBreakdown from './CardBuffBreakdown'
 import HandFan from './HandFan'
 import { cardKey } from './labels'
-import { discardSelecting, type RoundUiState } from './roundUiState'
+import { curseArmed, discardSelecting, type RoundUiState } from './roundUiState'
 
 export interface BuffRideZoneProps {
   readonly ui: RoundUiState
@@ -60,6 +60,11 @@ export default function BuffRideZone({
           promptOpen={ui.prompt !== null}
           discardSelecting={discardSelecting(ui)}
           discardSelection={ui.discardSelection ?? []}
+          // DLR-167 AC4/AC3 — both read straight off the reducer's own state and predicate, so the
+          // fan computes neither. `skullsOn` is THE single union of the Quarry's dealt skulls and
+          // the player's own curses.
+          skulledCards={skullsOn(ui.round)}
+          curseArmed={curseArmed(ui)}
           damageForCard={(card) => cardDamagePreview(ui, card)}
           buffLightForCard={(card) => buffRide.lights.get(cardKey(card)) ?? null}
           onCardEnter={buffRide.breakdownTarget.onEnterCard}

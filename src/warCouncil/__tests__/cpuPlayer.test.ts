@@ -33,6 +33,7 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
+    cursedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

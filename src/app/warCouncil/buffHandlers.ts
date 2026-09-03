@@ -25,6 +25,7 @@ import {
   buffActivationStock,
   buffActivationWindowOpen,
   canAct,
+  curseLive,
   discardWindowOpen,
   offeredBuffs,
   type RoundUiState,
@@ -138,11 +139,15 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
   // row can pass its guard and then throw here — `activateBuff` re-checks the window itself and
   // throws on a refusal, which is exactly what a narrower window at this line would trigger on a
   // Cheat's own second tap.
+  // DLR-167 — `curseLive(state)` is threaded so `activateBuff`'s own re-check is a REAL one:
+  // `loadoutRefusalFor` above asked the same question through the same stock, and a guard that
+  // asked a different question there would surface as a thrown `RangeError` on the second tap.
   const { activation, buffs } = activateFromPile(
     state.buffActivation,
     state.buffs,
     buff,
     buffActivationWindowOpen(state, buff),
+    curseLive(state),
   )
   return {
     ...state,
@@ -166,6 +171,10 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
     // `buff.kind`, so that throw is not reachable here.
     cheatTricksRemaining:
       buff.kind === BuffKind.Cheat ? cheatDurationTricksOf(buff) : state.cheatTricksRemaining,
+    // DLR-167 AC3 — the spend ARMS the card; the mark itself is made by the next hand tap, in
+    // `roundReducer.ts`'s `curseTapped`. The whole `Buff` is held, not a figure, because
+    // `curseRewardOf` needs the tier when the cursed trick resolves.
+    curseArmedBuff: buff.kind === BuffKind.Curse ? buff : state.curseArmedBuff,
     discardsRemaining: state.discardsRemaining + extraDiscardCharges(buff),
     loadout: { poised: null },
   }
@@ -190,4 +199,3 @@ export function handleRemoveBuff(state: RoundUiState, id: BuffId): RoundUiState 
   const { activation, buffs } = deactivateFromPile(state.buffActivation, state.buffs, buff)
   return { ...state, buffs, buffActivation: activation }
 }
-

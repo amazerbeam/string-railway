@@ -62,6 +62,9 @@ export function chooseCpuCard(state: RoundState, side: PlayerSide): Card {
     // than a defect, and it keeps `chooseCpuMove`'s signature and its call sites unchanged.
     resolveTrickWinner([lead, { side, card }], state.trumpSuit) === side
 
+  // DLR-167 — `skulledCards`, NOT `skullsOn`: this reasons about the QUARRY's own dealt skulls.
+  // A skull the player just put on their own card is not something the Quarry knows or is shown,
+  // and `legal` here is the Quarry's own hand in any case.
   const skulledLosers = legal.filter(
     (card) => !wouldWin(card) && isSkulled(state.skulledCards, card),
   )

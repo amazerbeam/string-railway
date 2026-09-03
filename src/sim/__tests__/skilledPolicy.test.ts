@@ -17,6 +17,8 @@ function stateWith(over: Partial<RoundState>): RoundState {
   return {
     hands: { player: [], cpu: [] },
     skulledCards: [],
+    // DLR-167 — `skullsOn` reads this list, so the minimal state has to carry it.
+    cursedCards: [],
     currentTrick: [],
     trumpSuit: 'bells',
     ...over,

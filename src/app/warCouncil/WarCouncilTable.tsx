@@ -35,6 +35,7 @@ import {
 import {
   canAct,
   cheatArmed,
+  curseArmed,
   discardSelecting,
   discardStock,
   loadoutOpen,
@@ -124,7 +125,10 @@ export default function WarCouncilTable({
   // DLR-100 — `handInteractive` keeps the fan tappable during the
   // Quarry-to-lead gap, where `interactive` is false but a selection may still be open or opening.
   const discardRefusal = discardRefusalFor(discardStock(ui))
-  const handInteractive = interactive || discardSelecting(ui)
+  // DLR-167 — `curseArmed` joins it for the identical reason: a Curse is armed in the
+  // between-tricks window, which reaches the Quarry-to-lead gap where `interactive` is false, and
+  // the tap that marks a card has to land there.
+  const handInteractive = interactive || discardSelecting(ui) || curseArmed(ui)
 
   useDebugRoundState({
     ui,
@@ -145,6 +149,8 @@ export default function WarCouncilTable({
   // DLR-101 — the whole assembly lives in `roundBars.ts`.
   const bars = barsForRound(ui, maxHealth)
 
+  // DLR-167 — `skulledCards`, NOT `skullsOn`: this reasons about the QUARRY's own dealt skulls.
+  // A skull the player just put on their own card is not something the Quarry knows or is shown.
   const shape = suitShape(ui.round.hands[PlayerSide.Cpu], ui.round.skulledCards)
 
   // DLR-155 — extracted to `roundHandSummary.ts`, which carries the derivation's own reasoning.

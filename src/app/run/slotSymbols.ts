@@ -31,6 +31,8 @@ export type SlotGlyph =
   | { readonly kind: 'skullTether' }
   // DLR-162 — the wildcard's own mark, drawn by `src/app/warCouncil/WildMark.tsx`.
   | { readonly kind: 'wildcard' }
+  // DLR-167 — Curse's own mark, an arrow coming down onto a skull.
+  | { readonly kind: 'curse' }
 
 export interface SlotSymbolFace {
   /** `template.id` — already unique across the strip, so it is the React key AND what a
@@ -58,6 +60,8 @@ const FAMILY_WORD: Readonly<Record<BuffTemplate['kind'], string>> = {
   [BuffKind.SkullTether]: 'Tether',
   // DLR-162 — PLACEHOLDER copy.
   [BuffKind.Wildcard]: 'Wildcard',
+  // DLR-167 — PLACEHOLDER copy.
+  [BuffKind.Curse]: 'Curse',
 }
 
 /** DLR-162 — was `glyph: { kind: 'cheat' }` outright on the activated branch, which rendered a
@@ -66,6 +70,7 @@ const FAMILY_WORD: Readonly<Record<BuffTemplate['kind'], string>> = {
 const ACTIVATED_GLYPH: Readonly<Record<BuffActivatedTemplateKind, SlotGlyph>> = {
   [BuffKind.Cheat]: { kind: 'cheat' },
   [BuffKind.Wildcard]: { kind: 'wildcard' },
+  [BuffKind.Curse]: { kind: 'curse' },
 }
 
 /** The mintable axes, in the same words `BUFF_REWARD_SUFFIX` uses — restated as a narrowed

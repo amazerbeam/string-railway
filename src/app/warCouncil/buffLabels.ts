@@ -5,6 +5,7 @@ import {
   BuffRewardAxis,
   BuffTargetSuit,
   BuffTier,
+  CURSE_REWARD,
   buffIsWild,
   buffTargetRankOf,
   buffTargetSuitOf,
@@ -43,6 +44,8 @@ export const BUFF_FAMILY_WORD: Readonly<Record<BuffKind, string>> = {
   [BuffKind.SkullTether]: 'Skull Tether',
   // DLR-162 — PLACEHOLDER copy.
   [BuffKind.Wildcard]: 'Wildcard',
+  // DLR-167 — PLACEHOLDER copy.
+  [BuffKind.Curse]: 'Curse',
 }
 
 /** The condition half, in sentence form. The eleven family rows are TRANSCRIBED from the same
@@ -53,7 +56,11 @@ export const BUFF_CONDITION_SENTENCE: Readonly<Record<BuffKind, string>> = {
   [BuffKind.Taker]: 'win a trick with {suit}',
   [BuffKind.Feeder]: 'lose a trick with {suit}',
   [BuffKind.MarkOfRank]: 'win a trick with a {rank}',
-  [BuffKind.Sidestep]: 'dodge a skull with this card',
+  // DLR-167 AC10 — the old wording claimed the buff attached to a card. NO BUFF ATTACHES TO A
+  // CARD: a buff is activated FOR A TRICK and checked when that trick resolves. It came from the
+  // unbuilt "Apply-to-card" category in `v1-buff-card-list.md`, which was never built.
+  // COPY IS THE DEVELOPER'S CALL — see `tasks.md` -> Developer decides or observes.
+  [BuffKind.Sidestep]: 'a skull trick you do not take',
   [BuffKind.Glutton]: 'eat a skull with this card',
   [BuffKind.Hoarder]: 'reach a high bank this hand',
   [BuffKind.Unbloodied]: 'survive several tricks without a hit',
@@ -75,6 +82,9 @@ export const BUFF_CONDITION_SENTENCE: Readonly<Record<BuffKind, string>> = {
   // DLR-162 — it has no trigger, so it reads as the action the player takes, exactly as Cheat's
   // row does. PLACEHOLDER copy.
   [BuffKind.Wildcard]: 'spend it on a suited card between fights',
+  // DLR-167 — it has no trigger, so it reads as the action the player takes, as Cheat's row does.
+  // PLACEHOLDER copy.
+  [BuffKind.Curse]: 'put a skull on a card in your hand',
 }
 
 /** DLR-161 AC5 — silver and gold print a WIDER sentence than bronze, because they fire on a clean
@@ -205,6 +215,9 @@ export const BUFF_ACTIVATION_REFUSAL_MESSAGE: Readonly<Record<BuffActivationRefu
   [BuffActivationRefusal.ShopOnly]: 'Spend this on the Manage Buffs screen.',
   [BuffActivationRefusal.NoEffectYet]: 'Not usable yet.',
   [BuffActivationRefusal.WindowClosed]: 'Not between tricks.',
+  // DLR-167 — PLACEHOLDER copy. Says what the player must do next rather than merely refusing:
+  // a Curse is already waiting for a card, and tapping one is what clears it.
+  [BuffActivationRefusal.CurseLive]: 'A Curse is already waiting for a card.',
   [BuffActivationRefusal.AlreadyActive]: 'Already active this trick.',
   [BuffActivationRefusal.InsufficientAp]: 'Not enough action points.',
 }
@@ -249,7 +262,10 @@ export const BUFF_CADENCE_WORD: Readonly<Record<BuffCadence, string>> = CADENCE_
 export const BUFF_EVENT_WORD: Partial<Readonly<Record<BuffKind, string>>> = {
   [BuffKind.Taker]: 'TAKE',
   [BuffKind.Feeder]: 'MISS',
-  [BuffKind.Sidestep]: 'DODGE',
+  // DLR-167 AC10 — the old face word collided with the card's own name AND with "dodge" as the
+  // name of a trick outcome. Still MECHANICAL vocabulary, per this table's own docblock: it names
+  // the branch the buff fires on, not the outcome. PLACEHOLDER copy.
+  [BuffKind.Sidestep]: 'SKULL LOSS',
   // DLR-161 — the mechanical word for the branch these fire on. Bronze fires on an eaten skull
   // and silver/gold on any hurt trick; `HURT` covers both without claiming the wider one at
   // bronze, and the card's own condition sentence states the difference. PLACEHOLDER copy.
@@ -273,6 +289,18 @@ export interface BuffPayoff {
 }
 
 export function buffPayoff(buff: Buff): BuffPayoff {
+  // DLR-167 — Curse pays TWO figures at gold, and `BuffReward` carries only the damage half
+  // (`curseBuff`). Read through `CURSE_REWARD`, never as a literal, so a retuned ladder cannot
+  // leave the card advertising a figure the engine will not honour. `risk` stays `null`: the card's
+  // cost is a bad trick, not a figure landing on the player.
+  if (buff.kind === BuffKind.Curse) {
+    const reward = CURSE_REWARD[buff.tier]
+    const gain =
+      reward.multiplier > 0
+        ? `+${reward.damage} damage, +${reward.multiplier} multiplier`
+        : `+${reward.damage} damage`
+    return { gain, risk: null }
+  }
   return { gain: buffRewardPhrase(buff), risk: null }
 }
 

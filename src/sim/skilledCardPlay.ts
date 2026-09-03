@@ -32,6 +32,7 @@ import {
   legalMoves,
   PlayerSide,
   resolveTrickWinner,
+  skullsOn,
   suitShape,
   type Card,
   type RoundState,
@@ -78,6 +79,8 @@ function junkiest(cards: readonly Card[]): Card {
  * cases the rank curve does not protect against.
  */
 export function quarrySkullOdds(state: RoundState): Readonly<Record<string, number>> {
+  // DLR-167 — `skulledCards`, NOT `skullsOn`: this reasons about the QUARRY's own dealt skulls.
+  // A skull the player just put on their own card is not something the Quarry knows or is shown.
   const shape = suitShape(state.hands[PlayerSide.Cpu], state.skulledCards)
   const held = shape.reduce((sum, row) => sum + row.held, 0)
   const skulled = shape.reduce((sum, row) => sum + row.skulled, 0)
@@ -150,7 +153,7 @@ function followWins(state: RoundState, card: Card): boolean {
  * That is the moment a Cheat is worth spending, which `skilledPolicy.ts` handles before this runs.
  */
 export function chooseFollow(state: RoundState, legal: readonly Card[]): Card {
-  const skullTrick = isSkulled(state.skulledCards, state.currentTrick[0].card)
+  const skullTrick = isSkulled(skullsOn(state), state.currentTrick[0].card)
   const reaching = legal.filter((card) => followWins(state, card) !== skullTrick)
   // The prompt preference is applied AFTER the outcome filter, never before: ducking a skull
   // matters more than avoiding an ability prompt, so a Fox is played when only a Fox reaches the
@@ -264,6 +267,7 @@ export function trickIntent(state: RoundState): TrickIntent | null {
     if (candidates.length === 0) return null
     const card = chooseLead(state, candidates)
     const skull = odds[card.suit] ?? 0
+    // DLR-167 — `skulledCards`, NOT `skullsOn`: the QUARRY's own dealt skulls, as above.
     const row = suitShape(state.hands[PlayerSide.Cpu], state.skulledCards).find(
       (r) => r.suit === card.suit,
     )
@@ -280,6 +284,7 @@ export function trickIntent(state: RoundState): TrickIntent | null {
   }
   // The Quarry leads. Its likeliest suit is the one it holds most of — `suitShape`'s counts, which
   // are posted on screen, and no rank is read.
+  // DLR-167 — `skulledCards`, NOT `skullsOn`: the QUARRY's own dealt skulls, as above.
   const shape = suitShape(state.hands[PlayerSide.Cpu], state.skulledCards)
   let likeliest = shape[0]
   for (const row of shape) if (row.held > likeliest.held) likeliest = row
@@ -299,7 +304,7 @@ export function trickIntent(state: RoundState): TrickIntent | null {
 
 export function forcedHurt(state: RoundState): boolean {
   if (state.currentTrick.length === 0) return false
-  const skullTrick = isSkulled(state.skulledCards, state.currentTrick[0].card)
+  const skullTrick = isSkulled(skullsOn(state), state.currentTrick[0].card)
   return !legalMoves(state, PlayerSide.Player).some(
     (card) => followWins(state, card) !== skullTrick,
   )
@@ -307,7 +312,7 @@ export function forcedHurt(state: RoundState): boolean {
 
 export function cheatEscape(state: RoundState): Card | null {
   if (state.currentTrick.length === 0) return null
-  const skullTrick = isSkulled(state.skulledCards, state.currentTrick[0].card)
+  const skullTrick = isSkulled(skullsOn(state), state.currentTrick[0].card)
   const reaches = (card: Card): boolean => followWins(state, card) !== skullTrick
   if (legalMoves(state, PlayerSide.Player).some(reaches)) return null
   const unlocked = legalMoves(state, PlayerSide.Player, { ignoreFollowSuit: true }).filter(reaches)

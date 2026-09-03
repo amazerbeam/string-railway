@@ -44,6 +44,8 @@ export type {
 } from './buffProjection'
 export { playCard } from './playCard'
 export { assignSkulls, isSkulled, skullableCards, suitShape, trickIsSkulled } from './skulls'
+// DLR-167 — `skullsOn` is THE single place a dealt skull and a player's curse are read as one.
+export { curseCard, isCursed, skullsOn, uncurseCard } from './curse'
 export type { SuitShape } from './skulls'
 export {
   incomingFrom,

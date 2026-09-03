@@ -156,7 +156,7 @@ export function isConsumableItemKind(kind: BuffKind): kind is ConsumableItemKind
 
 /** The Activated cards whose single-use-ness is a developer-owned toggle rather than the
  *  fixed DLR-111 five-item set's rule. */
-type ActivatedItemKind = typeof BuffKind.Cheat | typeof BuffKind.Shield
+type ActivatedItemKind = typeof BuffKind.Cheat | typeof BuffKind.Shield | typeof BuffKind.Curse
 
 /**
  * Whether spending this Activated card ALSO removes it from the pile, on top of the felt-state
@@ -169,6 +169,8 @@ type ActivatedItemKind = typeof BuffKind.Cheat | typeof BuffKind.Shield
 export const ACTIVATED_CARD_SINGLE_USE: Readonly<Record<ActivatedItemKind, boolean>> = {
   [BuffKind.Cheat]: true,
   [BuffKind.Shield]: true,
+  // DLR-167 AC8 — spent on use, matching Cheat: a skull has already changed the felt.
+  [BuffKind.Curse]: true,
 }
 
 const ACTIVATED_ITEM_KINDS: ReadonlySet<BuffKind> = new Set(

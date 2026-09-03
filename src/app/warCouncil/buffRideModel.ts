@@ -18,6 +18,7 @@ import {
   containsCard,
   PlayerSide,
   projectBuffBranches,
+  skullsOn,
   trickIsSkulled,
   type BuffProjection,
   type BuffProjectionInput,
@@ -80,9 +81,11 @@ export function rideInputFor(state: RoundUiState): RideInput {
  *  (`currentTrick.length === 1`), the full trick is knowable too. Otherwise `null` — NOT "no
  *  skull", but "not knowable": the Quarry's face-down card may still carry one. */
 export function skullReadingFor(state: RoundUiState, candidate: Card): boolean | null {
-  if (containsCard(state.round.skulledCards, candidate)) return true
+  // DLR-167 — the UNION, through `skullsOn`: a card the player has cursed carries a skull exactly
+  // as a dealt one does, and this reading is what lights the hand for it.
+  if (containsCard(skullsOn(state.round), candidate)) return true
   if (state.round.currentTrick.length === 1) {
-    return trickIsSkulled(state.round.skulledCards, [
+    return trickIsSkulled(skullsOn(state.round), [
       ...state.round.currentTrick,
       { side: PlayerSide.Player, card: candidate },
     ])

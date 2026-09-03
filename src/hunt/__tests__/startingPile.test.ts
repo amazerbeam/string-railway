@@ -100,9 +100,10 @@ describe('openingPileWeightOf', () => {
     expect(BUFF_TEMPLATES.every((t) => openingPileWeightOf(t) > 0)).toBe(true)
   })
 
-  it('leaves Cheat eligible (DLR-132 — an ordinary pool member)', () => {
+  // DLR-162 added the wildcard and DLR-167 adds Curse; the count was left at 1 by DLR-162.
+  it('leaves every activated card eligible (DLR-132 — ordinary pool members)', () => {
     const activated = BUFF_TEMPLATES.filter((t) => t.form === 'activated')
-    expect(activated).toHaveLength(1)
+    expect(activated).toHaveLength(3)
     expect(activated.every((t) => openingPileWeightOf(t) > 0)).toBe(true)
   })
 })

@@ -75,6 +75,57 @@ export function wildcardBuff(tier: BuffTier, id: BuffId): Buff {
   }
 }
 
+/** DLR-167 — Curse's two figures at one tier. A PAIR, not one number, because `BuffReward` is
+ *  deliberately one axis and one value (DLR-105) and widening it for one card is a type change this
+ *  codebase has twice declined to make.
+ *  UNIT: `damage` in damage points added to the cursed trick's base; `multiplier` in multiplier
+ *  points added to that trick's `buffMult`. */
+export interface CurseBonus {
+  readonly damage: number
+  readonly multiplier: number
+}
+
+/** DLR-167 AC6, TRANSCRIBED verbatim — "bronze +1 damage; silver +2 damage; gold +2 damage and
+ *  +1 multiplier". NOT chosen here, and the ticket's scope boundaries forbid retuning them in this
+ *  contract: they ship as specified and get tuned by playing. */
+export const CURSE_REWARD: Readonly<Record<BuffTier, CurseBonus>> = {
+  [BuffTier.Bronze]: { damage: 1, multiplier: 0 },
+  [BuffTier.Silver]: { damage: 2, multiplier: 0 },
+  [BuffTier.Gold]: { damage: 2, multiplier: 1 },
+}
+
+/** DLR-167 AC1 — mint a Curse at `tier`. `condition` is the shared `ACTIVATED_BUFF_CONDITION`
+ *  Cheat already uses: the player presses it, so it has no trigger. `reward` carries the DAMAGE
+ *  half as its headline figure — the multiplier half is read through `curseRewardOf` below, which
+ *  is the same split `BuffReward`'s one-axis shape forces on any two-figure card.
+ *
+ *  `id` is the CALLER's, from `RunState.nextBuffId`; this module never invents one and never calls
+ *  `Math.random()`, because `src/hunt/` must stay deterministic. */
+export function curseBuff(tier: BuffTier, id: BuffId): Buff {
+  return {
+    id,
+    kind: BuffKind.Curse,
+    tier,
+    condition: ACTIVATED_BUFF_CONDITION,
+    reward: { axis: BuffRewardAxis.Magnitude, value: CURSE_REWARD[tier].damage },
+  }
+}
+
+/**
+ * Both of Curse's figures for this card's tier.
+ *
+ * THROWS on a buff of any other kind rather than returning a plausible pair, for
+ * `cheatDurationTricksOf`'s stated reason and a sharper version of it: every figure here is a small
+ * integer, so a swallowed version would quietly add another card's damage to a trick's base and
+ * look entirely reasonable doing it.
+ */
+export function curseRewardOf(buff: Buff): CurseBonus {
+  if (buff.kind !== BuffKind.Curse) {
+    throw new RangeError(`Buff ${buff.id} is a ${buff.kind}, not a Curse — it has no curse reward`)
+  }
+  return CURSE_REWARD[buff.tier]
+}
+
 /** DLR-110 — mint a Shield buff at `tier`. On the `heartCount` axis `buffs.ts` and
  *  `.docs/implementation/hunt/buff-pile.md` already name as Shield's. `id` is the caller's, minted
  *  from `RunState.nextBuffId` exactly as `cheatBuff`'s is; this module never invents one.

@@ -28,6 +28,7 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     trumpSuit: Suit.Bells,
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
+    cursedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

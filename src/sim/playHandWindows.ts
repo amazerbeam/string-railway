@@ -5,7 +5,7 @@
  * `runDiscard`, `runCheatPlay`, `runBuffWindow` — and nothing else. `playHand.ts` keeps the driver
  * loop itself, which is the part that actually needs all of these in view at once.
  */
-import { discardRefusalFor, type WarCouncilState } from '../warCouncil'
+import { containsCard, discardRefusalFor, PlayerSide, type WarCouncilState } from '../warCouncil'
 import {
   apCapacityFor,
   baseDamageBonusFor,
@@ -19,6 +19,7 @@ import { loadoutRefusalFor } from '../app/warCouncil/buffHandlers'
 import { roundReducer } from '../app/warCouncil/roundReducer'
 import {
   cheatArmed,
+  curseArmed,
   discardSelecting,
   discardStock,
   loadoutOpen,
@@ -189,6 +190,19 @@ export function runBuffWindow(initial: RoundUiState, policy: SimPolicy): WindowO
 
   if (loadoutOpen(ui)) {
     ui = roundReducer(ui, { kind: RoundUiActionKind.CancelLoadout })
+  }
+
+  // DLR-167 — a spent Curse ARMS the next hand-card tap, so the mark has to be made inside this
+  // same window: leaving it armed would make the driver's own `TapCard` mark a card instead of
+  // playing it. Discharged here, never left dangling. `containsCard` is re-checked because every
+  // policy answer in this driver is advisory.
+  if (curseArmed(ui)) {
+    const hand = ui.round.hands[PlayerSide.Player]
+    const wanted = policy.chooseCurseTarget?.(ui) ?? null
+    const target = wanted !== null && containsCard(hand, wanted) ? wanted : (hand[0] ?? null)
+    if (target !== null) {
+      ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
+    }
   }
 
   return {

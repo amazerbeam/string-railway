@@ -8,7 +8,7 @@
  * Every builder is deterministic (same seed in, byte-identical value out) and calls neither
  * `Math.random()` nor any storage API — `src/sim/**` is lint-enforced pure.
  */
-import { closeHand, FRESH_ENCOUNTER_DECK, type EncounterDeck } from '../warCouncil'
+import { closeHand, FRESH_ENCOUNTER_DECK, PlayerSide, type EncounterDeck } from '../warCouncil'
 import {
   BuffKind,
   BuffRewardAxis,
@@ -19,6 +19,7 @@ import {
   PLAYER_START_HEALTH,
   recordEncounter,
   startRun,
+  templateById,
   templatesForFamily,
   type Buff,
   type RunState,
@@ -27,6 +28,7 @@ import { dealHand } from '../app/handDeal'
 import { roundReducer } from '../app/warCouncil/roundReducer'
 import {
   createRoundUiState,
+  curseArmed,
   discardWindowOpen,
   offeredBuffs,
   RoundUiActionKind,
@@ -150,6 +152,58 @@ export function fixtureHandWithStackedBuffs(seed = 1303): RoundUiState {
     throw new RangeError(
       `fixtureHandWithStackedBuffs: only ${ui.buffActivation.activatedThisTrick.length} of 2 offered buffs activated`,
     )
+  }
+  return ui
+}
+
+/**
+ * DLR-167 — a hand whose player holds a CURSED card, so the coming trick is a skull trick the
+ * player wants to lose.
+ *
+ * Seeds the run's pile with one real, minted Curse rather than relying on the fresh run's random
+ * draw (DLR-135), then drives the ORDINARY two-tap loadout gesture and one hand tap — the same
+ * dispatches a player makes. No policy and no retry: the between-tricks window is open on deal, so
+ * this is exactly reproducible. THROWS naming the step that failed rather than returning a silently
+ * unmarked state, the discipline `fixtureHandWithStackedBuffs` above already sets.
+ */
+export function fixtureHandWithCursedCard(
+  seed = 1307,
+  tier: BuffTier = BuffTier.Silver,
+): RoundUiState {
+  const template = templateById('curse')
+  if (template === undefined) {
+    throw new RangeError('fixtureHandWithCursedCard: no `curse` template in this build')
+  }
+  const run: RunState = {
+    ...startRun(PLAYER_START_HEALTH, [], seed),
+    buffs: [mintFromTemplate(template, tier, 9101)],
+  }
+  const dealt = dealHand(run, 1, FRESH_ENCOUNTER_DECK)
+  let ui = createRoundUiState(seedFor(run, dealt))
+
+  if (!discardWindowOpen(ui)) {
+    throw new RangeError('fixtureHandWithCursedCard: the activation window is not open on deal')
+  }
+  const curse = offeredBuffs(ui).find((buff) => buff.kind === BuffKind.Curse)
+  if (curse === undefined) {
+    throw new RangeError('fixtureHandWithCursedCard: the minted Curse was not offered')
+  }
+
+  ui = roundReducer(ui, { kind: RoundUiActionKind.ToggleLoadout })
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: curse.id }) // poise
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: curse.id }) // commit
+  if (!curseArmed(ui)) {
+    throw new RangeError('fixtureHandWithCursedCard: spending the Curse did not arm it')
+  }
+
+  const target = ui.round.hands[PlayerSide.Player][0]
+  if (target === undefined) {
+    throw new RangeError('fixtureHandWithCursedCard: the player was dealt no cards to curse')
+  }
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
+
+  if (ui.round.cursedCards.length === 0) {
+    throw new RangeError('fixtureHandWithCursedCard: the hand tap did not mark a card')
   }
   return ui
 }

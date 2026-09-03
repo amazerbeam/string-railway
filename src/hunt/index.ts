@@ -100,9 +100,13 @@ export {
   startingPileSeedFor,
 } from './startingPile'
 
+export type { CurseBonus } from './buffCatalog'
 export {
   CHEAT_DURATION_TRICKS,
+  CURSE_REWARD,
   cheatBuff,
+  curseBuff,
+  curseRewardOf,
   wildcardBuff,
   shieldBuff,
   cheatDurationTricksOf,
@@ -140,6 +144,8 @@ export type { BuffBonusAccrual, BuffCarry, TrickBuffBonus } from './buffAccrual'
 export {
   EMPTY_BUFF_ACCRUAL,
   EMPTY_BUFF_CARRY,
+  EMPTY_CURSE_BONUS,
+  curseBonusOf,
   startHandAccrual,
   accrualCapFor,
   accrueAxisBonus,

@@ -78,7 +78,8 @@ export function buffFires(buff: Buff, ctx: BuffTrickContext): boolean {
       return !ctx.playerWon && (wild || (suit !== null && ctx.playerSuits.includes(suit)))
     case 'markOfRank':
       return ctx.playerWon && rank !== null && ctx.playerRanks.includes(rank)
-    // "Dodge a skull with this card" — the trick this buff was activated FOR is a Dodge.
+    // DLR-167 AC10 — "a skull trick you do not take": the trick this buff was activated FOR is a
+    // Dodge. NO BUFF ATTACHES TO A CARD; a buff rides the trick and is checked when it resolves.
     case 'sidestep':
       return ctx.skullTrick && !ctx.playerWon
     // "Eat a skull with this card" — the same trick is a Skull Win.

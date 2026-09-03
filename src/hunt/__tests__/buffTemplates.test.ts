@@ -16,17 +16,17 @@ import { wildcardBuff } from '../buffCatalog'
 import { apCostOf, isConditionFamily } from '../buffCosts'
 
 describe('BUFF_TEMPLATES', () => {
-  // DLR-162 — 18: 6 Taker + 6 Feeder + 2 Sidestep + 1 Skull Helmet + 1 Skull Tether, plus the two
-  // activated cards Cheat and the wildcard. (DLR-166 deleted a third activated card outright.)
-  it('holds exactly the 18 templates DLR-162 leaves', () => {
-    expect(BUFF_TEMPLATES).toHaveLength(18)
-    expect(BUFF_TEMPLATE_COUNT).toBe(18)
+  // DLR-167 — 19: 6 Taker + 6 Feeder + 2 Sidestep + 1 Skull Helmet + 1 Skull Tether, plus the
+  // three activated cards Cheat, the wildcard and Curse. (DLR-166 deleted a fourth outright.)
+  it('holds exactly the 19 templates DLR-167 leaves', () => {
+    expect(BUFF_TEMPLATES).toHaveLength(19)
+    expect(BUFF_TEMPLATE_COUNT).toBe(19)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Taker)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Sidestep)).toHaveLength(2)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullHelmet)).toHaveLength(1)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullTether)).toHaveLength(1)
-    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(2)
+    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(3)
   })
 
   it('DLR-161 — resolves both new template ids through templateById', () => {
@@ -163,10 +163,12 @@ describe('templateIdForBuff', () => {
 })
 
 describe('the wildcard template (DLR-162 AC1)', () => {
-  it('takes the pool to 18 - one more ACTIVATED template, no new condition template', () => {
-    expect(BUFF_TEMPLATE_COUNT).toBe(18)
+  // DLR-167 added a third ACTIVATED template on the same terms; the point this pins is that
+  // neither ticket added a CONDITION template, so `FAMILY_AXIS_TOTAL` is untouched.
+  it('takes the pool to 19 - one more ACTIVATED template, no new condition template', () => {
+    expect(BUFF_TEMPLATE_COUNT).toBe(19)
     expect(BUFF_TEMPLATES.filter((t) => t.form === 'condition')).toHaveLength(16)
-    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(2)
+    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(3)
   })
 
   it('is resolvable by its frozen bare-kind id', () => {

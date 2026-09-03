@@ -11,6 +11,7 @@ function playerFacing(playerHand: Card[], led: Card): RoundState {
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
+    cursedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

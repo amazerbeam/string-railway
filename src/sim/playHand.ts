@@ -19,6 +19,7 @@ import {
   potValue,
   QUARRY_SIDE,
   RoundPhase,
+  skullsOn,
   type AbilityChoice,
   type EncounterDeck,
 } from '../warCouncil'
@@ -197,7 +198,8 @@ export function playHand(
           side: played.side,
           suit: played.card.suit,
           rank: played.card.rank,
-          skulled: isSkulled(ui.round.skulledCards, played.card),
+          // DLR-167 — the UNION, so a card the player cursed is logged as skulled.
+          skulled: isSkulled(skullsOn(ui.round), played.card),
         })),
         trumpSuit: ui.round.trumpSuit,
         playerLed: ui.resolvedTrick.cards[0].side === PlayerSide.Player,

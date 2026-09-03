@@ -24,6 +24,7 @@ import {
   CardRank,
   isSkulled,
   RoundPhase,
+  skullsOn,
   sameCard,
   type AbilityChoice,
   type Card,
@@ -121,7 +122,8 @@ export function feltRailProps({ ui, galleryOpen }: FeltRailOptions): FeltRailPro
     spentCount: ui.round.spentPile.length,
     reshuffled: ui.round.reshuffled,
     trick: galleryOpen ? ui.round.currentTrick : null,
-    skulledCards: ui.round.skulledCards,
+    // DLR-167 — the UNION, so a card the player has cursed reads as skulled on the rail too.
+    skulledCards: skullsOn(ui.round),
     // The ONE reading of the readout's facts — built here so the rail and any future consumer
     // cannot read the trick differently, mirroring `trickConsequenceFacts`'s own stated reason.
     consequence: trickConsequence(trickConsequenceFacts(ui)),
@@ -177,13 +179,17 @@ export function feltStageProps({
     felt = createElement(TrickWell, {
       currentTrick: ui.round.currentTrick,
       resolvedTrick: ui.resolvedTrick,
-      skulledCards: ui.round.skulledCards,
-        offeredBuffs: offered,
+      skulledCards: skullsOn(ui.round),
+      offeredBuffs: offered,
       // DLR-160 AC2 — the ONE reading of skull membership for THIS trick, filtered from the
       // round's own list through the SAME `isSkulled` predicate every other reader here uses.
+      // DLR-167 — through `skullsOn`. Note the held reveal renders from the state AFTER the trick
+      // resolved, and `playCard` has already lifted the mark by then (AC7), so a curse shows here
+      // only while it is still live; the resolution screen's own `skulledInTrick`
+      // (`commitHandlers.ts`) is built from the PRE-play state and does carry it.
       skulledInTrick: ui.resolvedTrick.cards
         .map((played) => played.card)
-        .filter((card) => isSkulled(ui.round.skulledCards, card)),
+        .filter((card) => isSkulled(skullsOn(ui.round), card)),
       quarryToLead,
       onCarryOn,
     })
@@ -200,7 +206,7 @@ export function feltStageProps({
       decree: ui.round.decree,
       hand: displayHand.filter((c) => !sameCard(c, promptCard)),
       drawnCard: promptCard.rank === CardRank.Woodcutter ? (ui.round.drawPile[0] ?? null) : null,
-        onChoose: (choice: AbilityChoice) =>
+      onChoose: (choice: AbilityChoice) =>
         dispatch({ kind: RoundUiActionKind.ChooseAbility, choice }),
       onCancel,
     })
@@ -208,8 +214,8 @@ export function feltStageProps({
     felt = createElement(TrickWell, {
       currentTrick: ui.round.currentTrick,
       resolvedTrick: null,
-      skulledCards: ui.round.skulledCards,
-        offeredBuffs: offered,
+      skulledCards: skullsOn(ui.round),
+      offeredBuffs: offered,
       quarryToLead,
       onCarryOn,
     })

@@ -35,6 +35,8 @@ function renderFan(overrides = {}) {
         promptOpen={false}
         discardSelecting={false}
         discardSelection={[]}
+        skulledCards={[]}
+        curseArmed={false}
         damageForCard={() => PREVIEW}
         buffLightForCard={() => null}
         onCardEnter={() => {}}
@@ -192,6 +194,48 @@ describe('HandFan', () => {
     const keys3 = screen.getByRole('button', { name: '3 of Keys (Fox)' })
     expect(keys3.getAttribute('tabindex')).toBe('0')
     expect(document.activeElement).toBe(keys3)
+  })
+
+  describe('the curse (DLR-167)', () => {
+    it('AC4 — a cursed card in your own hand shows the skull in its accessible name', () => {
+      renderFan({ skulledCards: [card(Suit.Bells, 7)] })
+      expect(screen.getByRole('button', { name: /7 of Bells.*skull/i })).toBeDefined()
+      expect(screen.queryByRole('button', { name: /3 of Keys.*skull/i })).toBeNull()
+    })
+
+    it('AC4 — it keeps its rank and suit readable, because the trick is still won on those', () => {
+      renderFan({ skulledCards: [card(Suit.Bells, 7)] })
+      const marked = screen.getByRole('button', { name: /7 of Bells/ })
+      expect(marked.className).toContain('wc-is-skulled')
+    })
+
+    it('AC3 — leaves an ILLEGAL card tappable while a Curse is armed', () => {
+      // legal=[Moons 11] only (the default fixture), so Bells 7 is illegal to play.
+      const { onTap } = renderFan({ curseArmed: true })
+      const illegal = screen.getByRole('button', { name: '7 of Bells' })
+      expect(illegal).toHaveProperty('disabled', false)
+      illegal.click()
+      expect(onTap).toHaveBeenCalledWith(card(Suit.Bells, 7))
+    })
+
+    it('AC3 — the roving tabindex reaches an illegal card by arrow key while a Curse is armed', () => {
+      renderFan({ curseArmed: true })
+      const group = screen.getByRole('group', { name: /hand/i })
+      fireEvent.keyDown(group, { key: 'ArrowRight' })
+      const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
+      expect(fox.getAttribute('tabindex')).toBe('0')
+      expect(document.activeElement).toBe(fox)
+    })
+
+    it('does not light an illegal card just because a Curse is armed', () => {
+      renderFan({
+        curseArmed: true,
+        buffLightForCard: () => ({ count: 3, estimate: false, projection: {} as never }),
+      })
+      expect(
+        screen.getByRole('button', { name: '7 of Bells' }).querySelector('.wc-card-buff-badge'),
+      ).toBeNull()
+    })
   })
 
   describe('the buff light (DLR-153)', () => {

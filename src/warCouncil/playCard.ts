@@ -7,6 +7,7 @@ import { drawCards } from './encounterDeck'
 import { legalMoves, type PlayCardOptions } from './legalMoves'
 import { resolveTrickWinner } from './resolveTrick'
 import { swanTierFactsFor, tierForSide } from './rankTierRules'
+import { skullsOn } from './curse'
 import { trickIsSkulled } from './skulls'
 import {
   AbilityChoiceKind,
@@ -120,7 +121,10 @@ export function playCard(
     { total: next.total, roll: next.roll },
     {
       playerWon: winner === PlayerSide.Player,
-      skullTrick: trickIsSkulled(next.skulledCards, completedTrick),
+      // DLR-167 AC5 — the UNION of the Quarry's dealt skulls and the player's own curses, through
+      // the rule that already exists: a trick is a skull trick iff any card played into it is
+      // skulled. No new branch and no new outcome — a cursed player card simply flips this trick.
+      skullTrick: trickIsSkulled(skullsOn(next), completedTrick),
       finalTrick,
       baseDamageBonus: options?.baseDamageBonus ?? 0,
       // DLR-122 AC4/AC5 — the Swan ladder as two plain facts, derived by `rankTierRules.ts`,
@@ -167,6 +171,11 @@ export function playCard(
       drawPile: refill ? refill.drawPile : next.drawPile,
       drawSeed: refill ? refill.drawSeed : next.drawSeed,
       currentTrick: [],
+      // DLR-167 AC7 — the mark is for ONE trick and lapses at its resolution, whether or not the
+      // cursed card was played. Clearing the whole list covers both branches with no per-card
+      // bookkeeping and no fuse counter: a curse never spans more than one trick. Written AFTER
+      // `skullTrick` was computed above, so the trick it was made for still reads as skulled.
+      cursedCards: [],
       // DLR-123 AC3 — the trick's two cards go face-down to the spent pile AS THE TRICK RESOLVES.
       // THE single place this pile grows: `dealRound` seeds it and `closeHand` reads it, and
       // nothing else in the engine writes it, so a card cannot be spent twice or spent early.

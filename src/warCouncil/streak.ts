@@ -1,8 +1,10 @@
 import {
   advanceTricksWithoutHit,
   BASE_DAMAGE,
+  curseBonusOf,
   DAMAGE_PER_HIT,
   DuelSide,
+  EMPTY_CURSE_BONUS,
   resolveTrickBuffs,
   streakProtectionFor,
   trickBonusFor,
@@ -231,8 +233,16 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     // and nothing else. The Overlap Bonus joins `bm` here, and is carried out separately on
     // `TrickDamage` so the resolution screen can beat it alone (AC16).
     const bonus = trick.buffs === null ? EMPTY_TRICK_BONUS : trickBonusFor(fired, false)
-    const base = BASE_DAMAGE + safeBonus(trick.baseDamageBonus)
-    const buffMult = 1 + bonus.multiplierBonus + bonus.overlapBonus
+    // DLR-167 AC6 — DERIVED here from the buffs riding this trick, for the reason the
+    // `streakProtectionFor` note above gives: they are already in scope, and handing this in on
+    // `TrickFacts` would make the caller evaluate the same set a second time.
+    // Reads `trick.buffs.active`, NOT `fired`: a Curse is `BuffCadence.Activated`, so it is
+    // excluded from the fired set by design and its payoff is owed for the trick it was ACTIVATED
+    // for. Only a BANKED trick reaches this branch at all, which is what makes AC6's reward
+    // self-gating with no "only on a dodge" condition written anywhere.
+    const curse = trick.buffs === null ? EMPTY_CURSE_BONUS : curseBonusOf(trick.buffs.active)
+    const base = BASE_DAMAGE + safeBonus(trick.baseDamageBonus) + safeBonus(curse.damage)
+    const buffMult = 1 + bonus.multiplierBonus + bonus.overlapBonus + safeBonus(curse.multiplier)
     trickDamage = {
       base,
       buffDamage: bonus.flatDamageBonus,

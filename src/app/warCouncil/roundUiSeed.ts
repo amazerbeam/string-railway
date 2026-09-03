@@ -70,6 +70,8 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     encounter: seed.encounter,
     openingEncounter: seed.encounter,
     cheatTricksRemaining: 0,
+    // DLR-167 — a hand opens with no Curse armed. A hand-scoped transient, like `cheatTricksRemaining`.
+    curseArmedBuff: null,
     baseDamageBonus: seed.baseDamageBonus,
     rankTiers: seed.rankTiers ?? ALL_BRONZE,
     unplayedAtResolve: null,

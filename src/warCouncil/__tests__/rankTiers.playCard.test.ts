@@ -119,6 +119,7 @@ describe('the ladder through playCard (AC2/AC3/AC6)', () => {
       trumpSuit: Suit.Bells,
       tricksWon: { player: 0, cpu: 0 },
       skulledCards: [],
+      cursedCards: [],
       spentPile: [],
       reshuffled: false,
       drawSeed: 0,

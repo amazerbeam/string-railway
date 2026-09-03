@@ -62,7 +62,7 @@ export function openingPileWeightOf(template: BuffTemplate): number {
  * `rng` is REQUIRED, not defaulted. A defaulted generator would let a call site drop determinism
  * with no compile error, and determinism is the one property this function must not lose.
  *
- * Drawn WITH REPLACEMENT as of DLR-145: the pool is 18 templates and the opening pile is 20 cards,
+ * Drawn WITH REPLACEMENT as of DLR-145: the pool is 19 templates and the opening pile is 20 cards,
  * so distinctness is arithmetically impossible — and it is also not wanted. Three bronze Bell-Takers
  * is exactly the shape design §3.4's "one fight's ammunition" describes. The short-draw THROW is
  * kept and still means what it always meant: an all-zero weight table, which is a configuration bug

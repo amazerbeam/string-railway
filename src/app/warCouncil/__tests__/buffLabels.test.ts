@@ -135,7 +135,9 @@ describe('buffCadenceWord — AC9, derived from BUFF_CADENCE, never authored per
     const sidestep: Buff = { ...taker, kind: BuffKind.Sidestep, condition: { kind: 'sidestep' } }
     expect(buffCadenceWord(taker)).toBe('TAKE')
     expect(buffCadenceWord(feeder)).toBe('MISS')
-    expect(buffCadenceWord(sidestep)).toBe('DODGE')
+    // DLR-167 AC10 — the old face word collided with the card's own name and with "dodge" as the
+    // name of a trick outcome.
+    expect(buffCadenceWord(sidestep)).toBe('SKULL LOSS')
   })
 
   it("resolves Threshold families ('WHEN') and Terminal families ('HAND END')", () => {

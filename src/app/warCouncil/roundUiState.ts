@@ -128,6 +128,10 @@ export interface RoundUiState {
    *  `commit` on the `null` -> non-null edge of `resolvedTrick`; cleared by `ApplyPot` and
    *  `RollOver`. */
   readonly resolution: ResolutionView | null
+  /** DLR-167 AC3 — the Curse that has been PAID FOR and is waiting for a hand card, or `null`.
+   *  Holds the `Buff` itself rather than a figure, because `curseRewardOf` needs the TIER when the
+   *  cursed trick resolves. The hand's OWN transient: dies on remount, never touches `RunState`. */
+  readonly curseArmedBuff: Buff | null
 }
 
 // `ResolutionView` lives in `resolutionView.ts` now (DLR-160 — this file was at its 400-line
@@ -197,6 +201,18 @@ export type RoundUiAction =
  *  live Cheat is now a COUNT of tricks still owed, not a two-stage selection. */
 export function cheatArmed(state: RoundUiState): boolean {
   return state.cheatTricksRemaining > 0
+}
+
+/** DLR-167 AC3 — a Curse has been paid for and the next hand tap MARKS rather than plays. */
+export function curseArmed(state: RoundUiState): boolean {
+  return state.curseArmedBuff !== null
+}
+
+/** Either half of "a hand tap is already claimed by a Curse" — armed and waiting, or a card already
+ *  marked. Both the disabled row and the reducer branch read THIS, never one half, so a row's
+ *  greyed state and the reducer's guard cannot disagree. */
+export function curseLive(state: RoundUiState): boolean {
+  return curseArmed(state) || state.round.cursedCards.length > 0
 }
 
 /** The felt is waiting on the player's own card — nothing is held, nothing is prompting, the
@@ -300,5 +316,12 @@ export function buffActivationStock(
   activation: BuffActivationState,
   buff: Buff,
 ): BuffActivationStock {
-  return buffActivationStockFor(activation, buff, buffActivationWindowOpen(state, buff))
+  // DLR-167 — the felt's own `curseLive` fact joins the window as the second thing only this layer
+  // can know. `buffActivationStockFor` folds in the KIND term, so this passes the plain fact.
+  return buffActivationStockFor(
+    activation,
+    buff,
+    buffActivationWindowOpen(state, buff),
+    curseLive(state),
+  )
 }

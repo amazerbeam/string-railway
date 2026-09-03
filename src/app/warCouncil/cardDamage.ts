@@ -28,6 +28,7 @@ import {
   sameCard,
   swanTierFactsFor,
   RoundPhase,
+  skullsOn,
   trickIsSkulled,
   type Card,
   type TrickCard,
@@ -100,7 +101,8 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
   const finalTrick = state.round.tricksPlayed + 1 === HAND_SIZE
   const remainingHand = state.round.hands[PlayerSide.Player].filter((c) => !sameCard(c, card))
   const shared: Omit<TrickFacts, 'playerWon'> = {
-    skullTrick: trickIsSkulled(state.round.skulledCards, visible),
+    // DLR-167 — the UNION, so a preview of a card the player has cursed reads as the dodge it is.
+    skullTrick: trickIsSkulled(skullsOn(state.round), visible),
     finalTrick,
     baseDamageBonus: options.baseDamageBonus ?? 0,
     // DLR-122 — the Swan ladder, derived exactly as `playCard.ts` derives it, from the same

@@ -68,6 +68,10 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     // weight makes the card rarely APPEAR, but on a visit where it does appear it is as likely as
     // anything else on that strip. See `tasks.md` → Developer decides or observes.
     [BuffKind.Wildcard]: 1,
+    // DLR-167 — NOBODY CHOSE THIS NUMBER. Curse is an in-hand tactical play exactly as Cheat is,
+    // so it carries Cheat's weight. Only RATIOS matter within one machine's table.
+    // UNIT: relative weight, >= 0, unitless. See `tasks.md` → Developer decides or observes.
+    [BuffKind.Curse]: 3,
   },
   [SlotMachineId.Strongbox]: {
     [BuffKind.Taker]: 2,
@@ -81,6 +85,8 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     // DLR-162 AC10 — see the Skirmisher table's comment above; same PLACEHOLDER, nobody-approved
     // status. UNIT: relative weight, >= 0, unitless.
     [BuffKind.Wildcard]: 1,
+    // DLR-167 — see the Skirmisher table's comment above; same nobody-approved status.
+    [BuffKind.Curse]: 1,
   },
 }
 

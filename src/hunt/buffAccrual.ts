@@ -1,3 +1,4 @@
+import { curseRewardOf, type CurseBonus } from './buffCatalog'
 import { isProtectiveAxis, narrowToCostAxis, type BuffCostAxis } from './buffCosts'
 import type { Buff } from './buffs'
 import {
@@ -185,6 +186,32 @@ export function resolveFiredBuffs(
     next = accrueAxisBonus(next, BuffRewardAxis.Multiplier, overlap)
   }
   return next
+}
+
+/** DLR-167 — no Curse riding this trick. A real answer rather than this codebase's plausible-zero
+ *  trap: no Curse genuinely pays nothing. */
+export const EMPTY_CURSE_BONUS: CurseBonus = { damage: 0, multiplier: 0 }
+
+/**
+ * DLR-167 AC6 — the two figures the Curses riding THIS trick pay into it, summed.
+ *
+ * Reads the ACTIVATED set, not the fired set, and that is the whole point: a Curse is
+ * `BuffCadence.Activated`, so `firedBuffs` excludes it by design and it has no `buffFires` case to
+ * gain. Its payoff is owed for the trick it was ACTIVATED for, not for a condition coming true.
+ *
+ * Deliberately NOT routed through `BuffBonusAccrual`: that accrual is the HAND's running total and
+ * would carry a one-trick bonus into later tricks.
+ */
+export function curseBonusOf(active: readonly Buff[]): CurseBonus {
+  return active
+    .filter((buff) => buff.kind === BuffKind.Curse)
+    .reduce((sum, buff) => {
+      const reward = curseRewardOf(buff)
+      return {
+        damage: sum.damage + reward.damage,
+        multiplier: sum.multiplier + reward.multiplier,
+      }
+    }, EMPTY_CURSE_BONUS)
 }
 
 /** DLR-156 AC11 — ONE trick's buff contribution, for THAT trick only. Nothing pools. */

@@ -43,6 +43,7 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
     trumpSuit: Suit.Bells,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
     skulledCards: [],
+    cursedCards: [],
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,

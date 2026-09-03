@@ -63,6 +63,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
       buffActivationRefusalFor({
         shopOnly: false,
         effectLive: true,
+        curseLive: false,
         windowOpen: true,
         apPool: 1,
         apCost: 2,
@@ -76,6 +77,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
       buffActivationRefusalFor({
         shopOnly: false,
         effectLive: true,
+        curseLive: false,
         windowOpen: false,
         apPool: 6,
         apCost: 2,
@@ -89,6 +91,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
       buffActivationRefusalFor({
         shopOnly: false,
         effectLive: true,
+        curseLive: false,
         windowOpen: true,
         apPool: 6,
         apCost: 2,
@@ -102,6 +105,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
       buffActivationRefusalFor({
         shopOnly: false,
         effectLive: true,
+        curseLive: false,
         windowOpen: true,
         apPool: 6,
         apCost: 2,
@@ -115,6 +119,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
       buffActivationRefusalFor({
         shopOnly: false,
         effectLive: true,
+        curseLive: false,
         windowOpen: false,
         apPool: 0,
         apCost: 5,
@@ -128,6 +133,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
       buffActivationRefusalFor({
         shopOnly: false,
         effectLive: false,
+        curseLive: false,
         windowOpen: false,
         apPool: 0,
         apCost: 5,
@@ -141,6 +147,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
       buffActivationRefusalFor({
         shopOnly: false,
         effectLive: false,
+        curseLive: false,
         windowOpen: true,
         apPool: STARTING_AP,
         apCost: 1,
@@ -363,6 +370,7 @@ describe('ShopOnly (DLR-162)', () => {
   const openStock = {
     shopOnly: false,
     effectLive: true,
+    curseLive: false,
     windowOpen: true,
     apPool: STARTING_AP,
     apCost: 1,
@@ -380,6 +388,7 @@ describe('ShopOnly (DLR-162)', () => {
       ...openStock,
       shopOnly: true,
       effectLive: false,
+      curseLive: false,
       windowOpen: false,
       alreadyActive: true,
     }

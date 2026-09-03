@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-09-03
 
 **Goal:** Give the player a drawable, activated card that puts a skull on a card in their own hand, turning a trick they were going to throw away into a dodge that banks — through the skull-trick rule that already exists, with the mark lapsing at that trick's resolution.
@@ -67,7 +67,7 @@ Started: 2026-09-03
 
 The engine half. `RoundState` gains `cursedCards`, a new module owns it, every reader whose question is "is this a skull trick" reads the union, and the mark lapses at trick resolution. The phase is a safe stopping point because it ends with the whole tree type-checking and the new field defaulted to empty everywhere — nothing yet writes a curse, so behaviour is unchanged and every existing test still passes. Task 1 deliberately changes the shape and all 21 construction sites together: splitting them leaves a boundary where the app does not compile.
 
-### Task 1: Add `cursedCards` to `RoundState` and fill every construction site
+### Task 1: Add `cursedCards` to `RoundState` and fill every construction site ✓
 
 - Skill: react-frontend
 
@@ -77,7 +77,7 @@ The engine half. `RoundState` gains `cursedCards`, a new module owns it, every r
 - Modify: `src/warCouncil/deal.ts:57`, `src/warCouncil/abilities.ts:39`, `src/warCouncil/discard.ts:98`, `src/warCouncil/encounterDeck.ts:148`, `src/warCouncil/encounterDeck.ts:163`, `src/warCouncil/playCard.ts:174`
 - Test: `src/app/warCouncil/__tests__/roundFixture.ts:49`, `src/warCouncil/__tests__/abilities.test.ts:29`, `src/warCouncil/__tests__/cpuPlayer.test.ts:39`, `src/warCouncil/__tests__/cpuPlayer.test.ts:297`, `src/warCouncil/__tests__/discard.test.ts:34`, `src/warCouncil/__tests__/drawCards.test.ts:24`, `src/warCouncil/__tests__/handRefill.test.ts:140`, `src/warCouncil/__tests__/legalMoves.test.ts:20`, `src/warCouncil/__tests__/legalMovesQuarry.test.ts:17`, `src/warCouncil/__tests__/playCard.bank.test.ts:26`, `src/warCouncil/__tests__/playCard.test.ts:29`, `src/warCouncil/__tests__/playCard.timebomb.test.ts:29`, `src/warCouncil/__tests__/quarryIntent.test.ts:31`, `src/warCouncil/__tests__/rankTiers.playCard.test.ts:125`, `src/warCouncil/__tests__/types.test.ts:16`
 
-- [ ] **Step 1: Add the field to `RoundState`, directly below `primedCards`**
+- [x] **Step 1: Add the field to `RoundState`, directly below `primedCards`**
 
 ```ts
   /** DLR-167 AC3/AC7 — cards the PLAYER has cursed for the COMING TRICK. Unlike `skulledCards`
@@ -93,16 +93,16 @@ The engine half. `RoundState` gains `cursedCards`, a new module owns it, every r
   readonly cursedCards: readonly Card[]
 ```
 
-- [ ] **Step 2: Add `cursedCards: []` to all 21 literals listed above**
+- [x] **Step 2: Add `cursedCards: []` to all 21 literals listed above**
 
 Every one is a complete `RoundState` object literal. Add the field beside the existing `primedCards: []` (or `primedCards: [...]`) entry in each. In `playCard.ts:174` the value is **not** `[]` — Task 3 replaces it; write `cursedCards: next.cursedCards` for now so this task is behaviour-neutral.
 
-- [ ] **Step 3: Typecheck — the compiler is the authority on the count, not this plan**
+- [x] **Step 3: Typecheck — the compiler is the authority on the count, not this plan**
 
 Run: `npm run typecheck`
 Expected: exits 0. If it names a literal not listed above, add the field there too and note it — the plan's count of 21 came from a proxy grep and `tsc` is the real list.
 
-### Task 2: The curse module — the mark and the one union
+### Task 2: The curse module — the mark and the one union ✓
 
 - Skill: react-frontend
 
@@ -112,7 +112,7 @@ Expected: exits 0. If it names a literal not listed above, add the field there t
 - Modify: `src/warCouncil/index.ts` — re-export `isCursed`, `curseCard`, `uncurseCard`, `skullsOn`
 - Test: `src/warCouncil/__tests__/curse.test.ts`
 
-- [ ] **Step 1: Write the failing test for the mark's four invariants and the union**
+- [x] **Step 1: Write the failing test for the mark's four invariants and the union**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -147,7 +147,7 @@ describe('skullsOn', () => {
 Run: `npx vitest run src/warCouncil/__tests__/curse.test.ts`
 Expected: fails to resolve `../curse` — the module does not exist yet.
 
-- [ ] **Step 2: Write `src/warCouncil/curse.ts`**
+- [x] **Step 2: Write `src/warCouncil/curse.ts`**
 
 Mirror `src/warCouncil/timebomb.ts` in shape, naming and docblock discipline. `curseCard` and `uncurseCard` **throw** (`RangeError`) exactly as `primeCard`/`unprimeCard` do — a silent no-op would let the player spend a card for a mark that was never made — and the docblock must say the reducer guards both conditions first, because a reducer must not throw during an event handler.
 
@@ -177,7 +177,7 @@ export function uncurseCard(state: RoundState, card: Card): RoundState
 Run: `npx vitest run src/warCouncil/__tests__/curse.test.ts`
 Expected: exits 0, all cases pass.
 
-### Task 3: Read the union for the skull trick, and lapse the mark at resolution
+### Task 3: Read the union for the skull trick, and lapse the mark at resolution ✓
 
 - Skill: react-frontend
 
@@ -186,20 +186,20 @@ Expected: exits 0, all cases pass.
 - Modify: `src/warCouncil/playCard.ts:125` (the `skullTrick` read), `src/warCouncil/playCard.ts:174` (the lapse)
 - Test: `src/warCouncil/__tests__/playCard.curse.test.ts`
 
-- [ ] **Step 1: Write the failing test for the flip and the lapse**
+- [x] **Step 1: Write the failing test for the flip and the lapse**
 
 Three cases, all against the real `playCard`: a cursed player card played into a trick the player **loses** resolves as a **dodge** (banks, no health lost); the same card played into a trick the player **wins** is an eaten skull (hurts, banks nothing); and `cursedCards` is **empty** on the returned state after any trick resolves, including when the cursed card was never played.
 
 Run: `npx vitest run src/warCouncil/__tests__/playCard.curse.test.ts`
 Expected: fails — `skullTrick` still reads `skulledCards` alone, so the cursed trick resolves as a clean loss.
 
-- [ ] **Step 2: Read the union at line 125**
+- [x] **Step 2: Read the union at line 125**
 
 ```ts
       skullTrick: trickIsSkulled(skullsOn(next), completedTrick),
 ```
 
-- [ ] **Step 3: Clear the mark where the trick resolves, at line 174**
+- [x] **Step 3: Clear the mark where the trick resolves, at line 174**
 
 ```ts
     // AC7 — the mark is for ONE trick and lapses at its resolution, whether or not the cursed
@@ -211,7 +211,7 @@ Expected: fails — `skullTrick` still reads `skulledCards` alone, so the cursed
 Run: `npx vitest run src/warCouncil/__tests__/playCard.curse.test.ts src/warCouncil/__tests__/playCard.test.ts src/warCouncil/__tests__/playCard.bank.test.ts`
 Expected: exits 0. The two pre-existing suites must be unaffected — nothing curses anything yet outside the new spec.
 
-### Task 4: Convert the remaining skull readers to the union
+### Task 4: Convert the remaining skull readers to the union ✓
 
 - Skill: react-frontend
 
@@ -219,11 +219,11 @@ Expected: exits 0. The two pre-existing suites must be unaffected — nothing cu
 
 - Modify: `src/app/warCouncil/buffRideModel.ts:115,117`, `src/app/warCouncil/cardDamage.ts:104`, `src/app/warCouncil/commitHandlers.ts:186`, `src/app/warCouncil/trickConsequenceModel.ts:146`, `src/app/warCouncil/roundControlsProps.ts:126,183,190,216`, `src/sim/playHand.ts:200`, `src/sim/skilledCardPlay.ts:153,302,310`
 
-- [ ] **Step 1: Replace each `…round.skulledCards` with `skullsOn(…round)`**
+- [x] **Step 1: Replace each `…round.skulledCards` with `skullsOn(…round)`**
 
 Twelve sites in this task (the thirteenth, `playCard.ts:125`, was Task 3). Each becomes e.g. `trickIsSkulled(skullsOn(state.round), visible)` and `isSkulled(skullsOn(ui.round), card)`. Import `skullsOn` from `../../warCouncil` (app) or `../warCouncil` (sim).
 
-- [ ] **Step 2: Leave the six Quarry-side readers alone, and say why in a comment**
+- [x] **Step 2: Leave the six Quarry-side readers alone, and say why in a comment**
 
 Do **not** convert `src/app/warCouncil/WarCouncilTable.tsx:154`, `src/sim/skilledCardPlay.ts:81,267,283`, `src/warCouncil/cpuPlayer.ts:66`, or `deal.ts`'s write. Add this one-line comment above each of the five reads:
 
@@ -232,12 +232,12 @@ Do **not** convert `src/app/warCouncil/WarCouncilTable.tsx:154`, `src/sim/skille
 // A skull the player just put on their own card is not something the Quarry knows or is shown.
 ```
 
-- [ ] **Step 3: Prove no skull-trick reader was missed**
+- [x] **Step 3: Prove no skull-trick reader was missed**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "\.skulledCards"`
 Expected: every remaining hit is one of the six commented Quarry-side sites, `deal.ts`'s write, `skulls.ts`'s own parameters, `resolutionView.ts:23`'s docblock, or a test literal. No uncommented reader outside that set.
 
-- [ ] **Step 4: Typecheck and run the affected suites**
+- [x] **Step 4: Typecheck and run the affected suites**
 
 Run: `npm run typecheck; npx vitest run src/warCouncil src/app/warCouncil`
 Expected: both exit 0; Vitest reports 0 failed.
@@ -248,7 +248,7 @@ Expected: both exit 0; Vitest reports 0 failed.
 
 The pure `src/hunt/` half: Curse becomes a real, mintable, priced card with tier figures, single-use and non-revocable. Nothing on the felt can reach it yet, so the phase ends type-checking with the card constructible and fully unit-tested but unreachable by a player — the same state DLR-161 left its two cards in before its own UI task.
 
-### Task 5: `BuffKind.Curse` and the three total maps
+### Task 5: `BuffKind.Curse` and the three total maps ✓
 
 - Skill: react-frontend
 
@@ -257,7 +257,7 @@ The pure `src/hunt/` half: Curse becomes a real, mintable, priced card with tier
 - Modify: `src/hunt/buffs.ts` — the `BuffKind` member and its `BUFF_CADENCE` row
 - Modify: `src/app/warCouncil/buffLabels.ts` — `BUFF_FAMILY_WORD` and `BUFF_CONDITION_SENTENCE`
 
-- [ ] **Step 1: Add the member and its cadence row**
+- [x] **Step 1: Add the member and its cadence row**
 
 ```ts
   /** DLR-167 — the player's own skull. An Activated card: the player presses it, so it has no
@@ -269,7 +269,7 @@ The pure `src/hunt/` half: Curse becomes a real, mintable, priced card with tier
   [BuffKind.Curse]: BuffCadence.Activated,
 ```
 
-- [ ] **Step 2: Add Curse's two label rows**
+- [x] **Step 2: Add Curse's two label rows**
 
 ```ts
   [BuffKind.Curse]: 'Curse',
@@ -279,12 +279,12 @@ The pure `src/hunt/` half: Curse becomes a real, mintable, priced card with tier
   [BuffKind.Curse]: 'put a skull on a card in your hand',
 ```
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0. All three `Record<BuffKind, …>` maps are total, so a missed row fails here — that is the designed behaviour and the reason this is one task.
 
-### Task 6: Curse's tier figures and its minting function
+### Task 6: Curse's tier figures and its minting function ✓
 
 - Skill: react-frontend
 
@@ -294,7 +294,7 @@ Expected: exits 0. All three `Record<BuffKind, …>` maps are total, so a missed
 - Modify: `src/hunt/index.ts` — export `CurseBonus`, `CURSE_REWARD`, `curseBuff`, `curseRewardOf`
 - Test: `src/hunt/__tests__/curseCard.test.ts`
 
-- [ ] **Step 1: Write the failing test for the tier figures and the throw**
+- [x] **Step 1: Write the failing test for the tier figures and the throw**
 
 ```ts
 it('pays AC6 figures at each tier', () => {
@@ -313,7 +313,7 @@ it('throws on a buff that is not a Curse', () => {
 Run: `npx vitest run src/hunt/__tests__/curseCard.test.ts`
 Expected: fails — none of the three symbols exists.
 
-- [ ] **Step 2: Add the pair type and the tier table**
+- [x] **Step 2: Add the pair type and the tier table**
 
 ```ts
 /** Curse's two figures at one tier. A PAIR, not one number, for `TimebombDamage`'s stated reason:
@@ -336,14 +336,14 @@ export const CURSE_REWARD: Readonly<Record<BuffTier, CurseBonus>> = {
 }
 ```
 
-- [ ] **Step 3: Add `curseBuff` and `curseRewardOf`**
+- [x] **Step 3: Add `curseBuff` and `curseRewardOf`**
 
 `curseBuff` mirrors `timebombBuff` — `condition: ACTIVATED_BUFF_CONDITION`, and `reward: { axis: BuffRewardAxis.Magnitude, value: CURSE_REWARD[tier].damage }`, the damage half as the headline figure. `curseRewardOf` throws a `RangeError` naming the kind on any other card, for `timebombDamageOf`'s stated reason.
 
 Run: `npx vitest run src/hunt/__tests__/curseCard.test.ts`
 Expected: exits 0.
 
-### Task 7: The template — Curse is minted from the slot machine
+### Task 7: The template — Curse is minted from the slot machine ✓
 
 - Skill: react-frontend
 
@@ -352,7 +352,7 @@ Expected: exits 0.
 - Modify: `src/hunt/buffTemplates.ts`
 - Test: `src/hunt/__tests__/curseCard.test.ts` (extend)
 
-- [ ] **Step 1: Extend the spec for the pool and the minting path**
+- [x] **Step 1: Extend the spec for the pool and the minting path**
 
 ```ts
 it('mints Curse from its activated template', () => {
@@ -371,7 +371,7 @@ it('round-trips a minted Curse back to its template id', () => {
 Run: `npx vitest run src/hunt/__tests__/curseCard.test.ts`
 Expected: fails — no `curse` template.
 
-- [ ] **Step 2: Widen the activated kind and add the row**
+- [x] **Step 2: Widen the activated kind and add the row**
 
 ```ts
 export type BuffActivatedTemplateKind =
@@ -388,18 +388,18 @@ export type BuffActivatedTemplateKind =
   { form: 'activated', id: 'curse', kind: BuffKind.Curse },
 ```
 
-- [ ] **Step 3: Replace `mintFromTemplate`'s two-way ternary with a total narrowing**
+- [x] **Step 3: Replace `mintFromTemplate`'s two-way ternary with a total narrowing**
 
 The current activated branch is `template.kind === BuffKind.Cheat ? cheatBuff(…) : timebombBuff(…)`, which would silently mint a Timebomb for a Curse. Replace it with a `switch` over `template.kind` that returns `cheatBuff` / `timebombBuff` / `curseBuff`, so a fourth activated kind fails to compile here rather than minting the wrong card.
 
-- [ ] **Step 4: Update this file's own docblock and `BUFF_TEMPLATES`' count comment**
+- [x] **Step 4: Update this file's own docblock and `BUFF_TEMPLATES`' count comment**
 
 Both currently say 18. State 19, and that DLR-167 adds one **activated** template — not a `TEMPLATE_FAMILIES` row, and not a restoration of any cut condition family.
 
 Run: `npx vitest run src/hunt`
 Expected: exits 0; Vitest reports 0 failed. Any pre-existing spec asserting a count of 18 is updated in this task.
 
-### Task 8: Curse's price, its single use, and its non-revocability
+### Task 8: Curse's price, its single use, and its non-revocability ✓
 
 - Skill: react-frontend
 
@@ -410,7 +410,7 @@ Expected: exits 0; Vitest reports 0 failed. Any pre-existing spec asserting a co
 - Config: `src/hunt/buffCosts.ts` — Curse's three AP figures (**a developer decision**, see the File map)
 - Test: `src/hunt/__tests__/curseCard.test.ts` (extend)
 
-- [ ] **Step 1: Extend the spec for the price, the single use, and the non-revocability**
+- [x] **Step 1: Extend the spec for the price, the single use, and the non-revocability**
 
 ```ts
 it('is priced through the existing consumable table (AC2)', () => {
@@ -427,7 +427,7 @@ it('cannot be taken back off the trick (AC8)', () => {
 Run: `npx vitest run src/hunt/__tests__/curseCard.test.ts`
 Expected: fails — `apCostOf` throws on an unpriced kind.
 
-- [ ] **Step 2: Add the price row, with the placeholder marked**
+- [x] **Step 2: Add the price row, with the placeholder marked**
 
 ```ts
   // DLR-167 AC2 — "a tiered action-point cost from the existing cost table". That table had no
@@ -439,7 +439,7 @@ Expected: fails — `apCostOf` throws on an unpriced kind.
   [BuffKind.Curse]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 4 },
 ```
 
-- [ ] **Step 3: Add the single-use row, and add NOTHING to `REVOCABLE_BUFF_KINDS`**
+- [x] **Step 3: Add the single-use row, and add NOTHING to `REVOCABLE_BUFF_KINDS`**
 
 ```ts
   // DLR-167 AC8 — spent on use, matching Cheat: putting a skull on a card has already changed
@@ -452,7 +452,7 @@ AC8's other half is an **omission**: Curse must NOT be added to `REVOCABLE_BUFF_
 Run: `npx vitest run src/hunt`
 Expected: exits 0; Vitest reports 0 failed.
 
-### Task 9: Curse's payoff reaches the trick's damage
+### Task 9: Curse's payoff reaches the trick's damage ✓
 
 - Skill: react-frontend
 
@@ -465,7 +465,7 @@ Expected: exits 0; Vitest reports 0 failed.
 
 **Do not add a field to `TrickFacts`.** See this file's header.
 
-- [ ] **Step 1: Extend the spec for the two figures and the self-gating**
+- [x] **Step 1: Extend the spec for the two figures and the self-gating**
 
 ```ts
 it('adds a silver Curse\'s +2 to the dodged trick\'s damage', () => { /* base 5 -> 7 */ })
@@ -478,7 +478,7 @@ it('pays NOTHING on a trick the player won with the curse — self-gating (AC6)'
 Run: `npx vitest run src/warCouncil/__tests__/playCard.curse.test.ts`
 Expected: fails — the dodged trick banks the base figure only.
 
-- [ ] **Step 2: Add `curseBonusOf` to `buffAccrual.ts`**
+- [x] **Step 2: Add `curseBonusOf` to `buffAccrual.ts`**
 
 ```ts
 const EMPTY_CURSE_BONUS: CurseBonus = { damage: 0, multiplier: 0 }
@@ -503,7 +503,7 @@ export function curseBonusOf(active: readonly Buff[]): CurseBonus {
 }
 ```
 
-- [ ] **Step 3: Fold the two terms into the banked branch of `resolveTrickBank`**
+- [x] **Step 3: Fold the two terms into the banked branch of `resolveTrickBank`**
 
 Beside the existing `trickBonusFor(fired, false)` and `streakProtectionFor(fired)` derivations — which is where a figure derived from this trick's own buffs belongs, per `streakProtectionFor`'s own docblock:
 
@@ -529,7 +529,7 @@ Expected: both exit 0; Vitest reports 0 failed.
 
 The interaction. Activation is entirely existing machinery — Curse rides the same two-tap loadout row as every other card — so the new work is the arming flag, the tap that marks rather than plays, and the skull reaching the hand. The phase ends with the card fully playable end to end. Layout and interaction throughout follow `mockup.html` in this folder.
 
-### Task 10: The armed-Curse state and its refusal
+### Task 10: The armed-Curse state and its refusal ✓
 
 - Skill: react-frontend
 
@@ -539,14 +539,14 @@ The interaction. Activation is entirely existing machinery — Curse rides the s
 - Modify: `src/app/warCouncil/roundUiState.ts` — `curseArmedBuff`, `curseArmed`, `curseLive`, the stock wiring
 - Test: `src/app/warCouncil/__tests__/roundReducer.curse.test.ts`
 
-- [ ] **Step 1: Write the failing test for the mutual refusal**
+- [x] **Step 1: Write the failing test for the mutual refusal**
 
 A Curse armed refuses a Timebomb and a second Curse with `CurseLive`; a Timebomb armed still refuses a Curse with `TimebombLive`; neither refuses anything once the trick has resolved and the state is cleared.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.curse.test.ts`
 Expected: fails — `CurseLive` does not exist.
 
-- [ ] **Step 2: Add the refusal member, the stock field, and the order**
+- [x] **Step 2: Add the refusal member, the stock field, and the order**
 
 ```ts
   /** DLR-167 — a Curse is armed and waiting for a hand card, or a card is already cursed. Refuses
@@ -557,7 +557,7 @@ Expected: fails — `CurseLive` does not exist.
 
 Order becomes `NoEffectYet → WindowClosed → TimebombLive → CurseLive → AlreadyActive → InsufficientAp`, and `buffActivationStockFor` gains `curseLive` alongside `timebombLive`. Set `timebombLive` true for a **Curse** as well when a Timebomb is live, and `curseLive` true for a **Timebomb** as well when a Curse is live — the point is that either armed card blocks the other, not that each blocks only itself.
 
-- [ ] **Step 3: Add the felt state and its two predicates**
+- [x] **Step 3: Add the felt state and its two predicates**
 
 ```ts
   /** DLR-167 AC3 — the Curse that has been PAID FOR and is waiting for a hand card, or `null`.
@@ -582,7 +582,7 @@ Add `curseArmedBuff: null` to every `RoundUiState` construction site the typeche
 Run: `npm run typecheck; npx vitest run src/app/warCouncil/__tests__/roundReducer.curse.test.ts`
 Expected: both exit 0.
 
-### Task 11: Spending a Curse arms it
+### Task 11: Spending a Curse arms it ✓
 
 - Skill: react-frontend
 
@@ -591,19 +591,19 @@ Expected: both exit 0.
 - Modify: `src/app/warCouncil/buffHandlers.ts` — the Curse branch of the commit path
 - Test: `src/app/warCouncil/__tests__/roundReducer.curse.test.ts` (extend)
 
-- [ ] **Step 1: Extend the spec — spending a Curse costs AP, removes the card, and arms the mode**
+- [x] **Step 1: Extend the spec — spending a Curse costs AP, removes the card, and arms the mode**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.curse.test.ts`
 Expected: fails — `curseArmedBuff` stays `null` after the spend.
 
-- [ ] **Step 2: Set `curseArmedBuff` on the commit, beside the existing Cheat and Timebomb branches**
+- [x] **Step 2: Set `curseArmedBuff` on the commit, beside the existing Cheat and Timebomb branches**
 
 `activateFromPile` already spends the AP and removes the single-use card; the only addition is `curseArmedBuff: buff` on the returned state when `buff.kind === BuffKind.Curse`. Follow the Timebomb branch's shape exactly. Thread the real `curseLive(state)` fact into `activateFromPile`'s guard the way DLR-154's fix threads `timebombLive`, so the throw-guard is a real re-check rather than an assumed one.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.curse.test.ts src/app/warCouncil/__tests__/buffHandlers.test.ts`
 Expected: exits 0; Vitest reports 0 failed.
 
-### Task 12: The tap that marks rather than plays
+### Task 12: The tap that marks rather than plays ✓
 
 - Skill: react-frontend
 
@@ -612,14 +612,14 @@ Expected: exits 0; Vitest reports 0 failed.
 - Modify: `src/app/warCouncil/roundReducer.ts` — `handleTapCard`'s new branch and a `curseTapped` helper
 - Test: `src/app/warCouncil/__tests__/roundReducer.curse.test.ts` (extend)
 
-- [ ] **Step 1: Extend the spec — the illegal card is a legal target (AC3)**
+- [x] **Step 1: Extend the spec — the illegal card is a legal target (AC3)**
 
 Assert that with a Curse armed, tapping a card that `legalMoves` excludes still marks it; that a second tap on an already-cursed card is a no-op that keeps the mode open; and that a tap on a card not in hand clears `curseArmedBuff` rather than throwing.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.curse.test.ts`
 Expected: fails — the tap arms/plays instead of marking.
 
-- [ ] **Step 2: Add the branch, beside the Timebomb's, above the `canAct` guard**
+- [x] **Step 2: Add the branch, beside the Timebomb's, above the `canAct` guard**
 
 ```ts
   // DLR-167 AC3 — NOT `canAct`-gated, for the reason the Timebomb branch above gives: a Curse can
@@ -630,14 +630,14 @@ Expected: fails — the tap arms/plays instead of marking.
   }
 ```
 
-- [ ] **Step 3: Write `curseTapped`, mirroring `primeTapped`'s three guards**
+- [x] **Step 3: Write `curseTapped`, mirroring `primeTapped`'s three guards**
 
 Guard hand membership and the existing mark **before** calling `curseCard`, which throws — a reducer must not throw during an event handler. A failed membership guard clears `curseArmedBuff` rather than half-applying, so the player is never left armed with no visible cause. A tap on an already-cursed card is a **no-op that keeps the mode open**, matching `primeTapped`'s Assumption 5. **Legality is deliberately not checked** — say so in the docblock, because it is the whole point of the card.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.curse.test.ts src/app/warCouncil/__tests__/roundReducer.test.ts`
 Expected: exits 0; Vitest reports 0 failed.
 
-### Task 13: The skull on a card in your own hand
+### Task 13: The skull on a card in your own hand ✓
 
 - Skill: react-frontend, game-ux
 
@@ -649,7 +649,7 @@ Expected: exits 0; Vitest reports 0 failed.
 
 Layout per `mockup.html` in this folder — specifically its hand row, where a cursed card keeps its corner rank and suit while the skull replaces the art, and where every held card becomes tappable while a Curse is armed.
 
-- [ ] **Step 1: Write the failing component test, querying by accessible role and label (AC11)**
+- [x] **Step 1: Write the failing component test, querying by accessible role and label (AC11)**
 
 ```tsx
 it('renders a cursed card with the skull in its accessible name', () => {
@@ -665,22 +665,22 @@ it('leaves an illegal card tappable while a Curse is armed (AC3)', () => {
 Run: `npx vitest run src/app/warCouncil/__tests__/HandFan.test.tsx`
 Expected: fails — `HandFan` takes no `skulledCards` prop.
 
-- [ ] **Step 2: Add the two props and pass `skulled` through**
+- [x] **Step 2: Add the two props and pass `skulled` through**
 
 `HandFan` computes nothing about a card's state — it takes both as answers, exactly as it already takes `legal` from the engine. On each rendered card set `skulled={isSkulled(skulledCards, card)}`. `PlayingCard`'s existing `skulled` branch and its `wc-is-skulled` class already hide the art window and keep the corner index; **no new rendering and no new CSS is needed for AC4.**
 
-- [ ] **Step 3: Widen the tap-target and focus gates to include `curseArmed`**
+- [x] **Step 3: Widen the tap-target and focus gates to include `curseArmed`**
 
 Everywhere `timebombArmed` currently makes every held card a valid target — the `containsCard(legal, …)` drop-out and the focusability gate — the condition becomes `timebombArmed || curseArmed`. The roving tabindex must therefore admit a card that is illegal to play but legal to mark; a `disabled` button cannot take focus, so failing to widen this makes those cards unreachable by keyboard.
 
-- [ ] **Step 4: Thread both props from `roundControlsProps.ts`**
+- [x] **Step 4: Thread both props from `roundControlsProps.ts`**
 
 `skulledCards: skullsOn(ui.round)` and `curseArmed: curseArmed(ui)` at each of the `HandFan` prop sites.
 
 Run: `npx vitest run src/app/warCouncil; npm run typecheck`
 Expected: both exit 0; Vitest reports 0 failed.
 
-### Task 14: Curse's card face, and Sidestep's corrected wording
+### Task 14: Curse's card face, and Sidestep's corrected wording ✓
 
 - Skill: react-frontend
 
@@ -690,7 +690,7 @@ Expected: both exit 0; Vitest reports 0 failed.
 - Config: `src/app/warCouncil/buffLabels.ts` — Sidestep's replacement copy (**a developer decision**, see the File map)
 - Test: `src/app/warCouncil/__tests__/buffLabels.test.ts` (or the nearest existing labels spec)
 
-- [ ] **Step 1: Correct Sidestep's two strings (AC10)**
+- [x] **Step 1: Correct Sidestep's two strings (AC10)**
 
 ```ts
   // DLR-167 AC10 — was 'dodge a skull with this card'. NO BUFF ATTACHES TO A CARD: a buff is
@@ -709,11 +709,11 @@ Expected: both exit 0; Vitest reports 0 failed.
 
 Do **not** rename Sidestep itself — the ticket rules that out explicitly.
 
-- [ ] **Step 2: Give Curse its payoff phrase**
+- [x] **Step 2: Give Curse its payoff phrase**
 
 Curse pays two figures at gold, so `buffPayoff` needs a Curse branch beside the Timebomb's — reading `CURSE_REWARD[buff.tier]` from `src/hunt`, never a literal, so a retuned ladder cannot leave the card advertising a figure the engine will not honour. Gold reads as gain `+2 damage, +1 mult`; bronze and silver carry damage alone and no risk half.
 
-- [ ] **Step 3: Assert the old wording is gone**
+- [x] **Step 3: Assert the old wording is gone**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "dodge a skull with this card|'DODGE'"`
 Expected: zero hits.
@@ -727,7 +727,7 @@ Expected: exits 0; Vitest reports 0 failed. Any pre-existing spec asserting the 
 
 So the card can be measured. The simulator is lint-enforced pure and drives the real reducer, so this is a fixture and a window action, not a new judgement policy — teaching a policy *when* to Curse is a tuning question the ticket does not ask for. The phase ends with the simulator able to reach a Curse and the whole suite still green.
 
-### Task 15: A Curse fixture and the buff window offering it
+### Task 15: A Curse fixture and the buff window offering it ✓
 
 - Skill: react-frontend
 
@@ -737,18 +737,18 @@ So the card can be measured. The simulator is lint-enforced pure and drives the 
 - Modify: `src/sim/playHandWindows.ts` — let `runBuffWindow` spend a Curse and mark a card
 - Test: `src/sim/__tests__/curse.test.ts`
 
-- [ ] **Step 1: Write the failing test — a simulated run can reach a cursed trick**
+- [x] **Step 1: Write the failing test — a simulated run can reach a cursed trick**
 
 Assert that the fixture produces a state whose `round.cursedCards` is non-empty and whose next resolved trick reads as a skull trick.
 
 Run: `npx vitest run src/sim/__tests__/curse.test.ts`
 Expected: fails — no fixture exists.
 
-- [ ] **Step 2: Add the fixture, mirroring `fixtureHandWithPrimedTimebomb`**
+- [x] **Step 2: Add the fixture, mirroring `fixtureHandWithPrimedTimebomb`**
 
 Same shape: `ToggleLoadout`, `TapBuff` twice (poise, commit — this arms the Curse), then `TapCard` on a held card to mark it. Retry across seeds with a bounded attempt count and **throw** with a message naming the range when none lands, exactly as the Timebomb fixture does — never return a silently-unmarked state.
 
-- [ ] **Step 3: Let the buff window spend a Curse**
+- [x] **Step 3: Let the buff window spend a Curse**
 
 In `runBuffWindow`, a Curse offered by `offeredBuffs` is spendable in the same `discardWindowOpen` window as every other activated card, and the follow-up `TapCard` marks the policy's chosen card. Gate on `discardWindowOpen`, not `canAct` alone.
 
@@ -761,64 +761,64 @@ Expected: both exit 0. Lint matters here specifically: `src/sim/**` is purity-en
 
 The closing phase. No production changes — only sanity-checks that the cumulative work is clean.
 
-### Task 16: Confirm the pure-core boundary still holds
+### Task 16: Confirm the pure-core boundary still holds ✓
 
 - Skill: none — verification only, no code is written
 
-- [ ] **Step 1: Grep the three pure trees for React and DOM references**
+- [x] **Step 1: Grep the three pure trees for React and DOM references**
 
 Run: `Get-ChildItem src\hunt,src\warCouncil,src\sim -Recurse -Include *.ts,*.tsx | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"`
 Expected: zero hits.
 
-- [ ] **Step 2: Confirm the storage boundary is untouched**
+- [x] **Step 2: Confirm the storage boundary is untouched**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "globalThis\.(localStorage|sessionStorage)\b"`
 Expected: one hit, in `src/persistence/browserStorage.ts` — the sanctioned access. This contract persists nothing new; the template id `'curse'` is additive, so no `SAVE_SCHEMA_VERSION` bump is expected in the diff.
 
-### Task 17: Confirm no tuning value was hard-coded and no stale name remains
+### Task 17: Confirm no tuning value was hard-coded and no stale name remains ✓
 
 - Skill: none — verification only, no code is written
 
-- [ ] **Step 1: Confirm Curse's figures live only in their tables**
+- [x] **Step 1: Confirm Curse's figures live only in their tables**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "CURSE_REWARD|CONSUMABLE_AP_COST"`
 Expected: every hit is a declaration in `buffCatalog.ts` / `buffCosts.ts`, a read through `curseRewardOf` / `apCostOf`, or a spec asserting against the table. No inline `1`, `2` or `3` standing in for a Curse figure at any call site.
 
-- [ ] **Step 2: Confirm the corrected Sidestep copy left nothing behind**
+- [x] **Step 2: Confirm the corrected Sidestep copy left nothing behind**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "dodge a skull with this card|'DODGE'"`
 Expected: zero hits.
 
-- [ ] **Step 3: Confirm no skull-trick reader was left on the un-unioned list**
+- [x] **Step 3: Confirm no skull-trick reader was left on the un-unioned list**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "\.skulledCards"`
 Expected: every remaining hit is a test literal, `deal.ts`'s write, `resolutionView.ts`'s docblock, or one of the six Quarry-side readers carrying the `DLR-167 — skulledCards, NOT skullsOn` comment from Task 4.
 
-- [ ] **Step 4: Confirm no file was pushed past the 400-line budget**
+- [x] **Step 4: Confirm no file was pushed past the 400-line budget**
 
 Run: `Get-ChildItem src\hunt\buffCatalog.ts,src\hunt\buffTemplates.ts,src\hunt\buffActivation.ts,src\app\warCouncil\buffLabels.ts,src\app\warCouncil\roundUiState.ts,src\app\warCouncil\roundReducer.ts,src\app\warCouncil\HandFan.tsx,src\warCouncil\streak.ts | ForEach-Object { "$($_.Name) $((Get-Content $_.FullName).Count)" }`
 Expected: every count ≤ 400. `(Get-Content).Count`, **not** `Measure-Object -Line`, which drops blank lines and hides a real breach. Any file over budget is split **in this contract**, not reported as a finding.
 
-### Task 18: Static gates and the full suite
+### Task 18: Static gates and the full suite — DELEGATED TO QA
 
 - Skill: none — verification only, no code is written
 
-- [ ] **Step 1: Warm the transform cache, then run the gates and the full suite**
+- [ ] **Step 1: Warm the transform cache, then run the gates and the full suite** — DELEGATED TO QA (batch run: the unfiltered suite, `npm run lint` and `npm run build` belong to the central review pass). `npm run typecheck` was run by the Implementer and is clean.
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm run typecheck; npm run lint; npm test`
 Expected: all exit 0; Vitest reports 0 failed. The two scoped project runs come first deliberately — a cold-cache `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond`, which is a worker-start timeout, **not** a failing test. Only a second consecutive timeout is a real problem.
 
-- [ ] **Step 2: Check formatting of the files this contract changed, not the repo**
+- [x] **Step 2: Check formatting of the files this contract changed, not the repo**
 
 Run: `npx prettier --check src/warCouncil/curse.ts src/warCouncil/types.ts src/warCouncil/playCard.ts src/warCouncil/streak.ts src/hunt/buffs.ts src/hunt/buffCatalog.ts src/hunt/buffTemplates.ts src/hunt/buffCosts.ts src/hunt/consumables.ts src/hunt/buffAccrual.ts src/hunt/buffActivation.ts src/app/warCouncil/roundUiState.ts src/app/warCouncil/roundReducer.ts src/app/warCouncil/buffHandlers.ts src/app/warCouncil/HandFan.tsx src/app/warCouncil/buffLabels.ts src/app/warCouncil/roundControlsProps.ts src/sim/fixtures.ts src/sim/playHandWindows.ts`
 Expected: exits 0. Rewrite with `npx prettier --write <the same paths>` if it fails. **Never run `npm run format`** — it rewrites ~59 files across `.docs/**` that no contract touched. Run `npm run format:check` and report its result, but do not gate on it: it fails on pre-existing files.
 
-- [ ] **Step 3: Production build**
+- [ ] **Step 3: Production build** — DELEGATED TO QA
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 19: Update the PR description
+### Task 19: Update the PR description ✓
 
 - Skill: none — a written hand-off, no code
 
@@ -826,7 +826,7 @@ Expected: exits 0, `dist/` written, no bundler errors.
 
 - Create: `.claude/contract/DLR-167-curse-skull-your-own-card/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 

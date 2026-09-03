@@ -74,6 +74,15 @@ export interface SimPolicy {
    *  `chooseDiscard`'s reason. */
   wantsCheatPlay?(ui: RoundUiState): CheatPlay | null
 
+  /** DLR-167 — OPTIONAL: which card in hand a spent Curse should put its skull on. Called only
+   *  after a Curse has actually been spent and `curseArmed(ui)` holds. Advisory like every other
+   *  answer here: the driver re-checks the card is in hand and falls back to the FIRST card if the
+   *  policy names none, because an armed Curse claims the next hand tap and leaving it armed would
+   *  silently swallow the driver's own play. That fallback is mechanics-resolution, NOT strategy —
+   *  teaching a policy WHEN and WHERE to Curse is a tuning question DLR-167 does not ask for.
+   *  Optional for `chooseDiscard`'s stated reason. */
+  chooseCurseTarget?(ui: RoundUiState): Card | null
+
   /** DLR-156 review fix — OPTIONAL, called only when the resolution screen offers a real choice
    *  (`ui.resolution !== null` and the trick was not a hurt one — a hurt trick's only exit is
    *  `RollOver`/"Onward", never a choice). `true` presses Apply Damage (`RoundUiActionKind.ApplyPot`);

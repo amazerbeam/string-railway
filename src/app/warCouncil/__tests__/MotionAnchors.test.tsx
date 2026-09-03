@@ -118,6 +118,8 @@ function FeltPlaces() {
         promptOpen={false}
         discardSelecting={false}
         discardSelection={[]}
+        skulledCards={[]}
+        curseArmed={false}
         damageForCard={() => null}
         buffLightForCard={() => null}
         onCardEnter={() => {}}

@@ -52,6 +52,10 @@ export const BuffKind = {
    *  `BuffActivationRefusal.ShopOnly`. Its template id `'wildcard'` is a bare kind string like
    *  `'cheat'`, and is FROZEN the moment it ships (`ActivatedBuffTemplate`'s own docblock). */
   Wildcard: 'wildcard',
+  /** DLR-167 — the player's own skull. An Activated card: the player presses it, so it has no
+   *  trigger and gains no `buffFires` case. Its template id `'curse'` is a bare kind string like
+   *  `'cheat'`, and is FROZEN the moment it ships (`ActivatedBuffTemplate`'s own docblock). */
+  Curse: 'curse',
 } as const
 export type BuffKind = (typeof BuffKind)[keyof typeof BuffKind]
 
@@ -227,6 +231,8 @@ export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
   [BuffKind.SkullTether]: BuffCadence.Event,
   // DLR-162 — the player spends it; it has no trigger, exactly like Cheat.
   [BuffKind.Wildcard]: BuffCadence.Activated,
+  // DLR-167 — the player presses it; it has no trigger, exactly like Cheat.
+  [BuffKind.Curse]: BuffCadence.Activated,
 }
 
 /**

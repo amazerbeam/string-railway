@@ -12,7 +12,7 @@ import {
   type BuffTarget,
 } from './buffs'
 import type { BuffMintedAxis } from './buffCosts'
-import { cheatBuff, wildcardBuff } from './buffCatalog'
+import { cheatBuff, curseBuff, wildcardBuff } from './buffCatalog'
 
 /**
  * DLR-112 — originally the 71-template v1 condition-card pool, GENERATED at module load from two
@@ -58,6 +58,12 @@ import { cheatBuff, wildcardBuff } from './buffCatalog'
  * `templateWeightFor` result is unchanged bit for bit. A card MADE wild by spending a wildcard has
  * no template at all and never will: `buffWild.ts`'s `mintWildAtTier` mints it by transformation,
  * deliberately, so the machine's candidate pool and the opening pile's draw never contain one.
+ *
+ * DLR-167 ADDS one more ACTIVATED template, Curse, taking the pool to 19. It is an
+ * `ACTIVATED_TEMPLATES` row plus the `BuffActivatedTemplateKind` widening — NOT a `TEMPLATE_FAMILIES`
+ * row, because that table generates CONDITION templates crossed by suit and reward axis and Curse
+ * has neither; and NOT a restoration of any cut condition family. `FAMILY_AXIS_TOTAL` is untouched,
+ * so every existing suited template's `templateWeightFor` result is unchanged bit for bit.
  *
  * The five consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are still absent —
  * DLR-120's scope boundary, unrelated to this pruning.
@@ -112,6 +118,9 @@ export type BuffActivatedTemplateKind =
   // Cheat-or-else-something binaries (this file's `mintFromTemplate` and
   // `src/app/run/slotSymbols.ts`'s `slotSymbolFace`) to become total lookups.
   | typeof BuffKind.Wildcard
+  // DLR-167 AC1 — the widening that makes Curse CONSTRUCTIBLE rather than merely unweighted, which
+  // is the mechanism `MintableConditionKind`'s docblock names for the condition families.
+  | typeof BuffKind.Curse
 
 /** An activated card's template. Carries NO axis and NO condition family — that is exactly the
  *  shape problem DLR-120 named, and the `form` tag is the answer to it. Its reward axis and value
@@ -138,6 +147,9 @@ export const ACTIVATED_TEMPLATES: readonly ActivatedBuffTemplate[] = [
   // DLR-162 — a bare kind string like its sibling. PERSISTED by the Vault as a grant id, so the
   // format is frozen the moment it ships.
   { form: 'activated', id: 'wildcard', kind: BuffKind.Wildcard },
+  // DLR-167 — PERSISTED id (DLR-113), ADDITIVE and never a rename, so no saved grant is orphaned
+  // and no SAVE_SCHEMA_VERSION bump is needed. Frozen the moment it ships, like the two above.
+  { form: 'activated', id: 'curse', kind: BuffKind.Curse },
 ]
 
 const BLADE_AND_MOMENTUM: readonly MintableRewardAxis[] = [
@@ -211,9 +223,9 @@ function makeTemplate(
     : { form: 'condition', id, kind, axis, target }
 }
 
-/** DLR-162's pool: 18 templates — 16 GENERATED condition templates (6 Taker + 6 Feeder +
- *  2 Sidestep + 1 Skull Helmet + 1 Skull Tether) plus the 2 activated ones (`ACTIVATED_TEMPLATES`:
- *  Cheat and the wildcard).
+/** DLR-167's pool: 19 templates — 16 GENERATED condition templates (6 Taker + 6 Feeder +
+ *  2 Sidestep + 1 Skull Helmet + 1 Skull Tether) plus the 3 activated ones (`ACTIVATED_TEMPLATES`:
+ *  Cheat, the wildcard and Curse).
  *  The 5 consumable templates (Ward and its four siblings) are still absent — see this file's own
  *  docblock above for why that is a scope boundary, not a gap. */
 export const BUFF_TEMPLATES: readonly BuffTemplate[] = [
@@ -336,6 +348,8 @@ const ACTIVATED_MINT: Readonly<
 > = {
   [BuffKind.Cheat]: cheatBuff,
   [BuffKind.Wildcard]: wildcardBuff,
+  // DLR-167 — a fourth activated card is a compile error here rather than a silently mis-minted one.
+  [BuffKind.Curse]: curseBuff,
 }
 
 /** Mint an ordinary `Buff` from a template at `tier`. `id` is the CALLER's, from

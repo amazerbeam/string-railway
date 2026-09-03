@@ -27,6 +27,10 @@ export const BuffActivationRefusal = {
   /** Paying twice for one card in one trick is a duplicate-payment bug wearing a stacking rule's
    *  clothes (`plan.md` Part 1 → Assumptions made). */
   AlreadyActive: 'alreadyActive',
+  /** DLR-167 — a Curse already claims the next hand tap: one is armed and waiting for a card, or a
+   *  card is already marked this trick. Two Curses armed at once would make that tap ambiguous,
+   *  which is `handleToggleLoadout`'s own stated rule about controls that reinterpret a hand tap. */
+  CurseLive: 'curseLive',
   /** AC5 — the per-hand pool does not cover this buff's tiered AP cost. */
   InsufficientAp: 'insufficientAp',
 } as const
@@ -45,6 +49,9 @@ export interface BuffActivationStock {
   /** DLR-126 — whether spending this card would do anything at all in this build. `false` only for
    *  a consumable whose effect surface is not built yet; `true` for every other card. */
   readonly effectLive: boolean
+  /** DLR-167 — THIS card would claim the next hand tap, and a Curse already has. `false` for every
+   *  card that does not claim that tap, so the refusal cannot leak onto Cheat or a condition card. */
+  readonly curseLive: boolean
   readonly windowOpen: boolean
   readonly apPool: ActionPoints
   readonly apCost: ActionPoints
@@ -96,6 +103,9 @@ export function buffActivationRefusalFor(stock: BuffActivationStock): BuffActiva
   if (stock.shopOnly) return BuffActivationRefusal.ShopOnly
   if (!stock.effectLive) return BuffActivationRefusal.NoEffectYet
   if (!stock.windowOpen) return BuffActivationRefusal.WindowClosed
+  // DLR-167 — above `AlreadyActive`: a SECOND Curse is a different card with a different id, so
+  // `alreadyActive` is false for it and would let two claim the same tap.
+  if (stock.curseLive) return BuffActivationRefusal.CurseLive
   if (stock.alreadyActive) return BuffActivationRefusal.AlreadyActive
   if (!canAffordAp(stock.apPool, stock.apCost)) return BuffActivationRefusal.InsufficientAp
   return null
@@ -108,10 +118,17 @@ export function buffActivationStockFor(
   state: BuffActivationState,
   buff: Buff,
   windowOpen: boolean,
+  /** DLR-167 — the FELT's fact: a Curse is armed, or a card is already marked this trick. Defaulted
+   *  because only the felt can know it and only one card reads it; every pure caller passes
+   *  nothing and gets the pre-DLR-167 answer. */
+  curseLive: boolean = false,
 ): BuffActivationStock {
   return {
     shopOnly: isShopOnlyBuff(buff),
     effectLive: consumableEffectIsLive(buff),
+    // The KIND term lives here, in `src/hunt/`, rather than at the felt: the rule is "a Curse
+    // cannot be armed on top of a live Curse", and the felt supplies only the plain fact.
+    curseLive: curseLive && buff.kind === BuffKind.Curse,
     windowOpen,
     apPool: state.apPool,
     apCost: apCostOf(buff),
@@ -130,8 +147,10 @@ export function activateBuff(
   state: BuffActivationState,
   buff: Buff,
   windowOpen: boolean,
+  /** DLR-167 — threaded so this re-check is a REAL one rather than an assumed one. */
+  curseLive: boolean = false,
 ): BuffActivationState {
-  const stock = buffActivationStockFor(state, buff, windowOpen)
+  const stock = buffActivationStockFor(state, buff, windowOpen, curseLive)
   const refusal = buffActivationRefusalFor(stock)
   if (refusal !== null) {
     throw new RangeError(`Cannot activate buff ${buff.id} — ${refusal}`)
@@ -173,8 +192,10 @@ export function activateFromPile(
   buffs: readonly Buff[],
   buff: Buff,
   windowOpen: boolean,
+  /** DLR-167 — threaded through to `activateBuff`'s re-check, see there. */
+  curseLive: boolean = false,
 ): BuffActivationResult {
-  const activation = activateBuff(state, buff, windowOpen)
+  const activation = activateBuff(state, buff, windowOpen, curseLive)
   if (!isConsumableItem(buff)) {
     return { activation, buffs }
   }
@@ -200,6 +221,10 @@ export function activateFromPile(
  *
  * Read by the riding row's own control AND by `handleRemoveBuff`'s guard, so the two cannot read
  * revocability differently — the discipline `buffActivationRefusalFor` sets for activation.
+ *
+ * DLR-167 AC8 — CURSE IS DELIBERATELY ABSENT, and that absence IS the rule: putting a skull on a
+ * card has already changed the felt, so a Curse cannot be taken back off the trick. Do not "fix"
+ * this by adding it.
  */
 const REVOCABLE_BUFF_KINDS: ReadonlySet<BuffKind> = new Set([
   BuffKind.Taker,

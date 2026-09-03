@@ -23,6 +23,7 @@ import {
   CardRank,
   isSkulled,
   PlayerSide,
+  skullsOn,
   type Card,
   type Suit,
   type TrickCard,
@@ -143,7 +144,8 @@ export function trickConsequenceFacts(state: RoundUiState): TrickConsequenceFact
   ).length
   return {
     led,
-    skulled: led !== null && isSkulled(state.round.skulledCards, led.card),
+    // DLR-167 — the UNION: a led card the player cursed reads out as skulled too.
+    skulled: led !== null && isSkulled(skullsOn(state.round), led.card),
     trumpSuit: state.round.trumpSuit,
     witchCount,
   }
