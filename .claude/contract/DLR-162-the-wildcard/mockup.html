@@ -1,0 +1,514 @@
+<title>Wildcard Bench</title>
+<style>
+  /* DLR-162 mockup — the Manage Buffs screen with the wildcard band and its target mode.
+     Palette, type and card anatomy are the project's OWN (`warCouncil.css`'s --wc-* tokens,
+     transcribed here so the file stands alone). Nothing new is invented except the wild mark,
+     which reuses --wc-brass rather than adding a fourth hue: tier already owns the metallic
+     frame and suit already owns the field, so wildness reads by GLYPH and WORD, not by colour.
+     Single-theme on purpose — this is a lit card table, not a document. */
+  :root {
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-ink-soft: #5c5443;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+    --wc-guard: #7fae8c;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --tile-w: clamp(6.4rem, 11vw, 9rem);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--wc-felt-lip);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+  }
+
+  /* ---- shell: one full-viewport grid, three rows, never scrolls ---- */
+  .mb-shell {
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: clamp(0.4rem, 1.4vmin, 0.9rem);
+    padding: clamp(0.5rem, 1.8vmin, 1.1rem);
+    padding-top: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-top, 0px));
+    padding-bottom: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-bottom, 0px));
+    background: var(--wc-felt);
+  }
+
+  .mb-status {
+    display: flex; align-items: baseline; flex-wrap: wrap;
+    gap: clamp(0.7rem, 3vmin, 2rem);
+    padding: 0.2rem clamp(0.4rem, 2vmin, 1rem) 0.5rem;
+    border-bottom: 1px solid #ffffff14;
+  }
+  .mb-title {
+    font-size: clamp(0.95rem, 2.2vmin, 1.3rem);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--wc-brass); font-weight: 700;
+  }
+  .mb-stat { display: flex; align-items: baseline; gap: 0.4rem; }
+  .mb-stat-value { font-size: clamp(1.1rem, 3vmin, 1.7rem); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mb-stat-label { font-size: 0.78rem; letter-spacing: 0.06em; color: var(--wc-chalk-dim); }
+  .mb-rule { margin: 0; flex: 1 1 18rem; min-width: 12rem; font-size: 0.8rem; color: var(--wc-chalk-dim); line-height: 1.4; }
+  .mb-back {
+    margin-left: auto; min-height: 44px; padding: 0.5rem 1rem;
+    background: #ffffff0d; color: var(--wc-chalk);
+    border: 1px solid var(--wc-brass-dim); border-radius: 7px;
+    font: inherit; font-size: 0.82rem; cursor: pointer; touch-action: manipulation;
+  }
+  .mb-back:hover { background: #ffffff1a; }
+  .mb-back:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+
+  .mb-stage { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: clamp(0.4rem, 1.5vmin, 1rem); }
+
+  .mb-bandrow { min-height: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .mb-bandhead {
+    margin: 0; display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.74rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--wc-brass);
+  }
+  .mb-bandhead.is-refused { color: var(--wc-chalk-dim); }
+  .mb-pip { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .mb-grid {
+    list-style: none; margin: 0; padding: 0.15rem;
+    display: flex; flex-wrap: wrap; align-content: flex-start;
+    gap: clamp(0.4rem, 1.4vmin, 0.85rem);
+    min-height: 0; overflow-y: auto;
+  }
+
+  /* ---- the wildcard band ---- */
+  .mb-wildband {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: clamp(0.6rem, 2vmin, 1.2rem);
+    padding: clamp(0.5rem, 1.6vmin, 0.9rem);
+    border: 1px solid var(--wc-brass-dim); border-radius: 10px;
+    background: linear-gradient(180deg, #c99a4e14, #00000026);
+  }
+  .mb-wildband-copy { flex: 1 1 16rem; min-width: 11rem; }
+  .mb-wildband-head { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--wc-brass); }
+  .mb-wildband-rule { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--wc-chalk-dim); line-height: 1.4; }
+  .mb-go, .mb-no {
+    min-height: 44px; padding: 0.55rem 1.1rem; border-radius: 7px;
+    font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; touch-action: manipulation;
+  }
+  .mb-go { background: var(--wc-brass); color: #221a08; border: 1px solid var(--wc-brass); }
+  .mb-no { background: #ffffff0d; color: var(--wc-chalk); border: 1px solid #ffffff2b; }
+  .mb-go:focus-visible, .mb-no:focus-visible { outline: 2px solid var(--wc-chalk); outline-offset: 2px; }
+
+  /* ---- a card face, cut down to what a layout judgement needs ---- */
+  .card {
+    width: var(--tile-w); display: flex; flex-direction: column; gap: 0.18rem;
+    padding: 0.4rem 0.42rem 0.45rem;
+    border-radius: 8px; text-align: left;
+    background: var(--wc-parchment); color: var(--wc-ink);
+    box-shadow: 0 0 0 2px var(--metal, #8a6a3a), 0 4px 10px #00000073;
+  }
+  .t-bronze { --metal: #a97442; }
+  .t-silver { --metal: #9fa7ab; }
+  .t-gold   { --metal: #c9a24e; }
+  .s-bells { --suit: var(--wc-bells); }
+  .s-keys  { --suit: var(--wc-keys); }
+  .s-moons { --suit: var(--wc-moons); }
+  .s-wild  { --suit: var(--wc-brass-dim); }
+  .s-none  { --suit: var(--wc-ink-soft); }
+  .card-top { display: flex; align-items: center; gap: 0.3rem; }
+  .card-mark { width: 15px; height: 15px; color: var(--suit); flex: none; }
+  .card-tier { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; color: var(--wc-ink-soft); }
+  .card-cadence { margin-left: auto; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; color: var(--wc-ink-soft); }
+  .card-count { font-size: 0.66rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .card-name { font-size: 0.72rem; font-weight: 700; line-height: 1.15; }
+  .card-cond { font-size: 0.6rem; line-height: 1.25; color: var(--wc-ink-soft); }
+  .card-payoff {
+    margin-top: 0.1rem; align-self: flex-start;
+    padding: 0.1rem 0.34rem; border-radius: 4px;
+    font-size: 0.64rem; font-weight: 700;
+    background: var(--suit); color: #1a1206;
+  }
+  .card.is-wild { box-shadow: 0 0 0 2px var(--metal, #8a6a3a), 0 0 0 4px #c99a4e59, 0 4px 10px #00000073; }
+
+  /* ---- a tile: the card plus its strip ---- */
+  .tile {
+    display: flex; flex-direction: column; gap: 0.3rem; align-items: stretch;
+    padding: 0.35rem; border-radius: 10px;
+    background: #00000026; border: 1px solid #ffffff14;
+    font: inherit; color: inherit; text-align: left; cursor: pointer; touch-action: manipulation;
+  }
+  .tile:hover { background: #ffffff12; }
+  .tile:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+  .tile.is-refused { cursor: default; background: #0000003d; opacity: 0.72; }
+  .tile.is-refused:hover { background: #0000003d; }
+  .strip {
+    font-size: 0.62rem; line-height: 1.3; padding: 0.2rem 0.3rem;
+    border-radius: 5px; letter-spacing: 0.02em;
+  }
+  .strip.is-ready { background: #c99a4e26; color: var(--wc-brass); font-weight: 700; }
+  .strip.is-refused { background: #ffffff0d; color: var(--wc-chalk-dim); }
+  .badge {
+    align-self: flex-start; padding: 0.1rem 0.34rem; border-radius: 4px;
+    font-size: 0.56rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--wc-guard); color: #0d1a12;
+  }
+
+  /* ---- the confirmation, on the object ---- */
+  .confirm {
+    display: flex; flex-direction: column; gap: 0.28rem;
+    padding: 0.4rem; border-radius: 10px;
+    background: #00000059; border: 1px solid var(--wc-brass);
+  }
+  .confirm-lab { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--wc-chalk-dim); }
+  .confirm-lose { font-size: 0.66rem; color: var(--wc-alarm); }
+  .confirm-gain { font-size: 0.66rem; color: var(--wc-guard); }
+  .confirm-cost { font-size: 0.6rem; color: var(--wc-chalk-dim); font-variant-numeric: tabular-nums; }
+  .confirm-acts { display: flex; gap: 0.3rem; margin-top: 0.15rem; }
+  .confirm-acts button { min-height: 38px; padding: 0.35rem 0.6rem; font-size: 0.72rem; }
+  .pair { display: flex; gap: 0.4rem; align-items: flex-start; }
+
+  .mb-foot {
+    display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    padding: 0.4rem clamp(0.4rem, 2vmin, 1rem) 0.1rem;
+    border-top: 1px solid #ffffff14; font-size: 0.76rem;
+  }
+  .mb-log { color: var(--wc-guard); min-height: 1.2em; flex: 1 1 20rem; }
+  .mb-spend { color: var(--wc-chalk-dim); }
+
+  /* ---- the machine's strip, for the wildcard's own symbol ---- */
+  .stripbar {
+    display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+    padding: 0.4rem clamp(0.4rem, 2vmin, 1rem);
+    border-top: 1px solid #ffffff14;
+  }
+  .chip {
+    display: flex; align-items: center; gap: 0.3rem;
+    padding: 0.24rem 0.5rem; border-radius: 999px;
+    background: #00000033; border: 1px solid #ffffff1f;
+    font-size: 0.66rem; color: var(--wc-chalk);
+  }
+  .chip svg { width: 14px; height: 14px; }
+  .chip.is-wild { border-color: var(--wc-brass); color: var(--wc-brass); }
+  [hidden] { display: none !important; }
+</style>
+
+<div class="mb-shell">
+  <header class="mb-status">
+    <span class="mb-title">Manage Buffs</span>
+    <span class="mb-stat"><span class="mb-stat-value" id="held">14</span><span class="mb-stat-label">cards held</span></span>
+    <span class="mb-stat"><span class="mb-stat-value" id="ready">2</span><span class="mb-stat-label">piles ready</span></span>
+    <p class="mb-rule">Two of the same card at the same tier become one of the next tier. It costs no coins — it costs a card.</p>
+    <button type="button" class="mb-back" onclick="alert('Back to the shop')">Back to the shop</button>
+  </header>
+
+  <main class="mb-stage">
+
+    <!-- =============== the wildcard band =============== -->
+    <div class="mb-wildband" id="band">
+      <span class="card t-bronze s-wild is-wild" aria-hidden="true">
+        <span class="card-top">
+          <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.2v17.6M4.2 7.6l15.6 8.8M19.8 7.6 4.2 16.4"/></g></svg>
+          <span class="card-tier">I</span>
+          <span class="card-cadence">SPEND</span>
+          <span class="card-count">×2</span>
+        </span>
+        <span class="card-name">Wildcard</span>
+        <span class="card-cond">spend it on a suited card between fights</span>
+      </span>
+      <div class="mb-wildband-copy">
+        <div class="mb-wildband-head">Wildcards · <span id="wcount">2</span></div>
+        <p class="mb-wildband-rule">Spend a wildcard on a suited card to take its suit off. It then pays on any trick.</p>
+      </div>
+      <button type="button" class="mb-go" id="spendbtn" onclick="enterTargets()">Spend a wildcard</button>
+    </div>
+
+    <!-- =============== combine mode (default) =============== -->
+    <div id="combinemode">
+      <section class="mb-bandrow">
+        <h2 class="mb-bandhead"><span class="mb-pip" aria-hidden="true"></span>Ready to combine · 2</h2>
+        <ul class="mb-grid">
+
+          <!-- a WILD pile, pairing with a suited card of the same family -->
+          <li id="wildpile-slot">
+            <button type="button" class="tile" id="wildpile" onclick="armWild()"
+              aria-label="Bronze Wild Taker (Blade), 1 held. Combine with a Bronze Bell-Taker (Blade) into one Silver Wild Taker (Blade), +3 damage">
+              <span class="card t-bronze s-wild is-wild" aria-hidden="true">
+                <span class="card-top">
+                  <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.2v17.6M4.2 7.6l15.6 8.8M19.8 7.6 4.2 16.4"/></g></svg>
+                  <span class="card-tier">I</span><span class="card-cadence">TAKE</span>
+                </span>
+                <span class="card-name">Wild Taker (Blade)</span>
+                <span class="card-cond">win a trick with any suit</span>
+                <span class="card-payoff">+1 dmg</span>
+              </span>
+              <span class="strip is-ready">⇧ Combine → II · eats a Bell-Taker</span>
+            </button>
+          </li>
+
+          <!-- the armed confirmation, on the object -->
+          <li id="wildpile-armed" hidden>
+            <div class="confirm">
+              <span class="confirm-lab">Destroy</span>
+              <span class="confirm-lose">1 × Bronze Wild Taker (Blade) + 1 × Bronze Bell-Taker (Blade)</span>
+              <span class="confirm-lab">Make</span>
+              <span class="confirm-gain">1 × Silver Wild Taker (Blade) — +3 damage</span>
+              <span class="confirm-cost">14 → 13 cards</span>
+              <div class="confirm-acts">
+                <button type="button" class="mb-go" onclick="commitWild()">Combine</button>
+                <button type="button" class="mb-no" onclick="cancelWild()">Cancel</button>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <button type="button" class="tile" onclick="alert('arm: 2 × Bronze Moon-Feeder (Momentum) → 1 × Silver')"
+              aria-label="Bronze Moon-Feeder (Momentum), 2 held. Combine two into one Silver Moon-Feeder (Momentum), +3 multiplier">
+              <span class="card t-bronze s-moons" aria-hidden="true">
+                <span class="card-top">
+                  <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15 6a7 7 0 0 0 0 12" fill="currentColor" stroke="none"/></svg>
+                  <span class="card-tier">I</span><span class="card-cadence">MISS</span><span class="card-count">×2</span>
+                </span>
+                <span class="card-name">Moon-Feeder (Momentum)</span>
+                <span class="card-cond">lose a trick with Moons</span>
+                <span class="card-payoff">+2 mult</span>
+              </span>
+              <span class="strip is-ready">⇧ Combine → II</span>
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="mb-bandrow">
+        <h2 class="mb-bandhead is-refused"><span class="mb-pip" aria-hidden="true"></span>Nothing to combine · 3</h2>
+        <ul class="mb-grid">
+          <!-- the wildcard pile itself: refused, so it can never be merged away -->
+          <li class="tile is-refused" aria-label="Bronze Wildcard, 2 held. Every wildcard is the same — combining one would waste it">
+            <span class="card t-bronze s-wild is-wild" aria-hidden="true">
+              <span class="card-top">
+                <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.2v17.6M4.2 7.6l15.6 8.8M19.8 7.6 4.2 16.4"/></g></svg>
+                <span class="card-tier">I</span><span class="card-cadence">SPEND</span><span class="card-count">×2</span>
+              </span>
+              <span class="card-name">Wildcard</span>
+              <span class="card-cond">spend it on a suited card between fights</span>
+            </span>
+            <span class="strip is-refused">Every wildcard is the same — combining one would waste it</span>
+          </li>
+          <li class="tile is-refused" aria-label="Bronze Bell-Taker (Blade), 1 held. Only one — nothing to pair it with">
+            <span class="card t-bronze s-bells" aria-hidden="true">
+              <span class="card-top">
+                <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a5 5 0 0 0-5 5v5l-2 2h14l-2-2V9a5 5 0 0 0-5-5z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+                <span class="card-tier">I</span><span class="card-cadence">TAKE</span>
+              </span>
+              <span class="card-name">Bell-Taker (Blade)</span>
+              <span class="card-cond">win a trick with Bells</span>
+              <span class="card-payoff">+1 dmg</span>
+            </span>
+            <span class="strip is-refused">Only one — nothing to pair it with</span>
+          </li>
+          <li class="tile is-refused" aria-label="Gold Sidestep (Blade), 1 held. Already gold — nothing above it">
+            <span class="card t-gold s-none" aria-hidden="true">
+              <span class="card-top">
+                <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 6.5 10 12l-5 5.5"/><path d="M13 6.5 18 12l-5 5.5" opacity=".55"/></g></svg>
+                <span class="card-tier">III</span><span class="card-cadence">DODGE</span>
+              </span>
+              <span class="card-name">Sidestep (Blade)</span>
+              <span class="card-cond">dodge a skull with this card</span>
+              <span class="card-payoff">+5 dmg</span>
+            </span>
+            <span class="strip is-refused">Already gold — nothing above it</span>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- =============== target mode =============== -->
+    <div id="targetmode" hidden>
+      <section class="mb-bandrow">
+        <h2 class="mb-bandhead"><span class="mb-pip" aria-hidden="true"></span>Pick a card to make wild · 2</h2>
+        <ul class="mb-grid">
+
+          <li id="t1-slot">
+            <button type="button" class="tile" id="t1" onclick="armTarget(1)"
+              aria-label="Bronze Bell-Taker (Blade), 1 held. Make it a Bronze Wild Taker (Blade), +1 damage">
+              <span class="card t-bronze s-bells" aria-hidden="true">
+                <span class="card-top">
+                  <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a5 5 0 0 0-5 5v5l-2 2h14l-2-2V9a5 5 0 0 0-5-5z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+                  <span class="card-tier">I</span><span class="card-cadence">TAKE</span>
+                </span>
+                <span class="card-name">Bell-Taker (Blade)</span>
+                <span class="card-cond">win a trick with Bells</span>
+                <span class="card-payoff">+1 dmg</span>
+              </span>
+              <span class="strip is-ready">✳ Make wild</span>
+            </button>
+          </li>
+          <li id="t1-armed" hidden>
+            <div class="confirm">
+              <span class="confirm-lab">Destroy</span>
+              <span class="confirm-lose">1 × Bronze Wildcard</span>
+              <span class="confirm-lab">Make</span>
+              <span class="confirm-gain">1 × Bronze Wild Taker (Blade) — +1 damage</span>
+              <span class="confirm-cost">14 → 13 cards · 1 wildcard left</span>
+              <div class="confirm-acts">
+                <button type="button" class="mb-go" onclick="commitTarget(1)">Make wild</button>
+                <button type="button" class="mb-no" onclick="cancelTarget(1)">Cancel</button>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <button type="button" class="tile" onclick="alert('arm: Moon-Feeder (Momentum) → Wild Feeder (Momentum)')"
+              aria-label="Bronze Moon-Feeder (Momentum), 2 held. Make one a Bronze Wild Feeder (Momentum), +2 multiplier">
+              <span class="card t-bronze s-moons" aria-hidden="true">
+                <span class="card-top">
+                  <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15 6a7 7 0 0 0 0 12" fill="currentColor" stroke="none"/></svg>
+                  <span class="card-tier">I</span><span class="card-cadence">MISS</span><span class="card-count">×2</span>
+                </span>
+                <span class="card-name">Moon-Feeder (Momentum)</span>
+                <span class="card-cond">lose a trick with Moons</span>
+                <span class="card-payoff">+2 mult</span>
+              </span>
+              <span class="strip is-ready">✳ Make wild</span>
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="mb-bandrow">
+        <h2 class="mb-bandhead is-refused"><span class="mb-pip" aria-hidden="true"></span>Cannot be made wild · 3</h2>
+        <ul class="mb-grid">
+          <li class="tile is-refused" aria-label="Bronze Wild Taker (Blade), 1 held. Already wild">
+            <span class="card t-bronze s-wild is-wild" aria-hidden="true">
+              <span class="card-top">
+                <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.2v17.6M4.2 7.6l15.6 8.8M19.8 7.6 4.2 16.4"/></g></svg>
+                <span class="card-tier">I</span><span class="card-cadence">TAKE</span>
+              </span>
+              <span class="card-name">Wild Taker (Blade)</span>
+              <span class="card-cond">win a trick with any suit</span>
+              <span class="card-payoff">+1 dmg</span>
+            </span>
+            <span class="strip is-refused">Already wild</span>
+          </li>
+          <li class="tile is-refused" aria-label="Gold Sidestep (Blade), 1 held. No suit to take off">
+            <span class="card t-gold s-none" aria-hidden="true">
+              <span class="card-top">
+                <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 6.5 10 12l-5 5.5"/><path d="M13 6.5 18 12l-5 5.5" opacity=".55"/></g></svg>
+                <span class="card-tier">III</span><span class="card-cadence">DODGE</span>
+              </span>
+              <span class="card-name">Sidestep (Blade)</span>
+              <span class="card-cond">dodge a skull with this card</span>
+              <span class="card-payoff">+5 dmg</span>
+            </span>
+            <span class="strip is-refused">No suit to take off</span>
+          </li>
+          <li class="tile is-refused" aria-label="Silver Timebomb, 1 held. No suit to take off">
+            <span class="card t-silver s-none" aria-hidden="true">
+              <span class="card-top">
+                <svg class="card-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="15" r="6"/><path d="M15.4 10.6 18 8"/></g></svg>
+                <span class="card-tier">II</span><span class="card-cadence">PRESS</span>
+              </span>
+              <span class="card-name">Timebomb (Blade)</span>
+              <span class="card-cond">prime a card in your hand</span>
+              <span class="card-payoff">+8 dmg</span>
+            </span>
+            <span class="strip is-refused">No suit to take off</span>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <footer class="mb-foot">
+    <span class="mb-log" id="log" role="status" aria-live="polite"></span>
+    <span class="mb-spend" id="spendline">Every combine spends 2 cards and returns 1.</span>
+  </footer>
+
+  <!-- the machine's strip: the wildcard's own symbol among the eight stocked -->
+  <div class="stripbar">
+    <span class="mb-wildband-head" style="margin-right:0.3rem">On the strip</span>
+    <span class="chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a5 5 0 0 0-5 5v5l-2 2h14l-2-2V9a5 5 0 0 0-5-5z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>Bell-Taker (Blade)</span>
+    <span class="chip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15 6a7 7 0 0 0 0 12" fill="currentColor" stroke="none"/></svg>Moon-Feeder (Momentum)</span>
+    <span class="chip"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 6.5 10 12l-5 5.5"/><path d="M13 6.5 18 12l-5 5.5" opacity=".55"/></g></svg>Sidestep (Momentum)</span>
+    <span class="chip is-wild"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.2v17.6M4.2 7.6l15.6 8.8M19.8 7.6 4.2 16.4"/></g></svg>Wildcard</span>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function enterTargets() {
+    $('combinemode').hidden = true;
+    $('targetmode').hidden = false;
+    $('spendbtn').textContent = 'Cancel';
+    $('spendbtn').onclick = leaveTargets;
+    $('spendline').textContent = 'Spending a wildcard costs the wildcard. The card it is spent on is kept.';
+    $('t1').focus();
+  }
+
+  function leaveTargets() {
+    cancelTarget(1);
+    $('targetmode').hidden = true;
+    $('combinemode').hidden = false;
+    $('spendbtn').textContent = 'Spend a wildcard';
+    $('spendbtn').onclick = enterTargets;
+    $('spendline').textContent = 'Every combine spends 2 cards and returns 1.';
+    $('spendbtn').focus();
+  }
+
+  function armTarget(n) {
+    $('t' + n + '-slot').hidden = true;
+    $('t' + n + '-armed').hidden = false;
+    $('t' + n + '-armed').querySelector('.mb-go').focus();
+  }
+
+  function cancelTarget(n) {
+    $('t' + n + '-armed').hidden = true;
+    $('t' + n + '-slot').hidden = false;
+  }
+
+  function commitTarget(n) {
+    cancelTarget(n);
+    $('log').textContent =
+      'One Bronze Wildcard became a Bronze Wild Taker (Blade) — +1 damage. It now pays on a trick of any suit.';
+    $('held').textContent = '13';
+    $('wcount').textContent = '1';
+    leaveTargets();
+  }
+
+  function armWild() {
+    $('wildpile-slot').hidden = true;
+    $('wildpile-armed').hidden = false;
+    $('wildpile-armed').querySelector('.mb-go').focus();
+  }
+
+  function cancelWild() {
+    $('wildpile-armed').hidden = true;
+    $('wildpile-slot').hidden = false;
+    $('wildpile').focus();
+  }
+
+  function commitWild() {
+    cancelWild();
+    $('log').textContent =
+      'A Bronze Wild Taker (Blade) and a Bronze Bell-Taker (Blade) became one Silver Wild Taker (Blade) — +3 damage. It is still wild.';
+    $('held').textContent = '13';
+    $('ready').textContent = '1';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (!$('wildpile-armed').hidden) { cancelWild(); return; }
+    if (!$('t1-armed').hidden) { cancelTarget(1); $('t1').focus(); return; }
+    if (!$('targetmode').hidden) { leaveTargets(); }
+  });
+</script>

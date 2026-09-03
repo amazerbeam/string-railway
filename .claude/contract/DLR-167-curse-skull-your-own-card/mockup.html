@@ -1,0 +1,999 @@
+<title>Curse the Card</title>
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+/>
+<style>
+  /* ------------------------------------------------------------------
+     DLR-167 — Curse. Layout/interaction mockup only.
+     Deliberately SINGLE-THEME: this is a card table seen by lamplight.
+     A felt that flips to a light ground is not the same object, so every
+     colour below is painted explicitly and no theme query is used.
+     Not the real stylesheet — no project component or CSS is imported.
+     ------------------------------------------------------------------ */
+  :root {
+    --felt: #1e3029;
+    --felt-deep: #142019;
+    --felt-line: #2f4a3e;
+    --parchment: #e9dec5;
+    --parchment-dim: #cbbfa4;
+    --ink: #221c14;
+    --ink-soft: #4d4234;
+    --brass: #cba552;
+    --brass-dim: #8a6f33;
+    --oxblood: #a8443c;
+    --bone: #ded4c0;
+    --bone-shadow: #6d6350;
+    --good: #7fa86a;
+
+    --card-w: clamp(56px, 7.2vw, 92px);
+    --card-h: calc(var(--card-w) * 1.42);
+    --step: clamp(8px, 1.1vh, 14px);
+  }
+
+  body {
+    height: 100svh;
+    margin: 0;
+    background: var(--felt-deep);
+    color: var(--parchment);
+    font-family: 'Spectral', Georgia, serif;
+    overflow: hidden;
+  }
+
+  /* ---- the shell: three zones, no page scroll ---- */
+  .felt {
+    height: 100svh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: calc(var(--step) + env(safe-area-inset-top)) var(--step)
+      calc(var(--step) + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    gap: var(--step);
+    background:
+      radial-gradient(ellipse at 50% 38%, #24382f 0%, var(--felt) 46%, var(--felt-deep) 100%);
+  }
+
+  /* ---- zone 1: the Quarry, anchored top ---- */
+  .quarry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--step);
+    border-bottom: 1px solid var(--felt-line);
+    padding-bottom: var(--step);
+  }
+  .quarry-name {
+    font-family: 'Cinzel', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-size: clamp(11px, 1.5vw, 14px);
+    color: var(--brass);
+  }
+  .hearts {
+    display: flex;
+    gap: 4px;
+  }
+  .heart {
+    width: 12px;
+    height: 12px;
+    background: var(--oxblood);
+    clip-path: polygon(50% 100%, 0 38%, 22% 0, 50% 22%, 78% 0, 100% 38%);
+  }
+  .heart.is-spent {
+    background: #3d3128;
+  }
+
+  /* ---- zone 2: the trick well, centre ---- */
+  .well {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(200px, 25vw, 290px);
+    gap: var(--step);
+    min-height: 0;
+  }
+  .table {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--step) * 1.2);
+    border: 1px solid var(--felt-line);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.16);
+    min-height: 0;
+    padding: var(--step);
+  }
+  .table-label {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--parchment-dim);
+    opacity: 0.75;
+  }
+  .played-row {
+    display: flex;
+    gap: calc(var(--step) * 1.6);
+    align-items: flex-end;
+  }
+  /* game-ux: a played card is a record, not a choice — condensed against hand cards. */
+  .played-row .card {
+    --card-w: clamp(42px, 5.2vw, 66px);
+  }
+  .slot-empty {
+    width: clamp(42px, 5.2vw, 66px);
+    height: calc(clamp(42px, 5.2vw, 66px) * 1.42);
+    border: 1px dashed var(--felt-line);
+    border-radius: 4px;
+  }
+
+  /* ---- the side rail: streak + riding list ---- */
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--step);
+    min-height: 0;
+  }
+  .panel {
+    border: 1px solid var(--felt-line);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.22);
+    padding: calc(var(--step) * 0.9);
+  }
+  .panel h2 {
+    margin: 0 0 6px;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass);
+  }
+  .streak-figures {
+    display: flex;
+    gap: calc(var(--step) * 1.4);
+    font-variant-numeric: tabular-nums;
+  }
+  .figure {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .figure b {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: clamp(17px, 2.3vw, 24px);
+    line-height: 1;
+    color: var(--parchment);
+  }
+  .figure span {
+    font-size: 9px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--parchment-dim);
+  }
+  .figure.is-up b {
+    color: var(--good);
+  }
+
+  .riding {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .riding-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 7px;
+    border-left: 2px solid var(--brass-dim);
+    background: rgba(203, 165, 82, 0.07);
+    font-size: 11px;
+  }
+  .riding-row b {
+    font-family: 'Cinzel', Georgia, serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+  }
+  .riding-note {
+    font-size: 10px;
+    font-style: italic;
+    color: var(--parchment-dim);
+  }
+  .riding-empty {
+    font-size: 11px;
+    font-style: italic;
+    color: var(--parchment-dim);
+    opacity: 0.65;
+  }
+
+  /* ---- zone 3: the player's own side, anchored bottom ---- */
+  .mine {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--step) * 0.8);
+    border-top: 1px solid var(--felt-line);
+    padding-top: var(--step);
+  }
+  .hint {
+    min-height: 1.4em;
+    font-size: clamp(11px, 1.4vw, 13px);
+    text-align: center;
+    color: var(--parchment-dim);
+  }
+  .hint strong {
+    color: var(--brass);
+    font-weight: 600;
+  }
+  .hand {
+    display: flex;
+    justify-content: center;
+    gap: calc(var(--step) * 0.7);
+    flex-wrap: nowrap;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--step);
+  }
+  .bar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--step);
+  }
+  .ap {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--parchment-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .ap b {
+    color: var(--brass);
+    font-size: 14px;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+  button:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+  .btn {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--brass-dim);
+    border-radius: 3px;
+    background: rgba(203, 165, 82, 0.1);
+    color: var(--parchment);
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    touch-action: manipulation;
+  }
+  .btn[aria-expanded='true'],
+  .btn.is-on {
+    background: var(--brass);
+    color: var(--ink);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  @media (hover: hover) {
+    .btn:hover:not(:disabled) {
+      background: rgba(203, 165, 82, 0.24);
+    }
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  /* ---- the card ---- */
+  .card {
+    position: relative;
+    width: var(--card-w);
+    height: var(--card-h);
+    padding: 0;
+    border: 1px solid #b9a887;
+    border-radius: 4px;
+    background: linear-gradient(168deg, #f3e9d2 0%, var(--parchment) 62%, #d9cbab 100%);
+    color: var(--ink);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    touch-action: manipulation;
+    transition: transform 0.12s ease;
+    flex: 0 0 auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card {
+      transition: none;
+    }
+  }
+  .card-index {
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    text-align: left;
+    line-height: 1.05;
+  }
+  .card-rank {
+    font-family: 'Cinzel', Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(12px, 1.7vw, 17px);
+    font-variant-numeric: tabular-nums;
+  }
+  .card-suit {
+    font-size: clamp(9px, 1.2vw, 12px);
+  }
+  /* Two categorical axes: suit is a GLYPH, not a field colour — colour only reinforces. */
+  .suit-bells {
+    color: #9a6b2f;
+  }
+  .suit-keys {
+    color: #3f5f7a;
+  }
+  .suit-moons {
+    color: #5b4a77;
+  }
+  .card-art {
+    position: absolute;
+    inset: 26% 16% 14%;
+    display: grid;
+    place-items: center;
+    font-size: clamp(17px, 2.6vw, 30px);
+    opacity: 0.5;
+  }
+
+  .card.is-illegal {
+    opacity: 0.46;
+    filter: saturate(0.4);
+  }
+  .card.is-armed {
+    transform: translateY(-9px);
+    box-shadow:
+      0 0 0 2px var(--brass),
+      0 6px 12px rgba(0, 0, 0, 0.5);
+    z-index: 2;
+  }
+  .card.is-target {
+    box-shadow:
+      0 0 0 2px var(--oxblood),
+      0 3px 8px rgba(0, 0, 0, 0.45);
+  }
+
+  /* AC4 — the skull REPLACES the art; rank and suit stay readable in the corner,
+     because the trick is still won on those. Form, not colour: a static greyscale
+     screenshot still shows a skull sitting where a picture was. */
+  .card.is-skulled .card-art {
+    display: none;
+  }
+  .card-skull {
+    position: absolute;
+    inset: 24% 14% 12%;
+    display: grid;
+    place-items: center;
+    background: rgba(28, 22, 16, 0.1);
+    border-radius: 3px;
+  }
+  .card-skull svg {
+    width: 76%;
+    height: 76%;
+    fill: var(--bone-shadow);
+  }
+  /* A curse the PLAYER made is still just a skull — same face as a dealt one (AC4).
+     The dashed cuff is the only extra, and it says "yours, and only for this trick". */
+  .card.is-cursed {
+    border-style: dashed;
+    border-color: var(--oxblood);
+  }
+
+  /* ---- the loadout drawer ---- */
+  .drawer {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--step) + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(560px, calc(100dvw - var(--step) * 2));
+    max-height: 62svh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    border: 1px solid var(--brass-dim);
+    border-radius: 4px;
+    background: #1b2a23;
+    box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.6);
+    padding: calc(var(--step) * 1.1);
+    z-index: 10;
+  }
+  .drawer h2 {
+    margin: 0 0 10px;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass);
+  }
+  .buff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .buff-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 11px;
+    border: 1px solid var(--felt-line);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--parchment);
+    text-align: left;
+    touch-action: manipulation;
+  }
+  .buff-row.is-poised {
+    border-color: var(--brass);
+    background: rgba(203, 165, 82, 0.14);
+  }
+  .buff-row:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .buff-name {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .buff-tier {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass);
+  }
+  .buff-cond {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    color: var(--parchment-dim);
+  }
+  .buff-pill {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 3px 6px;
+    border: 1px solid var(--brass-dim);
+    border-radius: 2px;
+    color: var(--brass);
+    white-space: nowrap;
+  }
+  .buff-cost {
+    font-size: 10px;
+    color: var(--parchment-dim);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    margin-top: 3px;
+  }
+
+  /* ---- the resolution readout ---- */
+  .resolution {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(10, 16, 13, 0.82);
+    z-index: 20;
+    padding: var(--step);
+  }
+  .resolution-card {
+    max-width: 440px;
+    border: 1px solid var(--brass-dim);
+    border-radius: 4px;
+    background: #1b2a23;
+    padding: calc(var(--step) * 1.8);
+    text-align: center;
+  }
+  .resolution-card h2 {
+    margin: 0 0 4px;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: clamp(19px, 3vw, 27px);
+    letter-spacing: 0.05em;
+    color: var(--good);
+    text-wrap: balance;
+  }
+  .resolution-sub {
+    margin: 0 0 16px;
+    font-size: 12px;
+    color: var(--parchment-dim);
+    font-style: italic;
+  }
+  .maths {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 0 0 18px;
+    padding: 12px;
+    border-top: 1px solid var(--felt-line);
+    border-bottom: 1px solid var(--felt-line);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .maths-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .maths-row.is-total {
+    color: var(--brass);
+    font-weight: 600;
+  }
+  .maths-row span:first-child {
+    color: var(--parchment-dim);
+  }
+  .maths-row.is-total span:first-child {
+    color: var(--brass);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* The mockup's own scaffolding — never part of the real screen. */
+  .scaffold {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: rgba(0, 0, 0, 0.55);
+    border-bottom-left-radius: 4px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--parchment-dim);
+  }
+  .scaffold button {
+    min-height: 26px;
+    padding: 0 8px;
+    border: 1px solid var(--felt-line);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--parchment-dim);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+</style>
+
+<div class="scaffold">
+  <span>DLR-167 mockup</span>
+  <button type="button" id="reset">Reset</button>
+</div>
+
+<div class="felt">
+  <!-- ZONE 1 — the Quarry, anchored top -->
+  <header class="quarry">
+    <span class="quarry-name">The Woodcutter</span>
+    <div class="hearts" role="img" aria-label="Quarry health: 5 of 7">
+      <i class="heart"></i><i class="heart"></i><i class="heart"></i><i class="heart"></i
+      ><i class="heart"></i><i class="heart is-spent"></i><i class="heart is-spent"></i>
+    </div>
+  </header>
+
+  <!-- ZONE 2 — the trick well and the side rail -->
+  <div class="well">
+    <section class="table" aria-label="The trick">
+      <span class="table-label" id="trickLabel">The Quarry leads</span>
+      <div class="played-row" id="playedRow"></div>
+    </section>
+
+    <aside class="rail">
+      <section class="panel" aria-label="Your streak">
+        <h2>Your streak</h2>
+        <div class="streak-figures">
+          <span class="figure" id="figTotal"><b>0</b><span>Total</span></span>
+          <span class="figure" id="figRoll"><b>0</b><span>Roll</span></span>
+          <span class="figure" id="figPot"><b>0</b><span>Pot</span></span>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Riding this trick" style="min-height: 0">
+        <h2>Riding this trick</h2>
+        <div class="riding" id="riding"></div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- ZONE 3 — your own side, anchored bottom -->
+  <section class="mine" aria-label="Your hand and controls">
+    <p class="hint" id="hint"></p>
+    <div class="hand" id="hand" role="group" aria-label="Your hand"></div>
+    <div class="bar">
+      <div class="bar-left">
+        <span class="ap">Action points <b id="ap">6</b></span>
+      </div>
+      <button
+        type="button"
+        class="btn"
+        id="loadoutBtn"
+        aria-expanded="false"
+        aria-controls="drawer"
+      >
+        Apply buff
+      </button>
+    </div>
+  </section>
+</div>
+
+<div class="drawer" id="drawer" hidden>
+  <h2>Your cards — tap once to poise, again to spend</h2>
+  <div class="buff-list" id="buffList"></div>
+</div>
+
+<div class="resolution" id="resolution" hidden>
+  <div class="resolution-card" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+    <h2 id="resTitle">Dodge</h2>
+    <p class="resolution-sub">
+      You lost the trick — and because it carried a skull, losing it is what banks it.
+    </p>
+    <div class="maths" id="maths"></div>
+    <button type="button" class="btn" id="resOk">Carry on</button>
+  </div>
+</div>
+
+<script>
+  'use strict';
+
+  // ---- fake felt state. Obviously not the engine; enough to judge the flow. ----
+  const SUIT_GLYPH = { bells: '❀', keys: '⚷', moons: '☽' };
+  const SUIT_NAME = { bells: 'Bells', keys: 'Keys', moons: 'Moons' };
+
+  const HAND = [
+    { suit: 'bells', rank: 2 },
+    { suit: 'bells', rank: 7 },
+    { suit: 'keys', rank: 3 },
+    { suit: 'keys', rank: 8 },
+    { suit: 'moons', rank: 5 },
+    { suit: 'moons', rank: 11 },
+  ];
+
+  // The Quarry has led a CLEAN Moons 9. Follow-suit means only Moons are legal —
+  // so Bells and Keys are illegal to play but still legal to MARK (AC3).
+  const LED = { suit: 'moons', rank: 9 };
+  const LEGAL = (c) => c.suit === 'moons';
+
+  const BUFFS = [
+    {
+      id: 'curse',
+      name: 'Curse',
+      tier: 'Silver',
+      cond: 'put a skull on a card in your hand',
+      pill: 'PRESS',
+      cost: 3,
+      payoff: '+2 damage',
+    },
+    {
+      id: 'sidestep',
+      name: 'Sidestep (Blade)',
+      tier: 'Bronze',
+      // AC10 — no longer "dodge a skull with this card". A buff rides the trick.
+      cond: 'a skull trick you do not take',
+      pill: 'SKULL LOSS',
+      cost: 1,
+      payoff: '+1 damage',
+    },
+    {
+      id: 'taker',
+      name: 'Bell-Taker (Blade)',
+      tier: 'Bronze',
+      cond: 'win a trick with Bells',
+      pill: 'TAKE',
+      cost: 1,
+      payoff: '+1 damage',
+    },
+  ];
+
+  const key = (c) => c.suit + '-' + c.rank;
+
+  let S;
+  function reset() {
+    S = {
+      step: 'idle', // idle -> armed -> marked -> resolved
+      drawer: false,
+      poised: null,
+      ap: 6,
+      riding: [],
+      cursed: null, // the card key carrying the player's skull
+      played: null, // the card key the player committed
+      focus: 4, // roving tabindex: starts on the first legal card (Moons 5)
+    };
+    render();
+  }
+
+  // ---- the riding list (AC8: Curse says it cannot be taken back) ----
+  function ridingHtml() {
+    if (S.riding.length === 0) {
+      return '<p class="riding-empty">Nothing riding yet.</p>';
+    }
+    return S.riding
+      .map((b) => {
+        const note =
+          b.id === 'curse'
+            ? 'Spent — cannot be taken back'
+            : b.id === 'sidestep'
+              ? 'Pays if you do not take a skull trick'
+              : 'Pays if you take a Bells trick';
+        return (
+          '<div class="riding-row"><span><b>' +
+          b.name +
+          '</b><span class="riding-note"> — ' +
+          note +
+          '</span></span><span class="buff-pill">' +
+          b.payoff +
+          '</span></div>'
+        );
+      })
+      .join('');
+  }
+
+  // ---- a card ----
+  function cardHtml(c, opts) {
+    const k = key(c);
+    const cursed = opts.cursed;
+    const classes = ['card'];
+    if (opts.illegal) classes.push('is-illegal');
+    if (opts.armed) classes.push('is-armed');
+    if (opts.target) classes.push('is-target');
+    if (cursed) classes.push('is-skulled', 'is-cursed');
+
+    // The accessible name carries the skull, exactly as the real card face does.
+    const label =
+      SUIT_NAME[c.suit] +
+      ' ' +
+      c.rank +
+      (cursed ? ', cursed — carries a skull for this trick' : '') +
+      (opts.illegal && !opts.markable ? ', illegal to play' : '');
+
+    const skull = cursed
+      ? '<span class="card-skull"><svg viewBox="0 0 32 32" aria-hidden="true">' +
+        '<path d="M16 3C9.9 3 5 7.6 5 13.3c0 3.4 1.7 6.3 4.3 8.2v3.1c0 .8.6 1.4 1.4 1.4h2.1v2.2c0 .5.4.9.9.9h4.6c.5 0 .9-.4.9-.9V26h2.1c.8 0 1.4-.6 1.4-1.4v-3.1c2.6-1.9 4.3-4.8 4.3-8.2C27 7.6 22.1 3 16 3zm-4.8 13.4a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8zm9.6 0a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8zM16 22l-1.8-3.6h3.6L16 22z"/>' +
+        '</svg></span>'
+      : '';
+
+    return (
+      '<button type="button" class="' +
+      classes.join(' ') +
+      '" data-card="' +
+      k +
+      '" tabindex="' +
+      (opts.tabStop ? '0' : '-1') +
+      '" ' +
+      (opts.disabled ? 'disabled ' : '') +
+      'aria-label="' +
+      label +
+      '">' +
+      '<span class="card-index ' +
+      'suit-' +
+      c.suit +
+      '"><span class="card-rank">' +
+      c.rank +
+      '</span><br><span class="card-suit">' +
+      SUIT_GLYPH[c.suit] +
+      '</span></span>' +
+      '<span class="card-art suit-' +
+      c.suit +
+      '" aria-hidden="true">' +
+      SUIT_GLYPH[c.suit] +
+      '</span>' +
+      skull +
+      '</button>'
+    );
+  }
+
+  function render() {
+    // --- the trick well ---
+    const wellCards = [cardHtml(LED, { illegal: false, disabled: true, tabStop: false })];
+    if (S.played) {
+      const c = HAND.find((h) => key(h) === S.played);
+      wellCards.push(
+        cardHtml(c, { cursed: S.cursed === S.played, disabled: true, tabStop: false }),
+      );
+    } else {
+      wellCards.push('<div class="slot-empty"></div>');
+    }
+    document.getElementById('playedRow').innerHTML = wellCards.join('');
+    document.getElementById('trickLabel').textContent =
+      S.step === 'resolved' ? 'The trick is decided' : 'The Quarry leads — you follow';
+
+    // --- the hand ---
+    const remaining = HAND.filter((c) => key(c) !== S.played);
+    const armedMode = S.step === 'armed';
+    document.getElementById('hand').innerHTML = remaining
+      .map((c, i) => {
+        const illegal = !LEGAL(c);
+        return cardHtml(c, {
+          cursed: S.cursed === key(c),
+          // AC3 — while a Curse is armed EVERY held card is a target, illegal ones included.
+          illegal: illegal && !armedMode,
+          markable: armedMode,
+          target: armedMode,
+          disabled: S.step === 'resolved' || (!armedMode && illegal),
+          tabStop: i === Math.min(S.focus, remaining.length - 1),
+        });
+      })
+      .join('');
+
+    // --- the rail ---
+    document.getElementById('riding').innerHTML = ridingHtml();
+    const banked = S.step === 'resolved';
+    document.getElementById('figTotal').innerHTML =
+      '<b>' + (banked ? 9 : 0) + '</b><span>Total</span>';
+    document.getElementById('figRoll').innerHTML =
+      '<b>' + (banked ? 1 : 0) + '</b><span>Roll</span>';
+    document.getElementById('figPot').innerHTML =
+      '<b>' + (banked ? 9 : 0) + '</b><span>Pot</span>';
+    document.getElementById('figTotal').className = 'figure' + (banked ? ' is-up' : '');
+    document.getElementById('figPot').className = 'figure' + (banked ? ' is-up' : '');
+
+    // --- the bar ---
+    document.getElementById('ap').textContent = S.ap;
+    const loadoutBtn = document.getElementById('loadoutBtn');
+    loadoutBtn.setAttribute('aria-expanded', String(S.drawer));
+    loadoutBtn.classList.toggle('is-on', S.drawer);
+    loadoutBtn.disabled = S.step === 'armed' || S.step === 'resolved';
+
+    // --- the drawer ---
+    document.getElementById('drawer').hidden = !S.drawer;
+    document.getElementById('buffList').innerHTML = BUFFS.map((b) => {
+      const spent = S.riding.some((r) => r.id === b.id);
+      const poised = S.poised === b.id;
+      return (
+        '<button type="button" class="buff-row' +
+        (poised ? ' is-poised' : '') +
+        '" data-buff="' +
+        b.id +
+        '" ' +
+        (spent || b.cost > S.ap ? 'disabled ' : '') +
+        '><span><span class="buff-name">' +
+        b.name +
+        '</span> <span class="buff-tier">' +
+        b.tier +
+        '</span><span class="buff-cond">' +
+        b.cond +
+        '</span></span><span><span class="buff-pill">' +
+        b.pill +
+        '</span><span class="buff-cost">' +
+        (spent ? 'spent' : b.cost + ' AP') +
+        '</span></span></button>'
+      );
+    }).join('');
+
+    // --- the hint. Never a panel that says nothing is happening. ---
+    const hint = document.getElementById('hint');
+    if (S.step === 'armed') {
+      hint.innerHTML =
+        '<strong>Curse is armed.</strong> Tap any card in your hand — even one you could not legally play.';
+    } else if (S.step === 'marked') {
+      hint.innerHTML =
+        'Your <strong>Moons 5</strong> carries a skull. Play it and lose the trick to dodge.';
+    } else if (S.step === 'resolved') {
+      hint.textContent = 'The mark has lapsed. It does not carry into the next trick.';
+    } else {
+      hint.innerHTML = 'Follow with a Moons card — or open <strong>Apply buff</strong> first.';
+    }
+
+    // --- the resolution ---
+    document.getElementById('resolution').hidden = S.step !== 'resolved';
+    if (S.step === 'resolved') {
+      document.getElementById('maths').innerHTML = [
+        ['Base damage', '5'],
+        ['Curse (silver)', '+2'],
+        ['Sidestep (bronze)', '+1'],
+        ['Multiplier', '× 1'],
+      ]
+        .map((r) => '<div class="maths-row"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>')
+        .join('') +
+        '<div class="maths-row is-total"><span>Banked into total</span><span>9</span></div>';
+    }
+  }
+
+  // ---- interactions ----
+  document.getElementById('loadoutBtn').addEventListener('click', () => {
+    S.drawer = !S.drawer;
+    S.poised = null;
+    render();
+  });
+
+  document.getElementById('buffList').addEventListener('click', (e) => {
+    const row = e.target.closest('[data-buff]');
+    if (!row || row.disabled) return;
+    const id = row.dataset.buff;
+    if (S.poised !== id) {
+      S.poised = id; // first tap poises
+      render();
+      return;
+    }
+    // second tap spends
+    const buff = BUFFS.find((b) => b.id === id);
+    S.ap -= buff.cost;
+    S.riding.push(buff);
+    S.poised = null;
+    if (id === 'curse') {
+      S.step = 'armed';
+      S.drawer = false; // the next hand tap is now the Curse's target
+    }
+    render();
+  });
+
+  document.getElementById('hand').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-card]');
+    if (!btn || btn.disabled) return;
+    const k = btn.dataset.card;
+
+    if (S.step === 'armed') {
+      S.cursed = k; // AC3 — marking is not a move; legality was never checked
+      S.step = 'marked';
+      render();
+      return;
+    }
+    // Ordinary play. Only a legal card reaches here (illegal ones are disabled).
+    S.played = k;
+    S.step = 'resolved';
+    S.cursed = k === S.cursed ? k : S.cursed;
+    render();
+  });
+
+  // Roving tabindex across the hand — one tab stop, arrows move within it.
+  document.getElementById('hand').addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const cards = [...document.querySelectorAll('#hand [data-card]')];
+    if (cards.length === 0) return;
+    e.preventDefault();
+    const at = cards.findIndex((c) => c === document.activeElement);
+    const next = (at + (e.key === 'ArrowRight' ? 1 : -1) + cards.length) % cards.length;
+    S.focus = next;
+    render();
+    const moved = document.querySelectorAll('#hand [data-card]')[next];
+    if (moved) moved.focus();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (S.drawer) {
+      S.drawer = false;
+      S.poised = null;
+      render();
+    }
+  });
+
+  document.getElementById('resOk').addEventListener('click', () => {
+    // AC7 — the mark lapses at the trick's resolution, played or not.
+    S.cursed = null;
+    S.riding = [];
+    reset();
+  });
+
+  document.getElementById('reset').addEventListener('click', reset);
+
+  reset();
+</script>

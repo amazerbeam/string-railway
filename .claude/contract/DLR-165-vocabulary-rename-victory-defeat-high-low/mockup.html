@@ -1,0 +1,524 @@
+<title>High / Low Vocabulary</title>
+<style>
+  :root {
+    --felt: #1b2b24;
+    --felt-2: #16231d;
+    --parchment: #ece3d0;
+    --ink: #23201a;
+    --ink-soft: #5d564a;
+    --brass: #a8842f;
+    --brass-dark: #7a5f1f;
+    --alarm: #a33227;
+    --good: #3f7a4a;
+    --line: rgba(0, 0, 0, 0.18);
+    --bronze: #b0793f;
+    --bells: #c9873f;
+    --keys: #4b7fa8;
+    --moons: #7b6bab;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--felt);
+    background-image: radial-gradient(ellipse at 50% 0%, var(--felt-2) 0%, var(--felt) 70%);
+    color: var(--parchment);
+    font: 14px/1.5 "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    min-height: 100dvh;
+    padding: 20px clamp(12px, 3vw, 40px) 60px;
+  }
+  header { max-width: 1180px; margin: 0 auto 22px; }
+  h1 { font-size: clamp(19px, 2.4vw, 26px); margin: 0 0 4px; letter-spacing: 0.01em; }
+  .sub { color: #9fb0a5; font-size: 13px; margin: 0; max-width: 74ch; }
+  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 22px; }
+  .panel {
+    background: var(--parchment);
+    color: var(--ink);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38);
+    padding: 18px 20px 22px;
+  }
+  .panel > h2 {
+    margin: 0 0 3px;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brass-dark);
+  }
+  .panel > .note { margin: 0 0 16px; font-size: 12.5px; color: var(--ink-soft); max-width: 78ch; }
+
+  /* ---- toolbar ---- */
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+  button {
+    font: inherit;
+    font-size: 13px;
+    min-height: 44px;
+    padding: 8px 15px;
+    border-radius: 7px;
+    border: 1px solid var(--brass-dark);
+    background: #f6efdd;
+    color: var(--ink);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+  @media (hover: hover) { button:hover { background: #fffaf0; } }
+  button:active { transform: translateY(1px); }
+  button[aria-pressed='true'] {
+    background: var(--brass-dark);
+    border-color: var(--brass-dark);
+    color: #fff8e6;
+  }
+  .spacer { flex: 1 1 auto; }
+
+  /* ---- resolution headline ---- */
+  .well {
+    background: linear-gradient(180deg, #223429, #1a2921);
+    border: 1px solid rgba(168, 132, 47, 0.4);
+    border-radius: 9px;
+    padding: 22px 20px 20px;
+    text-align: center;
+    color: var(--parchment);
+  }
+  .cards { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+  .pcard {
+    width: 54px;
+    height: 76px;
+    border-radius: 6px;
+    background: #f3ead6;
+    color: var(--ink);
+    display: grid;
+    place-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    position: relative;
+  }
+  .pcard span { font-size: 11px; display: block; text-align: center; font-weight: 400; }
+  .pcard.skull::after {
+    content: '☠';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 13px;
+    color: var(--alarm);
+  }
+  .pcard.taken { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .who { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8fa295; }
+  .headline {
+    font-size: clamp(26px, 3.6vw, 38px);
+    letter-spacing: 0.015em;
+    margin: 0 0 6px;
+    line-height: 1.15;
+  }
+  .headline.victory { color: #93cfa2; }
+  .headline.defeat { color: #e08a7e; }
+  .why { margin: 0; font-size: 13.5px; color: #b9c7bd; max-width: 56ch; margin-inline: auto; }
+  .banner {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 11.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+  }
+  .banner.banks { color: #93cfa2; }
+  .banner.hurts { color: #e08a7e; }
+  .quad {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .quad button { justify-self: stretch; text-align: left; }
+  .quad small { display: block; color: var(--ink-soft); font-size: 11.5px; }
+  .quad button[aria-pressed='true'] small { color: #f0e2bd; }
+
+  /* ---- buff cards ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    border-radius: 8px;
+    border: 2px solid var(--bronze);
+    background: #f7f0de;
+    padding: 9px 10px 10px;
+    display: grid;
+    gap: 6px;
+    min-height: 150px;
+    grid-template-rows: auto auto 1fr auto;
+  }
+  .card .top { display: flex; align-items: center; gap: 6px; }
+  .pill {
+    font-size: 10px;
+    letter-spacing: 0.11em;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--ink);
+    color: var(--parchment);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .pill.low { background: #35506b; }
+  .pill.high { background: #6b4020; }
+  .pill.skull { background: #6d2a24; }
+  .suitdot { width: 11px; height: 11px; border-radius: 50%; margin-left: auto; }
+  .card h3 { margin: 0; font-size: 15px; line-height: 1.2; }
+  .card .rule { margin: 0; font-size: 12.5px; color: var(--ink-soft); }
+  .card .pay {
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(63, 122, 74, 0.16);
+    border-radius: 4px;
+    padding: 4px 7px;
+    text-align: center;
+  }
+  .card.dim { opacity: 0.55; }
+  .old { text-decoration: line-through; color: #9b8f7c; font-size: 12px; }
+
+  /* ---- meter ---- */
+  .meter {
+    display: flex;
+    gap: 18px;
+    align-items: baseline;
+    flex-wrap: wrap;
+    border-top: 1px dashed var(--line);
+    padding-top: 12px;
+    margin-top: 14px;
+  }
+  .meter b { font-size: 22px; }
+  .meter .lab { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  .msg { font-size: 13px; margin-left: auto; }
+
+  .legend { font-size: 12.5px; color: var(--ink-soft); margin: 14px 0 0; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 12.5px; min-width: 480px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: rgba(168, 132, 47, 0.14); }
+</style>
+
+<header>
+  <h1>DLR-165 — Victory / Defeat name the outcome, High / Low name the act</h1>
+  <p class="sub">
+    Placeholder data throughout. This mockup exists to judge two things: whether the four-way name
+    works as the resolution screen's load-bearing headline where a colour word sits today, and
+    whether the renamed cards read as their own condition. Nothing here is real game state.
+  </p>
+</header>
+
+<div class="wrap">
+  <section class="panel">
+    <h2>The resolution headline</h2>
+    <p class="note">
+      Pick a trick. The big word is the headline — today it reads Clean&nbsp;win / Dodge /
+      Clean&nbsp;loss / Ate&nbsp;the&nbsp;skull. The sentence under it is unchanged: flavour survives
+      as subtitle prose, never as the label. Use “Show today’s wording” to compare.
+    </p>
+
+    <div class="bar">
+      <button id="toggleOld" aria-pressed="false" onclick="toggleOld()">Show today’s wording</button>
+      <span class="spacer"></span>
+      <span style="font-size:12px;color:var(--ink-soft)">4 outcomes · click any to load it</span>
+    </div>
+
+    <div class="well">
+      <div class="cards" id="wellCards"></div>
+      <p class="headline" id="headline">Low Victory</p>
+      <p class="why" id="why">
+        they took it, and it carried a skull — so it banks, and costs you nothing
+      </p>
+      <div><span class="banner banks" id="banner">Banks</span></div>
+    </div>
+
+    <div class="quad" id="quad"></div>
+
+    <div class="meter">
+      <div><span class="lab">Total</span><br /><b id="mTotal">12</b></div>
+      <div><span class="lab">Roll</span><br /><b id="mRoll">×3</b></div>
+      <div><span class="lab">Pot</span><br /><b id="mPot">36</b></div>
+      <div class="msg" id="mMsg">Low Victory. The skull passed you by — the streak climbs.</div>
+    </div>
+    <p class="legend">
+      The meter line is <code>TRICK_OUTCOME_MESSAGE</code> — a second copy of outcome wording that
+      lives on the bank meter, not the resolution panel. It says “Clean trick lost” today.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>The live mintable pool, renamed</h2>
+    <p class="note">
+      Three suits crossed with high/low, plus Skull&nbsp;Low, plus the two protective families from
+      DLR-161 and the two activated cards. The pill is the mechanical word; the sentence is the
+      card’s rule text and never names Victory or Defeat. Click any card to see the name and text it
+      carries today.
+    </p>
+    <div class="bar">
+      <button aria-pressed="true" onclick="setTier(this,'bronze')">Bronze</button>
+      <button aria-pressed="false" onclick="setTier(this,'gold')">Gold (widened text)</button>
+      <span class="spacer"></span>
+      <span style="font-size:12px;color:var(--ink-soft)" id="cardHint">Click a card for its old name</span>
+    </div>
+    <div class="grid" id="cardGrid"></div>
+    <p class="legend">
+      Skull&nbsp;Low’s text is true for the first time here — it read “dodge a skull with this card”,
+      and no buff has ever attached to a card. The two protective families keep their names but move
+      onto the high/low axis; their pill word is the one place the scheme has no clean answer.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>The four names, and what each one is</h2>
+    <div class="tablewrap">
+      <table>
+        <tr><th></th><th>Clean trick</th><th>Skull trick</th></tr>
+        <tr>
+          <th>You went <b>high</b> (took the cards)</th>
+          <td><b>High Victory</b> — banks</td>
+          <td><b>High Defeat</b> — ate the skull</td>
+        </tr>
+        <tr>
+          <th>You went <b>low</b></th>
+          <td><b>Low Defeat</b> — the clean loss</td>
+          <td><b>Low Victory</b> — the dodge</td>
+        </tr>
+      </table>
+    </div>
+    <p class="legend">
+      “High” means winning the contest, trump included — not the higher numeral. A trump 3 takes a
+      trick over an 11 Bells, and that off-suit 11 goes low. The hover string that would teach this
+      is deliberately out of this ticket.
+    </p>
+  </section>
+</div>
+
+<script>
+  const OUTCOMES = [
+    {
+      key: 'highVictory',
+      now: 'High Victory',
+      old: 'Clean win',
+      why: 'you took it, and it carried no skull — so it banks',
+      banks: true,
+      skull: false,
+      took: true,
+      msg: 'High Victory. The streak climbs.',
+      oldMsg: 'Clean trick, taken. The streak climbs.',
+      blurb: 'took a clean trick',
+      totals: ['12', '×3', '36'],
+    },
+    {
+      key: 'lowVictory',
+      now: 'Low Victory',
+      old: 'Dodge',
+      why: 'they took it, and it carried a skull — so it banks, and costs you nothing',
+      banks: true,
+      skull: true,
+      took: false,
+      msg: 'Low Victory. The skull passed you by — the streak climbs.',
+      oldMsg: 'Skull dodged. The streak climbs.',
+      blurb: 'the dodge — did not take a skulled trick',
+      totals: ['12', '×3', '36'],
+    },
+    {
+      key: 'lowDefeat',
+      now: 'Low Defeat',
+      old: 'Clean loss',
+      why: 'they took it, and it carried no skull — your streak resets',
+      banks: false,
+      skull: false,
+      took: false,
+      msg: 'Low Defeat. 1 damage — the streak is lost.',
+      oldMsg: 'Clean trick lost. 1 damage — the streak is lost.',
+      blurb: 'the clean loss — did not take a clean trick',
+      totals: ['0', '×0', '0'],
+    },
+    {
+      key: 'highDefeat',
+      now: 'High Defeat',
+      old: 'Ate the skull',
+      why: 'you took it, and it carried a skull — your streak resets',
+      banks: false,
+      skull: true,
+      took: true,
+      msg: 'High Defeat. You took the skull. 1 damage — the streak is lost.',
+      oldMsg: 'You ate the skull. 1 damage — the streak is lost.',
+      blurb: 'ate the skull — took a skulled trick',
+      totals: ['0', '×0', '0'],
+    },
+  ]
+
+  let showOld = false
+  let current = 'lowVictory'
+
+  function toggleOld() {
+    showOld = !showOld
+    const b = document.getElementById('toggleOld')
+    b.setAttribute('aria-pressed', String(showOld))
+    b.textContent = showOld ? 'Show the new wording' : 'Show today’s wording'
+    render()
+  }
+
+  function pick(key) {
+    current = key
+    render()
+  }
+
+  function render() {
+    const o = OUTCOMES.find((x) => x.key === current)
+    document.getElementById('headline').textContent = showOld ? o.old : o.now
+    document.getElementById('headline').className =
+      'headline ' + (o.banks ? 'victory' : 'defeat')
+    document.getElementById('why').textContent = o.why
+    const banner = document.getElementById('banner')
+    banner.textContent = o.banks ? 'Banks' : 'Hurts'
+    banner.className = 'banner ' + (o.banks ? 'banks' : 'hurts')
+    document.getElementById('mTotal').textContent = o.totals[0]
+    document.getElementById('mRoll').textContent = o.totals[1]
+    document.getElementById('mPot').textContent = o.totals[2]
+    document.getElementById('mMsg').textContent = showOld ? o.oldMsg : o.msg
+
+    document.getElementById('wellCards').innerHTML = `
+      <div>
+        <p class="who">Quarry</p>
+        <div class="pcard ${o.skull ? 'skull' : ''} ${o.took ? '' : 'taken'}">5<span>Bells</span></div>
+      </div>
+      <div>
+        <p class="who">You</p>
+        <div class="pcard ${o.took ? 'taken' : ''}">${o.took ? '9' : '2'}<span>Bells</span></div>
+      </div>`
+
+    document.getElementById('quad').innerHTML = OUTCOMES.map(
+      (x) => `<button aria-pressed="${x.key === current}" onclick="pick('${x.key}')">
+        ${showOld ? x.old : x.now}<small>${x.blurb}</small></button>`,
+    ).join('')
+  }
+
+  // ---- buff cards ----
+  const SUITS = { Bells: 'var(--bells)', Keys: 'var(--keys)', Moons: 'var(--moons)' }
+  const CARDS = []
+  for (const suit of Object.keys(SUITS)) {
+    const one = suit.replace(/s$/, '')
+    CARDS.push({
+      name: `${one} High (Blade)`,
+      old: `${one}-Taker (Blade)`,
+      pill: 'HIGH',
+      pillClass: 'high',
+      rule: `go high on a ${suit} trick`,
+      oldRule: `win a trick with ${suit}`,
+      pay: '+1 damage',
+      suit,
+    })
+    CARDS.push({
+      name: `${one} Low (Momentum)`,
+      old: `${one}-Feeder (Momentum)`,
+      pill: 'LOW',
+      pillClass: 'low',
+      rule: `go low on a ${suit} trick`,
+      oldRule: `lose a trick with ${suit}`,
+      pay: '+2 multiplier',
+      suit,
+    })
+  }
+  CARDS.push({
+    name: 'Skull Low (Blade)',
+    old: 'Sidestep (Blade)',
+    pill: 'LOW',
+    pillClass: 'low',
+    rule: 'go low on a skull',
+    oldRule: 'dodge a skull with this card',
+    pay: '+1 damage',
+    suit: null,
+  })
+  CARDS.push({
+    name: 'Skull Helmet (Guard)',
+    old: 'Skull Helmet (Guard)',
+    pill: 'SKULL',
+    pillClass: 'skull',
+    rule: 'go high on a skull',
+    wideRule: 'go high on a skull, or low on a clean trick',
+    oldRule: 'eat a skull with this card',
+    oldWideRule: 'eat a skull, or lose a trick',
+    pay: 'your total survives',
+    suit: null,
+  })
+  CARDS.push({
+    name: 'Skull Tether (Guard)',
+    old: 'Skull Tether (Guard)',
+    pill: 'SKULL',
+    pillClass: 'skull',
+    rule: 'go high on a skull',
+    wideRule: 'go high on a skull, or low on a clean trick',
+    oldRule: 'eat a skull with this card',
+    oldWideRule: 'eat a skull, or lose a trick',
+    pay: 'your roll survives, +1',
+    suit: null,
+  })
+  CARDS.push({
+    name: 'Cheat (Free Rein)',
+    old: 'Cheat (Free Rein)',
+    pill: 'PRESS',
+    pillClass: '',
+    rule: 'play any card, ignoring follow-suit',
+    oldRule: 'play any card, ignoring follow-suit',
+    pay: '2 tricks of no follow-suit',
+    suit: null,
+  })
+  CARDS.push({
+    name: 'Timebomb (Blade)',
+    old: 'Timebomb (Blade)',
+    pill: 'PRESS',
+    pillClass: '',
+    rule: 'prime a card in your hand',
+    oldRule: 'prime a card in your hand',
+    pay: '+4 / −2 to you',
+    suit: null,
+  })
+
+  let tier = 'bronze'
+  function setTier(btn, t) {
+    tier = t
+    for (const b of btn.parentElement.querySelectorAll('button')) {
+      b.setAttribute('aria-pressed', String(b === btn))
+    }
+    renderCards()
+  }
+
+  function ruleFor(c) {
+    if (tier === 'gold' && c.wideRule) return c.wideRule
+    return c.rule
+  }
+  function oldRuleFor(c) {
+    if (tier === 'gold' && c.oldWideRule) return c.oldWideRule
+    return c.oldRule
+  }
+
+  function reveal(i) {
+    const c = CARDS[i]
+    document.getElementById('cardHint').textContent =
+      `Today: ${c.old} — “${oldRuleFor(c)}”`
+  }
+
+  function renderCards() {
+    document.getElementById('cardGrid').innerHTML = CARDS.map(
+      (c, i) => `<div class="card" onclick="reveal(${i})" tabindex="0"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();reveal(${i})}">
+        <div class="top">
+          <span class="pill ${c.pillClass}">${c.pill}</span>
+          ${c.suit ? `<span class="suitdot" style="background:${SUITS[c.suit]}"></span>` : ''}
+        </div>
+        <h3>${c.name}</h3>
+        <p class="rule">${ruleFor(c)}</p>
+        <div class="pay">${c.pay}</div>
+      </div>`,
+    ).join('')
+  }
+
+  render()
+  renderCards()
+</script>

@@ -1,0 +1,314 @@
+<title>DLR-166 Removal Preview</title>
+<style>
+  :root {
+    --felt: #1d2a20;
+    --felt-edge: #16201a;
+    --panel: #24312a;
+    --panel-edge: #3a4c40;
+    --ink: #e8e4d6;
+    --ink-dim: #9aa89c;
+    --brass: #c9a227;
+    --alarm: #b2432f;
+    --gain: #8fb04e;
+    --gain-edge: #5c7a2e;
+    --timebomb: #8fb04e;
+    --timebomb-edge: #5c7a2e;
+    --hp-red: #b2432f;
+    --hp-blue: #4a7fa8;
+    --hp-ticking: var(--timebomb);
+    --hp-atrisk: #7a5a2a;
+    --gone: #6b2e2e;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    height: 100svh;
+    overflow: hidden;
+    background: var(--felt-edge);
+    color: var(--ink);
+    font: 14px/1.45 "Segoe UI", system-ui, sans-serif;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* ---- control bar ---- */
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    padding: 0.55rem 0.9rem;
+    background: #121a15;
+    border-bottom: 1px solid var(--panel-edge);
+  }
+  .bar h1 { font-size: 0.95rem; margin: 0 0.4rem 0 0; font-weight: 650; letter-spacing: 0.01em; }
+  .bar .note { color: var(--ink-dim); font-size: 0.76rem; }
+
+  .toggle {
+    display: inline-flex;
+    border: 1px solid var(--panel-edge);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .toggle button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--ink-dim);
+    font: inherit;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.95rem;
+    min-height: 44px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .toggle button[aria-pressed="true"] { background: var(--brass); color: #1a1408; font-weight: 650; }
+  .toggle button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+  .legend { display: flex; gap: 0.75rem; font-size: 0.74rem; color: var(--ink-dim); }
+  .legend i { font-style: normal; }
+  .swatch {
+    display: inline-block; width: 0.7rem; height: 0.7rem;
+    border-radius: 2px; vertical-align: -1px; margin-right: 0.3rem;
+  }
+
+  /* ---- board ---- */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+    gap: 0.85rem;
+    padding: 0.85rem;
+    overflow-y: auto;
+    align-content: start;
+  }
+
+  section {
+    background: var(--felt);
+    border: 1px solid var(--panel-edge);
+    border-radius: 0.5rem;
+    padding: 0.8rem;
+    min-width: 0;
+  }
+  section > h2 {
+    margin: 0 0 0.15rem;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brass);
+  }
+  section > .sub { margin: 0 0 0.7rem; font-size: 0.76rem; color: var(--ink-dim); }
+
+  /* removal marking */
+  .doomed { position: relative; }
+  body[data-view="after"] .doomed { display: none !important; }
+  body[data-view="before"] .doomed::after {
+    content: "";
+    position: absolute; inset: -2px;
+    border: 1px dashed var(--gone);
+    border-radius: 0.35rem;
+    pointer-events: none;
+  }
+  .arriving { display: none; }
+  body[data-view="after"] .arriving { display: revert; }
+
+  /* ---- buff rail ---- */
+  .rail { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+  .plate {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.35rem;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.78rem;
+    display: flex; align-items: center; gap: 0.35rem;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .plate:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  @media (hover: hover) { .plate:hover { border-color: var(--brass); } }
+  .plate:active { transform: translateY(1px); }
+  .plate[data-kind="timebomb"] { border-color: var(--timebomb-edge); color: var(--timebomb); }
+
+  /* ---- health bar ---- */
+  .hp { display: flex; flex-direction: column; gap: 0.5rem; }
+  .hp-row { display: flex; align-items: center; gap: 0.5rem; }
+  .hp-row .who { width: 4.2rem; font-size: 0.76rem; color: var(--ink-dim); }
+  .hearts { display: flex; gap: 3px; }
+  .heart {
+    width: 15px; height: 15px; border-radius: 3px;
+    background: var(--hp-red);
+    border: 1px solid rgba(0,0,0,0.4);
+  }
+  .heart[data-state="broken"] { background: #2b1f1c; }
+  .heart[data-state="atRisk"] { background: var(--hp-atrisk); }
+  .heart[data-state="ticking"] {
+    background: var(--hp-ticking);
+    /* form, not just colour — a dashed edge survives greyscale */
+    border-style: dashed; border-color: #16210a;
+  }
+  .heart[data-state="shield"] { background: var(--hp-blue); }
+
+  /* ---- shop shelf ---- */
+  .shelf { display: flex; flex-direction: column; gap: 0.35rem; }
+  .shelf-label {
+    font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-dim); margin-top: 0.35rem;
+  }
+  .item {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    padding: 0.45rem 0.6rem; min-height: 44px;
+    background: var(--panel); border: 1px solid var(--panel-edge);
+    border-radius: 0.35rem; color: var(--ink); font: inherit; font-size: 0.8rem;
+    cursor: pointer; touch-action: manipulation; width: 100%; text-align: left;
+  }
+  .item:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .item .price { color: var(--brass); font-variant-numeric: tabular-nums; }
+  .empty-shelf { font-size: 0.76rem; color: var(--ink-dim); font-style: italic; padding: 0.3rem 0; }
+
+  /* ---- resolution terms ---- */
+  .terms { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.82rem; }
+  .term { display: flex; justify-content: space-between; padding: 0.25rem 0.4rem; border-radius: 0.25rem; }
+  .term.total { border-top: 1px solid var(--panel-edge); margin-top: 0.3rem; padding-top: 0.45rem; font-weight: 650; }
+  .term .v { font-variant-numeric: tabular-nums; }
+  .term[data-bad] .v { color: var(--alarm); }
+
+  /* ---- colour-token demo ---- */
+  .tokens { display: flex; flex-direction: column; gap: 0.5rem; }
+  .token-use {
+    padding: 0.45rem 0.6rem; border-radius: 0.3rem;
+    background: var(--panel); border: 1px solid var(--panel-edge); font-size: 0.8rem;
+  }
+  .verdict-won { color: var(--gain); font-weight: 650; }
+  .carry-out { border-left: 3px dashed var(--gain-edge); padding-left: 0.5rem; color: var(--gain); font-size: 0.75rem; }
+  .payoff-chip { background: var(--gain); color: #16210a; border-radius: 6px; padding: 0.1rem 0.45rem; display: inline-block; font-size: 0.75rem; font-weight: 650; }
+
+  .hint {
+    margin-top: 0.55rem; font-size: 0.74rem; color: var(--ink-dim);
+    border-left: 2px solid var(--panel-edge); padding-left: 0.5rem;
+  }
+  .log {
+    grid-column: 1 / -1;
+    font-size: 0.76rem; color: var(--ink-dim);
+    background: #121a15; border: 1px solid var(--panel-edge);
+    border-radius: 0.4rem; padding: 0.5rem 0.7rem; min-height: 2.2rem;
+  }
+</style>
+
+<div class="bar">
+  <h1>DLR-166 — what the removal leaves behind</h1>
+  <div class="toggle" role="group" aria-label="View before or after the removal">
+    <button id="btn-before" aria-pressed="true" onclick="setView('before')">Before</button>
+    <button id="btn-after" aria-pressed="false" onclick="setView('after')">After</button>
+  </div>
+  <div class="legend">
+    <i><span class="swatch" style="background:transparent;border:1px dashed #6b2e2e"></span>dashed = deleted</i>
+    <i><span class="swatch" style="background:#8fb04e"></span>shared colour token</i>
+  </div>
+  <span class="note">Placeholder data. Layout and holes only — not real state.</span>
+</div>
+
+<div class="board">
+
+  <section>
+    <h2>Felt rail — buff plates</h2>
+    <p class="sub">The Timebomb plate is one control in a row of them. Does the rail read right one shorter?</p>
+    <div class="rail">
+      <button class="plate" onclick="say('Cheat — unchanged by this ticket')">Cheat <span style="color:var(--ink-dim)">·2</span></button>
+      <button class="plate" onclick="say('Taker (Bells) — unchanged')">Taker <span style="color:var(--ink-dim)">·1</span></button>
+      <button class="plate doomed" data-kind="timebomb" onclick="say('Timebomb — DELETED. Its two-tap arm and the hand-card targeting go with it.')">Timebomb <span style="color:var(--ink-dim)">·2</span></button>
+      <button class="plate" onclick="say('Sidestep — kept, wording fixed on DLR-167')">Sidestep <span style="color:var(--ink-dim)">·1</span></button>
+      <button class="plate" onclick="say('Swap — unchanged')">Swap</button>
+    </div>
+    <p class="hint doomed">Hint line, armed state: <em>“Tap a card in your hand to prime it.”</em> — <code>TIMEBOMB_ARMED_HINT</code>, deleted.</p>
+  </section>
+
+  <section>
+    <h2>Health bar — heart states</h2>
+    <p class="sub">Only <strong>ticking</strong> goes. <strong>At-risk</strong> is the streak preview and must survive — the riskiest line in the contract.</p>
+    <div class="hp">
+      <div class="hp-row">
+        <span class="who">You</span>
+        <div class="hearts">
+          <span class="heart" data-state="shield"></span>
+          <span class="heart"></span><span class="heart"></span><span class="heart"></span>
+          <span class="heart doomed" data-state="ticking" title="ticking — booked Timebomb"></span>
+          <span class="heart doomed" data-state="ticking"></span>
+          <span class="heart" data-state="broken"></span>
+        </div>
+      </div>
+      <div class="hp-row">
+        <span class="who">Quarry</span>
+        <div class="hearts">
+          <span class="heart"></span><span class="heart"></span><span class="heart"></span>
+          <span class="heart" data-state="atRisk" title="at-risk — streak preview, SURVIVES"></span>
+          <span class="heart" data-state="atRisk"></span>
+          <span class="heart" data-state="broken"></span>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Amber hearts stay. Only the dashed green pair is removed, along with <code>--wc-hp-ticking-*</code> and its CSS selector.</p>
+  </section>
+
+  <section>
+    <h2>Shop shelves</h2>
+    <p class="sub">Both deleted items sit on shelves that have other stock — except the fight-long shelf, which empties.</p>
+    <div class="shelf">
+      <div class="shelf-label">One-time use</div>
+      <button class="item" onclick="say('Cheat — stays on the shelf')"><span>Cheat</span><span class="price">2c</span></button>
+      <button class="item doomed" onclick="say('Timebomb — DELETED from the shelf and from ShopItem')"><span>Timebomb</span><span class="price">2c</span></button>
+      <div class="shelf-label">Fight-long</div>
+      <button class="item doomed" onclick="say('Blast Guard — DELETED. Nothing left to protect.')"><span>Blast Guard</span><span class="price">1c</span></button>
+      <div class="empty-shelf arriving">Fight-long shelf is now empty — render nothing, or drop the shelf?</div>
+      <div class="shelf-label">Run-permanent</div>
+      <button class="item" onclick="say('Max health — stays')"><span>Max health +1</span><span class="price">4c</span></button>
+    </div>
+    <p class="hint arriving"><strong>Judgement needed:</strong> <code>game-ux</code> says never render a panel with nothing to say. An empty labelled shelf is exactly that.</p>
+  </section>
+
+  <section>
+    <h2>Trick resolution — damage terms</h2>
+    <p class="sub">The Timebomb term and the payout fold that let it beat a cash-out both go.</p>
+    <div class="terms">
+      <div class="term"><span>Base damage</span><span class="v">1</span></div>
+      <div class="term"><span>Taker (Bells) · Blade</span><span class="v">+2</span></div>
+      <div class="term"><span>Overlap bonus</span><span class="v">×2</span></div>
+      <div class="term doomed" data-bad><span>Timebomb detonation → you</span><span class="v">−2 hp</span></div>
+      <div class="term doomed" data-bad><span>Payout reduced by Timebomb (60%)</span><span class="v">×0.6</span></div>
+      <div class="term doomed"><span>Blast Guard spent — streak saved</span><span class="v">held</span></div>
+      <div class="term total"><span>Pot</span><span class="v">18</span></div>
+    </div>
+    <p class="hint">After removal the fold is a plain <code>if (trickHit)</code> — the <code>timebombResets</code> gate in <code>streak.ts</code> is gone.</p>
+  </section>
+
+  <section>
+    <h2>The shared colour token</h2>
+    <p class="sub">Three surfaces borrow <code>--wc-timebomb</code> with no link to the mechanic. Deleting it would unstyle all three. The plan renames it.</p>
+    <div class="tokens">
+      <div class="token-use">Won verdict headline — <span class="verdict-won">The Quarry falls.</span></div>
+      <div class="token-use"><div class="carry-out">Feeder carry — 3 damage into the next hand</div></div>
+      <div class="token-use">Buff card payoff — <span class="payoff-chip">+2 dmg</span></div>
+    </div>
+    <p class="hint">Proposed rename: <code>--wc-timebomb</code> → <code>--wc-gain</code>, <code>--wc-timebomb-edge</code> → <code>--wc-gain-edge</code>. <strong>The name is your call.</strong></p>
+  </section>
+
+  <div class="log" id="log" role="status" aria-live="polite">Click any control to see what happens to it.</div>
+</div>
+
+<script>
+  function setView(v) {
+    document.body.dataset.view = v;
+    document.getElementById('btn-before').setAttribute('aria-pressed', String(v === 'before'));
+    document.getElementById('btn-after').setAttribute('aria-pressed', String(v === 'after'));
+    say(v === 'before'
+      ? 'Before — everything dashed is what this ticket deletes.'
+      : 'After — the dashed items are gone. Look for holes: the rail, the empty fight-long shelf, the health bar.');
+  }
+  function say(msg) { document.getElementById('log').textContent = msg; }
+  document.body.dataset.view = 'before';
+</script>

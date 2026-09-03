@@ -1531,25 +1531,55 @@ band names Humble / Defeated / Victorious / Greedy came from Fox in the Forest a
 mirrored path, and the 2026-08-11 decision was to note the mismatch and leave it. Both are base-game
 outcome words imported into a game that inverts the outcome.
 
-#### The vocabulary — High / Low over Win / Loss
+#### The vocabulary — Victory / Defeat, with High and Low naming the act
 
-**Win and Loss become skull-aware and mean only the outcome.** A clean win and a dodge both become
-**Win**; a clean loss and an eaten skull both become **Loss**. This costs nothing, because the
-ruleset already states that each pair is "identical in every respect but their name."
+Revised in conversation 2026-09-03, after the developer hit the collision live. The version of this
+section written on 2026-08-26 kept Win and Loss as the outcome words and added High and Low
+alongside them. That reuses the two words that caused the problem: "win" reads as *taking the cards*
+whatever the ruleset declares it to mean, so a card printed "win a trick with Bells" still looks
+like it should fire on a dodge. The outcome words change too.
 
-**High and Low name the mechanical act, and are the only words a buff card uses.** You go high or
-you go low. High takes the trick. On a clean trick high wins; on a skull trick low wins.
+**Victory and Defeat name the outcome, and nothing else.**
+
+- **Victory** — the trick banks. You went high on a clean trick, or low on a skull.
+- **Defeat** — the trick hurts. You went low on a clean trick, or high on a skull.
+
+**High and Low name the mechanical act — whether you physically took the cards — and are the only
+words a buff card uses.** They do not replace the outcome word, they qualify it, so every trick has
+one unambiguous four-way name:
 
 | | Clean trick | Skull trick |
 |---|---|---|
-| You went **high** | **WIN** — +1 bank, +1 multiplier | **LOSS** — −1 health, two-thirds cash-out, both reset |
-| You went **low** | **LOSS** — −1 health, two-thirds cash-out, both reset | **WIN** — +1 bank, +1 multiplier |
+| You went **high** (took the cards) | **High Victory** — banks | **High Defeat** — ate the skull |
+| You went **low** | **Low Defeat** — the clean loss | **Low Victory** — the dodge |
+
+A Victory adds the trick's damage to `total` and climbs `roll` by one. A Defeat costs 1 health and
+zeroes both, and the Quarry is paid nothing — per DLR-156, which removed the two-thirds consolation
+that the 2026-08-26 version of this table quoted.
+
+**Why this fixes the card that started it.** The developer's live case: a skulled 5 taken by the
+Quarry against a played 1, with a Bell-Taker armed. The screen said **Dodge**, told them it banks and
+costs nothing, and then listed *"Bell-Taker — needed: win a trick with Bells"* as unmet. Both
+statements are true and they contradict each other in plain English. Under this scheme the readout
+says **Low Victory** and the card says **"Go high on a Bells trick"** — the player went low, so the
+card plainly did not fire, and the trick was plainly still good for them. The two facts stop
+competing for the same word.
+
+**A buff condition never names Victory or Defeat**, because no buff condition reads that axis. This
+is the rule that keeps the two vocabularies from re-merging: the moment a card's text can be read as
+being about the outcome, the collision is back.
 
 The family words fall out of the scheme, which also fixes "Feeder" meaning nothing: Bell-Taker
 becomes **Bell High**, Bell-Feeder becomes **Bell Low**, Sidestep becomes **Skull Low**. The whole
 live pool reads as three suits crossed with high/low, plus skull-low. Card text becomes *"go high on
 a Bells trick"*, *"go low on a Bells trick"*, *"go low on a skull"* — and Sidestep's text is true for
 the first time, since it never looked at which card was played.
+
+**The resolution headline becomes the four-way name.** Where the screen says *Dodge* today it says
+*Low Victory*, because the headline is the one place the player reliably reads both axes at once.
+Dodge, ate the skull, and the clean pair survive as flavour in the sentence underneath — *"they took
+it, and it carried a skull — so it banks, and costs you nothing"* — which is where a colour word
+belongs and a load-bearing one does not.
 
 **The one place it strains** is that "high" is not literally the higher rank — a trump 3 takes a
 trick over an 11 Bells, and an off-suit 11 takes nothing. Either define it as the contest rather
@@ -1566,17 +1596,17 @@ loss. The real defect is that the reward is *consumed* by the same losing cash-o
 it, paid into a pot that is near zero precisely because the player just lost. Three deliberate
 losses in a bad hand pay three separate points into three tiny cash-outs and accumulate into nothing.
 
-**The rule.** A Feeder that fires on a **Loss** does not join this hand's pool. Its reward goes into
-a carry pool which seeds the next hand's pool. A Feeder that fires on a **dodge** — which is a Win —
-pays into the current hand exactly as it does now, and stacks with everything else that fired,
+**The rule.** A Feeder that fires on a **Low Defeat** does not join this hand's pool. Its reward
+goes into a carry pool which seeds the next hand's pool. A Feeder that fires on a **Low Victory** —
+the dodge — pays into the current hand exactly as it does now, and stacks with everything else that fired,
 including the Overlap Bonus. So the card pays now when you got away with it, and pays later when you
 got hit.
 
 ```
 HAND 1 (going badly, bronze Bell Low active)
-  trick 2 · went low · LOSS · fires → carry +1
-  trick 4 · went low · LOSS · fires → carry +2
-  trick 5 · went low · LOSS · fires → carry +3
+  trick 2 · Low Defeat · fires → carry +1
+  trick 4 · Low Defeat · fires → carry +2
+  trick 5 · Low Defeat · fires → carry +3
   hand 1 pays out nothing from the Feeder
 
 HAND 2

@@ -110,11 +110,14 @@ Three consequences that are routinely got wrong:
   leftover from an unbuilt "Apply-to-card" category in `v1-buff-card-list.md`. **No buff attaches to
   a card.** A buff is activated for a trick and checked when that trick resolves.
 
-**A `High` / `Low` rename is banked and NOT built.** The proposal — Win/Loss become skull-aware and
-name only the outcome, while High/Low name the mechanical act and are the only words a buff card
-uses — is written up in `.docs/design/Balatro-Forbidden-Solitaire/ideas.md`. Until a ticket ships it,
-the vocabulary above is what the code and the ruleset actually say. Do not use High/Low in code, in
-`the-hunt.md`, or in a plan as though it were live.
+**A vocabulary rename is banked and NOT built.** The proposal, revised 2026-09-03: **Victory** and
+**Defeat** name the outcome only (banks / hurts), **High** and **Low** name whether the player
+physically took the cards, and the two combine into the four names **High Victory** (clean win),
+**Low Victory** (dodge), **High Defeat** (ate the skull), **Low Defeat** (clean loss). A buff card
+uses High or Low and never names Victory or Defeat. It is written up in
+`.docs/design/Balatro-Forbidden-Solitaire/ideas.md`. Until a ticket ships it, the vocabulary above is
+what the code and the ruleset actually say. Do not use these words in code, in `the-hunt.md`, or in a
+plan as though they were live.
 
 ### Cut buffs are cut until a ticket brings them back
 
@@ -175,6 +178,24 @@ Static analysis is real here: `npm run lint` and `npm run typecheck` are require
 ## Architecture: the `/fb-*` contract pipeline
 
 The pipeline is the substantive structure in this repo. It is not a suggestion — the five commands and four agents cross-reference each other, and a change to one usually implies a change to a referenced file rather than to the command itself.
+
+**Never write code outside `/fb-apply`.** Every change to `src/` — and to anything else the pipeline
+owns — goes `/fb-plan <brief>` → the approval gate → `/fb-apply <slug>`. This holds however the
+request is phrased: a bare "go", a "go" repeated several times, a task that looks small enough to
+just do, and an urgent-sounding ask are all still `/fb-plan` first. The only exception is the
+developer explicitly saying to work outside the pipeline for that piece of work.
+
+Two things follow from this and are just as binding:
+
+- **Do not pre-empt the plan's design decisions in chat.** Alignment, assumptions and open
+  questions belong in `plan.md` Part 1 and are settled at the approval gate. A conversational
+  back-and-forth that reaches those decisions first means the gate is rubber-stamping a
+  conversation the plan folder does not record.
+- **Reading is not writing.** Exploring the codebase to write a good brief or a good plan is fine
+  and encouraged. Editing a file is not.
+
+If code was written outside the pipeline, revert it and start at `/fb-plan` — do not retro-fit a
+plan around work already on disk.
 
 **The lifecycle:**
 
