@@ -44,7 +44,13 @@ export const RANK_FACE: Readonly<Record<number, RankFace>> = {
   5: { faceClass: RankFaceClass.Act, name: 'Woodcutter', figure: 'axe' },
   6: { faceClass: RankFaceClass.Plain, name: null, figure: null },
   7: {
-    faceClass: RankFaceClass.Inert,
+    // DLR-163 AC12 — was `RankFaceClass.Inert`. The no-rule mark comes off BY CONSTRUCTION:
+    // `printedRects` pushes `noRuleMark` only for an Inert face, and `cardActs` is already
+    // `faceClass === Act`, so the tooltip's "this card does something" branch follows too.
+    // The three per-suit figures are UNCHANGED — `RankFace.figure` already accepts a record and
+    // `printedRects` branches on `figure !== null`, not on the class. Whether the harp, chalice
+    // and sword still read for the new rule is criterion 14 and is the developer's.
+    faceClass: RankFaceClass.Act,
     name: 'Treasure',
     figure: { bells: 'harp', keys: 'chalice', moons: 'sword' },
   },
@@ -133,8 +139,12 @@ export const CARD_FACE_TYPE = {
   cornerGlyph: 0.15,
 } as const
 
-/** AC1/AC2 — true only for the five ranks that change what happens. NOT `Boolean(RANK_NAME[r])`
- *  any more: the Treasure is named and does not act, which is the whole point of this ticket. */
+/** AC1/AC2 — true only for the ranks that change what happens. NOT `Boolean(RANK_NAME[r])`:
+ *  `labels.ts`'s `RANK_NAME` deliberately omits the Treasure, so the two maps still differ.
+ *
+ *  DLR-163 AC12 — this is SIX ranks now, not five. The Treasure was `Inert` because DLR-149
+ *  recorded that it had no rule at all; DLR-163 gave it one, so that ticket's point is
+ *  superseded and the no-rule mark comes off by construction. */
 export function cardActs(rank: number): boolean {
   return RANK_FACE[rank]?.faceClass === RankFaceClass.Act
 }

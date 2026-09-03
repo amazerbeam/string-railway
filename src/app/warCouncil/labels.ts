@@ -55,8 +55,9 @@ export const ILLEGAL_MOVE_MESSAGE: Readonly<Record<IllegalMoveReason, string>> =
     'The Monarch was led — play your Swan or your highest card of that suit.',
   [IllegalMoveReason.MissingAbilityChoice]: 'Choose what this card does before playing it.',
   [IllegalMoveReason.UnexpectedAbilityChoice]: 'That card takes no choice.',
-  [IllegalMoveReason.InvalidFoxExchangeCard]: 'That card is not available to exchange.',
-  [IllegalMoveReason.InvalidWoodcutterDiscard]: 'That card is not available to discard.',
+  // DLR-163 — `InvalidFoxExchangeCard` and `InvalidWoodcutterDiscard` are gone from the union;
+  // neither rule takes a card any more. This map is a total `Record`, so their removal here is
+  // proved by the compiler rather than left as a silent gap.
 }
 
 /** AC1/AC7 — each bar's accessible name. The two must differ, because `getByRole('meter', …)`
@@ -160,6 +161,16 @@ export function quarryLeadTelegraphText(suit: Suit): string {
   return `The Quarry will lead with ${SUIT_NAME[suit]}`
 }
 
+/** DLR-163 AC7 — the visible word on the row a skull just landed in. A WORD, not colour alone:
+ *  the border marks the row too, but a border on its own is a colour signal. PLACEHOLDER copy. */
+export const SKULL_ARRIVED_WORD = 'skull arrived'
+
+/** DLR-163 AC7 — the same fact for a reader who cannot see the row. Suit name from `SUIT_NAME`,
+ *  never typed out, exactly as `quarryLeadTelegraphText` above. PLACEHOLDER copy. */
+export function skullArrivedText(suit: Suit): string {
+  return `A skull just landed on a ${SUIT_NAME[suit]} card in the Quarry's hand`
+}
+
 /** The purse plate on the status band (DLR-84). PLACEHOLDER copy, as this file's other labels
  *  are. Distinct from `runLabels.ts`'s `SHOP_COINS_LABEL`: each file owns its own surface's
  *  copy, so the felt and the shop can be reworded independently. */
@@ -179,10 +190,22 @@ export const DISCARD_REFUSAL_MESSAGE: Readonly<Record<DiscardRefusal, string>> =
   [DiscardRefusal.EmptySelection]: 'Select a card to discard.',
 }
 
+/** DLR-163 AC5/AC6 — the Swap control's visible count. BOTH figures, because a cap that can grow
+ *  is unreadable as a bare remainder: "3 left" says nothing about whether the pile just went to 4
+ *  of 4. The exact wording is the developer's, as this file's rest is. */
+export function swapCountText(discardsRemaining: number, swapCap: number): string {
+  return `${discardsRemaining} of ${swapCap}`
+}
+
 /** The rail's accessible name. The readings — held, selecting, ready, refused — MUST differ:
- *  `getByRole('button', { name })` is how the spec tells them apart. */
+ *  `getByRole('button', { name })` is how the spec tells them apart.
+ *
+ *  DLR-163 AC6 — the raise is spoken as well as drawn, so a player using a screen reader is told
+ *  the addition landed rather than left to infer it from a number that changed. */
 export function discardAccessibleName(
   discardsRemaining: number,
+  swapCap: number,
+  justRaised: boolean,
   selecting: boolean,
   selectionSize: number,
   refusal: DiscardRefusal | null,
@@ -190,7 +213,8 @@ export function discardAccessibleName(
   if (refusal !== null) {
     return `${DISCARD_RAIL_LABEL}, unavailable — ${DISCARD_REFUSAL_MESSAGE[refusal]}`
   }
-  const held = `${DISCARD_RAIL_LABEL}, ${discardsRemaining} left`
+  const raised = justRaised ? ', just raised by a Woodcutter' : ''
+  const held = `${DISCARD_RAIL_LABEL}, ${swapCountText(discardsRemaining, swapCap)}${raised}`
   if (!selecting) return held
   return selectionSize > 0
     ? `${held}, ${selectionSize} selected — tap to swap`

@@ -16,6 +16,7 @@ import {
   type Card,
   type DiscardStock,
   type IllegalMoveReason,
+  type Suit,
   type TrickCard,
   type TrickResolution,
   type WarCouncilState,
@@ -92,6 +93,24 @@ export interface RoundUiState {
    *  Run state carried for the life of the hand: the hand owns it for its whole life and hands the
    *  survivor back through `WarCouncilRoundResult`. */
   readonly discardsRemaining: number
+  /** DLR-163 AC5 — the fight's Swap cap bonus, mirrored from the mount's opening prop and climbed
+   *  by each Woodcutter the player commits. Run state carried for the life of the hand and handed
+   *  back through `WarCouncilRoundResult` — the same contract `discardsRemaining` documents. */
+  readonly discardCapBonus: number
+  /** DLR-163 AC8 — base damage earned this FIGHT so far. Mirrored from the mount's opening prop
+   *  and climbed by each banked trick that carried a Treasure. Unlike `baseDamageBonus` above,
+   *  which is a Whetstone figure a hand cannot change, this one IS written during a hand. */
+  readonly treasureDamageBonus: number
+  /** DLR-163 AC6 — the Swap pile climbed on the last committed card, so the control marks where
+   *  the addition went. Set by `commit` and cleared by the next commit, NOT by a timer: a
+   *  timeout-driven flash would need cleanup, would double-fire under StrictMode's development
+   *  double-mount, and would strand the mark if the felt unmounted mid-flash. */
+  readonly swapJustRaised: boolean
+  /** DLR-163 AC7 — the suit a skull was minted into on the last committed transition, or `null`.
+   *  Set by `commit` from a comparison of `skulledCards` before and after, and cleared by the
+   *  next commit — a plain value, not a ref, so StrictMode's double render recomputes the same
+   *  answer and no timer needs cancelling. */
+  readonly skullArrivedIn: Suit | null
   /** DLR-100 — the hand's OWN transient: dies on remount, never touches `RunState`. `null` when
    *  the discard rail is closed; an array (possibly empty) while it is open, holding the hand
    *  cards currently toggled in. ONE field rather than a boolean-plus-array pair: two independent

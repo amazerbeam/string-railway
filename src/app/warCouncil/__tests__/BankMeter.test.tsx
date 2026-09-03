@@ -15,6 +15,8 @@ const cleanLoss: TrickResolution = {
   roll: 0,
   buffAccrual: null,
   firedBuffIds: [],
+
+  treasureBonusEarned: false,
 }
 
 describe('BankMeter', () => {

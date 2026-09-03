@@ -22,8 +22,9 @@ export interface ResolutionView {
   /** DLR-160 AC2 — the cards in THIS trick that carry a skull, filtered from
    *  `RoundState.skulledCards` at the hand-off. Empty on a clean trick. */
   readonly skulledInTrick: readonly Card[]
-  /** DLR-160 AC7 — the decree in force as the trick resolved. */
-  readonly decree: Card
+  /** DLR-160 AC7 — the decree in force as the trick resolved. DLR-163 AC2 — `null` when a Fox
+   *  had already replaced it with a bare suit, so the trick resolved under a suit marker. */
+  readonly decree: Card | null
   /** DLR-160 AC3 — buffs armed for this trick that did not fire, resolved to `Buff`s at the
    *  hand-off from the same `offeredBuffs + spentThisTrick` union the beats use. */
   readonly deadBuffs: readonly Buff[]

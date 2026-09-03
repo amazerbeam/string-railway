@@ -85,6 +85,13 @@ export function recordEncounter(
   /** DLR-156 AC8/AC9 — OPTIONAL, defaulted to `run.streak`, mirroring `feederCarry` immediately
    *  above. `App.tsx` and `sim/playRun.ts` are the only callers that pass it. */
   streak?: StreakState,
+  /** DLR-163 AC5 — the fight's Swap cap bonus after this hand. OPTIONAL and defaulted to
+   *  `run.discardCapBonus`, mirroring `feederCarry` and `streak` immediately above, so every
+   *  existing call site is unchanged. `advanceRun`, not this function, resets it. */
+  discardCapBonus?: number,
+  /** DLR-163 AC8 — base damage earned this fight after this hand. OPTIONAL and defaulted to
+   *  `run.treasureDamageBonus`, for `discardCapBonus`'s stated reason. */
+  treasureDamageBonus?: number,
 ): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
     throw new RangeError(
@@ -109,6 +116,8 @@ export function recordEncounter(
     ...run,
     encounter,
     discardsRemaining,
+    discardCapBonus: discardCapBonus ?? run.discardCapBonus,
+    treasureDamageBonus: treasureDamageBonus ?? run.treasureDamageBonus,
     buffs: buffs ?? run.buffs,
     // DLR-125 R3 step 5 — Purse coins are additive with the win payout and the quick kill, never
     // conditioned on `wonThisEncounter`: a buff's condition already decided whether it fired, and
@@ -146,6 +155,9 @@ export function advanceRun(run: RunState): RunState {
     outcome: RunOutcome.InProgress,
     handOfFight: 1,
     discardsRemaining: DISCARDS_PER_FIGHT,
+    // DLR-163 AC11 — "everything resets when the fight ends", for both per-fight figures.
+    discardCapBonus: 0,
+    treasureDamageBonus: 0,
     // DLR-116 — a shop visit is per resolved encounter, so the free pull returns at every fight
     // boundary exactly as the discard budget does. `runSeed` and `apCapacityBonus` are carried by
     // the spread above untouched.

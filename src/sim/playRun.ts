@@ -181,6 +181,10 @@ export function playRun(
       outcome.result.buffs,
       outcome.result.feederCarry,
       outcome.result.streak,
+      // DLR-163 AC5/AC8 — the same two figures `App.tsx`'s `handleComplete` carries. Without
+      // these the simulator measures the pre-change game and silently reports the wrong figures.
+      outcome.result.discardCapBonus,
+      outcome.result.treasureDamageBonus,
     )
     coinsEarned += run.coins - coinsBefore
     handsThisFight += 1

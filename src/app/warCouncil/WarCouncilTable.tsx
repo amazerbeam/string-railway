@@ -213,8 +213,9 @@ export default function WarCouncilTable({
     const isCommitTap =
       ui.armed !== null &&
       sameCard(ui.armed, card) &&
+      // DLR-163 AC5 — only the 3 is excluded now: the 5 carries no prompt, so its second tap is
+      // an ordinary commit.
       card.rank !== CardRank.Fox &&
-      card.rank !== CardRank.Woodcutter &&
       !discardSelecting(ui)
     if (!isCommitTap) {
       dispatchClearingAnnouncement({ kind: RoundUiActionKind.TapCard, card })
@@ -269,7 +270,10 @@ export default function WarCouncilTable({
         quarryLabel={quarryLabel}
       />
       <aside className="wc-dossier">
-        <QuarryShape shape={shape} leadSuit={leadSuit} />
+        {/* DLR-163 AC7 — `skullArrivedIn` is a plain reducer value, not a ref: a mid-hand skull
+            minted onto a face-down Quarry card is invisible on the table, so the row that already
+            reports the Quarry's skulled count per suit is where its arrival is marked. */}
+        <QuarryShape shape={shape} leadSuit={leadSuit} skullArrivedIn={ui.skullArrivedIn} />
         <PotCard
           total={ui.round.total}
           roll={ui.round.roll}
@@ -310,7 +314,6 @@ export default function WarCouncilTable({
               offered,
               quarryToLead,
               handSummary,
-              displayHand,
               onCarryOn: handleCarryOn,
               onCancel: handleCancel,
             })}

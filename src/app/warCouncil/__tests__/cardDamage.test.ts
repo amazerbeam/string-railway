@@ -4,6 +4,7 @@ import {
   DAMAGE_PER_HIT,
   DuelSide,
   HAND_SIZE,
+  QUARRY_TREASURE_DAMAGE,
   startEncounter,
   ALL_BRONZE,
   steppedTo,
@@ -102,7 +103,6 @@ describe('cardDamagePreview — the hand fan’s per-card win/lose readout, deri
     expect(preview.lose.toQuarry).toBe(0)
   })
 
-
   it('returns null once the hand is complete', () => {
     const ui = seededUi({ phase: RoundPhase.Complete })
     expect(cardDamagePreview(ui, card(Suit.Bells, 2))).toBeNull()
@@ -152,5 +152,28 @@ describe('the preview reads the rank-tier ladder the commit will (DLR-122)', () 
       card(Suit.Bells, 2),
     )!
     expect(gold).toEqual(bronze)
+  })
+})
+
+describe('DLR-163 AC10 — the preview inherits the Treasure hit', () => {
+  it('reads 2 on the lose branch against a Treasure lead, not 1', () => {
+    const ui = seededUi({
+      currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Bells, CardRank.Treasure) }],
+      leader: PlayerSide.Cpu,
+      phase: RoundPhase.AwaitingFollow,
+    })
+    const preview = cardDamagePreview(ui, card(Suit.Bells, 2))!
+    expect(preview.lose.toPlayer).toBe(QUARRY_TREASURE_DAMAGE)
+  })
+
+  it('reads 2 on the lose branch when the PLAYER’S own card is the Treasure — ownership-blind', () => {
+    const ui = seededUi()
+    const preview = cardDamagePreview(ui, card(Suit.Bells, CardRank.Treasure))!
+    expect(preview.lose.toPlayer).toBe(QUARRY_TREASURE_DAMAGE)
+  })
+
+  it('still reads DAMAGE_PER_HIT when no Treasure is visible', () => {
+    const preview = cardDamagePreview(seededUi(), card(Suit.Bells, 2))!
+    expect(preview.lose.toPlayer).toBe(DAMAGE_PER_HIT)
   })
 })

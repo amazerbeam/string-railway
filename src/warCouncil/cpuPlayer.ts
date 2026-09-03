@@ -1,6 +1,5 @@
 import { TelegraphFidelity, TELEGRAPH_FIDELITY } from '../hunt'
 import { cardsOfSuit, removeCard } from './cardUtils'
-import { drawCards } from './encounterDeck'
 import { legalMoves } from './legalMoves'
 import { playCard } from './playCard'
 import { resolveTrickWinner } from './resolveTrick'
@@ -76,47 +75,43 @@ export function chooseCpuCard(state: RoundState, side: PlayerSide): Card {
   return lowestCard(winners.length > 0 ? winners : legal)
 }
 
-// Exchanges the Fox for the lowest card of the CPU's most-held suit whenever
-// that suit isn't already trump — concentrates trump in the CPU's strongest
-// suit. Declines when the strongest suit is already trump, or when the Fox
-// was the last card in hand (nothing left to offer).
-export function chooseCpuFoxChoice(handAfterFox: readonly Card[], trumpSuit: Suit): AbilityChoice {
-  if (handAfterFox.length === 0) {
-    return { kind: AbilityChoiceKind.FoxDecline }
+/**
+ * DLR-163 AC4 — the Quarry names the suit it holds MOST of, and declines when that suit is
+ * already trump. This is `chooseCpuFoxChoice`'s own heuristic with the cost removed: it no longer
+ * has to give up a card, so the empty-hand decline it used to need is gone — a 3 played as the
+ * Quarry's last card can still change trump.
+ *
+ * Ties break on `ALL_SUITS` order through `reduce`'s strict `>`, unchanged, so the choice stays
+ * deterministic and a seeded encounter reproduces it.
+ */
+export function chooseCpuTrumpChoice(
+  handAfterFox: readonly Card[],
+  trumpSuit: Suit,
+): AbilityChoice {
+  const strongest = ALL_SUITS.map((suit) => ({
+    suit,
+    count: cardsOfSuit(handAfterFox, suit).length,
+  })).reduce((best, row) => (row.count > best.count ? row : best))
+  if (strongest.count === 0 || strongest.suit === trumpSuit) {
+    return { kind: AbilityChoiceKind.DeclineTrump }
   }
-  const strongestSuit = ALL_SUITS.map((suit) => cardsOfSuit(handAfterFox, suit)).reduce(
-    (best, cards) => (cards.length > best.length ? cards : best),
-  )
-  if (strongestSuit[0].suit === trumpSuit) {
-    return { kind: AbilityChoiceKind.FoxDecline }
-  }
-  return { kind: AbilityChoiceKind.FoxExchange, handCard: lowestCard(strongestSuit) }
-}
-
-// Always discards the lowest-ranked card of the hand after the draw — the
-// simplest deterministic "keep your best cards" default. Every candidate is
-// drawn from the post-draw hand, so the discard is always legal.
-export function chooseCpuWoodcutterChoice(handWithDrawn: readonly Card[]): AbilityChoice {
-  return { kind: AbilityChoiceKind.WoodcutterDiscard, discard: lowestCard(handWithDrawn) }
+  return { kind: AbilityChoiceKind.NameTrump, suit: strongest.suit }
 }
 
 // Composes card selection with the matching ability choice, mirroring the same
 // hand-shape construction playCard.ts itself uses internally, so the two stay
 // in lockstep. Every value this can produce is drawn from a set the engine
 // itself already treats as legal.
+//
+// DLR-163 — the Woodcutter branch is GONE: the Quarry's 5 takes no choice at all, and the swap it
+// performs is `playCard`'s own business through `applyQuarrySwap`.
 export function chooseCpuMove(state: RoundState, side: PlayerSide): CpuMove {
   const card = chooseCpuCard(state, side)
-  const handAfter = removeCard(state.hands[side], card)
-
   if (card.rank === CardRank.Fox) {
-    return { card, choice: chooseCpuFoxChoice(handAfter, state.trumpSuit) }
-  }
-  if (card.rank === CardRank.Woodcutter) {
-    // DLR-146 fix pass — through `drawCards` rather than a raw `drawPile[0]` index, so this
-    // preview agrees with what `applyWoodcutterDraw` will actually hand back, including a
-    // mid-hand reshuffle, and never contains `undefined` when the pile has run dry.
-    const handWithDrawn = [...handAfter, ...drawCards(state, 1).drawn]
-    return { card, choice: chooseCpuWoodcutterChoice(handWithDrawn) }
+    return {
+      card,
+      choice: chooseCpuTrumpChoice(removeCard(state.hands[side], card), state.trumpSuit),
+    }
   }
   return { card }
 }

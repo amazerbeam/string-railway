@@ -31,6 +31,9 @@ describe('placementsOf', () => {
     for (const c of round.drawPile) {
       expect(placements.get(cardKey(c))).toEqual({ kind: PlaceKind.DrawPile })
     }
+    // DLR-163 AC2 — `decree` is nullable now; a DEAL always puts a card there.
+    expect(round.decree).not.toBeNull()
+    if (round.decree === null) throw new Error('expected a dealt decree')
     expect(placements.get(cardKey(round.decree))).toEqual({ kind: PlaceKind.DecreePlate })
   })
 })

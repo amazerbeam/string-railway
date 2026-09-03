@@ -128,8 +128,9 @@ describe('cardFace — the face model', () => {
 
   // AC1/AC2 — "named" and "acts" are NOT the same predicate any more. That divergence is the
   // whole ticket, so it is asserted rather than left implied.
-  it('acts on exactly the five acting ranks', () => {
-    expect(RANKS.filter(cardActs)).toEqual([1, 3, 5, 9, 11])
+  it('DLR-163 AC12 — acts on six ranks now: the Treasure joined them', () => {
+    expect(RANKS.filter(cardActs)).toEqual([1, 3, 5, 7, 9, 11])
+    expect(cardActs(7)).toBe(true)
   })
 
   it('paints exactly the six named ranks, the Treasure by suit', () => {
@@ -144,8 +145,12 @@ describe('cardFace — the face model', () => {
     expect(RANK_FACE[8]).toEqual({ faceClass: RankFaceClass.Plain, name: null, figure: null })
   })
 
-  it('marks only the Treasure inert', () => {
-    expect(RANKS.filter((rank) => RANK_FACE[rank].faceClass === RankFaceClass.Inert)).toEqual([7])
+  // DLR-163 AC12 — the Treasure was the ONLY inert face and it is now an acting one, so nothing
+  // is inert. That is what takes the printed "no rule" mark off rank 7 BY CONSTRUCTION:
+  // `printedRects` pushes it only for an `Inert` face.
+  it('marks no rank inert, so no face prints the no-rule mark', () => {
+    expect(RANKS.filter((rank) => RANK_FACE[rank].faceClass === RankFaceClass.Inert)).toEqual([])
+    expect(printedRects(7).printed).not.toContainEqual(CARD_FACE_GEOMETRY.noRuleMark)
   })
 
   // The drift guard for the two rank-name maps. `labels.ts` deliberately keeps RANK_NAME at the

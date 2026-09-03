@@ -22,6 +22,7 @@
 import { DuelSide, HAND_SIZE, isEncounterResolved, type Damage } from '../../hunt'
 import {
   buffTrickFactsFor,
+  CardRank,
   PlayerSide,
   potValue,
   resolveTrickBank,
@@ -103,6 +104,9 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
   const shared: Omit<TrickFacts, 'playerWon'> = {
     // DLR-167 — the UNION, so a preview of a card the player has cursed reads as the dodge it is.
     skullTrick: trickIsSkulled(skullsOn(state.round), visible),
+    // DLR-163 AC8/AC10 — derived exactly as `playCard.ts` derives it, over the cards the player
+    // can actually see, so the preview's "this card costs 2" is right for a Treasure trick.
+    treasureTrick: visible.some((t) => t.card.rank === CardRank.Treasure),
     finalTrick,
     baseDamageBonus: options.baseDamageBonus ?? 0,
     // DLR-122 — the Swan ladder, derived exactly as `playCard.ts` derives it, from the same

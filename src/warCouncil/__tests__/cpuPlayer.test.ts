@@ -2,12 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { dealRound } from '../deal'
 import { playCard } from '../playCard'
 import { legalMoves } from '../legalMoves'
-import {
-  chooseCpuCard,
-  chooseCpuFoxChoice,
-  chooseCpuMove,
-  chooseCpuWoodcutterChoice,
-} from '../cpuPlayer'
+import { chooseCpuCard, chooseCpuMove, chooseCpuTrumpChoice } from '../cpuPlayer'
 import {
   AbilityChoiceKind,
   CardRank,
@@ -200,16 +195,16 @@ describe('AC12 — the Quarry dumps skulls into tricks it is losing', () => {
   })
 })
 
-describe('chooseCpuFoxChoice', () => {
-  it('exchanges, offering the lowest card of the most-held non-trump suit', () => {
+describe('chooseCpuTrumpChoice (DLR-163 AC4)', () => {
+  it('names the suit it holds MOST of, taking nothing from hand', () => {
     const handAfterFox: Card[] = [
       { suit: 'keys', rank: 7 },
       { suit: 'keys', rank: 2 },
       { suit: 'moons', rank: 10 },
     ]
-    expect(chooseCpuFoxChoice(handAfterFox, 'bells')).toEqual({
-      kind: AbilityChoiceKind.FoxExchange,
-      handCard: { suit: 'keys', rank: 2 },
+    expect(chooseCpuTrumpChoice(handAfterFox, 'bells')).toEqual({
+      kind: AbilityChoiceKind.NameTrump,
+      suit: 'keys',
     })
   })
 
@@ -219,27 +214,13 @@ describe('chooseCpuFoxChoice', () => {
       { suit: 'bells', rank: 2 },
       { suit: 'moons', rank: 10 },
     ]
-    expect(chooseCpuFoxChoice(handAfterFox, 'bells')).toEqual({
-      kind: AbilityChoiceKind.FoxDecline,
+    expect(chooseCpuTrumpChoice(handAfterFox, 'bells')).toEqual({
+      kind: AbilityChoiceKind.DeclineTrump,
     })
   })
 
-  it('declines when the Fox was the last card in hand', () => {
-    expect(chooseCpuFoxChoice([], 'bells')).toEqual({ kind: AbilityChoiceKind.FoxDecline })
-  })
-})
-
-describe('chooseCpuWoodcutterChoice', () => {
-  it('discards the lowest-ranked card of the post-draw hand', () => {
-    const handWithDrawn: Card[] = [
-      { suit: 'keys', rank: 7 },
-      { suit: 'moons', rank: 2 },
-      { suit: 'bells', rank: 10 },
-    ]
-    expect(chooseCpuWoodcutterChoice(handWithDrawn)).toEqual({
-      kind: AbilityChoiceKind.WoodcutterDiscard,
-      discard: { suit: 'moons', rank: 2 },
-    })
+  it('declines on an empty hand — there is no suit it holds most of', () => {
+    expect(chooseCpuTrumpChoice([], 'bells')).toEqual({ kind: AbilityChoiceKind.DeclineTrump })
   })
 })
 
@@ -267,7 +248,7 @@ describe('chooseCpuMove', () => {
     expect(result.ok).toBe(true)
   })
 
-  it('produces a Woodcutter move accepted by playCard', () => {
+  it('DLR-163 AC5/AC7 — returns NO choice for a Woodcutter, and playCard accepts it', () => {
     const state = stateWith({
       leader: PlayerSide.Cpu,
       hands: {
@@ -280,13 +261,14 @@ describe('chooseCpuMove', () => {
     })
     const move = chooseCpuMove(state, PlayerSide.Cpu)
     expect(move.card).toEqual({ suit: 'keys', rank: 5 })
+    expect(move.choice).toBeUndefined()
     const result = playCard(state, PlayerSide.Cpu, move.card, move.choice)
     expect(result.ok).toBe(true)
   })
 })
 
-describe('chooseCpuMove — Woodcutter preview under an empty draw pile (DLR-146 fix pass)', () => {
-  it('does not throw and previews a real card by reshuffling the spent pile in', () => {
+describe("the Quarry's Woodcutter under an empty draw pile (DLR-146 fix pass, DLR-163)", () => {
+  it('does not throw and swaps a real card by reshuffling the spent pile in', () => {
     const state = stateWith({
       leader: PlayerSide.Cpu,
       drawPile: [],
@@ -303,16 +285,12 @@ describe('chooseCpuMove — Woodcutter preview under an empty draw pile (DLR-146
         ],
       },
     })
-    expect(() => chooseCpuMove(state, PlayerSide.Cpu)).not.toThrow()
     const move = chooseCpuMove(state, PlayerSide.Cpu)
     expect(move.card).toEqual({ suit: 'keys', rank: 5 })
-    expect(move.choice?.kind).toBe(AbilityChoiceKind.WoodcutterDiscard)
-    if (move.choice?.kind !== AbilityChoiceKind.WoodcutterDiscard) {
-      throw new Error('expected a Woodcutter discard choice')
-    }
-    expect(move.choice.discard).toBeDefined()
     const result = playCard(state, PlayerSide.Cpu, move.card, move.choice)
     expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error('expected ok')
+    expect(result.state.hands.cpu.every((c) => c !== undefined)).toBe(true)
   })
 })
 

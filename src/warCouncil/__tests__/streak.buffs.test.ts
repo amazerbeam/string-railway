@@ -43,6 +43,8 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   swanKeepsMultiplier: false,
   swanKeepsBank: false,
   buffs: null,
+  // DLR-163 AC8/AC10 — a trick with no Treasure in it, the default this suite measures against.
+  treasureTrick: false,
   ...over,
 })
 
@@ -187,10 +189,7 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
 
     it('a bronze Helmet keeps the total, zeroes the roll', () => {
       const helmet = buff('skullHelmet:protection', BuffTier.Bronze, 1)
-      const r = resolveTrickBank(
-        START,
-        skullTaken({ buffs: input({ active: [helmet] }) }),
-      )
+      const r = resolveTrickBank(START, skullTaken({ buffs: input({ active: [helmet] }) }))
       expect(r.total).toBe(8)
       expect(r.roll).toBe(0)
       expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
@@ -198,10 +197,7 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
 
     it('a bronze Tether keeps the roll, zeroes the total', () => {
       const tether = buff('skullTether:protection', BuffTier.Bronze, 1)
-      const r = resolveTrickBank(
-        START,
-        skullTaken({ buffs: input({ active: [tether] }) }),
-      )
+      const r = resolveTrickBank(START, skullTaken({ buffs: input({ active: [tether] }) }))
       expect(r.total).toBe(0)
       expect(r.roll).toBe(2)
       expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
@@ -210,10 +206,7 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
     it('both bronze together keep both figures, unchanged', () => {
       const helmet = buff('skullHelmet:protection', BuffTier.Bronze, 1)
       const tether = buff('skullTether:protection', BuffTier.Bronze, 2)
-      const r = resolveTrickBank(
-        START,
-        skullTaken({ buffs: input({ active: [helmet, tether] }) }),
-      )
+      const r = resolveTrickBank(START, skullTaken({ buffs: input({ active: [helmet, tether] }) }))
       expect(r.total).toBe(8)
       expect(r.roll).toBe(2)
       expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
@@ -222,10 +215,7 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
     it('both gold add their +1 to each surviving figure', () => {
       const helmet = buff('skullHelmet:protection', BuffTier.Gold, 1)
       const tether = buff('skullTether:protection', BuffTier.Gold, 2)
-      const r = resolveTrickBank(
-        START,
-        skullTaken({ buffs: input({ active: [helmet, tether] }) }),
-      )
+      const r = resolveTrickBank(START, skullTaken({ buffs: input({ active: [helmet, tether] }) }))
       expect(r.total).toBe(9)
       expect(r.roll).toBe(3)
       expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)

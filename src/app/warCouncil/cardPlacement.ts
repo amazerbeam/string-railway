@@ -90,7 +90,9 @@ export function placementsOf(state: RoundState): ReadonlyMap<string, PlaceId> {
     PlaceKind.TrickWell,
     false,
   )
-  map.set(cardKey(state.decree), { kind: PlaceKind.DecreePlate })
+  // DLR-163 AC2 — a decree replaced by a suit marker has no card to place. Guarded rather than
+  // defaulted: `cardKey` takes a `Card` and a fabricated stand-in would collide with a real card.
+  if (state.decree !== null) map.set(cardKey(state.decree), { kind: PlaceKind.DecreePlate })
   return map
 }
 

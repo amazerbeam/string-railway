@@ -49,6 +49,10 @@ export {
   FLASK_HEAL_PERCENT,
   DISCARDS_PER_FIGHT,
   MAX_CARDS_PER_DISCARD,
+  TREASURE_BASE_DAMAGE_STEP,
+  QUARRY_TREASURE_DAMAGE,
+  WOODCUTTER_SWAP_STEP,
+  QUARRY_SWAP_SKULL_CHANCE,
   AP_ENABLED,
   STARTING_AP,
   AP_CAPACITY_STEP,
@@ -73,150 +77,10 @@ export {
 export type { PathNode, PathStage } from './runPath'
 export { PathNodeStatus, runPath } from './runPath'
 
-export type { Buff, BuffId, BuffCondition, BuffReward, BuffTarget } from './buffs'
-export {
-  BuffTier,
-  BuffKind,
-  BuffRewardAxis,
-  BuffCadence,
-  BuffTargetSuit,
-  BUFF_CADENCE,
-  BUFF_TARGET_RANK_MIN,
-  BUFF_TARGET_RANK_MAX,
-  UNASSIGNED_BUFF_CONDITION,
-  UNASSIGNED_BUFF_REWARD,
-  ACTIVATED_BUFF_CONDITION,
-  buffTargetSuitOf,
-  buffTargetRankOf,
-  buffIsWild,
-  isShopOnlyBuff,
-  isValidBuffTarget,
-} from './buffs'
-
-export {
-  openingPileWeightOf,
-  seedStartingBuffPile,
-  startingBuffPileFor,
-  startingPileSeedFor,
-} from './startingPile'
-
-export type { CurseBonus } from './buffCatalog'
-export {
-  CHEAT_DURATION_TRICKS,
-  CURSE_REWARD,
-  cheatBuff,
-  curseBuff,
-  curseRewardOf,
-  wildcardBuff,
-  shieldBuff,
-  cheatDurationTricksOf,
-  shieldHeartsOf,
-} from './buffCatalog'
-
-export type { ShieldAbsorption } from './shield'
-export { SHIELD_HEARTS, NO_SHIELD_HEARTS, absorbWithShield, shieldHeartsForTier } from './shield'
-
-export type { BuffCostAxis, BuffMintedAxis } from './buffCosts'
-export {
-  AP_COST_MIN,
-  AP_COST_MAX,
-  REWARD_BASE,
-  CONDITION_MODIFIER,
-  CONSUMABLE_AP_COST,
-  buffApCost,
-  apCostOf,
-  isConditionFamily,
-  isConsumableKind,
-  narrowToMintedAxis,
-  isProtectiveAxis,
-} from './buffCosts'
-
-export type { StreakProtection, BuffProtectiveKind } from './buffProtection'
-export {
-  NO_STREAK_PROTECTION,
-  isProtectiveKind,
-  protectionCoversCleanLoss,
-  conditionIsWidened,
-  streakProtectionFor,
-} from './buffProtection'
-
-export type { BuffBonusAccrual, BuffCarry, TrickBuffBonus } from './buffAccrual'
-export {
-  EMPTY_BUFF_ACCRUAL,
-  EMPTY_BUFF_CARRY,
-  EMPTY_CURSE_BONUS,
-  curseBonusOf,
-  startHandAccrual,
-  accrualCapFor,
-  accrueAxisBonus,
-  accrueCarry,
-  overlapBonusFor,
-  resolveFiredBuffs,
-  trickBonusFor,
-} from './buffAccrual'
-
-export type {
-  BuffHandContext,
-  BuffTrickContext,
-  BuffTrickInput,
-  BuffTrickOutcome,
-} from './buffEvaluation'
-export {
-  advanceTricksWithoutHit,
-  buffFires,
-  firedBuffs,
-  firesOncePerHand,
-  resolveTrickBuffs,
-} from './buffEvaluation'
-
-export type {
-  BuffActivationStock,
-  BuffActivationState,
-  BuffActivationResult,
-} from './buffActivation'
-export {
-  BuffActivationRefusal,
-  startBuffActivation,
-  buffActivationRefusalFor,
-  buffActivationStockFor,
-  activateBuff,
-  activateFromPile,
-  deactivateFromPile,
-  isRevocableBuff,
-  openBuffWindow,
-  refreshBuffsForNewHand,
-  isPricedBuff,
-  activatableBuffs,
-} from './buffActivation'
-
-// DLR-126 — the consumable model. `ConsumableTiming` and `ConsumableItemKind` are exported as both
-// a value and a type, the `as const` pattern `BuffTier` and `BuffKind` already use.
-export type {
-  ConsumableItemKind,
-  ConsumableEffect,
-  ConsumableStack,
-  WardAbsorption,
-} from './consumables'
-export {
-  ConsumableTiming,
-  CONSUMABLE_TIMING,
-  CONSUMABLE_EFFECT_LIVE,
-  WARD_ABSORPTION,
-  SECOND_THOUGHTS_CHARGES,
-  FORESIGHT_CARDS,
-  SPYGLASS_CANDIDATES,
-  PUPPETEER_FORCED_CARDS,
-  isConsumableItemKind,
-  isConsumableItem,
-  consumableTimingOf,
-  consumableEffectOf,
-  consumableEffectIsLive,
-  consumableStacks,
-  spendConsumable,
-  extraDiscardCharges,
-  absorbWithWard,
-  wardAbsorptionForTier,
-} from './consumables'
+// DLR-163 — the buff subsystem's re-exports moved to `./buffIndex` when this barrel reached its
+// 400-line blocking budget, the same split `config.ts` → `apConfig.ts` already made. The barrel's
+// exported set is unchanged.
+export * from './buffIndex'
 
 export {
   startEncounter,
@@ -273,6 +137,11 @@ export {
   maxHealthPriceFor,
   raisedMaxHealthFor,
 } from './maxHealth'
+
+// DLR-163 AC5 — the Swap pile's rule, stated once outside `run.ts` so the arithmetic is
+// unit-testable with no renderer.
+export type { SwapPile } from './swapPile'
+export { swapPileAfterWoodcutter, swapCapFor } from './swapPile'
 
 export type { QuickKill } from './quickKill'
 export { quickKillTierMultiplier, quickKillPayout } from './quickKill'
@@ -334,52 +203,6 @@ export {
   templateWeightFor,
   weightedDrawWithoutReplacement,
 } from './slotWeights'
-
-export type {
-  BuffTemplate,
-  ConditionBuffTemplate,
-  ActivatedBuffTemplate,
-  BuffActivatedTemplateKind,
-  MintableConditionKind,
-  MintableRewardAxis,
-  BuffThresholdFamily,
-  TemplateGrant,
-} from './buffTemplates'
-export {
-  REWARD_TIER_VALUE,
-  CONDITION_THRESHOLD,
-  BUFF_TEMPLATES,
-  BUFF_TEMPLATE_COUNT,
-  ACTIVATED_TEMPLATES,
-  templatesForFamily,
-  mintFromTemplate,
-  conditionThresholdOf,
-  templateById,
-  templateIdForBuff,
-  templateForBuff,
-  mintGrants,
-} from './buffTemplates'
-
-export {
-  CombineRefusal,
-  buffCombineKey,
-  buffCombineFamilyKey,
-  combinePairFor,
-  combineProductFor,
-  nextBuffTierAfter,
-  combineRefusalFor,
-  combineBuffs,
-} from './buffCombine'
-
-// DLR-162 — the wild transition.
-export {
-  WildRefusal,
-  wildRefusalFor,
-  isWildcardCard,
-  mintWildAtTier,
-  wildenedBuff,
-  spendWildcard,
-} from './buffWild'
 
 export type { SlotMachine, SlotAward, SlotPull, SlotVisitStock } from './slotMachine'
 export {

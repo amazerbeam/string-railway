@@ -44,6 +44,40 @@
   z-index: 2;
 }
 
+/* DLR-163 AC2 — the decree replaced by a bare suit. Shares the card's OWN box dimensions from
+   `--wc-plate-card-w` and the same 2/3 aspect ratio, so the plate keeps its footprint and the
+   felt does not reflow when the card goes. The DASHED edge is what distinguishes it in
+   greyscale — form, not colour. */
+.wc-decree-marker {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  width: var(--wc-plate-card-w);
+  aspect-ratio: 2 / 3;
+  border: 2px dashed var(--wc-brass);
+  border-radius: clamp(2px, 0.5vmin, 4px);
+  background: transparent;
+  color: var(--wc-chalk);
+}
+
+.wc-decree-marker-icon {
+  width: 45%;
+  height: auto;
+  aspect-ratio: 1;
+  color: var(--wc-brass);
+}
+
+.wc-decree-marker-name {
+  font-family: var(--wc-sans);
+  font-size: clamp(0.55rem, 1.2vmin, 0.72rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .wc-pile-cards .wc-card {
   animation: wc-decree-swap var(--wc-decree-swap-ms) ease-out both;
 }

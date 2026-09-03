@@ -80,11 +80,14 @@ function cardMatchesTarget(buff: Buff, card: Card): boolean {
   return false
 }
 
-/** Fox and Woodcutter open an `AbilityChoice` prompt, and this policy returns no choice of its own —
- *  the driver would answer the prompt from `chooseCpuMove`'s choice for a DIFFERENT card. Excluded
- *  for exactly the reason `maximalistPolicy.wantsCheatPlay` excludes them. */
+/** The Fox opens an `AbilityChoice` prompt, and this policy returns no choice of its own — the
+ *  driver would answer the prompt from `chooseCpuMove`'s choice for a DIFFERENT card. Excluded
+ *  for exactly the reason `maximalistPolicy.wantsCheatPlay` excludes it.
+ *
+ *  DLR-163 — the Woodcutter is NO LONGER excluded: it carries no choice since the 5's rule became
+ *  a Swap-pile raise, so a policy may lead or follow with one freely. */
 function isPromptFree(card: Card): boolean {
-  return card.rank !== CardRank.Fox && card.rank !== CardRank.Woodcutter
+  return card.rank !== CardRank.Fox
 }
 
 /** play-tester (2026-09-02) — through `apCostFor`, not `apCostOf`. See `baselinePolicy.ts`'s

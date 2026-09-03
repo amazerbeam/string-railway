@@ -73,6 +73,8 @@ const bankedResolution: TrickResolution = {
   roll: 3,
   buffAccrual: null,
   firedBuffIds: [],
+
+  treasureBonusEarned: false,
 }
 
 const bankedView: ResolutionView = {
@@ -108,6 +110,8 @@ const hurtResolution: TrickResolution = {
   roll: 0,
   buffAccrual: null,
   firedBuffIds: [],
+
+  treasureBonusEarned: false,
 }
 
 const hurtView: ResolutionView = {

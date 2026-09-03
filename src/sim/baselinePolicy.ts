@@ -38,8 +38,9 @@
  *
  * MAXIMALIST CHEAT — the run's starting Cheat (`RUN_STARTING_CHEATS = 1`), armed ONLY where lifting
  * follow-suit strictly widens the legal set, and then playing the highest-ranked card the widening
- * admits. Fox and Woodcutter are excluded: both open an `AbilityChoice` prompt, and the driver
- * answers a prompt from `chooseCpuMove`'s choice for a different card.
+ * admits. The Fox is excluded: it opens an `AbilityChoice` prompt, and the driver answers a prompt
+ * from `chooseCpuMove`'s choice for a different card. DLR-163 — the Woodcutter is NOT excluded any
+ * more; it carries no prompt since its rule became a Swap-pile raise.
  */
 import {
   CardRank,
@@ -227,10 +228,9 @@ function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
   const widened = legalMoves(ui.round, PlayerSide.Player, { ignoreFollowSuit: true })
   if (widened.length <= legal.length) return null
 
-  const gained = widened.filter(
-    (card) =>
-      !containsCard(legal, card) && card.rank !== CardRank.Fox && card.rank !== CardRank.Woodcutter,
-  )
+  // DLR-163 — only the Fox is excluded now: the Woodcutter carries no choice since the 5's rule
+  // became a Swap-pile raise, so a Cheat may legitimately unlock one.
+  const gained = widened.filter((card) => !containsCard(legal, card) && card.rank !== CardRank.Fox)
   if (gained.length === 0) return null
 
   const best = gained.reduce((highest, card) => (card.rank > highest.rank ? card : highest))

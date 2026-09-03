@@ -1,5 +1,10 @@
 import { HAND_SIZE, PLAYER_HAND_FLOOR, TieredRank } from '../hunt'
-import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './abilities'
+import {
+  applyNameTrump,
+  applyQuarrySwap,
+  chooseQuarrySwapCard,
+  nextLeaderAfterTrick,
+} from './abilities'
 import { resolveTrickBank } from './streak'
 import { buffTrickFactsFor } from './buffTrickFacts'
 import { containsCard, removeCard, sameCard } from './cardUtils'
@@ -15,6 +20,7 @@ import {
   currentTurn,
   IllegalMoveReason,
   PlayerSide,
+  QUARRY_SIDE,
   RoundPhase,
   type AbilityChoice,
   type Card,
@@ -59,35 +65,32 @@ export function playCard(
     hands: { ...state.hands, [side]: removeCard(state.hands[side], card) },
   }
 
+  // DLR-163 AC1/AC3 — the timing is UNCHANGED: this runs before `currentTrick` is extended and
+  // before `resolveTrickWinner`, so a newly named trump decides the trick it was played into.
   if (card.rank === CardRank.Fox) {
     if (!choice) {
       return { ok: false, reason: IllegalMoveReason.MissingAbilityChoice }
     }
-    if (choice.kind === AbilityChoiceKind.FoxExchange) {
-      if (!containsCard(next.hands[side], choice.handCard)) {
-        return { ok: false, reason: IllegalMoveReason.InvalidFoxExchangeCard }
-      }
-      next = applyFoxExchange(next, side, choice.handCard)
-    } else if (choice.kind !== AbilityChoiceKind.FoxDecline) {
+    if (choice.kind === AbilityChoiceKind.NameTrump) {
+      next = applyNameTrump(next, choice.suit)
+    } else if (choice.kind !== AbilityChoiceKind.DeclineTrump) {
       return { ok: false, reason: IllegalMoveReason.UnexpectedAbilityChoice }
     }
-  } else if (card.rank === CardRank.Woodcutter) {
-    if (!choice) {
-      return { ok: false, reason: IllegalMoveReason.MissingAbilityChoice }
-    }
-    if (choice.kind !== AbilityChoiceKind.WoodcutterDiscard) {
+  } else if (card.rank === CardRank.Woodcutter && side === QUARRY_SIDE) {
+    // DLR-163 AC7 — asymmetric BY DESIGN, and the one place in this tree that is. AC5 gives the
+    // player's 5 an effect on a run figure the card layer cannot see, so the player's 5 does
+    // nothing here and `commitHandlers.ts` owns it. `QUARRY_SIDE` exists for exactly this.
+    // Refused BEFORE the swap, never after: a rejected move must leave no state behind it.
+    if (choice) {
       return { ok: false, reason: IllegalMoveReason.UnexpectedAbilityChoice }
     }
-    // DLR-146 fix pass — through `drawCards` rather than a raw `drawPile[0]` index, so this
-    // preview agrees with what `applyWoodcutterDraw` will actually hand back, including a
-    // mid-hand reshuffle, and never contains `undefined` when the pile has run dry.
-    const preview = drawCards(next, 1)
-    const handWithDrawn = [...next.hands[side], ...preview.drawn]
-    if (!containsCard(handWithDrawn, choice.discard)) {
-      return { ok: false, reason: IllegalMoveReason.InvalidWoodcutterDiscard }
+    const swapped = chooseQuarrySwapCard(next.hands[side])
+    if (swapped !== null) {
+      next = applyQuarrySwap(next, swapped)
     }
-    next = applyWoodcutterDraw(next, side, choice.discard)
   } else if (choice) {
+    // DLR-163 AC5 — the PLAYER'S 5 now falls here: it takes no choice at all, so a choice offered
+    // with one is `UnexpectedAbilityChoice` exactly as it is for any other plain rank.
     return { ok: false, reason: IllegalMoveReason.UnexpectedAbilityChoice }
   }
 
@@ -125,6 +128,11 @@ export function playCard(
       // the rule that already exists: a trick is a skull trick iff any card played into it is
       // skulled. No new branch and no new outcome — a cursed player card simply flips this trick.
       skullTrick: trickIsSkulled(skullsOn(next), completedTrick),
+      // DLR-163 AC8/AC10 — a fact about the TRICK, derived where `trickIsSkulled` beside it is.
+      // OWNERSHIP-BLIND deliberately: AC8 says "a trick you were victorious on THAT CARRIED a 7"
+      // and AC10 mirrors it, and exactly one side is victorious on the outcome axis each trick,
+      // so whose card it was decides nothing (`plan.md` Part 1 → Assumptions made).
+      treasureTrick: completedTrick.some((t) => t.card.rank === CardRank.Treasure),
       finalTrick,
       baseDamageBonus: options?.baseDamageBonus ?? 0,
       // DLR-122 AC4/AC5 — the Swan ladder as two plain facts, derived by `rankTierRules.ts`,

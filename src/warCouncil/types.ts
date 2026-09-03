@@ -62,7 +62,11 @@ export interface RoundState {
   readonly dealer: PlayerSide
   readonly hands: Readonly<Record<PlayerSide, readonly Card[]>>
   readonly drawPile: readonly Card[]
-  readonly decree: Card
+  /** DLR-163 AC2 — the decree card, or `null` once a Fox has replaced it with a bare suit.
+   *  `null` does NOT mean "no trump": `trumpSuit` beside this is always live, and a `null` decree
+   *  means the plate shows that suit with no card behind it. The replaced card joins `spentPile`
+   *  at the instant it is replaced, so `closeHand` must not spend it a second time. */
+  readonly decree: Card | null
   readonly trumpSuit: Suit
   readonly tricksWon: Readonly<Record<PlayerSide, number>>
   /** AC2 — the Quarry's dealt cards carrying a skull. Written once by `dealRound` and carried by
@@ -123,16 +127,19 @@ export function currentTurn(state: RoundState): PlayerSide {
 }
 
 export const AbilityChoiceKind = {
-  FoxExchange: 'foxExchange',
-  FoxDecline: 'foxDecline',
-  WoodcutterDiscard: 'woodcutterDiscard',
+  /** DLR-163 AC1 — replaces `FoxExchange`. Carries a SUIT, not a card: nothing leaves the hand.
+   *  Naming the suit already in force is accepted and behaves exactly as `DeclineTrump`, which is
+   *  enforced in `applyNameTrump` rather than at the prompt so the two cannot disagree. */
+  NameTrump: 'nameTrump',
+  /** DLR-163 AC1 — replaces `FoxDecline`. */
+  DeclineTrump: 'declineTrump',
 } as const
 export type AbilityChoiceKind = (typeof AbilityChoiceKind)[keyof typeof AbilityChoiceKind]
 
+// DLR-163 AC5 — `WoodcutterDiscard` is REMOVED outright: the 5 takes no choice at all now.
 export type AbilityChoice =
-  | { readonly kind: typeof AbilityChoiceKind.FoxExchange; readonly handCard: Card }
-  | { readonly kind: typeof AbilityChoiceKind.FoxDecline }
-  | { readonly kind: typeof AbilityChoiceKind.WoodcutterDiscard; readonly discard: Card }
+  | { readonly kind: typeof AbilityChoiceKind.NameTrump; readonly suit: Suit }
+  | { readonly kind: typeof AbilityChoiceKind.DeclineTrump }
 
 export const IllegalMoveReason = {
   RoundComplete: 'roundComplete',
@@ -140,10 +147,12 @@ export const IllegalMoveReason = {
   CardNotInHand: 'cardNotInHand',
   MustFollowLeadSuit: 'mustFollowLeadSuit',
   MustFollowMonarch: 'mustFollowMonarch',
+  /** DLR-163 AC1 — a 3 played with no choice. The one remaining refusal of its kind. */
   MissingAbilityChoice: 'missingAbilityChoice',
+  /** DLR-163 AC5 — a choice offered with any rank but 3, which now includes the 5. */
   UnexpectedAbilityChoice: 'unexpectedAbilityChoice',
-  InvalidFoxExchangeCard: 'invalidFoxExchangeCard',
-  InvalidWoodcutterDiscard: 'invalidWoodcutterDiscard',
+  // DLR-163 — `InvalidFoxExchangeCard` and `InvalidWoodcutterDiscard` are REMOVED. Neither rule
+  // takes a card any more, so neither refusal has anything left to refuse.
 } as const
 export type IllegalMoveReason = (typeof IllegalMoveReason)[keyof typeof IllegalMoveReason]
 

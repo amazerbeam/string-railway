@@ -11,6 +11,7 @@ import {
   CardRank,
   PlayerSide,
   RoundPhase,
+  Suit,
   currentTurn,
   type AbilityChoice,
   type Card,
@@ -27,7 +28,9 @@ function census(state: RoundState): string[] {
     ...state.drawPile,
     ...state.spentPile,
     ...state.currentTrick.map((t) => t.card),
-    state.decree,
+    // DLR-163 AC2 — a Fox that named a suit nulls the decree and puts its card in `spentPile`,
+    // so the census must count the plate only when a card is still on it.
+    ...(state.decree === null ? [] : [state.decree]),
   ].map((c) => `${c.suit}-${c.rank}`)
 }
 
@@ -39,30 +42,25 @@ function census(state: RoundState): string[] {
  * plain card to fall back on. Making this total is what lets `playOutHand` play any hand the deck
  * produces, so these invariants hold for the real game rather than for a lucky seed.
  *
- * Both choices are the NEUTRAL one, so neither perturbs what is being measured: the Fox declines
- * (the decree is untouched), and the Woodcutter buries straight back the card it just drew, which
- * is the identity case of a swap that already leaves `drawPile.length` unchanged.
+ * DLR-163 — the Fox's choice is the NEUTRAL one by default, so it does not perturb what is being
+ * measured; `nameTrump` is passed instead by the second invariant below, which is the case where
+ * the decree is nulled. The Woodcutter needs no choice at all any more.
  */
-function choiceFor(state: RoundState, card: Card): AbilityChoice | undefined {
-  if (card.rank === CardRank.Fox) return { kind: AbilityChoiceKind.FoxDecline }
-  if (card.rank === CardRank.Woodcutter) {
-    const discard = state.drawPile[0]
-    // Fails cleanly with a named cause rather than letting `undefined` reach `playCard` and
-    // crash somewhere downstream with an opaque TypeError — DLR-146 fix pass.
-    if (!discard) throw new Error('choiceFor: drawPile is empty, nothing to bury as the discard')
-    return { kind: AbilityChoiceKind.WoodcutterDiscard, discard }
-  }
-  return undefined
+function choiceFor(card: Card, nameTrump: Suit | null): AbilityChoice | undefined {
+  if (card.rank !== CardRank.Fox) return undefined
+  return nameTrump === null
+    ? { kind: AbilityChoiceKind.DeclineTrump }
+    : { kind: AbilityChoiceKind.NameTrump, suit: nameTrump }
 }
 
 /** Play a hand out to its sixth trick, always taking the first legal move and answering any
  *  ability prompt it raises. */
-function playOutHand(start: RoundState): RoundState {
+function playOutHand(start: RoundState, nameTrump: Suit | null = null): RoundState {
   let state = start
   while (state.phase !== RoundPhase.Complete) {
     const side = currentTurn(state)
     const card = legalMoves(state, side)[0]
-    const result = playCard(state, side, card, choiceFor(state, card))
+    const result = playCard(state, side, card, choiceFor(card, nameTrump))
     if (!result.ok) throw new Error(`illegal move: ${result.reason}`)
     state = result.state
   }
@@ -79,6 +77,22 @@ describe('the encounter deck cycle', () => {
       expect(new Set(census(played)).size).toBe(DECK_SIZE)
       deck = closeHand(played)
       expect(deck.drawPile.length + deck.spentPile.length).toBe(DECK_SIZE)
+    }
+  })
+
+  it('DLR-163 AC2 — still conserves all 33 when a Fox has nulled the decree', () => {
+    let deck = FRESH_ENCOUNTER_DECK
+    for (let handOfFight = 1; handOfFight <= 4; handOfFight += 1) {
+      const dealt = dealRound(PlayerSide.Player, createSeededRng(handOfFight), deck)
+      // Always name Bells: on a hand whose decree is already Bells this is a decline, and on
+      // every other it nulls the plate — both cases must conserve.
+      const played = playOutHand(dealt, Suit.Bells)
+      expect(new Set(census(played)).size).toBe(DECK_SIZE)
+      deck = closeHand(played)
+      expect(deck.drawPile.length + deck.spentPile.length).toBe(DECK_SIZE)
+      expect(
+        new Set([...deck.drawPile, ...deck.spentPile].map((c) => `${c.suit}-${c.rank}`)).size,
+      ).toBe(DECK_SIZE)
     }
   })
 
@@ -116,7 +130,7 @@ describe('the encounter deck cycle', () => {
       expect(new Set(census(state)).size).toBe(DECK_SIZE)
       const side = currentTurn(state)
       const card = legalMoves(state, side)[0]
-      const result = playCard(state, side, card, choiceFor(state, card))
+      const result = playCard(state, side, card, choiceFor(card, null))
       if (!result.ok) throw new Error(`illegal move: ${result.reason}`)
       state = result.state
       // Never grows, EXCEPT across a reshuffle, which is the one thing that can put cards back.

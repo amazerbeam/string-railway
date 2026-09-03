@@ -242,25 +242,23 @@ describe('WarCouncilRound', () => {
     )
   })
 
-  it('shows the trump suit and updates it when a Fox exchange lands', () => {
+  it('DLR-163 AC1/AC2 — shows the trump suit, and naming a new one changes it and empties the plate', () => {
     renderRound()
     expect(screen.getByText(/Bells is trump/i)).toBeDefined()
     const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
     fireEvent.click(fox)
     fireEvent.click(fox)
-    // Once the prompt opens, AbilityPrompt renders a PlayingCard for every remaining
-    // hand card alongside the now-non-interactive HandFan, so "5 of Moons
-    // (Woodcutter)" — the corrected accessible name for CardRank.Woodcutter — exists
-    // twice in the document. Scope the query to the prompt's own labelled region
-    // (see AbilityPrompt.tsx's added role="group" aria-label) rather than weakening
-    // the assertion.
-    const prompt = screen.getByRole('group', { name: 'Choose what the card does' })
-    fireEvent.click(within(prompt).getByRole('button', { name: '5 of Moons (Woodcutter)' }))
+    // The prompt offers SUITS now, not hand cards. Scoped to its own labelled region because
+    // the suit names also appear on the felt's trump chip and the Quarry's shape rows.
+    const prompt = screen.getByRole('group', { name: 'Name the new trump suit' })
+    fireEvent.click(within(prompt).getByRole('button', { name: /moons/i }))
     // DLR-156 — the Fox's own commit resolves the trick in the same transition (the player led,
     // so the Quarry's forced follow completes it immediately), handing off to the resolution
     // screen; the trump readout lives on the felt, so dismiss it before reading the felt again.
     carryOnFromResolution()
     expect(screen.getByText(/Moons is trump/i)).toBeDefined()
+    // AC2 — the decree plate is a bare suit marker now, with no card behind it.
+    expect(screen.getByRole('img', { name: /decree replaced — moons is trump/i })).toBeDefined()
   })
 
   it('holds the deciding sixth trick on the resolution screen before the hand-over panel, then reports onComplete once', () => {

@@ -108,10 +108,12 @@ export function suitShape(
 /**
  * AC5/AC7's discriminator: a trick is a skull trick iff ANY card played into it is skulled.
  *
- * Skulls are dealt only to the Quarry, so in practice this reads "the Quarry's card is skulled"
- * — but the Quarry's Fox can exchange a skulled card into the decree and the player's Fox can
- * later take that decree into hand, so a player-held skull is expressible in one hand. Testing
- * the trick rather than the seat survives that path with no special case.
+ * DLR-163 closed the path this test was originally written for: the Fox used to exchange a card
+ * into the decree, so a skulled Quarry card could reach the decree and from there the player's
+ * hand. No card is ever moved onto the decree any more, and the Quarry's new Woodcutter mints its
+ * skull into the Quarry's own hand. The trick-shaped test is RETAINED because it is TOTAL — it
+ * needs no knowledge of which seat holds a skull, and DLR-167's curse, which marks a card in the
+ * PLAYER's hand, is a live reason a player-held skull is expressible today.
  */
 export function trickIsSkulled(
   skulledCards: readonly Card[],

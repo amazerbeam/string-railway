@@ -1,5 +1,12 @@
 import type { Suit, SuitShape } from '../../warCouncil'
-import { QUARRY_SHAPE_LABEL, SUIT_NAME, quarryLeadTelegraphText, suitShapeRowText } from './labels'
+import {
+  QUARRY_SHAPE_LABEL,
+  SKULL_ARRIVED_WORD,
+  SUIT_NAME,
+  quarryLeadTelegraphText,
+  skullArrivedText,
+  suitShapeRowText,
+} from './labels'
 import { SuitMark } from './SuitMark'
 
 interface QuarryShapeProps {
@@ -8,6 +15,11 @@ interface QuarryShapeProps {
    *  `cardAccessibleName`'s `marks` is: every existing render site keeps compiling, and an
    *  un-telegraphed panel is a real state (the player is the one leading). */
   readonly leadSuit?: Suit | null
+  /** DLR-163 AC7 — the suit whose skulled count climbed on the last resolved trick, or `null`.
+   *  The row marks the arrival, which is where a skull minted onto a face-down Quarry card is
+   *  actually visible to the player. OPTIONAL, following `leadSuit`, so every existing render
+   *  site keeps compiling. */
+  readonly skullArrivedIn?: Suit | null
 }
 
 /**
@@ -40,7 +52,7 @@ interface QuarryShapeProps {
  * other. The mark is CSS only — enlarged tiles and a glow so it survives a greyscale reading, plus
  * a hover/`:focus-visible` tooltip that is a nicety, never the only signal.
  */
-export default function QuarryShape({ shape, leadSuit }: QuarryShapeProps) {
+export default function QuarryShape({ shape, leadSuit, skullArrivedIn }: QuarryShapeProps) {
   return (
     <section className="wc-shape" aria-label={QUARRY_SHAPE_LABEL}>
       <p className="wc-shape-eyebrow" aria-hidden="true">
@@ -55,14 +67,24 @@ export default function QuarryShape({ shape, leadSuit }: QuarryShapeProps) {
         // DLR-155 — a string comparison per row, three per render. The suit is resolved ONCE
         // upstream in `quarryTelegraph.ts`; nothing here polls the engine.
         const marked = leadSuit !== undefined && leadSuit !== null && row.suit === leadSuit
+        // DLR-163 AC7 — the Quarry's cards are face down, so a skull landing on one is invisible
+        // there. This row is where the player can already read the Quarry's skulled count per
+        // suit, so the arrival is marked HERE.
+        const skullArrived =
+          skullArrivedIn !== undefined && skullArrivedIn !== null && row.suit === skullArrivedIn
 
         return (
           <div
             key={row.suit}
-            className={`wc-shape-row wc-suit-${row.suit}${marked ? ' wc-shape-row-lead' : ''}`}
+            className={`wc-shape-row wc-suit-${row.suit}${marked ? ' wc-shape-row-lead' : ''}${
+              skullArrived ? ' wc-shape-row-skull-arrived' : ''
+            }`}
             tabIndex={marked ? 0 : undefined}
           >
             {marked && <span className="wc-sr-only">{quarryLeadTelegraphText(row.suit)}</span>}
+            {/* AC7 — spoken as well as drawn, so a player using a reader is told a skull arrived
+                rather than left to notice a count that changed. */}
+            {skullArrived && <span className="wc-sr-only">{skullArrivedText(row.suit)}</span>}
             <span className="wc-sr-only">{suitShapeRowText(row)}</span>
             <SuitMark suit={row.suit} className="wc-shape-pip" />
             <span className="wc-shape-suit" aria-hidden="true">
@@ -89,6 +111,13 @@ export default function QuarryShape({ shape, leadSuit }: QuarryShapeProps) {
             {marked && (
               <span className="wc-shape-tip" aria-hidden="true">
                 {quarryLeadTelegraphText(row.suit)}
+              </span>
+            )}
+            {/* AC7 — a visible WORD as well as the border, so the arrival does not read by
+                colour alone. */}
+            {skullArrived && (
+              <span className="wc-shape-arrived" aria-hidden="true">
+                {SKULL_ARRIVED_WORD}
               </span>
             )}
           </div>

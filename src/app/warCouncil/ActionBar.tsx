@@ -9,7 +9,12 @@ import {
   applyBuffAccessibleName,
   cardsAccessibleName,
 } from './actionBarLabels'
-import { cardAccessibleName, DISCARD_REFUSAL_MESSAGE, discardAccessibleName } from './labels'
+import {
+  cardAccessibleName,
+  DISCARD_REFUSAL_MESSAGE,
+  discardAccessibleName,
+  swapCountText,
+} from './labels'
 
 export interface ActionBarProps {
   readonly offeredBuffs: readonly Buff[]
@@ -18,6 +23,11 @@ export interface ActionBarProps {
   readonly armed: Card | null
   readonly cardsEnabled: boolean
   readonly discardsRemaining: number
+  /** DLR-163 AC5/AC6 — the cap the "N of M" readout prints, from `swapCapFor`. */
+  readonly swapCap: number
+  /** DLR-163 AC6 — the cap climbed on the last committed card, so the control marks where the
+   *  addition went. Cleared on the next commit. */
+  readonly swapJustRaised: boolean
   readonly discardSelecting: boolean
   readonly discardSelectionSize: number
   readonly discardRefusal: DiscardRefusal | null
@@ -59,6 +69,8 @@ export default function ActionBar({
   armed,
   cardsEnabled,
   discardsRemaining,
+  swapCap,
+  swapJustRaised,
   discardSelecting,
   discardSelectionSize,
   discardRefusal,
@@ -127,10 +139,17 @@ export default function ActionBar({
       <div className="wc-bar-item">
         <button
           type="button"
-          className={`wc-bar-btn${discardSelecting ? ' is-selecting' : ''}`}
+          className={`wc-bar-btn${discardSelecting ? ' is-selecting' : ''}${
+            // DLR-163 AC6 — the raise is marked with a THICKENED BORDER and a BOXED count, not
+            // colour alone, so it survives a greyscale screenshot. Rendered from state and cleared
+            // by the next commit, never scheduled by a timer.
+            swapJustRaised ? ' wc-is-swap-raised' : ''
+          }`}
           aria-pressed={discardSelecting}
           aria-label={discardAccessibleName(
             discardsRemaining,
+            swapCap,
+            swapJustRaised,
             discardSelecting,
             discardSelectionSize,
             discardRefusal,
@@ -142,7 +161,7 @@ export default function ActionBar({
             {SWAP_LABEL}
           </span>
           <span className="wc-bar-btn-figure" aria-hidden="true">
-            {discardsRemaining} left
+            {swapCountText(discardsRemaining, swapCap)}
           </span>
         </button>
         {discardRefusal !== null && (

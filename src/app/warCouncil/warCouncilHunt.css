@@ -187,6 +187,24 @@
   height: 1.22rem;
 }
 
+/* DLR-163 AC7 — a skull was minted onto a face-down Quarry card in this suit on the last resolved
+   trick. Marked HERE because the Quarry's hand is face down and the arrival is invisible there.
+   A dashed inset edge AND the visible word `.wc-shape-arrived` beside it, so the state reads in
+   greyscale rather than by colour alone. Rendered from state and cleared by the next trick, so
+   there is no timer to cancel. */
+.wc-shape-row-skull-arrived {
+  box-shadow: inset 0 0 0 2px var(--wc-brass);
+}
+
+.wc-shape-arrived {
+  margin-left: 0.4rem;
+  font-family: var(--wc-sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wc-brass);
+}
+
 /* The tooltip. Its content is a NICETY — the glow above is what the buff decision reads, and it
    is always visible, so nothing a decision needs is hover-only. Revealed on hover for pointer
    devices only, and on `:focus-visible` so the keyboard path works without a stuck outline after

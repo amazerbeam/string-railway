@@ -19,15 +19,9 @@ import {
 /** The `AbilityChoice` a card needs, or `undefined` for a card that needs none. Both choices are
  *  the neutral one — see `deckCycle.test.ts`'s `choiceFor`, which this mirrors — so neither
  *  perturbs the hand widths being measured here. */
-function choiceFor(state: RoundState, card: Card): AbilityChoice | undefined {
-  if (card.rank === CardRank.Fox) return { kind: AbilityChoiceKind.FoxDecline }
-  if (card.rank === CardRank.Woodcutter) {
-    const discard = state.drawPile[0]
-    // Fails cleanly with a named cause rather than letting `undefined` reach `playCard` and
-    // crash somewhere downstream with an opaque TypeError — DLR-146 fix pass.
-    if (!discard) throw new Error('choiceFor: drawPile is empty, nothing to bury as the discard')
-    return { kind: AbilityChoiceKind.WoodcutterDiscard, discard }
-  }
+function choiceFor(_state: RoundState, card: Card): AbilityChoice | undefined {
+  // DLR-163 — only the 3 carries a choice, and declining is the neutral one.
+  if (card.rank === CardRank.Fox) return { kind: AbilityChoiceKind.DeclineTrump }
   return undefined
 }
 
@@ -146,13 +140,10 @@ describe('DLR-146 — the player hand floor', () => {
       tricksPlayed: 0,
       phase: RoundPhase.AwaitingFollow,
     }
-    const result = playCard(
-      state,
-      PlayerSide.Player,
-      woodcutter,
-      { kind: AbilityChoiceKind.WoodcutterDiscard, discard: drawPile[0] },
-      { handFloor: PLAYER_HAND_FLOOR },
-    )
+    // DLR-163 AC5 — the player's Woodcutter takes no choice at all now.
+    const result = playCard(state, PlayerSide.Player, woodcutter, undefined, {
+      handFloor: PLAYER_HAND_FLOOR,
+    })
     if (!result.ok) throw new Error(`illegal move: ${result.reason}`)
     expect(result.state.hands[PlayerSide.Player]).toHaveLength(PLAYER_HAND_FLOOR)
   })

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { FRESH_ENCOUNTER_DECK, legalMoves, PlayerSide, type RoundState } from '../../warCouncil'
+import {
+  CardRank,
+  FRESH_ENCOUNTER_DECK,
+  legalMoves,
+  PlayerSide,
+  Suit,
+  type RoundState,
+} from '../../warCouncil'
 import {
   apCapacityFor,
   baseDamageBonusFor,
@@ -107,6 +114,20 @@ describe('cardAwarePolicy — it aims, the baseline does not', () => {
       const choice = cardAwarePolicy.chooseCard(ui.round, ui)
       expect(legalMoves(ui.round, PlayerSide.Player)).toContainEqual(choice.card)
     }
+  })
+
+  // DLR-163 — the 5 carries no prompt any more, so a policy may play one freely. Before this
+  // change the Woodcutter was filtered out of every measured game.
+  it('DLR-163 — a hand whose only card is a Woodcutter is played, with no choice attached', () => {
+    const base = uiFor(startRun(PLAYER_START_HEALTH, [], 5))
+    const woodcutter = { suit: Suit.Bells, rank: CardRank.Woodcutter }
+    const round = {
+      ...base.round,
+      hands: { ...base.round.hands, [PlayerSide.Player]: [woodcutter] },
+    }
+    const choice = cardAwarePolicy.chooseCard(round, { ...base, round })
+    expect(choice.card).toEqual(woodcutter)
+    expect(choice.choice).toBeUndefined()
   })
 
   it('falls back to the engine heuristic when called without ui, matching the baseline', () => {

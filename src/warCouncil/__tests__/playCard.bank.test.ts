@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { DAMAGE_PER_HIT } from '../../hunt'
+import { DAMAGE_PER_HIT, QUARRY_TREASURE_DAMAGE } from '../../hunt'
 import { TrickOutcome } from '../streak'
 import { playCard } from '../playCard'
-import { PlayerSide, RoundPhase, Suit, type Card, type RoundState } from '../types'
+import { CardRank, PlayerSide, RoundPhase, Suit, type Card, type RoundState } from '../types'
 
 /** Split off `playCard.test.ts` on DLR-146 to keep that file under the 400-line budget.
  *  Deliberately its own small copy of `stateWith` rather than an import from the sibling spec —
@@ -98,5 +98,44 @@ describe('playCard — banking and skulls', () => {
     expect(done.ok).toBe(true)
     if (!done.ok) return
     expect(done.state.spentPile).toEqual([lead, follow])
+  })
+
+  it('DLR-163 AC10 — a hurt trick that carried a Treasure costs QUARRY_TREASURE_DAMAGE', () => {
+    // The Quarry leads the 7, the player answers low and loses cleanly: a hurt trick that carried
+    // a Treasure, so the hit is 2 rather than 1. The fact is OWNERSHIP-BLIND — the 7 was the
+    // Quarry's.
+    const treasure: Card = { suit: Suit.Bells, rank: CardRank.Treasure }
+    const state = stateWith({
+      hands: { player: [{ suit: Suit.Bells, rank: 2 }], cpu: [] },
+      trumpSuit: 'keys',
+      currentTrick: [{ side: PlayerSide.Cpu, card: treasure }],
+      leader: PlayerSide.Cpu,
+      phase: RoundPhase.AwaitingFollow,
+    })
+    const result = playCard(state, PlayerSide.Player, { suit: Suit.Bells, rank: 2 }, undefined, {
+      handFloor: 0,
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.CleanLoss)
+    expect(result.state.lastResolution?.damageToPlayer).toBe(QUARRY_TREASURE_DAMAGE)
+    expect(result.state.lastResolution?.treasureBonusEarned).toBe(false)
+  })
+
+  it('DLR-163 AC8 — a banked trick that carried a Treasure reports the bonus', () => {
+    const treasure: Card = { suit: Suit.Bells, rank: CardRank.Treasure }
+    const state = stateWith({
+      hands: { player: [treasure], cpu: [] },
+      trumpSuit: 'keys',
+      currentTrick: [{ side: PlayerSide.Cpu, card: { suit: Suit.Bells, rank: 2 } }],
+      leader: PlayerSide.Cpu,
+      phase: RoundPhase.AwaitingFollow,
+    })
+    const result = playCard(state, PlayerSide.Player, treasure, undefined, { handFloor: 0 })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.CleanWin)
+    expect(result.state.lastResolution?.treasureBonusEarned).toBe(true)
+    expect(result.state.lastResolution?.damageToPlayer).toBe(0)
   })
 })

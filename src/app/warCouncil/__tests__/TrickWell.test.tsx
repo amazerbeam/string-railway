@@ -3,12 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
-import {
-  BuffTier,
-  mintFromTemplate,
-  templateById,
-  type Buff,
-} from '../../../hunt'
+import { BuffTier, mintFromTemplate, templateById, type Buff } from '../../../hunt'
 import { MotionAnchorProvider } from '../MotionAnchors'
 import type { ResolvedTrick } from '../roundUiState'
 import TrickWell from '../TrickWell'
@@ -36,6 +31,8 @@ const resolvedTrick: ResolvedTrick = {
     roll: 0,
     buffAccrual: null,
     firedBuffIds: [],
+
+    treasureBonusEarned: false,
   },
 }
 
@@ -96,7 +93,6 @@ describe('TrickWell — a resolved trick', () => {
     expect(screen.queryByText(/They take \d+\./)).toBeNull()
     expect(screen.getByText(/You take 1\./)).toBeDefined()
   })
-
 })
 
 describe('TrickWell — DLR-119 clauses', () => {

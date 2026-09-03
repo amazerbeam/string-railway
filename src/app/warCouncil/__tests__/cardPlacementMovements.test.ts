@@ -152,51 +152,42 @@ it('M8 — a reshuffle collapses to one pile-to-pile request, not one per card',
   expect(requests[0].cardKey).toBeUndefined()
 })
 
-it('M11 — the Fox exchange: a hand card and the decree card cross, neither flips', () => {
+// DLR-163 AC1/AC2 — M11 was the Fox EXCHANGE, where a hand card and the decree card crossed. That
+// rule is gone: naming a suit takes nothing from hand and sends the decree card to the spent pile,
+// so the movement is one card in one direction and the hand does not move at all.
+it('M11 — naming a suit: the decree card leaves for the spent pile and no hand card moves', () => {
   const round = makeRound()
-  const handCard = round.hands[PlayerSide.Player][0] // card(Suit.Bells, 2)
-  const decreeCard = round.decree // card(Suit.Bells, 10)
+  const decreeCard = round.decree
+  if (decreeCard === null) throw new Error('expected a decree on the fixture')
   const prev = placementsOf(round)
 
-  const exchanged = makeRound({
-    decree: handCard,
-    hands: {
-      ...round.hands,
-      [PlayerSide.Player]: round.hands[PlayerSide.Player]
-        .filter((c) => cardKey(c) !== cardKey(handCard))
-        .concat(decreeCard),
-    },
+  const named = makeRound({
+    decree: null,
+    spentPile: [...round.spentPile, decreeCard],
   })
-  const next = placementsOf(exchanged)
+  const next = placementsOf(named)
 
   const movements = diffPlacements(prev, next)
-  expect(movements).toEqual(
-    expect.arrayContaining([
-      {
-        cardKey: cardKey(handCard),
-        from: { kind: PlaceKind.PlayerHand, slot: cardKey(handCard) },
-        to: { kind: PlaceKind.DecreePlate },
-      },
-      {
-        cardKey: cardKey(decreeCard),
-        from: { kind: PlaceKind.DecreePlate },
-        to: { kind: PlaceKind.PlayerHand, slot: cardKey(decreeCard) },
-      },
-    ]),
-  )
-  for (const movement of movements) {
-    expect(faceAt(movement.from)).toBe(faceAt(movement.to)) // up → up, both ways
-  }
+  expect(movements).toEqual([
+    {
+      cardKey: cardKey(decreeCard),
+      from: { kind: PlaceKind.DecreePlate },
+      to: { kind: PlaceKind.SpentPile },
+    },
+  ])
 })
 
-it('M12+M13 — the Woodcutter: the drawn card enters the hand as the buried card leaves it, in one commit', () => {
+// DLR-163 — the PLAYER'S Woodcutter no longer draws and buries; the QUARRY'S still does, through
+// `applyQuarrySwap`. The movement shape this pins is unchanged and is now the Quarry's, plus the
+// player's own refill, which produces the same draw-pile-to-hand movement.
+it('M12+M13 — a swap: the drawn card enters a hand as the buried card leaves it, in one commit', () => {
   const drawnCard = card(Suit.Moons, 2) // present in the default fixture's draw pile
   const buriedCard = card(Suit.Bells, 2) // an existing hand card
   const round = makeRound()
   const prev = placementsOf(round)
 
-  // Mirrors `applyWoodcutterDraw` (`abilities.ts:15`): the drawn card joins the hand and the
-  // buried card leaves it, landing at the bottom of the draw pile, in the SAME commit.
+  // Mirrors `applyQuarrySwap` (`abilities.ts`): the drawn card joins the hand and the buried
+  // card leaves it, landing at the bottom of the draw pile, in the SAME commit.
   const afterWoodcutter = makeRound({
     drawPile: round.drawPile.filter((c) => cardKey(c) !== cardKey(drawnCard)).concat(buriedCard),
     hands: {

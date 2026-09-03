@@ -19,13 +19,11 @@
  * compile error.
  */
 import { createElement, type ReactNode } from 'react'
-import type { Buff, BuffActivationRefusal } from '../../hunt'
+import { swapCapFor, type Buff, type BuffActivationRefusal } from '../../hunt'
 import {
-  CardRank,
   isSkulled,
   RoundPhase,
   skullsOn,
-  sameCard,
   type AbilityChoice,
   type Card,
   type DiscardRefusal,
@@ -95,6 +93,10 @@ export function actionBarProps({
     armed: ui.armed,
     cardsEnabled: interactive,
     discardsRemaining: ui.discardsRemaining,
+    // DLR-163 AC5/AC6 — the cap through `swapCapFor`, so the control's readout and the rule
+    // cannot disagree about what "full" means.
+    swapCap: swapCapFor(ui.discardCapBonus),
+    swapJustRaised: ui.swapJustRaised,
     discardSelecting: discardSelecting(ui),
     discardSelectionSize: ui.discardSelection?.length ?? 0,
     discardRefusal,
@@ -136,7 +138,8 @@ export interface FeltStageOptions {
   readonly offered: readonly Buff[]
   readonly quarryToLead: boolean
   readonly handSummary: HandSummary
-  readonly displayHand: readonly Card[]
+  // DLR-163 — `displayHand` is GONE: the ability prompt was the only reader, and it no longer
+  // offers hand cards. `BuffRideZone` keeps its own, separate `displayHand` prop.
   readonly onCarryOn: () => void
   readonly onCancel: () => void
 }
@@ -157,7 +160,6 @@ export function feltStageProps({
   offered,
   quarryToLead,
   handSummary,
-  displayHand,
   onCarryOn,
   onCancel,
 }: FeltStageOptions): FeltStageProps {
@@ -203,9 +205,9 @@ export function feltStageProps({
     const promptCard = ui.prompt
     felt = createElement(AbilityPrompt, {
       card: promptCard,
-      decree: ui.round.decree,
-      hand: displayHand.filter((c) => !sameCard(c, promptCard)),
-      drawnCard: promptCard.rank === CardRank.Woodcutter ? (ui.round.drawPile[0] ?? null) : null,
+      // DLR-163 AC1 — the prompt offers SUITS now, not hand cards, so `decree`, `hand` and
+      // `drawnCard` are gone with the Woodcutter branch.
+      trumpSuit: ui.round.trumpSuit,
       onChoose: (choice: AbilityChoice) =>
         dispatch({ kind: RoundUiActionKind.ChooseAbility, choice }),
       onCancel,

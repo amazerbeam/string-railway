@@ -47,6 +47,11 @@ export function seedFor(run: RunState, dealt: WarCouncilState): RoundUiSeed {
     coins: run.coins,
     feederCarry: run.feederCarry,
     streak: run.streak,
+    // DLR-163 AC5/AC8 — the two per-fight figures, seeded exactly as `App.tsx`'s mount seeds
+    // them. Omitting these would default both to 0 on every hand, so a simulated fight would
+    // silently lose every Swap cap raise and every Treasure bonus at each hand boundary.
+    discardCapBonus: run.discardCapBonus,
+    treasureDamageBonus: run.treasureDamageBonus,
   }
 }
 

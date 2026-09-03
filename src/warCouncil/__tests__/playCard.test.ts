@@ -122,15 +122,17 @@ describe('playCard — rejections', () => {
     expect(result).toEqual({ ok: false, reason: IllegalMoveReason.MissingAbilityChoice })
   })
 
-  it('rejects Woodcutter (rank 5) played with no ability choice', () => {
+  // DLR-163 AC5 — the Woodcutter takes NO choice now, so its three old refusal cases become one
+  // pair: it plays with nothing offered, and it is refused when a choice IS offered.
+  it('the PLAYER’S Woodcutter (rank 5) plays with no ability choice at all', () => {
     const state = stateWith({
       hands: { player: [{ suit: 'keys', rank: 5 }], cpu: [] },
     })
     const result = playCard(state, 'player', { suit: 'keys', rank: 5 })
-    expect(result).toEqual({ ok: false, reason: IllegalMoveReason.MissingAbilityChoice })
+    expect(result.ok).toBe(true)
   })
 
-  it('rejects Woodcutter (rank 5) played with a mismatched-kind ability choice', () => {
+  it('rejects Woodcutter (rank 5) played WITH an ability choice', () => {
     const state = stateWith({
       hands: { player: [{ suit: 'keys', rank: 5 }], cpu: [] },
     })
@@ -138,44 +140,33 @@ describe('playCard — rejections', () => {
       state,
       'player',
       { suit: 'keys', rank: 5 },
-      { kind: AbilityChoiceKind.FoxExchange, handCard: { suit: 'bells', rank: 4 } },
+      {
+        kind: AbilityChoiceKind.DeclineTrump,
+      },
     )
     expect(result).toEqual({ ok: false, reason: IllegalMoveReason.UnexpectedAbilityChoice })
   })
 
-  it('rejects Fox (rank 3) played with a mismatched-kind ability choice', () => {
+  it('the PLAYER’S Woodcutter moves no card: the hand loses only the 5 itself', () => {
     const state = stateWith({
-      hands: { player: [{ suit: 'keys', rank: 3 }], cpu: [] },
+      hands: {
+        player: [
+          { suit: 'keys', rank: 5 },
+          { suit: 'moons', rank: 6 },
+        ],
+        cpu: [],
+      },
     })
-    const result = playCard(
-      state,
-      'player',
-      { suit: 'keys', rank: 3 },
-      { kind: AbilityChoiceKind.WoodcutterDiscard, discard: { suit: 'bells', rank: 4 } },
-    )
-    expect(result).toEqual({ ok: false, reason: IllegalMoveReason.UnexpectedAbilityChoice })
-  })
-
-  it('rejects an invalid Woodcutter discard rather than throwing when the draw pile is empty', () => {
-    // DLR-146 fix pass — an empty `drawPile` used to leave `undefined` in the preview hand, which
-    // threw a TypeError out of a reducer instead of returning this reason.
-    const state = stateWith({
-      hands: { player: [{ suit: 'keys', rank: 5 }], cpu: [] },
-      drawPile: [],
-      spentPile: [],
-    })
-    const result = playCard(
-      state,
-      'player',
-      { suit: 'keys', rank: 5 },
-      { kind: AbilityChoiceKind.WoodcutterDiscard, discard: { suit: 'bells', rank: 4 } },
-    )
-    expect(result).toEqual({ ok: false, reason: IllegalMoveReason.InvalidWoodcutterDiscard })
+    const result = playCard(state, 'player', { suit: 'keys', rank: 5 })
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error('expected ok')
+    expect(result.state.hands.player).toEqual([{ suit: 'moons', rank: 6 }])
+    expect(result.state.drawPile).toEqual(state.drawPile)
   })
 })
 
 describe('playCard — the Fox (rank 3) mutates trump mid-trick, and it is illegal to ignore the new trump on the next play', () => {
-  it('exchanging the decree updates trumpSuit and decree immediately', () => {
+  it('naming a suit updates trumpSuit immediately and nulls the decree (DLR-163 AC1/AC2)', () => {
     const state = stateWith({
       hands: {
         player: [
@@ -190,17 +181,19 @@ describe('playCard — the Fox (rank 3) mutates trump mid-trick, and it is illeg
       'player',
       { suit: 'keys', rank: 3 },
       {
-        kind: AbilityChoiceKind.FoxExchange,
-        handCard: { suit: 'moons', rank: 7 },
+        kind: AbilityChoiceKind.NameTrump,
+        suit: 'moons',
       },
     )
     expect(result.ok).toBe(true)
     if (!result.ok) throw new Error('expected ok')
     expect(result.state.trumpSuit).toBe('moons')
-    expect(result.state.decree).toEqual({ suit: 'moons', rank: 7 })
+    expect(result.state.decree).toBeNull()
+    // AC1 — nothing left the hand but the 3 itself.
+    expect(result.state.hands.player).toEqual([{ suit: 'moons', rank: 7 }])
   })
 
-  it('a full trick resolves using the trump suit as of after the Fox exchange', () => {
+  it('AC3 — a full trick resolves under the suit the Fox named, not the one it replaced', () => {
     const state = stateWith({
       leader: PlayerSide.Player,
       trumpSuit: 'bells',
@@ -220,8 +213,8 @@ describe('playCard — the Fox (rank 3) mutates trump mid-trick, and it is illeg
       'player',
       { suit: 'keys', rank: 3 },
       {
-        kind: AbilityChoiceKind.FoxExchange,
-        handCard: { suit: 'moons', rank: 2 },
+        kind: AbilityChoiceKind.NameTrump,
+        suit: 'moons',
       },
     )
     expect(afterLead.ok).toBe(true)
@@ -275,12 +268,8 @@ function playOutHand(dealt: RoundState): { state: RoundState; allPlayed: Card[] 
     const chosen = options[0]
     allPlayed.push(chosen)
 
-    const choice =
-      chosen.rank === 3
-        ? { kind: 'foxDecline' as const }
-        : chosen.rank === 5
-          ? { kind: 'woodcutterDiscard' as const, discard: state.drawPile[0] }
-          : undefined
+    // DLR-163 — only the 3 carries a choice now; the 5 commits like any plain card.
+    const choice = chosen.rank === 3 ? { kind: 'declineTrump' as const } : undefined
 
     const result = playCard(state, turn, chosen, choice)
     if (!result.ok) {

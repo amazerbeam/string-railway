@@ -12,6 +12,8 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   swanKeepsMultiplier: false,
   swanKeepsBank: false,
   buffs: null,
+  // DLR-163 AC8/AC10 — a trick with no Treasure in it, the default this suite measures against.
+  treasureTrick: false,
   ...over,
 })
 

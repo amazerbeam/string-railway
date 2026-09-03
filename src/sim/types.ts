@@ -13,8 +13,8 @@ import type {
 } from '../hunt'
 import type { RoundUiState } from '../app/warCouncil/roundUiState'
 
-/** A card and, for a Fox or a Woodcutter, the ability choice that must accompany it. Exactly
- *  `CpuMove`'s shape, so `chooseCpuMove` satisfies it without a wrapper. */
+/** A card and, for a Fox — the only rank that carries one since DLR-163 — the ability choice that
+ *  must accompany it. Exactly `CpuMove`'s shape, so `chooseCpuMove` satisfies it with no wrapper. */
 export interface CardChoice {
   readonly card: Card
   readonly choice?: AbilityChoice
@@ -227,7 +227,7 @@ export interface TrickDamageRecord {
    *  with the lead's skull mark. Without these a trace says which buffs were spent but not what was
    *  played, and a Taker keyed to Bells only means anything beside the suit actually led. */
   readonly cards: readonly TrickCardRecord[]
-  /** The suit that was trump as this trick resolved — after any Fox exchange made in it. */
+  /** The suit that was trump as this trick resolved — after any suit a Fox named in it. */
   readonly trumpSuit: string
   /** play-tester (2026-09-02) — what the player PREDICTED this trick would be, at the moment the
    *  buff window opened and before any card was laid. Recorded so a trace shows the reasoning

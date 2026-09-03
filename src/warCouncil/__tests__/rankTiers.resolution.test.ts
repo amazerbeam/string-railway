@@ -89,6 +89,8 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     swanKeepsMultiplier: false,
     swanKeepsBank: false,
     buffs: null,
+    // DLR-163 AC8/AC10 — a trick with no Treasure in it, the default this suite measures against.
+    treasureTrick: false,
     ...over,
   })
 

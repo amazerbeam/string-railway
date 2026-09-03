@@ -41,6 +41,8 @@ const someResolvedTrick: ResolvedTrick = {
     roll: 1,
     buffAccrual: null,
     firedBuffIds: [],
+
+    treasureBonusEarned: false,
   },
 }
 
@@ -84,7 +86,6 @@ describe('deriveHint — the cascade’s own priority order', () => {
     expect(deriveHint(cheatLive, true, false)).not.toBe('')
     expect(deriveHint(cheatLive, true, false)).toBe(deriveHint(baseUi(), true, false))
   })
-
 
   it('an interactive state names lead-vs-follow, distinctly', () => {
     const toLead = baseUi({ round: makeRound({ currentTrick: [] }) })

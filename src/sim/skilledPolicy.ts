@@ -79,7 +79,7 @@ function chooseCard(round: RoundState): CardChoice {
   const wanted = chooseSkilledCard(round)
   // FINAL SAFETY NET, and it only ever bites on a FOLLOW: `leadCandidates` has already filtered
   // prompts out of every lead, so the plan and the play still agree. A follow can still name a Fox
-  // or a Woodcutter when only that card reaches the wanted outcome, and this policy has no
+  // when only that card reaches the wanted outcome, and this policy has no
   // `AbilityChoice` to answer with — the driver then loops on an unanswered prompt and the hand
   // stalls. Falling back to the engine's own move keeps its matching choice with it.
   if (!isPromptFree(wanted)) return fallback
@@ -96,8 +96,9 @@ function chooseCard(round: RoundState): CardChoice {
  */
 function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
   const card = cheatEscape(ui.round)
-  // A Cheat that unlocks a Fox or a Woodcutter opens a prompt this policy cannot answer, and the
-  // driver has no `AbilityChoice` for a card the engine did not pick — which stalls the hand.
+  // A Cheat that unlocks a Fox opens a prompt this policy cannot answer, and the driver has no
+  // `AbilityChoice` for a card the engine did not pick — which stalls the hand. DLR-163 — a Cheat
+  // unlocking a Woodcutter is no longer a stall risk; that card carries no prompt.
   if (card === null || !isPromptFree(card)) return null
   const cheat = offeredBuffs(ui).find(
     (buff) => buff.kind === BuffKind.Cheat && loadoutRefusalFor(ui, buff) === null,

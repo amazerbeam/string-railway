@@ -163,9 +163,13 @@ export function chooseFollow(state: RoundState, legal: readonly Card[]): Card {
 }
 
 /**
- * A Fox or a Woodcutter opens an `AbilityChoice` prompt this strategy has no answer for, so it does
- * not lead one. THE single statement of that exclusion: `trickIntent` and `chooseSkilledCard` both
- * lead through `leadCandidates`, so the plan and the play cannot pick different cards.
+ * A Fox opens an `AbilityChoice` prompt this strategy has no answer for, so it does not lead one.
+ * THE single statement of that exclusion: `trickIntent` and `chooseSkilledCard` both lead through
+ * `leadCandidates`, so the plan and the play cannot pick different cards.
+ *
+ * DLR-163 — the Woodcutter is NO LONGER excluded. Its rule became a Swap-pile raise that carries
+ * no choice, so a policy may lead or follow with one freely; the 5 was one of the two strongest
+ * levers in the deck that every measured figure had been playing around.
  *
  * They could, and did: `trickIntent` planned over the whole hand while the policy filtered prompts
  * out of the play, so 30% of led tricks were played in a different suit from the one the buffs were
@@ -176,7 +180,7 @@ export function chooseFollow(state: RoundState, legal: readonly Card[]): Card {
  * but Foxes must still play one.
  */
 export function isPromptFree(card: Card): boolean {
-  return card.rank !== CardRank.Fox && card.rank !== CardRank.Woodcutter
+  return card.rank !== CardRank.Fox
 }
 
 /** Prefer the prompt-free cards, but never return an empty set — a hand of nothing but Foxes must

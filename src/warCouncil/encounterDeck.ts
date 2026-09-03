@@ -39,8 +39,11 @@ export function isFreshDeck(deck: EncounterDeck): boolean {
 /**
  * D6 — at hand's end EVERY card not in the draw pile joins the spent pile: the decree (AC4), both
  * hands, and anything still on the table. ONE rule rather than three coordinated special cases,
- * which is what makes it total: it covers a Fox exchange (whatever card the Fox left in the decree
- * slot is what gets spent), and a hand ended early by a mid-hand cash-out with cards still held.
+ * which is what makes it total: it covers a hand ended early by a mid-hand cash-out with cards
+ * still held.
+ *
+ * DLR-163 AC2 — the decree is now nullable. A Fox that named a suit sent the decree card to the
+ * spent pile at the instant it did so, so there is nothing left here to spend.
  *
  * All 33 are conserved by construction — the returned two piles are exactly the input state's
  * cards, repartitioned — which is the invariant `deckCycle.test.ts` pins.
@@ -50,7 +53,11 @@ export function closeHand(state: RoundState): EncounterDeck {
     drawPile: state.drawPile,
     spentPile: [
       ...state.spentPile,
-      state.decree,
+      // DLR-163 AC2 — a Fox that named a suit already sent this card to the spent pile, so a
+      // `null` decree spends nothing here. Spending it twice would duplicate a card and break the
+      // all-33-conserved invariant `deckCycle.test.ts` pins; skipping it when there IS a card
+      // would lose one. This conditional is the whole of the difference.
+      ...(state.decree === null ? [] : [state.decree]),
       ...state.hands[PlayerSide.Player],
       ...state.hands[PlayerSide.Cpu],
       ...state.currentTrick.map((t) => t.card),

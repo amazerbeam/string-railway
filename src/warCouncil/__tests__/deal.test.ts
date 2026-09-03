@@ -25,12 +25,15 @@ describe('dealRound', () => {
 
   it('accounts for all 33 cards with no duplicates across hands, pile, and decree', () => {
     const state = dealRound(PlayerSide.Cpu, lcg(7))
+    // DLR-163 — `decree` is nullable on `RoundState` because a Fox can replace it with a bare
+    // suit. A DEAL always puts a card there, which is exactly what this asserts before counting.
+    expect(state.decree).not.toBeNull()
     const all = [
       ...state.hands.player,
       ...state.hands.cpu,
       ...state.drawPile,
       ...state.spentPile,
-      state.decree,
+      ...(state.decree === null ? [] : [state.decree]),
     ]
     const keys = all.map((c) => `${c.suit}-${c.rank}`)
     expect(new Set(keys).size).toBe(33)
@@ -39,7 +42,7 @@ describe('dealRound', () => {
 
   it("sets trumpSuit to the decree card's suit", () => {
     const state = dealRound(PlayerSide.Player, lcg(99))
-    expect(state.trumpSuit).toBe(state.decree.suit)
+    expect(state.trumpSuit).toBe(state.decree?.suit)
   })
 
   it('sets the leader to the non-dealer side', () => {
@@ -98,7 +101,11 @@ describe('dealRound', () => {
     expect(second.spentPile).toHaveLength(13)
     expect(second.reshuffled).toBe(false)
     const spent = new Set(carried.spentPile.map((c) => `${c.suit}-${c.rank}`))
-    const dealt = [...second.hands.player, ...second.hands.cpu, second.decree]
+    const dealt = [
+      ...second.hands.player,
+      ...second.hands.cpu,
+      ...(second.decree === null ? [] : [second.decree]),
+    ]
     for (const card of dealt) {
       expect(spent.has(`${card.suit}-${card.rank}`)).toBe(false)
     }

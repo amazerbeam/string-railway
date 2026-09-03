@@ -30,6 +30,8 @@ const WORKED_RESOLUTION: TrickResolution = {
   roll: 3,
   buffAccrual: null,
   firedBuffIds: [bladeTaker.id, momentumTakerA.id, momentumTakerB.id],
+
+  treasureBonusEarned: false,
 }
 
 const WORKED_FIRED: readonly Buff[] = [bladeTaker, momentumTakerA, momentumTakerB]
@@ -79,6 +81,8 @@ describe('resolutionBeatsFor — edge shapes', () => {
       total: 13,
       roll: 3,
       firedBuffIds: [],
+
+      treasureBonusEarned: false,
     }
     const beats = resolutionBeatsFor(resolution, [], BEFORE)
     expect(beats.map((beat) => beat.kind)).toEqual([BeatKind.Base, BeatKind.Banked])
@@ -92,6 +96,8 @@ describe('resolutionBeatsFor — edge shapes', () => {
       total: 14,
       roll: 3,
       firedBuffIds: [bladeTaker.id],
+
+      treasureBonusEarned: false,
     }
     const beats = resolutionBeatsFor(resolution, [bladeTaker], BEFORE)
     expect(beats.map((beat) => beat.kind)).toEqual([BeatKind.Base, BeatKind.Blade, BeatKind.Banked])
@@ -110,6 +116,8 @@ describe('resolutionBeatsFor — edge shapes', () => {
       roll: 0,
       buffAccrual: null,
       firedBuffIds: [],
+
+      treasureBonusEarned: false,
     }
     const beats = resolutionBeatsFor(resolution, [], before)
     expect(beats).toHaveLength(1)
@@ -132,6 +140,8 @@ describe('resolutionBeatsFor — edge shapes', () => {
       roll: 0,
       buffAccrual: null,
       firedBuffIds: [],
+
+      treasureBonusEarned: false,
     }
     const beats = resolutionBeatsFor(resolution, [], before)
     expect(beats).toHaveLength(1)
@@ -152,6 +162,8 @@ describe('resolutionBeatsFor — edge shapes', () => {
       roll: 2,
       buffAccrual: null,
       firedBuffIds: [],
+
+      treasureBonusEarned: false,
     }
     const beats = resolutionBeatsFor(resolution, [], before)
     expect(beats).toHaveLength(1)
@@ -173,6 +185,8 @@ describe('resolutionBeatsFor — edge shapes', () => {
       roll: 2,
       buffAccrual: null,
       firedBuffIds: [],
+
+      treasureBonusEarned: false,
     }
     const beats = resolutionBeatsFor(resolution, [], before)
     expect(beats).toHaveLength(1)
@@ -194,6 +208,8 @@ describe('resolutionBeatsFor — edge shapes', () => {
       roll: before.roll,
       buffAccrual: null,
       firedBuffIds: [],
+
+      treasureBonusEarned: false,
     }
     const beats = resolutionBeatsFor(resolution, [], before)
     expect(beats).toHaveLength(1)

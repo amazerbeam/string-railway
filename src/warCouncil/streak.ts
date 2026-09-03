@@ -5,6 +5,7 @@ import {
   DAMAGE_PER_HIT,
   DuelSide,
   EMPTY_CURSE_BONUS,
+  QUARRY_TREASURE_DAMAGE,
   resolveTrickBuffs,
   streakProtectionFor,
   trickBonusFor,
@@ -57,8 +58,13 @@ export interface TrickResolution extends StreakState {
   /** DLR-156 AC5/AC7 — damage dealt to the Quarry by THIS trick. Now always 0: only the apply
    *  choice pays, and it pays through `applyPot`, not through a resolution. */
   readonly cashOut: number
-  /** 0 or `DAMAGE_PER_HIT`. */
+  /** 0, `DAMAGE_PER_HIT`, or `QUARRY_TREASURE_DAMAGE` on a hurt trick that carried a Treasure
+   *  (DLR-163 AC10). */
   readonly damageToPlayer: number
+  /** DLR-163 AC8 — this trick BANKED and carried a Treasure, so the fight's base-damage figure
+   *  owes `TREASURE_BASE_DAMAGE_STEP`. Reported OUT rather than applied here: the figure is run
+   *  state and this module has never been allowed to see one. */
+  readonly treasureBonusEarned: boolean
   /** DLR-125 — the hand's accrual AFTER this trick, or `null` when `TrickFacts.buffs` was
    *  `null`. Reported back OUT so the felt folds one value rather than re-deriving it. */
   readonly buffAccrual: BuffBonusAccrual | null
@@ -100,6 +106,11 @@ export interface TrickFacts {
    *  handed in, never a run figure read — exactly `baseDamageBonus`'s
    *  contract. */
   readonly buffs: BuffTrickInput | null
+  /** DLR-163 AC8/AC10 — a Treasure was played into this trick, by EITHER side. A plain FACT
+   *  handed in, exactly as `baseDamageBonus` and `swanKeepsBank` are: this module must not
+   *  learn whose card it was, and AC8/AC10 do not depend on it. REQUIRED, not optional, so the
+   *  compiler enumerates every construction site. */
+  readonly treasureTrick: boolean
 }
 
 /** §3.2's table as a total function. The skull inverts the trick: on a clean trick you want to
@@ -180,7 +191,11 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
   // Gold implies silver, folded in HERE rather than trusted from the caller.
   const swanKeepsMultiplier = swanCleanLoss && (trick.swanKeepsMultiplier || trick.swanKeepsBank)
 
-  const damageToPlayer = trickHit ? DAMAGE_PER_HIT : 0
+  // DLR-163 AC10 — a Treasure REPLACES the flat hit rather than adding to it. This is the line
+  // that retires the-hunt.md §8's "damage to the player, per event: 1, every time" — every
+  // readout, projection and simulator figure that assumed exactly 1 has to stop assuming it.
+  const hitDamage = trick.treasureTrick ? QUARRY_TREASURE_DAMAGE : DAMAGE_PER_HIT
+  const damageToPlayer = trickHit ? hitDamage : 0
 
   // DLR-156 Assumption 10 — Hoarder is a cut, unconstructible family (CLAUDE.md — "Cut buffs are
   // cut until a ticket brings them back"), so this value is inert. Fed the ROLL after the trick
@@ -292,6 +307,12 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     trickDamage,
     cashOut: 0,
     damageToPlayer,
+    // DLR-163 AC8 — reported OUT, never applied here. The fight's base-damage figure is RUN state
+    // and this module has never been allowed to see one — the same contract `baseDamageBonus`
+    // states from the other direction. `taken` is the OUTCOME axis, which is exactly AC9's
+    // "victorious means the outcome axis, not the mechanical one": a dodge earns it and an eaten
+    // skull does not.
+    treasureBonusEarned: trick.treasureTrick && taken,
     total,
     roll,
     buffAccrual: accrual,

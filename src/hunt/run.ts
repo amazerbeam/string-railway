@@ -112,6 +112,17 @@ export interface RunState {
    *  survivor back through `WarCouncilRoundResult`.
    *  NEVER persisted, exactly as `coins` above. */
   readonly discardsRemaining: number
+  /** DLR-163 AC5/AC11 — Swaps added to THIS FIGHT's cap by Woodcutters played. Carried across
+   *  every hand within a fight and reset by `advanceRun` at the fight boundary, exactly as
+   *  `discardsRemaining` above is; the hand owns it for its life and hands the survivor back
+   *  through `WarCouncilRoundResult`. A COUNT of steps, not a total — `swapCapFor` owns the
+   *  addition. NEVER persisted, exactly as `coins` above. */
+  readonly discardCapBonus: number
+  /** DLR-163 AC8/AC11 — base damage earned THIS FIGHT by banking tricks that carried a Treasure.
+   *  SUMMED with `baseDamageBonusFor`'s run-permanent Whetstone figure at `playOptions`, never
+   *  merged into it: a Whetstone is run-permanent and this dies at the fight boundary. Reset by
+   *  `advanceRun`, exactly as `discardsRemaining` is. NEVER persisted, exactly as `coins`. */
+  readonly treasureDamageBonus: number
   /** DLR-95 AC6 — the receipt: what the quick-kill payout paid for the encounter just recorded, so
    *  the verdict renders a figure the run RECORDED rather than re-deriving the rule from state a
    *  component would have to hold in parallel. `RunOutcomePanel` computes nothing, and this is
@@ -200,6 +211,8 @@ export function startRun(
     flaskCharges: FLASK_STARTING_CHARGES,
     handOfFight: 1,
     discardsRemaining: DISCARDS_PER_FIGHT,
+    discardCapBonus: 0,
+    treasureDamageBonus: 0,
     lastQuickKillPayout: 0,
     buffs: [...startingBuffPileFor(STARTING_BUFF_COUNT, 1, runSeed), ...granted, ...openingCheats],
     nextBuffId: STARTING_BUFF_COUNT + 1 + granted.length + openingCheats.length,

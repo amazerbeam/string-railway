@@ -11,17 +11,20 @@
  */
 import {
   applyPot,
+  CardRank,
   incomingFrom,
   incomingFromPot,
   isSkulled,
   playCard,
   potValue,
   PlayerSide,
+  sameCard,
   skullsOn,
   type AbilityChoice,
   type Card,
   type PlayCardOptions,
   type StreakState,
+  type Suit,
   type TrickCard,
   type TrickResolution,
 } from '../../warCouncil'
@@ -30,6 +33,8 @@ import {
   BASE_DAMAGE,
   DuelSide,
   isEncounterResolved,
+  swapPileAfterWoodcutter,
+  TREASURE_BASE_DAMAGE_STEP,
   type EncounterState,
 } from '../../hunt'
 import {
@@ -59,7 +64,12 @@ import { potIsLethal } from './resolutionLethal'
  */
 export function playOptions(state: RoundUiState): PlayCardOptions {
   return {
-    baseDamageBonus: state.baseDamageBonus,
+    // DLR-163 AC8 — the Whetstone's run-permanent figure PLUS this fight's earned figure, summed
+    // in the ONE assembly all three readers share: the player's commit, the Quarry's follow, and
+    // `cardDamage.ts`'s preview. That is what makes the preview inherit the 7 with no arithmetic
+    // of its own. Kept as two fields on the state and summed here rather than merged into one:
+    // a Whetstone lasts the run and this dies at the fight boundary.
+    baseDamageBonus: state.baseDamageBonus + state.treasureDamageBonus,
     // DLR-122 — in the one assembly all three readers share. A preview or a
     // commit that read the run's ladder itself would be exactly the second reading this
     // docblock already warns about.
@@ -161,6 +171,20 @@ function resolutionViewFor(
   }
 }
 
+/**
+ * DLR-163 AC7 — the suit a skull was minted into by this transition, or `null`.
+ *
+ * A comparison of the two `skulledCards` lists rather than a flag threaded out of `playCard`: the
+ * engine's rule is "the drawn card joins `skulledCards`", and asking the state what changed keeps
+ * the felt from having to learn the Quarry's swap. A pure derivation of two values, so StrictMode's
+ * double render recomputes the same answer.
+ */
+function skullArrivedSuit(before: readonly Card[], after: readonly Card[]): Suit | null {
+  if (after.length <= before.length) return null
+  const minted = after.find((card) => !before.some((b) => sameCard(b, card)))
+  return minted?.suit ?? null
+}
+
 /** Commits `cardToPlay` for the player, then advances the opponent when the player led. */
 export function commit(
   state: RoundUiState,
@@ -202,6 +226,19 @@ export function commit(
           folded.encounter ?? state.encounter,
         )
       : state.resolution
+  // DLR-163 AC5 — the PLAYER'S 5 only. The rule itself is `swapPileAfterWoodcutter`, in
+  // `src/hunt/`, so the arithmetic is unit-testable with no renderer and the reducer holds no
+  // reading of its own. `commit` is the single place a player's card is committed, which is what
+  // makes one call site sufficient. The discard action's own decrement (`discardHandlers.ts`) is
+  // untouched: the two never run in the same transition.
+  const raisedSwap = cardToPlay.rank === CardRank.Woodcutter
+  const swap = raisedSwap
+    ? swapPileAfterWoodcutter({
+        discardsRemaining: state.discardsRemaining,
+        discardCapBonus: state.discardCapBonus,
+      })
+    : { discardsRemaining: state.discardsRemaining, discardCapBonus: state.discardCapBonus }
+
   const settled: RoundUiState = {
     ...state,
     round: result.state,
@@ -212,6 +249,18 @@ export function commit(
     resolution,
     encounter: folded ? folded.encounter : state.encounter,
     cheatTricksRemaining,
+    discardsRemaining: swap.discardsRemaining,
+    discardCapBonus: swap.discardCapBonus,
+    // DLR-163 AC6/AC7 — both set here and cleared by the NEXT commit, not by a timer.
+    swapJustRaised: raisedSwap,
+    skullArrivedIn: skullArrivedSuit(state.round.skulledCards, result.state.skulledCards),
+    // DLR-163 AC8 — the fight's figure climbs only AFTER this trick resolved, which is what makes
+    // "for the rest of the fight" true: `playOptions(state)` above was read with the figure as it
+    // stood BEFORE this trick, so the trick that earned the bonus does not also spend it.
+    treasureDamageBonus:
+      resolvedTrick?.resolution.treasureBonusEarned === true
+        ? state.treasureDamageBonus + TREASURE_BASE_DAMAGE_STEP
+        : state.treasureDamageBonus,
   }
 
   if (resolvedTrick) {
@@ -242,6 +291,19 @@ export function commit(
     resolution: advancedResolution,
     cpuFault: advanced.cpuFault,
     encounter: quarryFolded ? quarryFolded.encounter : settled.encounter,
+    // DLR-163 AC8 — the SECOND resolution site, and the ordering is load-bearing for the same
+    // reason: `playOptions(settled)` above was read with `settled.treasureDamageBonus`, which has
+    // NOT yet climbed for the trick it is about to resolve. Swapping these two would let a 7 pay
+    // its own trick, which contradicts "for the rest of the fight".
+    treasureDamageBonus:
+      advanced.resolvedTrick?.resolution.treasureBonusEarned === true
+        ? settled.treasureDamageBonus + TREASURE_BASE_DAMAGE_STEP
+        : settled.treasureDamageBonus,
+    // DLR-163 AC7 — the Quarry's own 5 lands HERE, in its automatic follow, which is the common
+    // case. Compared against `settled.round`, the state the player's commit left.
+    skullArrivedIn:
+      skullArrivedSuit(settled.round.skulledCards, advanced.round.skulledCards) ??
+      settled.skullArrivedIn,
   }
 }
 

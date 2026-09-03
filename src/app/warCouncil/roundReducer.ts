@@ -166,7 +166,9 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   }
 
   if (state.armed && sameCard(state.armed, tapped)) {
-    if (tapped.rank === CardRank.Fox || tapped.rank === CardRank.Woodcutter) {
+    // DLR-163 AC5 — only the 3 arms a prompt now. The 5 commits on its second tap like any plain
+    // card, because it takes no choice at all.
+    if (tapped.rank === CardRank.Fox) {
       return { ...state, armed: null, prompt: tapped }
     }
     return commit(state, tapped)

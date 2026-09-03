@@ -52,7 +52,6 @@ describe('startRun (AC1)', () => {
       expect(() => startRun(health)).toThrow(RangeError)
     }
   })
-
 })
 
 describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
@@ -66,12 +65,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
 
   it('stays in progress when an intermediate fight is won — the next one is waiting', () => {
     const run = startRun()
-    const after = recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      null,
-    )
+    const after = recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null)
     expect(after.outcome).toBe(RunOutcome.InProgress)
     expect(after.encounter.winner).toBe(DuelSide.Player)
     expect(canAdvanceRun(after)).toBe(true)
@@ -84,12 +78,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
         recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null),
       )
     }
-    const final = recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      null,
-    )
+    const final = recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null)
     expect(final.encounterIndex).toBe(final.encounterCount - 1)
     expect(final.outcome).toBe(RunOutcome.Won)
     expect(canAdvanceRun(final)).toBe(false)
@@ -111,21 +100,16 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
       run.discardsRemaining,
       null,
     )
-    expect(() =>
-      recordEncounter(lost, lost.encounter, lost.discardsRemaining, null),
-    ).toThrow(RangeError)
+    expect(() => recordEncounter(lost, lost.encounter, lost.discardsRemaining, null)).toThrow(
+      RangeError,
+    )
   })
 })
 
 describe('recordEncounter — the payout (AC1)', () => {
   it('credits COINS_PER_ENCOUNTER_WIN the moment the player wins the encounter', () => {
     const run = startRun()
-    const after = recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      null,
-    )
+    const after = recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null)
     expect(after.coins).toBe(run.coins + COINS_PER_ENCOUNTER_WIN)
   })
 
@@ -182,12 +166,7 @@ describe('advanceRun — the carry (AC3)', () => {
 
   it('never mutates the run it was handed', () => {
     const run = startRun()
-    const won = recordEncounter(
-      run,
-      winEncounter(run.encounter, 4),
-      run.discardsRemaining,
-      null,
-    )
+    const won = recordEncounter(run, winEncounter(run.encounter, 4), run.discardsRemaining, null)
     const before = JSON.stringify(won)
     advanceRun(won)
     expect(JSON.stringify(won)).toBe(before)
@@ -195,12 +174,7 @@ describe('advanceRun — the carry (AC3)', () => {
 
   it('carries the coin balance across a fight boundary untouched', () => {
     const run = startRun()
-    const won = recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      null,
-    )
+    const won = recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null)
     const next = advanceRun(won)
     expect(next.coins).toBe(won.coins)
   })
@@ -240,5 +214,53 @@ describe('the opening Cheat, now a pile member (DLR-132)', () => {
     const spent = run.buffs.filter((b) => b.kind !== BuffKind.Cheat)
     const after = recordEncounter(run, hit, run.discardsRemaining, null, 0, spent)
     expect(after.buffs).toEqual(spent)
+  })
+})
+
+describe("the fight's earned base damage (DLR-163 AC8/AC11)", () => {
+  it('opens at 0 on a fresh run', () => {
+    expect(startRun().treasureDamageBonus).toBe(0)
+  })
+
+  it('adopts an explicit figure passed to recordEncounter', () => {
+    const run = startRun()
+    const hit = applyDamage(run.encounter, damage(1, 1))
+    const after = recordEncounter(
+      run,
+      hit,
+      run.discardsRemaining,
+      null,
+      0,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      3,
+    )
+    expect(after.treasureDamageBonus).toBe(3)
+  })
+
+  it("keeps the run's own figure when recordEncounter is not told one", () => {
+    const run = { ...startRun(), treasureDamageBonus: 2 }
+    const hit = applyDamage(run.encounter, damage(1, 1))
+    expect(recordEncounter(run, hit, run.discardsRemaining, null).treasureDamageBonus).toBe(2)
+  })
+
+  it('is reset to 0 at the fight boundary', () => {
+    const run = startRun()
+    const won = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      run.discardsRemaining,
+      null,
+      0,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      3,
+    )
+    expect(won.treasureDamageBonus).toBe(3)
+    expect(advanceRun(won).treasureDamageBonus).toBe(0)
   })
 })

@@ -77,6 +77,13 @@ export interface WarCouncilMountProps {
   /** DLR-156 AC8 — the streak this hand OPENS on. OPTIONAL and defaulted to `EMPTY_STREAK`,
    *  following `feederCarry`, so every existing mount site and fixture reproduces today's game. */
   readonly streak?: StreakState
+  /** DLR-163 AC5 — the fight's Swap cap bonus at the START of this hand. OPTIONAL and defaulted
+   *  to 0, following `feederCarry` and `streak`, so every existing mount site and seed fixture
+   *  reproduces today's game. */
+  readonly discardCapBonus?: number
+  /** DLR-163 AC8 — base damage earned this fight so far, at the START of this hand. OPTIONAL and
+   *  defaulted to 0, for `discardCapBonus`'s stated reason. */
+  readonly treasureDamageBonus?: number
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 
@@ -122,4 +129,9 @@ export interface WarCouncilRoundResult {
   /** DLR-156 AC8 — the streak after this hand. REQUIRED, following `feederCarry`, so the
    *  compiler enumerates every construction site. */
   readonly streak: StreakState
+  /** DLR-163 AC5 — the fight's Swap cap bonus after this hand. REQUIRED, following `feederCarry`,
+   *  so the compiler enumerates every construction site. */
+  readonly discardCapBonus: number
+  /** DLR-163 AC8 — base damage earned this fight after this hand. REQUIRED, as above. */
+  readonly treasureDamageBonus: number
 }

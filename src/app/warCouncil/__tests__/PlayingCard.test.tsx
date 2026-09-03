@@ -131,18 +131,18 @@ describe('PlayingCard', () => {
     expect(used).toEqual(new Set(['#wc-fig-harp', '#wc-fig-chalice', '#wc-fig-sword']))
   })
 
-  it('AC2 — only the Treasure carries the “no rule” mark, and only the five acting ranks act', () => {
-    for (const rank of [1, 3, 5, 9, 11]) {
+  // DLR-163 AC12 — the Treasure was the only face carrying the printed "no rule" mark, and it
+  // has a rule now. It joins the acting ranks and the mark comes off; NO face prints it today.
+  it('AC12 — the six acting ranks act, and no face carries the “no rule” mark', () => {
+    for (const rank of [1, 3, 5, 7, 9, 11]) {
       const { container, unmount } = render(
         <PlayingCard card={{ suit: Suit.Keys, rank }} variant="hand" />,
       )
       expect(container.querySelector('.wc-face-act')).toBeTruthy()
       expect(container.querySelector('.wc-card-no-rule')).toBeNull()
+      expect(container.querySelector('.wc-face-inert')).toBeNull()
       unmount()
     }
-    const { container } = render(<PlayingCard card={{ suit: Suit.Keys, rank: 7 }} variant="hand" />)
-    expect(container.querySelector('.wc-face-inert')).toBeTruthy()
-    expect(container.querySelector('.wc-card-no-rule')).toBeTruthy()
   })
 
   // AC3 — rank 8 is a plain number, not a second inert card.

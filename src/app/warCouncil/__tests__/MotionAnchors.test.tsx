@@ -172,15 +172,13 @@ const woodcutterBuff = mintFromTemplate(templateById('taker:bells:magnitude')!, 
 const noRefusal = () => null
 
 function PromptGalleryStripPlaces() {
-  const drawn = card(Suit.Moons, 2)
   const view = buildBuffGallery([woodcutterBuff], noRefusal)
   return (
     <>
+      {/* DLR-163 — the prompt is the 3's suit picker now; it takes no hand and no drawn card. */}
       <AbilityPrompt
-        card={card(Suit.Bells, 5)}
-        decree={card(Suit.Bells, 10)}
-        hand={[card(Suit.Keys, 8)]}
-        drawnCard={drawn}
+        card={card(Suit.Keys, 3)}
+        trumpSuit={Suit.Bells}
         onChoose={() => {}}
         onCancel={() => {}}
       />
@@ -201,7 +199,9 @@ function PromptGalleryStripPlaces() {
 }
 
 describe('MotionAnchors — Task 9, the prompt, the gallery and the riding strip', () => {
-  it('resolves the Woodcutter’s drawn slot, the prompt row, a gallery card and its riding-strip row by the same buff id', () => {
+  // DLR-163 — the Woodcutter's drawn slot is GONE with the Woodcutter prompt itself; the 3's
+  // suit picker registers the prompt row and nothing else.
+  it('resolves the prompt row, a gallery card and its riding-strip row by the same buff id', () => {
     let anchors!: MotionAnchors
     render(
       <MotionAnchorProvider>
@@ -209,7 +209,6 @@ describe('MotionAnchors — Task 9, the prompt, the gallery and the riding strip
         <PromptGalleryStripPlaces />
       </MotionAnchorProvider>,
     )
-    expect(anchors.resolve({ kind: PlaceKind.AbilityPrompt, slot: 'drawn' })).not.toBeNull()
     expect(anchors.resolve({ kind: PlaceKind.AbilityPrompt })).not.toBeNull()
     expect(
       anchors.resolve({ kind: PlaceKind.BuffGallery, slot: String(woodcutterBuff.id) }),

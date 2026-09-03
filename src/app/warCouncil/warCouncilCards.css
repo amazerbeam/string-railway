@@ -46,6 +46,75 @@
   justify-content: center;
 }
 
+/* DLR-163 AC1 — the 3's suit picker. Three of these plus `.wc-decline` are the whole prompt; the
+   hand is no longer offered, because naming a suit costs nothing. */
+.wc-suit-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  font: inherit;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.68rem, 1.45vmin, 0.8rem);
+  min-width: 44px;
+  min-height: 44px;
+  padding: clamp(0.3rem, 1.2vmin, 0.6rem) clamp(0.5rem, 1.8vmin, 1rem);
+  background: transparent;
+  color: var(--wc-chalk);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 2px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.wc-suit-choice-glyph {
+  width: clamp(1rem, 2.6vmin, 1.5rem);
+  height: clamp(1rem, 2.6vmin, 1.5rem);
+}
+
+.wc-suit-choice-bells .wc-suit-choice-glyph {
+  color: var(--wc-bells);
+}
+.wc-suit-choice-keys .wc-suit-choice-glyph {
+  color: var(--wc-keys);
+}
+.wc-suit-choice-moons .wc-suit-choice-glyph {
+  color: var(--wc-moons);
+}
+
+/* The suit already in force. FORM as well as colour — a dashed edge — and the button also prints
+   the words "already trump", so the state survives a greyscale screenshot and colour-vision
+   differences. It stays OFFERED rather than hidden: hiding it would change the control count
+   between hands, and `applyNameTrump` already makes naming it identical to declining. */
+.wc-suit-choice[data-inforce='true'] {
+  border-style: dashed;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-suit-choice-note {
+  font-size: clamp(0.5rem, 1.05vmin, 0.6rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+}
+
+@media (hover: hover) {
+  .wc-suit-choice:hover {
+    border-color: var(--wc-brass);
+  }
+}
+
+.wc-suit-choice:active {
+  border-color: var(--wc-brass);
+}
+
+.wc-suit-choice:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+  z-index: 30;
+}
+
 .wc-drawn-wrap {
   display: flex;
   flex-direction: column;

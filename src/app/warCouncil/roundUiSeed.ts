@@ -45,6 +45,13 @@ export interface RoundUiSeed {
    *  (via `total: 0, roll: 0` below), following `feederCarry`, so every existing
    *  `createRoundUiState` site and fixture reproduces today's game. */
   readonly streak?: StreakState
+  /** DLR-163 AC5 — the fight's Swap cap bonus at the START of this hand. OPTIONAL and defaulted
+   *  to 0, following `feederCarry` and `streak`, so every existing seed fixture reproduces
+   *  today's game. */
+  readonly discardCapBonus?: number
+  /** DLR-163 AC8 — base damage earned this fight so far, at the START of this hand. OPTIONAL and
+   *  defaulted to 0, for `discardCapBonus`'s stated reason. */
+  readonly treasureDamageBonus?: number
 }
 
 /** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
@@ -76,6 +83,11 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     rankTiers: seed.rankTiers ?? ALL_BRONZE,
     unplayedAtResolve: null,
     discardsRemaining: seed.discardsRemaining,
+    discardCapBonus: seed.discardCapBonus ?? 0,
+    treasureDamageBonus: seed.treasureDamageBonus ?? 0,
+    // DLR-163 AC6/AC7 — a hand opens with no Swap raise and no minted skull to mark.
+    swapJustRaised: false,
+    skullArrivedIn: null,
     discardSelection: null,
     buffs: seed.buffs,
     buffActivation: startBuffActivation(seed.apCapacity ?? STARTING_AP),

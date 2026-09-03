@@ -38,12 +38,7 @@ describe("recordEncounter's discardsRemaining parameter (DLR-100 AC5)", () => {
   it('carries a lower figure through onto the returned RunState', () => {
     const run = startRun(MAX)
     const spent = DISCARDS_PER_FIGHT - 1
-    const recorded = recordEncounter(
-      run,
-      wonEncounter(run.encounter, MAX),
-      spent,
-      null,
-    )
+    const recorded = recordEncounter(run, wonEncounter(run.encounter, MAX), spent, null)
     expect(recorded.discardsRemaining).toBe(spent)
   })
 
@@ -64,13 +59,52 @@ describe('advanceRun (DLR-100 AC5)', () => {
   it('resets a spent-down budget to the configured per-fight figure on the new fight', () => {
     const run = startRun(MAX)
     const spent = DISCARDS_PER_FIGHT - 1
+    const recorded = recordEncounter(run, wonEncounter(run.encounter, MAX), spent, null)
+    expect(recorded.discardsRemaining).toBe(spent)
+    expect(advanceRun(recorded).discardsRemaining).toBe(DISCARDS_PER_FIGHT)
+  })
+})
+
+describe('the fight Swap cap bonus (DLR-163 AC5/AC11)', () => {
+  it('opens at 0 on a fresh run', () => {
+    expect(startRun(MAX).discardCapBonus).toBe(0)
+  })
+
+  it('adopts an explicit figure passed to recordEncounter', () => {
+    const run = startRun(MAX)
     const recorded = recordEncounter(
       run,
       wonEncounter(run.encounter, MAX),
-      spent,
+      DISCARDS_PER_FIGHT,
       null,
+      0,
+      undefined,
+      undefined,
+      undefined,
+      2,
     )
-    expect(recorded.discardsRemaining).toBe(spent)
-    expect(advanceRun(recorded).discardsRemaining).toBe(DISCARDS_PER_FIGHT)
+    expect(recorded.discardCapBonus).toBe(2)
+  })
+
+  it("keeps the run's own figure when recordEncounter is not told one", () => {
+    const run = { ...startRun(MAX), discardCapBonus: 1 }
+    const recorded = recordEncounter(run, run.encounter, DISCARDS_PER_FIGHT, null)
+    expect(recorded.discardCapBonus).toBe(1)
+  })
+
+  it('is reset to 0 at the fight boundary', () => {
+    const run = startRun(MAX)
+    const recorded = recordEncounter(
+      run,
+      wonEncounter(run.encounter, MAX),
+      DISCARDS_PER_FIGHT,
+      null,
+      0,
+      undefined,
+      undefined,
+      undefined,
+      2,
+    )
+    expect(advanceRun(recorded).discardCapBonus).toBe(0)
   })
 })

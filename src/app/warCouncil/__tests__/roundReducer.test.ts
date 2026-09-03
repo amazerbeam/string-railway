@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   AbilityChoiceKind,
-  CardRank,
   IllegalMoveReason,
   PlayerSide,
   RoundPhase,
@@ -129,6 +128,7 @@ describe('CarryOn commits a pending Quarry lead', () => {
         roll: 1,
         buffAccrual: null,
         firedBuffIds: [],
+        treasureBonusEarned: false,
       },
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }
@@ -163,15 +163,11 @@ describe('a full hand driven purely by CarryOn and taps', () => {
       const next = legal[0]
       ui = roundReducer(ui, tap(next))
       ui = roundReducer(ui, tap(next))
-      // A Fox or a Woodcutter opens the ability prompt on the second tap instead of
-      // committing — answer it with the simplest always-legal choice so the loop
-      // doesn't stall on `canAct`'s `prompt === null` guard.
+      // DLR-163 — only a Fox opens the ability prompt on the second tap now; a Woodcutter
+      // commits like any plain card. Answer it with the neutral choice so the loop doesn't stall
+      // on `canAct`'s `prompt === null` guard.
       if (ui.prompt !== null) {
-        const promptCard = ui.prompt
-        const choice: AbilityChoice =
-          promptCard.rank === CardRank.Fox
-            ? { kind: AbilityChoiceKind.FoxDecline }
-            : { kind: AbilityChoiceKind.WoodcutterDiscard, discard: ui.round.drawPile[0] }
+        const choice: AbilityChoice = { kind: AbilityChoiceKind.DeclineTrump }
         ui = roundReducer(ui, { kind: RoundUiActionKind.ChooseAbility, choice })
       }
     }
@@ -244,18 +240,31 @@ describe('abilities', () => {
     expect(ui.round.currentTrick).toHaveLength(0)
   })
 
-  it('changes the trump suit when the exchange is chosen', () => {
+  it('DLR-163 AC1/AC2 — changes the trump suit when a suit is named, and nulls the decree', () => {
     let ui = uiFrom(makeRound())
     expect(ui.round.trumpSuit).toBe(Suit.Bells)
+    const handBefore = ui.round.hands[PlayerSide.Player]
     ui = roundReducer(ui, tap(card(Suit.Keys, 3)))
     ui = roundReducer(ui, tap(card(Suit.Keys, 3)))
     ui = roundReducer(ui, {
       kind: RoundUiActionKind.ChooseAbility,
-      choice: { kind: AbilityChoiceKind.FoxExchange, handCard: card(Suit.Moons, 5) },
+      choice: { kind: AbilityChoiceKind.NameTrump, suit: Suit.Moons },
     })
     expect(ui.round.trumpSuit).toBe(Suit.Moons)
-    expect(ui.round.decree).toEqual(card(Suit.Moons, 5))
+    expect(ui.round.decree).toBeNull()
     expect(ui.prompt).toBeNull()
+    // AC1 — nothing left the hand but the 3 itself.
+    expect(ui.round.hands[PlayerSide.Player]).toEqual(
+      handBefore.filter((c) => !(c.suit === Suit.Keys && c.rank === 3)),
+    )
+  })
+
+  it('DLR-163 AC5 — a Woodcutter commits on its second tap with no prompt', () => {
+    let ui = uiFrom(makeRound())
+    ui = roundReducer(ui, tap(card(Suit.Moons, 5)))
+    ui = roundReducer(ui, tap(card(Suit.Moons, 5)))
+    expect(ui.prompt).toBeNull()
+    expect(ui.round.currentTrick.length + ui.round.tricksPlayed).toBeGreaterThan(0)
   })
 })
 

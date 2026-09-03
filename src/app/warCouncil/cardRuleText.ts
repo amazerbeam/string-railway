@@ -18,17 +18,21 @@ export const PLAIN_RANK_RULE_TEXT = 'A plain number card. No rule attached.'
 export const RANK_RULE_TEXT: Readonly<Record<number, string>> = {
   1: 'If a Swan is in a trick and belongs to the side that lost it, that side leads the next trick. Two Swans: the loser leads either way.',
   2: PLAIN_RANK_RULE_TEXT,
-  3: 'On playing it, you may exchange the decree card for a card from your hand. The exchanged card becomes the new decree, and its suit becomes the new trump suit. You may decline.',
+  3: 'On playing it, you may name any suit; that suit becomes the new trump suit and the decree becomes a marker showing it. You give up nothing. You may decline.',
   4: PLAIN_RANK_RULE_TEXT,
-  5: 'On playing it, draw the top card of the draw pile, then put one card from your hand — the drawn card or one you already held — on the bottom of the pile.',
+  5: 'On playing it, your Swap pile gains one — both the cap and the Swaps you have left — for the rest of the fight.',
   6: PLAIN_RANK_RULE_TEXT,
-  7: 'No effect at all. A named card with no rule attached.',
+  7: 'A trick you were victorious on that carried a Treasure adds 1 to your base damage for the rest of the fight. A trick that hurt you and carried one costs 2 health instead of 1.',
   8: PLAIN_RANK_RULE_TEXT,
   9: 'If a trick contains exactly one Witch, that Witch counts as trump when the winner is decided. Two Witches cancel — neither is treated as trump.',
   10: PLAIN_RANK_RULE_TEXT,
   11: 'When led, the follower may play only their Swan of that suit, or their highest card of that suit.',
 }
 
-/** AC2 — the Treasure's printed mark. Two words and no rule text: AC8 forbids rule text on any
- *  face, and this says only that there is none. PLACEHOLDER copy, as this project's copy is. */
+/** AC2 — the printed no-rule mark. Two words and no rule text: AC8 forbids rule text on any
+ *  face, and this says only that there is none. PLACEHOLDER copy, as this project's copy is.
+ *
+ *  DLR-163 AC12 — NO LONGER the Treasure's: rank 7 became an acting face when it got a rule, and
+ *  `printedRects` pushes this mark only for an `Inert` face. It stays exported and applied to any
+ *  future inert rank; nothing in `RANK_FACE` is `Inert` today. */
 export const NO_RULE_MARK_LABEL = 'no rule'

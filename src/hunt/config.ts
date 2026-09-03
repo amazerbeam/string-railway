@@ -328,6 +328,25 @@ export const BASE_DAMAGE: Damage = 1
 export const DISCARDS_PER_FIGHT = 3
 export const MAX_CARDS_PER_DISCARD = 3
 
+// DLR-163 AC8 — what one Treasure trick the player BANKED adds to the fight's base damage.
+// UNIT: damage per banked Treasure trick. Feeds the SAME term a Whetstone raises, so the two
+// stack; unlike a Whetstone this dies at the fight boundary.
+export const TREASURE_BASE_DAMAGE_STEP: Damage = 1
+
+// DLR-163 AC10 — damage to the player from a hurt trick that carried a Treasure. REPLACES
+// DAMAGE_PER_HIT for that trick rather than adding to it. UNIT: damage per event. This is the
+// constant that retires the-hunt.md §8's "damage to the player, per event: 1, every time".
+export const QUARRY_TREASURE_DAMAGE: Damage = 2
+
+// DLR-163 AC5 — what one Woodcutter the player plays adds to BOTH the Swap cap and the Swaps
+// remaining. UNIT: Swap actions, per Woodcutter played, for the rest of the fight.
+export const WOODCUTTER_SWAP_STEP = 1
+
+// DLR-163 AC7 — the chance the card the QUARRY'S Woodcutter draws carries a skull. A PROPORTION
+// in 0..1, exactly like SKULL_DENSITY above, NOT a 0..100 percentage. Independent of
+// SKULL_DENSITY, which is a property of the DEAL; this one mints a skull mid-hand.
+export const QUARRY_SWAP_SKULL_CHANCE = 0.4
+
 // DLR-108 — the AP tunables moved to `./apConfig` when this file reached its 400-line blocking
 // budget, the same split `run.ts` → `runTransitions.ts` already made. Re-exported here so every
 // existing importer (`actionPoints.ts`, `index.ts`, the specs) resolves unchanged.

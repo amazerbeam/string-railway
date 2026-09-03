@@ -177,9 +177,31 @@ describe('maximalistPolicy', () => {
     if (play !== null) {
       expect(widened).toContainEqual(play.card)
       expect(legal).not.toContainEqual(play.card)
+      // DLR-163 — only the Fox is excluded now. A Cheat unlocking a Woodcutter is no longer a
+      // stall risk, because the 5 carries no prompt.
       expect(play.card.rank).not.toBe(CardRank.Fox)
-      expect(play.card.rank).not.toBe(CardRank.Woodcutter)
     }
+  })
+
+  it('DLR-163 — a hand whose only escape is a Woodcutter is now playable through a Cheat', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 27)
+    const leadingUi = uiFor(run)
+    const led = { suit: Suit.Bells, rank: 4 }
+    const following: RoundState = {
+      ...leadingUi.round,
+      currentTrick: [{ side: PlayerSide.Cpu, card: led }],
+      hands: {
+        ...leadingUi.round.hands,
+        // One Bells card so following suit is forced, and one Woodcutter the Cheat unlocks.
+        [PlayerSide.Player]: [
+          { suit: Suit.Bells, rank: 2 },
+          { suit: Suit.Moons, rank: CardRank.Woodcutter },
+        ],
+      },
+    }
+    const play = maximalistPolicy.wantsCheatPlay?.({ ...leadingUi, round: following }) ?? null
+    expect(play).not.toBeNull()
+    expect(play?.card.rank).toBe(CardRank.Woodcutter)
   })
 })
 

@@ -160,6 +160,9 @@ function App() {
       result.buffs,
       result.feederCarry,
       result.streak,
+      // DLR-163 AC5/AC8 — the two per-fight figures, carried into the next hand of this fight.
+      result.discardCapBonus,
+      result.treasureDamageBonus,
     )
     setRun(recorded)
     if (isEncounterResolved(recorded.encounter)) {
@@ -381,6 +384,8 @@ function App() {
       discardsRemaining={run.discardsRemaining}
       feederCarry={run.feederCarry}
       streak={run.streak}
+      discardCapBonus={run.discardCapBonus}
+      treasureDamageBonus={run.treasureDamageBonus}
       buffs={run.buffs}
       baseDamageBonus={baseDamageBonusFor(run)}
       rankTiers={playerRankTiersFor(run)}

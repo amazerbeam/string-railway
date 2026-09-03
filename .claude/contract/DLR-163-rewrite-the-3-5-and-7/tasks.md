@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-09-03
 
 > **Note on the mockup:** `mockup.html` in this folder exists and was presented at the approval
@@ -90,7 +90,7 @@ Started: 2026-09-03
 
 Adds the four constants and the two `RunState` fields, plus the pure Swap-pile rule. Nothing reads any of them yet and both fields default to 0, so the game plays bit-identically at this boundary — a safe stopping point that widens before anything cuts.
 
-### Task 1: Add the four configuration keys and the Swap-pile rule
+### Task 1: Add the four configuration keys and the Swap-pile rule ✓
 
 - Skill: `react-frontend`
 
@@ -100,7 +100,7 @@ Adds the four constants and the two `RunState` fields, plus the pure Swap-pile r
 - Test: `src/hunt/__tests__/swapPile.test.ts`
 - Config: `src/hunt/config.ts` — add `TREASURE_BASE_DAMAGE_STEP`, `QUARRY_TREASURE_DAMAGE`, `WOODCUTTER_SWAP_STEP`, `QUARRY_SWAP_SKULL_CHANCE` (all four values transcribed from the ticket; see "Developer decides or observes")
 
-- [ ] **Step 1: Add the four keys to `src/hunt/config.ts`, beside `DISCARDS_PER_FIGHT` and `SKULL_DENSITY`**
+- [x] **Step 1: Add the four keys to `src/hunt/config.ts`, beside `DISCARDS_PER_FIGHT` and `SKULL_DENSITY`**
 
 Each carries its unit and its provenance, matching the file's existing comment style.
 
@@ -125,7 +125,7 @@ export const WOODCUTTER_SWAP_STEP = 1
 export const QUARRY_SWAP_SKULL_CHANCE = 0.4
 ```
 
-- [ ] **Step 2: Write the failing spec for the Swap-pile rule**
+- [x] **Step 2: Write the failing spec for the Swap-pile rule**
 
 `src/hunt/__tests__/swapPile.test.ts` — pin the two rows AC5 states by name, plus the cap function.
 
@@ -155,12 +155,12 @@ describe('swapPileAfterWoodcutter', () => {
 })
 ```
 
-- [ ] **Step 3: Run the spec and confirm it fails to resolve the module**
+- [x] **Step 3: Run the spec and confirm it fails to resolve the module**
 
 Run: `npx vitest run src/hunt/__tests__/swapPile.test.ts`
 Expected: non-zero exit; the failure names the missing `swapPile` exports, not a wrong value.
 
-- [ ] **Step 4: Write `src/hunt/swapPile.ts`**
+- [x] **Step 4: Write `src/hunt/swapPile.ts`**
 
 A separate file rather than an addition to `run.ts`, which stands at 307 lines and gains two field docblocks in Task 2.
 
@@ -191,16 +191,16 @@ export function swapCapFor(discardCapBonus: number): number {
 }
 ```
 
-- [ ] **Step 5: Re-export from `src/hunt/index.ts`**
+- [x] **Step 5: Re-export from `src/hunt/index.ts`**
 
 Add `swapPileAfterWoodcutter`, `swapCapFor` and `type SwapPile` alongside the existing `run.ts` exports, and the four new config keys alongside `DISCARDS_PER_FIGHT`.
 
-- [ ] **Step 6: Run the spec and the typecheck**
+- [x] **Step 6: Run the spec and the typecheck**
 
 Run: `npx vitest run src/hunt/__tests__/swapPile.test.ts; npm run typecheck`
 Expected: Vitest reports 3 passed, 0 failed; `tsc -b` exits 0.
 
-### Task 2: Add the two per-fight `RunState` figures
+### Task 2: Add the two per-fight `RunState` figures ✓
 
 - Skill: `react-frontend`
 
@@ -208,7 +208,7 @@ Expected: Vitest reports 3 passed, 0 failed; `tsc -b` exits 0.
 - Modify: `src/hunt/run.ts` (the `RunState` interface and `startRun`'s returned literal), `src/hunt/runTransitions.ts` (`recordEncounter`'s signature and returned spread, `advanceRun`'s returned literal)
 - Test: `src/hunt/__tests__/run.discard.test.ts` (extend), `src/hunt/__tests__/run.test.ts` (extend)
 
-- [ ] **Step 1: Add both fields to `RunState`, documented against `discardsRemaining`'s contract**
+- [x] **Step 1: Add both fields to `RunState`, documented against `discardsRemaining`'s contract**
 
 ```ts
   /** DLR-163 AC5/AC11 — Swaps added to THIS FIGHT's cap by Woodcutters played. Carried across
@@ -224,7 +224,7 @@ Expected: Vitest reports 3 passed, 0 failed; `tsc -b` exits 0.
   readonly treasureDamageBonus: number
 ```
 
-- [ ] **Step 2: Seed both to 0 in `startRun`'s returned literal**
+- [x] **Step 2: Seed both to 0 in `startRun`'s returned literal**
 
 Beside `discardsRemaining: DISCARDS_PER_FIGHT`:
 
@@ -233,7 +233,7 @@ Beside `discardsRemaining: DISCARDS_PER_FIGHT`:
     treasureDamageBonus: 0,
 ```
 
-- [ ] **Step 3: Reset both to 0 in `advanceRun`'s returned literal**
+- [x] **Step 3: Reset both to 0 in `advanceRun`'s returned literal**
 
 Beside `discardsRemaining: DISCARDS_PER_FIGHT` — AC11's "everything resets when the fight ends".
 
@@ -242,7 +242,7 @@ Beside `discardsRemaining: DISCARDS_PER_FIGHT` — AC11's "everything resets whe
     treasureDamageBonus: 0,
 ```
 
-- [ ] **Step 4: Add the two trailing optional parameters to `recordEncounter`**
+- [x] **Step 4: Add the two trailing optional parameters to `recordEncounter`**
 
 Following `feederCarry`'s and `streak`'s precedent exactly, so no existing call site changes.
 
@@ -263,16 +263,16 @@ and in the returned spread:
     treasureDamageBonus: treasureDamageBonus ?? run.treasureDamageBonus,
 ```
 
-- [ ] **Step 5: Add specs pinning the carry and the reset**
+- [x] **Step 5: Add specs pinning the carry and the reset**
 
 In `src/hunt/__tests__/run.discard.test.ts`, add a `describe('the fight Swap cap bonus')` block asserting that `startRun` opens at 0, `recordEncounter` with an explicit value adopts it, `recordEncounter` without one keeps the run's, and `advanceRun` resets it to 0. Add the mirror block for `treasureDamageBonus` in `src/hunt/__tests__/run.test.ts`.
 
-- [ ] **Step 6: Run the run specs and the typecheck**
+- [x] **Step 6: Run the run specs and the typecheck**
 
 Run: `npx vitest run src/hunt/__tests__/run.discard.test.ts src/hunt/__tests__/run.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0. Any `RunState` literal the compiler flags is one of the 7 construction sites the audit named — fix it in this task, not later.
 
-- [ ] **Step 7: Confirm `run.ts` is still inside budget**
+- [x] **Step 7: Confirm `run.ts` is still inside budget**
 
 Run: `(Get-Content src\hunt\run.ts).Count; (Get-Content src\hunt\runTransitions.ts).Count`
 Expected: both under 400. `run.ts` was 307 and `runTransitions.ts` 369 before this task; if either crosses, split it here rather than reporting it.
@@ -283,7 +283,7 @@ Expected: both under 400. `run.ts` was 307 and `runTransitions.ts` 369 before th
 
 Both changes to `AbilityChoice` land together, because the 3 and the 5 share that type and splitting them would leave a phase boundary where the Woodcutter prompt references a removed choice kind. At this boundary the 3 works end to end and the 5 is temporarily a plain card with no effect at all — the project type-checks and plays, and Phase 3 gives the 5 its two effects.
 
-### Task 3: Retype the decree, the ability choice, and the reject reasons
+### Task 3: Retype the decree, the ability choice, and the reject reasons ✓
 
 - Skill: `react-frontend`
 
@@ -291,7 +291,7 @@ Both changes to `AbilityChoice` land together, because the 3 and the 5 share tha
 - Modify: `src/warCouncil/types.ts`
 - Test: `src/warCouncil/__tests__/types.test.ts`
 
-- [ ] **Step 1: Widen `RoundState.decree` and replace the choice union**
+- [x] **Step 1: Widen `RoundState.decree` and replace the choice union**
 
 ```ts
   /** DLR-163 AC2 — the decree card, or `null` once a Fox has replaced it with a bare suit.
@@ -319,16 +319,16 @@ export type AbilityChoice =
 
 `WoodcutterDiscard` is removed outright — DLR-163 AC5 gives the 5 no choice to make.
 
-- [ ] **Step 2: Remove the two dead reject reasons from `IllegalMoveReason`**
+- [x] **Step 2: Remove the two dead reject reasons from `IllegalMoveReason`**
 
 Delete `InvalidFoxExchangeCard` and `InvalidWoodcutterDiscard`. `MissingAbilityChoice` and `UnexpectedAbilityChoice` stay and their meanings widen — the second now also covers a choice offered with a 5.
 
-- [ ] **Step 3: Typecheck and read the failure list**
+- [x] **Step 3: Typecheck and read the failure list**
 
 Run: `npm run typecheck`
 Expected: non-zero exit, with errors confined to the readers the audit enumerated — `abilities.ts`, `playCard.ts`, `cpuPlayer.ts`, `encounterDeck.ts`, and the app-layer decree readers. Tasks 4 to 8 clear them; do not silence any with a cast.
 
-### Task 4: Replace the Fox exchange with naming a suit
+### Task 4: Replace the Fox exchange with naming a suit ✓
 
 - Skill: `react-frontend`
 
@@ -336,7 +336,7 @@ Expected: non-zero exit, with errors confined to the readers the audit enumerate
 - Modify: `src/warCouncil/abilities.ts`, `src/warCouncil/playCard.ts:62-73`, `src/warCouncil/encounterDeck.ts:47-58`, `src/warCouncil/index.ts`, `src/warCouncil/skulls.ts:105-115`, `src/warCouncil/timebomb.ts:15-25`
 - Test: `src/warCouncil/__tests__/nameTrump.test.ts`, `src/warCouncil/__tests__/abilities.test.ts`, `src/warCouncil/__tests__/playCard.test.ts`, `src/warCouncil/__tests__/deckCycle.test.ts`
 
-- [ ] **Step 1: Write the failing spec for the new rule**
+- [x] **Step 1: Write the failing spec for the new rule**
 
 `src/warCouncil/__tests__/nameTrump.test.ts` — four assertions, one per clause of AC1 to AC3.
 
@@ -354,12 +354,12 @@ describe('applyNameTrump', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and confirm it fails on the missing export**
+- [x] **Step 2: Run it and confirm it fails on the missing export**
 
 Run: `npx vitest run src/warCouncil/__tests__/nameTrump.test.ts`
 Expected: non-zero exit naming `applyNameTrump`.
 
-- [ ] **Step 3: Replace `applyFoxExchange` with `applyNameTrump` in `abilities.ts`**
+- [x] **Step 3: Replace `applyFoxExchange` with `applyNameTrump` in `abilities.ts`**
 
 ```ts
 /**
@@ -385,7 +385,7 @@ export function applyNameTrump(state: RoundState, suit: Suit): RoundState {
 }
 ```
 
-- [ ] **Step 4: Rewrite `playCard.ts`'s rank-3 branch**
+- [x] **Step 4: Rewrite `playCard.ts`'s rank-3 branch**
 
 Replace the `CardRank.Fox` block's body:
 
@@ -406,7 +406,7 @@ Replace the `CardRank.Fox` block's body:
 
 The whole `CardRank.Woodcutter` branch is deleted, so a choice offered with a 5 now falls into the trailing `UnexpectedAbilityChoice`. `applyWoodcutterDraw`'s import goes with it. The timing is unchanged (AC3) because this still runs before `currentTrick` is extended and before `resolveTrickWinner`.
 
-- [ ] **Step 5: Guard `closeHand` against an already-spent decree**
+- [x] **Step 5: Guard `closeHand` against an already-spent decree**
 
 In `src/warCouncil/encounterDeck.ts`:
 
@@ -426,24 +426,24 @@ In `src/warCouncil/encounterDeck.ts`:
 
 Also update the function's docblock, which currently says the one rule "covers a Fox exchange (whatever card the Fox left in the decree slot is what gets spent)" — that path no longer exists.
 
-- [ ] **Step 6: Rewrite the two docblocks that cite the retired Fox path**
+- [x] **Step 6: Rewrite the two docblocks that cite the retired Fox path**
 
 `skulls.ts`'s `trickIsSkulled` and `timebomb.ts`'s `trickIsPrimed` both justify testing the trick rather than the seat by citing "the Quarry's Fox can exchange a skulled card into the decree and the player's Fox can later take that decree into hand". No card is ever moved onto the decree any more, so that path is gone. Keep the trick-shaped test — it is still the right shape and needs no special case — and rewrite each docblock to say the path closed on DLR-163 and that the test is retained because it is total, not because that path exists.
 
-- [ ] **Step 7: Update `src/warCouncil/index.ts`'s exports**
+- [x] **Step 7: Update `src/warCouncil/index.ts`'s exports**
 
 `applyFoxExchange` and `applyWoodcutterDraw` out; `applyNameTrump` in.
 
-- [ ] **Step 8: Fix the existing engine specs the compiler names**
+- [x] **Step 8: Fix the existing engine specs the compiler names**
 
 `abilities.test.ts`, `playCard.test.ts`, `deckCycle.test.ts` and `handRefill.test.ts` all build Fox or Woodcutter choices. Rewrite each to the new choice shape; **do not delete a case** — a Woodcutter case that tested the draw-and-bury becomes a case asserting a 5 now plays with no choice and moves no card, and `deckCycle.test.ts`'s all-33 assertion must gain a case where a 3 has nulled the decree.
 
-- [ ] **Step 9: Run the engine specs and the typecheck**
+- [x] **Step 9: Run the engine specs and the typecheck**
 
 Run: `npx vitest run src/warCouncil --project node; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0 for `src/warCouncil/` (app-layer errors remain until Tasks 6–8).
 
-### Task 5: Teach the Quarry to name a suit
+### Task 5: Teach the Quarry to name a suit ✓
 
 - Skill: `react-frontend`
 
@@ -451,7 +451,7 @@ Expected: Vitest reports 0 failed; `tsc -b` exits 0 for `src/warCouncil/` (app-l
 - Modify: `src/warCouncil/cpuPlayer.ts:88-116`
 - Test: `src/warCouncil/__tests__/cpuPlayer.test.ts`, `src/warCouncil/__tests__/quarryIntent.test.ts`
 
-- [ ] **Step 1: Replace `chooseCpuFoxChoice` with `chooseCpuTrumpChoice`**
+- [x] **Step 1: Replace `chooseCpuFoxChoice` with `chooseCpuTrumpChoice`**
 
 AC4's rule is the existing heuristic with the exchange removed — the suit it holds most of, declining when that is already trump. It no longer needs a hand card, so the empty-hand guard goes: a 3 played as the last card can still name a suit.
 
@@ -480,7 +480,7 @@ export function chooseCpuTrumpChoice(
 }
 ```
 
-- [ ] **Step 2: Delete `chooseCpuWoodcutterChoice` and simplify `chooseCpuMove`**
+- [x] **Step 2: Delete `chooseCpuWoodcutterChoice` and simplify `chooseCpuMove`**
 
 The Woodcutter branch and its `drawCards` preview both go; only the Fox branch remains.
 
@@ -494,16 +494,16 @@ export function chooseCpuMove(state: RoundState, side: PlayerSide): CpuMove {
 }
 ```
 
-- [ ] **Step 3: Update the CPU specs**
+- [x] **Step 3: Update the CPU specs**
 
 `cpuPlayer.test.ts` has 6 `AbilityChoiceKind.` references. Rewrite the Fox cases to the new shape and assert AC4's two clauses by name; replace the Woodcutter-choice cases with one asserting `chooseCpuMove` returns no `choice` for a rank 5.
 
-- [ ] **Step 4: Run the CPU specs and the typecheck**
+- [x] **Step 4: Run the CPU specs and the typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts src/warCouncil/__tests__/quarryIntent.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; no new `tsc` error in `src/warCouncil/`.
 
-### Task 6: Rebuild the ability prompt as a suit picker
+### Task 6: Rebuild the ability prompt as a suit picker ✓
 
 - Skill: `react-frontend`, and `game-ux` for the roving-tabindex and tap-cost floors
 - Layout, copy and interaction per `mockup.html`'s "The 3 — name a suit" section in this folder.
@@ -512,24 +512,24 @@ Expected: Vitest reports 0 failed; no new `tsc` error in `src/warCouncil/`.
 - Modify: `src/app/warCouncil/AbilityPrompt.tsx`, `src/app/warCouncil/warCouncilCards.css`
 - Test: `src/app/warCouncil/__tests__/AbilityPrompt.test.tsx`, `src/app/warCouncil/__tests__/WarCouncilRound.abilityCancel.test.tsx`
 
-- [ ] **Step 1: Rewrite the component to one branch with four controls**
+- [x] **Step 1: Rewrite the component to one branch with four controls**
 
 Both the Fox and Woodcutter branches go. The new props are `card`, `trumpSuit`, `onChoose`, `onCancel` — `decree`, `hand`, `drawnCard` and `primedCards` are all removed. Keep `attachGroup` and its focus guard **verbatim**, and keep `useRovingTabIndex(count, () => true, onCancel)` with `count = ALL_SUITS.length + 1`. Keep the cancel button outside `.wc-prompt-row` and rendered last, for the reason its existing comment gives. The suit already in force is still offered and is marked with a dashed edge **and** the words "already trump", so the state does not read by colour alone.
 
-- [ ] **Step 2: Add the suit-row styles to `warCouncilCards.css`**
+- [x] **Step 2: Add the suit-row styles to `warCouncilCards.css`**
 
 Rules for `.wc-suit-choice`, its per-suit glyph colour from the existing `--wc-bells` / `--wc-keys` / `--wc-moons` tokens, and the `[data-inforce]` dashed treatment. Minimum target 44×44px, `:focus-visible` outlines, `@media (hover: hover)` around the hover state, `touch-action: manipulation` — per `react-frontend`'s accessibility floor.
 
-- [ ] **Step 3: Rewrite the prompt spec**
+- [x] **Step 3: Rewrite the prompt spec**
 
 `AbilityPrompt.test.tsx` — query by role and accessible name. Assert: three suit buttons plus a decline button are rendered; clicking a suit calls `onChoose` with `{ kind: NameTrump, suit }`; clicking decline calls it with `{ kind: DeclineTrump }`; `ArrowRight` moves focus within the group and `Escape` calls `onCancel`; the suit currently in force renders its "already trump" wording.
 
-- [ ] **Step 4: Run the prompt specs and the typecheck**
+- [x] **Step 4: Run the prompt specs and the typecheck**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/AbilityPrompt.test.tsx src/app/warCouncil/__tests__/WarCouncilRound.abilityCancel.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed.
 
-### Task 7: Render the decree as a suit placeholder
+### Task 7: Render the decree as a suit placeholder ✓
 
 - Skill: `react-frontend`, and `game-ux` for the "state reads without colour alone" floor
 - Layout per `mockup.html`'s decree plate.
@@ -538,30 +538,30 @@ Expected: Vitest reports 0 failed.
 - Modify: `src/app/warCouncil/DecreePile.tsx`, `src/app/warCouncil/FeltRail.tsx:22,47-64`, `src/app/warCouncil/warCouncilTable.css`
 - Test: `src/app/warCouncil/__tests__/MotionAnchors.test.tsx`, and a new `describe` in `src/app/warCouncil/__tests__/WarCouncilRound.readouts.test.tsx`
 
-- [ ] **Step 1: Accept a nullable decree in `DecreePile.tsx`**
+- [x] **Step 1: Accept a nullable decree in `DecreePile.tsx`**
 
 `decree: Card | null`. When it is `null`, render a `.wc-decree-marker` in the card's own footprint — the suit glyph and the suit name — instead of the `PlayingCard`, keeping the two decorative backs and the trump chip exactly as they are so the plate does not reflow. The `useMotionAnchor` calls are unconditional, before the branch, per this codebase's hook rules. The marker carries `role="img"` and an `aria-label` naming the suit, so a screen reader is told what the plate now holds.
 
 Delete the component's DLR-157 carve-out comment about the Fox exchange's two-flight commit: no card is moved onto the decree any more, so the case it documents is unreachable. Say so in one line rather than deleting silently.
 
-- [ ] **Step 2: Widen `FeltRail.tsx`'s prop and pass it through**
+- [x] **Step 2: Widen `FeltRail.tsx`'s prop and pass it through**
 
 `readonly decree: Card | null`. `decreePrimed` stays a boolean; its caller already computes it and Task 8 guards that read.
 
-- [ ] **Step 3: Style the marker in `warCouncilTable.css`**
+- [x] **Step 3: Style the marker in `warCouncilTable.css`**
 
 A dashed brass border and the suit glyph, sharing the card's box dimensions from the existing custom properties rather than a new fixed size. Form as well as colour — the dashed edge is what distinguishes it in greyscale.
 
-- [ ] **Step 4: Add the placeholder assertion**
+- [x] **Step 4: Add the placeholder assertion**
 
 In `WarCouncilRound.readouts.test.tsx`, add a case mounting with a `null` decree and asserting the plate exposes the suit's accessible name and no card.
 
-- [ ] **Step 5: Typecheck and run the felt specs**
+- [x] **Step 5: Typecheck and run the felt specs**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/WarCouncilRound.readouts.test.tsx src/app/warCouncil/__tests__/MotionAnchors.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed.
 
-### Task 8: Clear the remaining nullable-decree readers and the rank-5 prompt
+### Task 8: Clear the remaining nullable-decree readers and the rank-5 prompt ✓
 
 - Skill: `react-frontend`
 
@@ -569,7 +569,7 @@ Expected: Vitest reports 0 failed.
 - Modify: `src/app/warCouncil/cardPlacement.ts:93`, `src/app/warCouncil/resolutionView.ts:25-26`, `src/app/warCouncil/roundControlsProps.ts:119-122,204-206`, `src/app/warCouncil/commitHandlers.ts:187-188`, `src/app/warCouncil/roundReducer.ts:170`, `src/app/warCouncil/WarCouncilTable.tsx:216-217`, `src/app/warCouncil/TrickResolutionScreen.tsx` (comment), `src/app/warCouncil/labels.ts:85-88`
 - Test: `src/app/warCouncil/__tests__/cardPlacement.test.ts`, `src/app/warCouncil/__tests__/roundReducer.test.ts`, `src/app/warCouncil/__tests__/roundFixture.ts`, `src/app/warCouncil/__tests__/labels.test.ts`, `src/app/warCouncil/__tests__/TrickResolutionScreen.test.tsx`
 
-- [ ] **Step 1: Skip a null decree in the placement map**
+- [x] **Step 1: Skip a null decree in the placement map**
 
 `cardPlacement.ts` line 93 currently writes `map.set(cardKey(state.decree), …)` unconditionally. Guard it — a `null` decree has no card key, and calling `cardKey(null)` would throw inside a render.
 
@@ -579,15 +579,15 @@ Expected: Vitest reports 0 failed.
   if (state.decree !== null) map.set(cardKey(state.decree), { kind: PlaceKind.DecreePlate })
 ```
 
-- [ ] **Step 2: Widen `ResolutionView.decree` and its producer**
+- [x] **Step 2: Widen `ResolutionView.decree` and its producer**
 
 `resolutionView.ts` → `readonly decree: Card | null`, with its AC7 docblock extended to say a `null` decree means the trick resolved under a suit marker. `commitHandlers.ts:188` needs no change beyond the type flowing through.
 
-- [ ] **Step 3: Narrow the prompt to rank 3 only, in both readers**
+- [x] **Step 3: Narrow the prompt to rank 3 only, in both readers**
 
 `roundReducer.ts:170` currently arms a prompt for `CardRank.Fox || CardRank.Woodcutter`; drop the Woodcutter clause. `WarCouncilTable.tsx:216-217` excludes both ranks from its prompt-free predicate; drop the Woodcutter clause there too, so a 5 commits on its second tap like any plain card.
 
-- [ ] **Step 4: Rebuild the prompt's props in `roundControlsProps.ts`**
+- [x] **Step 4: Rebuild the prompt's props in `roundControlsProps.ts`**
 
 The `AbilityPrompt` prop assembly at lines 204-206 loses `decree`, `hand`, `drawnCard` and `primedCards` and gains `trumpSuit: ui.round.trumpSuit`. Line 122's `isPrimed(ui.round.primedCards, ui.round.decree)` must guard the null: a `null` decree is never primed.
 
@@ -595,15 +595,15 @@ The `AbilityPrompt` prop assembly at lines 204-206 loses `decree`, `hand`, `draw
     decreePrimed: ui.round.decree !== null && isPrimed(ui.round.primedCards, ui.round.decree),
 ```
 
-- [ ] **Step 5: Remove the two dead reason-code labels**
+- [x] **Step 5: Remove the two dead reason-code labels**
 
 `labels.ts:87-88` maps `InvalidFoxExchangeCard` and `InvalidWoodcutterDiscard` to copy. Both keys are gone from the union, so both rows are removed; the map is a total `Record` over the union, so the compiler proves nothing else is left dangling.
 
-- [ ] **Step 6: Fix the test fixtures the compiler names**
+- [x] **Step 6: Fix the test fixtures the compiler names**
 
 `roundFixture.ts` and the six `roundReducer.*.test.ts` files build ability choices and read `decree`. Rewrite each to the new shape and keep every case; add one asserting that tapping a 5 twice commits it directly with no prompt.
 
-- [ ] **Step 7: Typecheck the whole project and run the app-layer suite**
+- [x] **Step 7: Typecheck the whole project and run the app-layer suite**
 
 Run: `npm run typecheck; npx vitest run src/app/warCouncil`
 Expected: `tsc -b` exits 0 across the whole project for the first time since Task 3; Vitest reports 0 failed.
@@ -614,7 +614,7 @@ Expected: `tsc -b` exits 0 across the whole project for the first time since Tas
 
 Gives the 5 its rules on both sides of the table: the player's Swap pile grows, and the Quarry's swap can mint a skull. Two files at their 400-line ceiling are split in the tasks that grow them, so the phase ends inside budget as well as type-checking.
 
-### Task 9: The Quarry's swap, with its seeded skull roll
+### Task 9: The Quarry's swap, with its seeded skull roll ✓
 
 - Skill: `react-frontend`
 
@@ -622,7 +622,7 @@ Gives the 5 its rules on both sides of the table: the player's Swap pile grows, 
 - Modify: `src/warCouncil/abilities.ts`, `src/warCouncil/playCard.ts`, `src/warCouncil/index.ts`
 - Test: `src/warCouncil/__tests__/quarrySwap.test.ts`, `src/warCouncil/__tests__/deckCycle.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 `src/warCouncil/__tests__/quarrySwap.test.ts` — five cases, each naming its criterion.
 
@@ -636,12 +636,12 @@ describe('applyQuarrySwap', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and confirm it fails on the missing export**
+- [x] **Step 2: Run it and confirm it fails on the missing export**
 
 Run: `npx vitest run src/warCouncil/__tests__/quarrySwap.test.ts`
 Expected: non-zero exit naming `applyQuarrySwap`.
 
-- [ ] **Step 3: Write `applyQuarrySwap` in `abilities.ts`**
+- [x] **Step 3: Write `applyQuarrySwap` in `abilities.ts`**
 
 ```ts
 /**
@@ -669,7 +669,7 @@ export function applyQuarrySwap(state: RoundState, swapped: Card): RoundState
 
 Implementation order inside the function: build the generator, take the one roll, `drawCards(state, 1)`, remove `swapped` from the Quarry hand and append the drawn card, bottom `swapped` onto `draw.drawPile`, and append the drawn card to `skulledCards` when the roll hit **and** `skullableCards([drawn]).length > 0`. An exhausted deck returns no drawn card; follow `applyWoodcutterDraw`'s documented posture — the hand shrinks by one and nothing throws — and carry that note across.
 
-- [ ] **Step 4: Call it from `playCard.ts` for the Quarry only**
+- [x] **Step 4: Call it from `playCard.ts` for the Quarry only**
 
 Between the rank-3 branch and the trailing `else if (choice)`:
 
@@ -683,12 +683,12 @@ Between the rank-3 branch and the trailing `else if (choice)`:
 
 `chooseQuarrySwapCard` is the lowest-ranked held card, mirroring the deleted `chooseCpuWoodcutterChoice`'s stated "keep your best cards" default. Put it in `cpuPlayer.ts` and import it, so the Quarry's judgement stays in the Quarry's module; a Quarry holding nothing after the 5 is a no-op.
 
-- [ ] **Step 5: Run the new spec, the deck-cycle spec and the typecheck**
+- [x] **Step 5: Run the new spec, the deck-cycle spec and the typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/quarrySwap.test.ts src/warCouncil/__tests__/deckCycle.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed. `deckCycle.test.ts`'s all-33-conserved assertion is the one that proves the swap did not duplicate or lose a card.
 
-### Task 10: Raise the Swap pile on a committed 5, and split `commitHandlers.ts`
+### Task 10: Raise the Swap pile on a committed 5, and split `commitHandlers.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -697,16 +697,16 @@ Expected: Vitest reports 0 failed. `deckCycle.test.ts`'s all-33-conserved assert
 - Modify: `src/app/warCouncil/commitHandlers.ts`, `src/app/warCouncil/roundReducer.ts:8-33,138-152`, `src/app/warCouncil/roundUiState.ts`, `src/app/warCouncil/roundUiSeed.ts`, `src/app/warCouncil/roundResult.ts`, `src/app/warCouncilMount.ts`
 - Test: `src/app/warCouncil/__tests__/roundReducer.swapPile.test.ts`, `src/app/warCouncil/__tests__/roundResult.test.ts`
 
-- [ ] **Step 1: Move the two pot handlers out first, before growing the file**
+- [x] **Step 1: Move the two pot handlers out first, before growing the file**
 
 Cut `applyPotAction` and `rollOverAction` — with their docblocks — from `commitHandlers.ts` into a new `src/app/warCouncil/potHandlers.ts`, and repoint `roundReducer.ts`'s import. A pure move: no behaviour changes, and every docblock travels with its function. This is done **before** the additions below so the file never crosses its budget mid-task.
 
-- [ ] **Step 2: Confirm the split landed inside budget**
+- [x] **Step 2: Confirm the split landed inside budget**
 
 Run: `(Get-Content src\app\warCouncil\commitHandlers.ts).Count; (Get-Content src\app\warCouncil\potHandlers.ts).Count; npm run typecheck`
 Expected: `commitHandlers.ts` comfortably under 400 (it was 399); `potHandlers.ts` well under; `tsc -b` exits 0.
 
-- [ ] **Step 3: Add the two per-fight figures and the raised mark to `RoundUiState`**
+- [x] **Step 3: Add the two per-fight figures and the raised mark to `RoundUiState`**
 
 ```ts
   /** DLR-163 AC5 — the fight's Swap cap bonus, mirrored from the mount's opening prop and climbed
@@ -726,7 +726,7 @@ Expected: `commitHandlers.ts` comfortably under 400 (it was 399); `potHandlers.t
 
 Seed all three in `roundUiSeed.ts` from new **optional** `RoundUiSeed` fields defaulting to `0` / `0` / `false`, following `feederCarry`'s precedent so no existing seed fixture changes.
 
-- [ ] **Step 4: Apply the bump in `commit`**
+- [x] **Step 4: Apply the bump in `commit`**
 
 After a successful `playCard` and before the result is assembled:
 
@@ -746,20 +746,20 @@ After a successful `playCard` and before the result is assembled:
 
 Spread `discardsRemaining: swap.discardsRemaining`, `discardCapBonus: swap.discardCapBonus` and `swapJustRaised: raisedSwap` into `settled`. Note in a comment that the discard action's own decrement (`discardHandlers.ts`) is untouched and the two never run in the same transition.
 
-- [ ] **Step 5: Hand both figures back and thread the mount contract**
+- [x] **Step 5: Hand both figures back and thread the mount contract**
 
 `roundResult.ts` gains `discardCapBonus: ui.discardCapBonus` and `treasureDamageBonus: ui.treasureDamageBonus`. `warCouncilMount.ts` gains the two **optional** props (defaulted to 0, documented against `feederCarry`) and the two **required** result fields (documented against `feederCarry`'s "so the compiler enumerates every construction site").
 
-- [ ] **Step 6: Write the reducer spec**
+- [x] **Step 6: Write the reducer spec**
 
 `roundReducer.swapPile.test.ts` — committing a 5 raises both figures by one; committing it at 0 remaining gives 1 of 4; committing it at full gives 4 of 4; `swapJustRaised` is true after that commit and false after the next; committing any other rank changes neither figure.
 
-- [ ] **Step 7: Run the specs and the typecheck**
+- [x] **Step 7: Run the specs and the typecheck**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.swapPile.test.ts src/app/warCouncil/__tests__/roundResult.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 
-### Task 11: Show the cap on the Swap control and the skull on the Quarry's shape
+### Task 11: Show the cap on the Swap control and the skull on the Quarry's shape ✓
 
 - Skill: `react-frontend`, and `game-ux` for the greyscale and "no panel with nothing to say" floors
 - Layout and treatment per `mockup.html`'s "The 5 — the Swap pile grows" and "The Quarry's 5" sections.
@@ -768,28 +768,28 @@ Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 - Modify: `src/app/warCouncil/ActionBar.tsx:20,61,133-146`, `src/app/warCouncil/QuarryShape.tsx`, `src/app/warCouncil/roundControlsProps.ts:97`, `src/app/warCouncil/WarCouncilTable.tsx:154,282`, `src/app/warCouncil/warCouncilActionBar.css`, `src/app/warCouncil/warCouncilHunt.css`
 - Test: `src/app/warCouncil/__tests__/ActionBar.test.tsx`, `src/app/warCouncil/__tests__/QuarryShape.test.tsx`, `src/app/warCouncil/__tests__/quarryShapeCss.test.ts`
 
-- [ ] **Step 1: Print the cap and mark the raise on the Swap control**
+- [x] **Step 1: Print the cap and mark the raise on the Swap control**
 
 `ActionBar.tsx` gains `swapCap: number` and `swapJustRaised: boolean`. The count line changes from `{discardsRemaining} left` to the "N of M" form, with `swapCapFor` supplying the cap through `roundControlsProps.ts`. The raised state adds a class carrying a thickened border **and** a boxed count, so it survives a greyscale screenshot; the transition is CSS-only and is disabled under `@media (prefers-reduced-motion: reduce)`.
 
-- [ ] **Step 2: Mark the suit whose skulled count just climbed**
+- [x] **Step 2: Mark the suit whose skulled count just climbed**
 
 `QuarryShape.tsx` gains `skullArrivedIn: Suit | null`. `WarCouncilTable.tsx` derives it by comparing the resolved trick's skulled count per suit against the previous render's — take it from the reducer rather than a ref, so it is a plain value and StrictMode's double render recomputes the same answer. The mark is a border colour **and** a visible word in the row, plus screen-reader text through the existing `.wc-sr-only` span, so a player using a reader is told a skull arrived.
 
-- [ ] **Step 3: Add both CSS rules and keep the drift spec honest**
+- [x] **Step 3: Add both CSS rules and keep the drift spec honest**
 
 `quarryShapeCss.test.ts` pins the shape row's tokens; extend it rather than working around it.
 
-- [ ] **Step 4: Update the two component specs**
+- [x] **Step 4: Update the two component specs**
 
 `ActionBar.test.tsx` asserts the "N of M" readout at cap 3 and at cap 4, and that the raised class is present only when `swapJustRaised`. `QuarryShape.test.tsx` asserts the mark and its accessible text appear only for the named suit.
 
-- [ ] **Step 5: Run the component specs and the typecheck**
+- [x] **Step 5: Run the component specs and the typecheck**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/ActionBar.test.tsx src/app/warCouncil/__tests__/QuarryShape.test.tsx src/app/warCouncil/__tests__/quarryShapeCss.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed.
 
-### Task 12: Thread both figures through the run driver, and split `App.tsx`
+### Task 12: Thread both figures through the run driver, and split `App.tsx` ✓
 
 - Skill: `react-frontend`
 
@@ -798,24 +798,24 @@ Expected: Vitest reports 0 failed.
 - Modify: `src/App.tsx`, `src/sim/playRun.ts`
 - Test: `src/__tests__/App.test.tsx`, `src/sim/__tests__/simulate.test.ts`
 
-- [ ] **Step 1: Move the four run-transition handlers out first, before growing the file**
+- [x] **Step 1: Move the four run-transition handlers out first, before growing the file**
 
 Cut `leaveForNextFight`, `handleContinue`, `handleBuy` and `handleDrinkFlask` from `App.tsx` into `src/app/run/useRunTransitions.ts` as one `use*` hook taking the state setters it needs and returning the four callbacks. A pure move — no behaviour change — done before the additions below so the file never crosses its budget mid-task. `src/app/run/` is where every other run-screen hook already lives (`useShopSlot`, `useManageBuffs`, `useSlotSpin`).
 
-- [ ] **Step 2: Confirm the split landed inside budget**
+- [x] **Step 2: Confirm the split landed inside budget**
 
 Run: `(Get-Content src\App.tsx).Count; (Get-Content src\app\run\useRunTransitions.ts).Count; npm run typecheck`
 Expected: `App.tsx` comfortably under 400 (it was 399); `tsc -b` exits 0.
 
-- [ ] **Step 3: Pass both figures down and record both back**
+- [x] **Step 3: Pass both figures down and record both back**
 
 The `<WarCouncilRound>` mount gains `discardCapBonus={run.discardCapBonus}` and `treasureDamageBonus={run.treasureDamageBonus}`; `handleComplete`'s `recordEncounter` call gains `result.discardCapBonus` and `result.treasureDamageBonus` as its tenth and eleventh arguments.
 
-- [ ] **Step 4: Mirror the same threading in the simulator's run driver**
+- [x] **Step 4: Mirror the same threading in the simulator's run driver**
 
 `src/sim/playRun.ts` calls `recordEncounter` with the same trailing arguments, so a simulated run carries both figures exactly as a played one does. Without this the simulator measures the pre-change game and silently reports the wrong figures — which is the specific failure this ticket exists to make impossible.
 
-- [ ] **Step 5: Run the driver specs and the typecheck**
+- [x] **Step 5: Run the driver specs and the typecheck**
 
 Run: `npx vitest run src/__tests__/App.test.tsx src/sim/__tests__/simulate.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0.
@@ -826,7 +826,7 @@ Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 
 Two facts about a completed trick, derived in one place and consumed in two. The phase ends with the 7 live end to end and the hand fan's damage preview inheriting it with no arithmetic of its own.
 
-### Task 13: The Treasure fact in the streak module
+### Task 13: The Treasure fact in the streak module ✓
 
 - Skill: `react-frontend`
 
@@ -834,7 +834,7 @@ Two facts about a completed trick, derived in one place and consumed in two. The
 - Modify: `src/warCouncil/streak.ts`
 - Test: `src/warCouncil/__tests__/streak.treasure.test.ts`, `src/warCouncil/__tests__/streak.test.ts`, `src/warCouncil/__tests__/streak.buffs.test.ts`, `src/warCouncil/__tests__/streak.formula.test.ts`, `src/warCouncil/__tests__/streak.integration.test.ts`, `src/warCouncil/__tests__/rankTiers.resolution.test.ts`
 
-- [ ] **Step 1: Write the failing spec for both halves**
+- [x] **Step 1: Write the failing spec for both halves**
 
 `src/warCouncil/__tests__/streak.treasure.test.ts` — six cases against the four outcomes.
 
@@ -849,16 +849,16 @@ describe('a trick that carried a Treasure', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and confirm it fails on the missing fields**
+- [x] **Step 2: Run it and confirm it fails on the missing fields**
 
 Run: `npx vitest run src/warCouncil/__tests__/streak.treasure.test.ts`
 Expected: non-zero exit naming `treasureTrick` / `treasureBonusEarned`.
 
-- [ ] **Step 3: Add `TrickFacts.treasureTrick` and `TrickResolution.treasureBonusEarned`**
+- [x] **Step 3: Add `TrickFacts.treasureTrick` and `TrickResolution.treasureBonusEarned`**
 
 Both with the docblocks `plan.md` Part 2 → Data shapes states. `treasureTrick` is REQUIRED, following `buffs`' stated reason.
 
-- [ ] **Step 4: Use the fact in `resolveTrickBank`**
+- [x] **Step 4: Use the fact in `resolveTrickBank`**
 
 Exactly two uses and no more:
 
@@ -881,21 +881,21 @@ and, in the returned record:
     treasureBonusEarned: trick.treasureTrick && taken,
 ```
 
-- [ ] **Step 5: Add the field to the five test helpers**
+- [x] **Step 5: Add the field to the five test helpers**
 
 Each `facts()` / `Partial<TrickFacts>` helper gains `treasureTrick: false`, and `cardDamage.ts`'s `shared` literal is handled in Task 14. These are the construction sites the audit counted; the compiler enumerates any it missed.
 
-- [ ] **Step 6: Run the streak specs and the typecheck**
+- [x] **Step 6: Run the streak specs and the typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/streak.treasure.test.ts src/warCouncil/__tests__/streak.test.ts src/warCouncil/__tests__/streak.buffs.test.ts src/warCouncil/__tests__/streak.formula.test.ts src/warCouncil/__tests__/streak.integration.test.ts src/warCouncil/__tests__/rankTiers.resolution.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed.
 
-- [ ] **Step 7: Confirm `streak.ts` is still inside budget**
+- [x] **Step 7: Confirm `streak.ts` is still inside budget**
 
 Run: `(Get-Content src\warCouncil\streak.ts).Count`
 Expected: under 400. It was 367; if the additions cross it, split the four-outcome table's helpers out here rather than reporting the breach.
 
-### Task 14: Derive the fact, and let the preview inherit it
+### Task 14: Derive the fact, and let the preview inherit it ✓
 
 - Skill: `react-frontend`
 
@@ -903,7 +903,7 @@ Expected: under 400. It was 367; if the additions cross it, split the four-outco
 - Modify: `src/warCouncil/playCard.ts`, `src/app/warCouncil/cardDamage.ts:103-122`
 - Test: `src/warCouncil/__tests__/playCard.bank.test.ts`, `src/app/warCouncil/__tests__/cardDamage.test.ts`
 
-- [ ] **Step 1: Derive `treasureTrick` in `playCard.ts` beside its two siblings**
+- [x] **Step 1: Derive `treasureTrick` in `playCard.ts` beside its two siblings**
 
 ```ts
       // DLR-163 AC8/AC10 — a fact about the TRICK, derived where `trickIsSkulled` and
@@ -914,20 +914,20 @@ Expected: under 400. It was 367; if the additions cross it, split the four-outco
       treasureTrick: completedTrick.some((t) => t.card.rank === CardRank.Treasure),
 ```
 
-- [ ] **Step 2: Add the same derivation to the hand fan's preview**
+- [x] **Step 2: Add the same derivation to the hand fan's preview**
 
 `cardDamage.ts`'s `shared: Omit<TrickFacts, 'playerWon'>` literal gains `treasureTrick: visible.some((t) => t.card.rank === CardRank.Treasure)`, so the win and lose branches both see it and the preview's "this card costs 2" is right for a Treasure trick.
 
-- [ ] **Step 3: Add the two assertions**
+- [x] **Step 3: Add the two assertions**
 
 `playCard.bank.test.ts` — a hurt trick carrying a Treasure costs 2 and a banked one reports the bonus. `cardDamage.test.ts` — the lose branch of a preview against a Treasure lead reads 2, not 1.
 
-- [ ] **Step 4: Run both specs and the typecheck**
+- [x] **Step 4: Run both specs and the typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/playCard.bank.test.ts src/app/warCouncil/__tests__/cardDamage.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed.
 
-### Task 15: Accumulate the fight's base damage and feed it back in
+### Task 15: Accumulate the fight's base damage and feed it back in ✓
 
 - Skill: `react-frontend`
 
@@ -935,7 +935,7 @@ Expected: Vitest reports 0 failed.
 - Modify: `src/app/warCouncil/commitHandlers.ts` (`playOptions` and both resolution sites in `commit`)
 - Test: `src/app/warCouncil/__tests__/roundReducer.treasure.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 `roundReducer.treasure.test.ts` — four cases:
 
@@ -948,7 +948,7 @@ describe('the fight base-damage figure', () => {
 })
 ```
 
-- [ ] **Step 2: Sum both figures in `playOptions`**
+- [x] **Step 2: Sum both figures in `playOptions`**
 
 ```ts
     // DLR-163 AC8 — the Whetstone's run-permanent figure PLUS this fight's earned figure, summed
@@ -959,16 +959,16 @@ describe('the fight base-damage figure', () => {
     baseDamageBonus: state.baseDamageBonus + state.treasureDamageBonus,
 ```
 
-- [ ] **Step 3: Climb the figure at both resolution sites**
+- [x] **Step 3: Climb the figure at both resolution sites**
 
 `commit` resolves a trick in two places — the player's own follow, and the Quarry's automatic follow after a player lead. Both read `resolution.treasureBonusEarned` and add `TREASURE_BASE_DAMAGE_STEP`. Because `playOptions(settled)` is re-read for the Quarry's follow, the second site must be handed the state whose figure has **not** yet climbed for the trick it is about to resolve — that is AC8's "for the rest of the fight" and the reason the two orderings are not interchangeable. State this in a comment at both sites.
 
-- [ ] **Step 4: Run the spec and the typecheck**
+- [x] **Step 4: Run the spec and the typecheck**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.treasure.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed.
 
-- [ ] **Step 5: Confirm `commitHandlers.ts` is still inside budget**
+- [x] **Step 5: Confirm `commitHandlers.ts` is still inside budget**
 
 Run: `(Get-Content src\app\warCouncil\commitHandlers.ts).Count`
 Expected: under 400. Task 10 moved two handlers out; if the phase's additions cross the line again, split further here.
@@ -979,7 +979,7 @@ Expected: under 400. Task 10 moved two handlers out; if the phase's additions cr
 
 The 7 stops printing "no rule" and all three ranks get their new rule text. No logic changes, so this phase's only risk is a drift spec.
 
-### Task 16: Make the 7 an acting face and rewrite the three rule texts
+### Task 16: Make the 7 an acting face and rewrite the three rule texts ✓
 
 - Skill: `react-frontend`
 - Face treatment per `mockup.html`'s "The three faces" section, which shows the 7 before and after.
@@ -988,7 +988,7 @@ The 7 stops printing "no rule" and all three ranks get their new rule text. No l
 - Modify: `src/app/warCouncil/cardFace.ts:44-56`, `src/app/warCouncil/cardRuleText.ts:21-31`
 - Test: `src/app/warCouncil/__tests__/cardFace.test.ts`, `src/app/warCouncil/__tests__/cardRuleText.test.ts`, `src/app/warCouncil/__tests__/CardAbilityTip.test.tsx`
 
-- [ ] **Step 1: Flip rank 7's face class**
+- [x] **Step 1: Flip rank 7's face class**
 
 ```ts
   7: {
@@ -1006,7 +1006,7 @@ The 7 stops printing "no rule" and all three ranks get their new rule text. No l
 
 Update `cardActs`'s docblock, which currently says "the Treasure is named and does not act, which is the whole point of this ticket" — that ticket's point has been superseded.
 
-- [ ] **Step 2: Rewrite the three rule texts**
+- [x] **Step 2: Rewrite the three rule texts**
 
 ```ts
   3: 'On playing it, you may name any suit; that suit becomes the new trump suit and the decree becomes a marker showing it. You give up nothing. You may decline.',
@@ -1016,11 +1016,11 @@ Update `cardActs`'s docblock, which currently says "the Treasure is named and do
 
 `NO_RULE_MARK_LABEL` stays exported and stays applied to rank 8, which is still an unnamed plain card. The wording is placeholder copy in the sense this project's copy always is — the developer's.
 
-- [ ] **Step 3: Update the face specs**
+- [x] **Step 3: Update the face specs**
 
 `cardFace.test.ts` asserts rank 7's printed rectangles no longer include `noRuleMark` and that `cardActs(7)` is true. `cardRuleText.test.ts` asserts the three texts are non-empty and distinct from `PLAIN_RANK_RULE_TEXT`, and that every rank in `RANKS` still has an entry — the total-`Record` property that stops the tooltip rendering nothing.
 
-- [ ] **Step 4: Run the face specs and the typecheck**
+- [x] **Step 4: Run the face specs and the typecheck**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/cardFace.test.ts src/app/warCouncil/__tests__/cardRuleText.test.ts src/app/warCouncil/__tests__/CardAbilityTip.test.tsx src/app/warCouncil/__tests__/cardFaceCss.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed.
@@ -1031,7 +1031,7 @@ Expected: Vitest reports 0 failed.
 
 The 5 no longer opens a prompt, so the policies must stop excluding it — otherwise the ticket's stated second goal, measuring the two strongest levers in the deck, still fails.
 
-### Task 17: Stop the policies avoiding the Woodcutter
+### Task 17: Stop the policies avoiding the Woodcutter ✓
 
 - Skill: `react-frontend`
 
@@ -1039,24 +1039,24 @@ The 5 no longer opens a prompt, so the policies must stop excluding it — other
 - Modify: `src/sim/baselinePolicy.ts:232`, `src/sim/cardAwarePolicy.ts:83-88`, `src/sim/skilledCardPlay.ts:163-180`, `src/sim/skilledPolicy.ts:74-101`, `src/sim/playHand.ts:111-112,214`, `src/sim/types.ts:16-20,221`
 - Test: `src/sim/__tests__/baselinePolicy.test.ts`, `src/sim/__tests__/cardAwarePolicy.test.ts`, `src/sim/__tests__/skilledPolicy.test.ts`, `src/sim/__tests__/playHand.test.ts`
 
-- [ ] **Step 1: Narrow the three prompt-free predicates to the Fox alone**
+- [x] **Step 1: Narrow the three prompt-free predicates to the Fox alone**
 
 Each currently reads `card.rank !== CardRank.Fox && card.rank !== CardRank.Woodcutter`. Drop the second clause in all three and update the docblock above it to say the 5 carries no choice since DLR-163, so a policy may lead or follow with one freely.
 
-- [ ] **Step 2: Update the comments that describe the old prompt behaviour**
+- [x] **Step 2: Update the comments that describe the old prompt behaviour**
 
 `playHand.ts:111-112` and `:214` both explain a window-reset in terms of "a Fox or Woodcutter prompt is pending"; only a Fox can be pending now. `types.ts:16-20` describes `choice` as "for a Fox or a Woodcutter"; `types.ts:221` describes a trump suit as "after any Fox exchange made in it" — there is no exchange any more. `skilledPolicy.ts:99-101` names a Cheat unlocking a Woodcutter as a stall risk; that risk is gone.
 
-- [ ] **Step 3: Assert the change in the policy specs**
+- [x] **Step 3: Assert the change in the policy specs**
 
 Add one case per policy spec: a hand whose only card is a rank 5 is playable and the policy returns it with no `choice`. Keep the existing Fox cases unchanged.
 
-- [ ] **Step 4: Run the simulator specs and the typecheck**
+- [x] **Step 4: Run the simulator specs and the typecheck**
 
 Run: `npx vitest run src/sim; npm run typecheck`
 Expected: Vitest reports 0 failed; `tsc -b` exits 0.
 
-- [ ] **Step 5: Confirm no policy still names the Woodcutter as prompted**
+- [x] **Step 5: Confirm no policy still names the Woodcutter as prompted**
 
 Run: `Get-ChildItem src\sim -Recurse -Include *.ts | Select-String -Pattern "CardRank.Woodcutter"`
 Expected: zero hits.
@@ -1064,6 +1064,10 @@ Expected: zero hits.
 ---
 
 ## Phase 7 — The ruleset and the module docs
+
+> **DEFERRED by the 2026-09-03 batch run.** `.docs/` is rewritten once at the end of the batch,
+> because several plans in the run edit the same ruleset file. Every requirement below still
+> stands and is unchanged; it is executed by the batch's single documentation pass, not here.
 
 The two rules the ticket names as breaking are rewritten, §5's ability table is replaced, and every module doc this contract touched is updated. Nothing under `src/` changes.
 
@@ -1105,35 +1109,35 @@ Expected: zero hits.
 
 No production changes. Only sanity checks that the cumulative work is clean and inside its budgets.
 
-### Task 19: Confirm the pure-core boundary still holds
+### Task 19: Confirm the pure-core boundary still holds ✓
 
 - Skill: `none — a verification grep, no code written`
 
-- [ ] **Step 1: Grep the two pure trees for React and DOM references**
+- [x] **Step 1: Grep the two pure trees for React and DOM references**
 
 Run: `Get-ChildItem src\warCouncil,src\hunt -Recurse -Include *.ts,*.tsx | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage|Math\.random"`
 Expected: zero hits. `Math.random` is included deliberately — the Quarry's skull roll is the first randomness inside `playCard`, and a `Math.random()` reaching it would make every seeded measurement irreproducible with nothing failing.
 
-- [ ] **Step 2: Grep the simulator, which is lint-enforced pure too**
+- [x] **Step 2: Grep the simulator, which is lint-enforced pure too**
 
 Run: `Get-ChildItem src\sim -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bdocument\.|Math\.random"`
 Expected: zero hits.
 
-### Task 20: Confirm no tuning value was hard-coded and no retired name remains
+### Task 20: Confirm no tuning value was hard-coded and no retired name remains ✓
 
 - Skill: `none — verification greps, no code written`
 
-- [ ] **Step 1: Grep source for the four literals configuration now owns**
+- [x] **Step 1: Grep source for the four literals configuration now owns**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "0\.4\b" | Select-String -NotMatch "__tests__|config.ts"`
 Expected: zero hits — `QUARRY_SWAP_SKULL_CHANCE` is the only place `0.4` may appear outside a spec. The other three constants are `1` and `2` and cannot be grepped usefully; confirm by reading the diff that no branch compares against a bare numeral instead of the named export.
 
-- [ ] **Step 2: Grep for every removed identifier**
+- [x] **Step 2: Grep for every removed identifier**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "applyFoxExchange|applyWoodcutterDraw|chooseCpuFoxChoice|chooseCpuWoodcutterChoice|FoxExchange|FoxDecline|WoodcutterDiscard|InvalidFoxExchangeCard|InvalidWoodcutterDiscard"`
 Expected: zero hits.
 
-- [ ] **Step 3: Confirm every file this contract created or grew is inside its budget**
+- [x] **Step 3: Confirm every file this contract created or grew is inside its budget**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | ForEach-Object { [pscustomobject]@{ n = $_.FullName; c = (Get-Content $_.FullName).Count } } | Where-Object { $_.c -gt 400 } | Sort-Object c -Descending`
 Expected: no file this contract touched appears. `src/sim/skilledPolicy.ts` stands at 420 and is a **pre-existing** breach this contract does not touch — report it, do not fix it here.
@@ -1157,11 +1161,11 @@ Expected: exits 0. Do **not** run `npm run format` — it rewrites the whole rep
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 22: Update the PR description
+### Task 22: Update the PR description ✓
 
 - Skill: `none — a written hand-off, no code`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 - A link to `plan.md` and `mockup.html` in this folder, noting the mockup was reviewed as a local file because the publish was refused.

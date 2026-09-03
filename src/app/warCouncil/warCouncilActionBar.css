@@ -91,6 +91,29 @@
   transform: translateY(-3px);
 }
 
+/* DLR-163 AC6 — the Swap pile just took its addition. FORM, not colour: a thickened solid border
+   plus a boxed count, so the state survives a greyscale screenshot and colour-vision differences.
+   Rendered from state and cleared by the NEXT commit, so the transition below needs no timer and
+   therefore no cleanup — a `setTimeout`-driven flash would double-fire under StrictMode's
+   development double-mount and strand the mark if the felt unmounted mid-flash. */
+.wc-bar-btn.wc-is-swap-raised {
+  border: 3px solid var(--wc-brass);
+  transition: border-color 240ms ease-out;
+}
+
+.wc-bar-btn.wc-is-swap-raised .wc-bar-btn-figure {
+  padding: 0 0.3rem;
+  border: 1px solid var(--wc-brass);
+  border-radius: 2px;
+  color: var(--wc-chalk);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-bar-btn.wc-is-swap-raised {
+    transition: none;
+  }
+}
+
 .wc-bar-btn:focus-visible {
   outline: 2px solid var(--wc-brass);
   outline-offset: 3px;

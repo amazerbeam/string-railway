@@ -261,6 +261,8 @@ describe('the two actions are TOTAL and GUARDED — never a throw', () => {
         roll: 1,
         buffAccrual: null,
         firedBuffIds: [],
+
+        treasureBonusEarned: false,
       },
       beats: [],
       trickNumber: 1,

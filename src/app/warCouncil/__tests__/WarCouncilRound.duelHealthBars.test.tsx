@@ -143,7 +143,8 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         fireEvent.click(stillHeld)
         break
       }
-      const prompt = screen.queryByRole('group', { name: 'Choose what the card does' })
+      // DLR-163 — the ability prompt is the 3's suit picker now, and its group is named for it.
+      const prompt = screen.queryByRole('group', { name: 'Name the new trump suit' })
       if (prompt) {
         const choice = within(prompt).getAllByRole('button')[0]
         resolveIfShown(() => fireEvent.click(choice))

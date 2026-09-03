@@ -4,6 +4,7 @@ import {
   cheatEscape,
   chooseSkilledCard,
   deadness,
+  isPromptFree,
   leadBankOdds,
   quarrySkullOdds,
 } from '../skilledCardPlay'
@@ -120,6 +121,19 @@ describe('chooseFollow — the decision that costs health', () => {
     const hand = [card('bells', 1), card('bells', 4), card('bells', 6)]
     const state = quarryLeads(lead, hand, [])
     expect(chooseSkilledCard(state)).toEqual(card('bells', 6))
+  })
+
+  // DLR-163 — the 5 carries no prompt any more, so the strategy may lead or follow with one.
+  // Before this change every measured figure played around the 5, which is half of what the
+  // ticket exists to fix.
+  it('DLR-163 — a hand whose only card is a Woodcutter is playable, and it carries no choice', () => {
+    const state = stateWith({
+      hands: { player: [card('bells', 5)], cpu: [] } as never,
+    })
+    expect(chooseSkilledCard(state)).toEqual(card('bells', 5))
+    expect(isPromptFree(card('bells', 5))).toBe(true)
+    // The Fox is still excluded — it opens a prompt this policy has no answer for.
+    expect(isPromptFree(card('bells', 3))).toBe(false)
   })
 })
 

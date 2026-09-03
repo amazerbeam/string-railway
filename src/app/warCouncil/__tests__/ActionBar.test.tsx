@@ -21,6 +21,8 @@ function renderBar(over: Partial<Parameters<typeof ActionBar>[0]> = {}) {
       armed={null}
       cardsEnabled={true}
       discardsRemaining={2}
+      swapCap={3}
+      swapJustRaised={false}
       discardSelecting={false}
       discardSelectionSize={0}
       discardRefusal={null}
@@ -88,9 +90,11 @@ describe('ActionBar', () => {
     expect(onPlayArmed).toHaveBeenCalledOnce()
   })
 
-  it("Swap's name carries the remaining discard count, and clicking calls onTapSwap", () => {
-    const { onTapSwap } = renderBar({ discardsRemaining: 2 })
-    const btn = screen.getByRole('button', { name: /2 left/i })
+  it("Swap's name carries the remaining count AND the cap, and clicking calls onTapSwap", () => {
+    // DLR-163 AC5 — "2 left" became "2 of 3": a cap that can grow is unreadable as a bare
+    // remainder, so both figures are in the name as well as on the face.
+    const { onTapSwap } = renderBar({ discardsRemaining: 2, swapCap: 3 })
+    const btn = screen.getByRole('button', { name: /2 of 3/i })
     fireEvent.click(btn)
     expect(onTapSwap).toHaveBeenCalledOnce()
   })
@@ -100,6 +104,26 @@ describe('ActionBar', () => {
     const btn = screen.getByRole('button', { name: /discard/i }) as HTMLButtonElement
     expect(btn.disabled).toBe(true)
     expect(screen.getByText(/no discards left/i)).toBeTruthy()
+  })
+
+  it('DLR-163 AC5 — the Swap control prints "N of M", at cap 3 and at cap 4', () => {
+    renderBar({ discardsRemaining: 3, swapCap: 3 })
+    expect(screen.getByText('3 of 3')).toBeTruthy()
+    cleanup()
+    renderBar({ discardsRemaining: 4, swapCap: 4 })
+    expect(screen.getByText('4 of 4')).toBeTruthy()
+  })
+
+  it('DLR-163 AC6 — the raised mark is present only when swapJustRaised', () => {
+    renderBar({ swapJustRaised: true })
+    const raised = screen.getByRole('button', { name: /discard/i })
+    expect(raised.className).toContain('wc-is-swap-raised')
+    expect(raised.getAttribute('aria-label')).toContain('just raised')
+    cleanup()
+    renderBar({ swapJustRaised: false })
+    const plain = screen.getByRole('button', { name: /discard/i })
+    expect(plain.className).not.toContain('wc-is-swap-raised')
+    expect(plain.getAttribute('aria-label')).not.toContain('just raised')
   })
 
   it('Escape calls onCancelSwap', () => {
@@ -125,6 +149,8 @@ describe('ActionBar', () => {
           armed={null}
           cardsEnabled={true}
           discardsRemaining={2}
+          swapCap={3}
+          swapJustRaised={false}
           discardSelecting={false}
           discardSelectionSize={0}
           discardRefusal={null}

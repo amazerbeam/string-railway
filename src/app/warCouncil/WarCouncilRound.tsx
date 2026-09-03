@@ -70,6 +70,8 @@ export default function WarCouncilRound({
   rankTiers,
   feederCarry,
   streak,
+  discardCapBonus,
+  treasureDamageBonus,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
@@ -85,6 +87,9 @@ export default function WarCouncilRound({
       coins,
       feederCarry,
       streak,
+      // DLR-163 AC5/AC8 — the two per-fight figures this hand opens on.
+      discardCapBonus,
+      treasureDamageBonus,
     },
     createRoundUiState,
   )

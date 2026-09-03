@@ -1,10 +1,4 @@
-import {
-  isSkulled,
-  PlayerSide,
-  type Card,
-  type Suit,
-  type TrickCard,
-} from '../../warCouncil'
+import { isSkulled, PlayerSide, type Card, type Suit, type TrickCard } from '../../warCouncil'
 import DecreePile from './DecreePile'
 import DiscardPile from './DiscardPile'
 import PlayingCard from './PlayingCard'
@@ -18,7 +12,8 @@ const SIDE_LABEL: Readonly<Record<PlayerSide, string>> = {
 }
 
 export interface FeltRailProps {
-  readonly decree: Card
+  /** DLR-163 AC2 — `null` once a Fox has replaced the card with a bare suit. */
+  readonly decree: Card | null
   readonly trumpSuit: Suit
   readonly drawPileCount: number
   readonly spentCount: number
@@ -52,11 +47,7 @@ export default function FeltRail({
 }: FeltRailProps) {
   return (
     <div className="wc-felt-rail">
-      <DecreePile
-        decree={decree}
-        trumpSuit={trumpSuit}
-        drawPileCount={drawPileCount}
-      />
+      <DecreePile decree={decree} trumpSuit={trumpSuit} drawPileCount={drawPileCount} />
       <hr className="wc-rail-rule" aria-hidden="true" />
       <div className="wc-rail-trick">
         {trick !== null && (

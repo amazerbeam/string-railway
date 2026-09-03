@@ -61,6 +61,8 @@ const RESOLUTION: TrickResolution = {
   roll: 1,
   buffAccrual: null,
   firedBuffIds: [],
+
+  treasureBonusEarned: false,
 }
 
 function withResolved(

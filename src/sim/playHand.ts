@@ -109,8 +109,8 @@ export function playHand(
   // for it is written. Snapshotted before `runBuffWindow` arms anything, so it is what was
   // AVAILABLE rather than what survived.
   // The read and the pile as the CURRENT trick's window opened. BOTH ARE CLEARED as each trick is
-  // recorded: a window does not open for every trick — `discardWindowOpen` is false while a Fox or
-  // Woodcutter prompt is pending — and without the reset the previous trick's read stayed attached
+  // recorded: a window does not open for every trick — `discardWindowOpen` is false while a Fox
+  // prompt is pending — and without the reset the previous trick's read stayed attached
   // to the next one, which read as the strategy predicting the wrong seat on 27% of tricks when it
   // had in fact made no prediction at all.
   let heldAtWindow: readonly HeldBuff[] = []
@@ -213,7 +213,7 @@ export function playHand(
         potApplied: apply ? potValue(resolved.total, resolved.roll) : null,
       })
       // Cleared only AFTER the record is written. A window does not open for every trick —
-      // `discardWindowOpen` is false while a Fox or Woodcutter prompt is pending — and without this
+      // `discardWindowOpen` is false while a Fox prompt is pending — and without this
       // the previous trick's read stayed attached to the next one, which read as the strategy
       // predicting the wrong seat on 27% of tricks when it had made no prediction at all.
       intentAtWindow = null
