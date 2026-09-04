@@ -2,7 +2,7 @@
 
 Branch: `Version-7` · base commit `73d7415` · tree clean at preflight.
 
-**Progress:** batches 5/5 · plans 5/5 — 5 committed, 0 blocked · central review running
+**Progress:** batches 5/5 · plans 5/5 — 5 committed, 0 blocked · review, fixes and docs complete
 
 ## Resolved plans
 
@@ -281,3 +281,81 @@ use of the retired words and now reads inconsistently beside a card saying "go h
 Dispatched once, in parallel, over `73d7415..HEAD` — code-evaluator, defender and QA. QA owns the
 gates deferred all run: the unfiltered suite, lint, format:check and the production build, none of
 which has run across this diff. No browser pass.
+
+### Review findings and the fix pass · committed `d32523f`
+
+Three reviewers ran once, in parallel, over `73d7415..d7d1991`. Two reachable bugs, both DLR-167:
+
+1. **The trick well worded a curse-made dodge as its exact opposite.** It rebuilt the trick's
+   skull set from post-play state, but `playCard` clears `cursedCards` as the trick resolves, so a
+   trick skulled only by a Curse read "Low Defeat — it carried no skull, your streak resets" on a
+   trick the engine had banked. Fixed by capturing the set on `ResolvedTrick` from the pre-play
+   state and having both the well and the resolution panel read it — which also covers the trick
+   that ends the encounter, where the resolution is nulled but the reveal survives.
+2. **An armed Curse survived the Quarry's lead**, letting the player choose the mark after seeing
+   what was led — the read `roundUiState.ts` states the card was never meant to buy. Carry-on now
+   refuses while a Curse is armed, as it already did for the discard.
+
+Also fixed: the wildcard's targeting mode had no cancel control and, when nothing was targetable,
+no `Escape` handler at all; opening the Swap rail with a Curse armed left two claimants on the
+next hand tap; **every wild Suit High and Suit Low was refused arming by the simulator's skilled
+policy**, because a wild card's suit reads as the string `"null"`; six files over 400 lines split
+on real seams; `BuffPayoff.risk` and the fuse tip removed as unreachable; `HeldBuffCard` now
+renders the face extracted for it in the same ticket rather than a 37-line copy of it.
+
+**A file-size claim the run carried was wrong.** `src/hunt/__tests__/buffActivation.test.ts` was
+reported as a pre-existing 413-line breach and briefed to the reviewers as out of scope. It was
+**378 at the base commit** and was grown past 400 by four of the five tickets. QA caught it, the
+coordinator verified it against the base, and it was split. The wrong figure almost certainly came
+from a `Measure-Object -Line` baseline, which drops blank lines — the trap `CLAUDE.md` prescribes
+and that already hid a real breach on DLR-63.
+
+### Final gates — all run once, at the end, across the whole diff
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` | clean |
+| `npm run lint` | clean |
+| `npm test -- --run` | **216 files / 2508 tests passed** |
+| `npm run build` | clean — 385.28 kB JS (116.08 kB gzip), 106.12 kB CSS (31.36 kB gzip) |
+| files over 400 lines in `src/` | **zero** |
+| `npm run format:check` | fails on 74 markdown files, **all pre-existing** — no `src/` file is unformatted |
+
+**No browser pass ran.** Every ticket's eyes-on list is recorded above.
+
+### Documentation pass · committed `4cbe236`
+
+Seven pages describing removed mechanics deleted, ~50 inbound links repaired, four new pages
+written (activated cards, wild cards, the Curse, the low carry). `the-hunt.md` lost its
+ticket-changelog preamble and tail — the shape the ruleset is not supposed to have — and states the
+four outcomes under the new vocabulary throughout.
+
+**Left stale deliberately:** the Status register keeps ~42 rows and Known tensions ~30 entries
+about removed mechanics, each block under a banner naming what cannot resolve. A follow-up.
+
+### Open decisions for the developer
+
+1. **Does the Curse's reward require the marked card to be played?** As built it pays on any banked
+   trick, so marking a card and never playing it earns the bonus with none of the risk.
+2. **Curse's slot weights (3 / 1)** — a number nobody chose, copied from Cheat.
+3. **Whether a silver or gold wildcard should do more than a bronze one** — all three convert
+   exactly one card today.
+4. The four transcribed DLR-163 figures: Quarry swap skull chance 0.4, Treasure damage 2, base
+   damage step 1, Swap-cap step 1.
+5. **Copy:** "Bulwark" for the two renamed payoff words; `SKULL` replacing `HURT` on the protective
+   families; the card sentence "go high on Bells" (the plan's article was ungrammatical once the
+   wildcard substitutes "any suit"); the four bank-meter outcome sentences.
+6. **The 3's prompt does not show how many of each suit you hold** — the one fact the choice turns
+   on. The mockup had it; the plan's prop list dropped it.
+7. **The dashed red edge on a cursed card** from the mockup was not built.
+8. `consequenceLabels.ts` still says "If you win" / "If you lose" on the pre-commit hover.
+9. **Rank 8 has no name.** The ruleset called it "Timebomb"; the code calls it `Poison` and shows
+   nothing.
+
+### Found outside this run's scope, not fixed
+
+- **`src/app/warCouncil/consequenceLabels.ts:19` prints a rule that has not existed since DLR-156** —
+  *"You eat the skull — one heart, and your bank cashes at two-thirds."* It is live on the felt, so
+  the game tells the player the Quarry gets paid on a High Defeat. It does not; a hurt trick pays
+  nothing. Needs its own ticket.
+- `src/hunt/runCarry.ts` exports `guardAfter` with no caller — dead since DLR-166.
