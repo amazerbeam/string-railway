@@ -48,7 +48,7 @@ const bankedBeats: readonly ResolutionBeat[] = [
   { kind: BeatKind.Base, label: 'Base damage +1', amount: 1, damage: 1, mult: 1, running: 1 },
   {
     kind: BeatKind.Blade,
-    label: 'Bell-Taker (Blade) bronze +1 DMG',
+    label: 'Bell High (Blade) bronze +1 DMG',
     amount: 1,
     damage: 2,
     mult: 1,
@@ -65,7 +65,7 @@ const bankedBeats: readonly ResolutionBeat[] = [
 ]
 
 const bankedResolution: TrickResolution = {
-  outcome: TrickOutcome.CleanWin,
+  outcome: TrickOutcome.HighVictory,
   trickDamage: { base: 1, buffDamage: 1, buffMult: 1, overlapBonus: 0, dealt: 2 },
   cashOut: 0,
   damageToPlayer: 0,
@@ -102,7 +102,7 @@ const hurtBeats: readonly ResolutionBeat[] = [
 ]
 
 const hurtResolution: TrickResolution = {
-  outcome: TrickOutcome.CleanLoss,
+  outcome: TrickOutcome.LowDefeat,
   trickDamage: null,
   cashOut: 0,
   damageToPlayer: 1,
@@ -285,12 +285,12 @@ describe('TrickResolutionScreen', () => {
   })
 
   it('DLR-160 AC3 — a dead buff renders its own condition, with no numeric value cell', () => {
-    const feeder = mint(BuffKind.Feeder, 1)
-    const view: ResolutionView = { ...bankedView, deadBuffs: [feeder] }
+    const suitLow = mint(BuffKind.SuitLow, 1)
+    const view: ResolutionView = { ...bankedView, deadBuffs: [suitLow] }
     render(
       <TrickResolutionScreen resolution={view} dispatch={vi.fn()} quarryHealth={QUARRY_HEALTH} />,
     )
-    expect(screen.getByText(deadBuffReasonText(feeder))).toBeTruthy()
+    expect(screen.getByText(deadBuffReasonText(suitLow))).toBeTruthy()
   })
 
   it("DLR-160 AC6 — a lethal pot says so in the Apply control's own accessible name, and names the Quarry's health", () => {

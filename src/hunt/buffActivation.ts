@@ -77,7 +77,7 @@ export interface BuffActivationState {
   /** DLR-145 — cards REMOVED FROM THE PILE during the current trick, kept so a consumed condition
    *  card still fires at this trick's resolution. `buffHandInputFor` builds the trick's active set
    *  by filtering the PILE, and `activateFromPile` has already taken a consumed card out of it —
-   *  without this field a spent Taker pays nothing, with no throw, no refusal and no log.
+   *  without this field a spent Suit High card pays nothing, with no throw, no refusal and no log.
    *  Same lifetime as `activatedThisTrick`, cleared on the same edge; separating the two is how
    *  that bug comes back in a different shape. Always empty for a non-consumable activation. */
   readonly spentThisTrick: readonly Buff[]
@@ -208,7 +208,7 @@ export function activateFromPile(
 /**
  * DLR-153 AC10 — THE one statement of which activated cards may be taken back off the trick.
  *
- * TRUE for the three REVOCABLE condition families — Taker, Feeder, Sidestep.
+ * TRUE for the three REVOCABLE condition families — Suit High, Suit Low, Skull Low.
  * Deliberately NOT `isConditionFamily` from `buffCosts.ts`: that predicate
  * spans all 11 condition families the type system still declares, eight of which are cut and
  * unmintable (CLAUDE.md → "Cut buffs are cut until a ticket brings them back"). Activating a
@@ -227,9 +227,9 @@ export function activateFromPile(
  * this by adding it.
  */
 const REVOCABLE_BUFF_KINDS: ReadonlySet<BuffKind> = new Set([
-  BuffKind.Taker,
-  BuffKind.Feeder,
-  BuffKind.Sidestep,
+  BuffKind.SuitHigh,
+  BuffKind.SuitLow,
+  BuffKind.SkullLow,
 ])
 
 export function isRevocableBuff(buff: Buff): boolean {

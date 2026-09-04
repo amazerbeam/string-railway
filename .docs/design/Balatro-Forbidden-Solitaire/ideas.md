@@ -1533,6 +1533,10 @@ outcome words imported into a game that inverts the outcome.
 
 #### The vocabulary — Victory / Defeat, with High and Low naming the act
 
+> **Shipped by DLR-165, 2026-09-03.** The vocabulary below is live in the code, on the resolution
+> screen, in `the-hunt.md` and in `CLAUDE.md`. The Feeder carry described in the next subsection
+> shipped separately on DLR-150.
+
 Revised in conversation 2026-09-03, after the developer hit the collision live. The version of this
 section written on 2026-08-26 kept Win and Loss as the outcome words and added High and Low
 alongside them. That reuses the two words that caused the problem: "win" reads as *taking the cards*

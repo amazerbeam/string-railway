@@ -21,11 +21,11 @@ import {
  */
 
 /** What the window paints in its glyph slot. `suit` covers the two suit-parameterised families;
- *  Sidestep, Skull Helmet, Skull Tether and the two activated templates carry no suit and take
+ *  Skull Low, Skull Helmet, Skull Tether and the two activated templates carry no suit and take
  *  their own mark instead. */
 export type SlotGlyph =
   | { readonly kind: 'suit'; readonly suit: BuffTargetSuit }
-  | { readonly kind: 'sidestep' }
+  | { readonly kind: 'skullLow' }
   | { readonly kind: 'cheat' }
   | { readonly kind: 'skullHelmet' }
   | { readonly kind: 'skullTether' }
@@ -39,7 +39,7 @@ export interface SlotSymbolFace {
    *  match compares on, exactly as `resolvePull` compares templates. */
   readonly id: string
   readonly glyph: SlotGlyph
-  /** The family word — Taker / Feeder / Sidestep / Cheat. */
+  /** The family word — High / Low / Skull Low / Cheat. */
   readonly family: string
   /** The reward axis word — Blade / Momentum — or `null` for an activated card, which has no
    *  axis at all (`ActivatedBuffTemplate`'s own docblock). Rendering nothing rather than a
@@ -51,9 +51,9 @@ export interface SlotSymbolFace {
  *  over the family words a mintable template can carry, so a restored family fails to compile
  *  here rather than rendering `undefined` in a reel window. */
 const FAMILY_WORD: Readonly<Record<BuffTemplate['kind'], string>> = {
-  [BuffKind.Taker]: 'Taker',
-  [BuffKind.Feeder]: 'Feeder',
-  [BuffKind.Sidestep]: 'Sidestep',
+  [BuffKind.SuitHigh]: 'High',
+  [BuffKind.SuitLow]: 'Low',
+  [BuffKind.SkullLow]: 'Skull Low',
   [BuffKind.Cheat]: 'Cheat',
   // DLR-161 — short forms, for a moving reel window; the full card name is `slotLabels.ts`'s job.
   [BuffKind.SkullHelmet]: 'Helmet',
@@ -90,14 +90,14 @@ function conditionGlyphFor(template: ConditionBuffTemplate): SlotGlyph {
   const suit = template.target?.suit
   if (suit !== undefined) return { kind: 'suit', suit }
   switch (template.kind) {
-    case BuffKind.Sidestep:
-      return { kind: 'sidestep' }
+    case BuffKind.SkullLow:
+      return { kind: 'skullLow' }
     case BuffKind.SkullHelmet:
       return { kind: 'skullHelmet' }
     case BuffKind.SkullTether:
       return { kind: 'skullTether' }
-    case BuffKind.Taker:
-    case BuffKind.Feeder:
+    case BuffKind.SuitHigh:
+    case BuffKind.SuitLow:
       throw new RangeError(`Template ${template.id} is suit-parameterised but carries no suit`)
   }
 }

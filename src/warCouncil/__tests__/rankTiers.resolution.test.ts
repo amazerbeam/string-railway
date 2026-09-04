@@ -82,7 +82,7 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
   const STREAK: StreakState = { total: 3, roll: 3 }
 
   const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
-    playerWon: false,
+    playerWentHigh: false,
     skullTrick: false,
     finalTrick: false,
     baseDamageBonus: 0,
@@ -94,7 +94,7 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     ...over,
   })
 
-  it('bronze on a clean loss resets both and cashes nothing — DLR-156 AC7 (AC1)', () => {
+  it('bronze on a Low Defeat resets both and cashes nothing — DLR-156 AC7 (AC1)', () => {
     const r = resolveTrickBank(STREAK, facts())
     expect(r.total).toBe(0)
     expect(r.roll).toBe(0)
@@ -102,7 +102,7 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('silver on a clean loss spares the roll only — damage lands, nothing ever cashed anyway (AC4)', () => {
+  it('silver on a Low Defeat spares the roll only — damage lands, nothing ever cashed anyway (AC4)', () => {
     const r = resolveTrickBank(STREAK, facts({ swanKeepsMultiplier: true }))
     expect(r.roll).toBe(STREAK.roll)
     expect(r.total).toBe(0)
@@ -110,7 +110,7 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('gold on a clean loss spares the total too — the whole streak stands, the damage still lands (AC5)', () => {
+  it('gold on a Low Defeat spares the total too — the whole streak stands, the damage still lands (AC5)', () => {
     const r = resolveTrickBank(STREAK, facts({ swanKeepsMultiplier: true, swanKeepsBank: true }))
     expect(r.total).toBe(STREAK.total)
     expect(r.roll).toBe(STREAK.roll)
@@ -125,10 +125,10 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
   })
 
   it('silver does nothing against an EATEN SKULL — that is AC4 excluding it by name', () => {
-    const bronze = resolveTrickBank(STREAK, facts({ playerWon: true, skullTrick: true }))
+    const bronze = resolveTrickBank(STREAK, facts({ playerWentHigh: true, skullTrick: true }))
     const silver = resolveTrickBank(
       STREAK,
-      facts({ playerWon: true, skullTrick: true, swanKeepsMultiplier: true }),
+      facts({ playerWentHigh: true, skullTrick: true, swanKeepsMultiplier: true }),
     )
     expect(silver).toEqual(bronze)
     expect(silver.roll).toBe(0)
@@ -136,11 +136,11 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
   })
 
   it('gold does nothing against an EATEN SKULL either (AC4/AC5)', () => {
-    const bronze = resolveTrickBank(STREAK, facts({ playerWon: true, skullTrick: true }))
+    const bronze = resolveTrickBank(STREAK, facts({ playerWentHigh: true, skullTrick: true }))
     const gold = resolveTrickBank(
       STREAK,
       facts({
-        playerWon: true,
+        playerWentHigh: true,
         skullTrick: true,
         swanKeepsMultiplier: true,
         swanKeepsBank: true,
@@ -150,10 +150,10 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
   })
 
   it('changes nothing on a trick the player took — there is no hit to spare', () => {
-    const bronzeWin = resolveTrickBank(STREAK, facts({ playerWon: true }))
+    const bronzeWin = resolveTrickBank(STREAK, facts({ playerWentHigh: true }))
     const goldWin = resolveTrickBank(
       STREAK,
-      facts({ playerWon: true, swanKeepsMultiplier: true, swanKeepsBank: true }),
+      facts({ playerWentHigh: true, swanKeepsMultiplier: true, swanKeepsBank: true }),
     )
     expect(goldWin).toEqual(bronzeWin)
   })
@@ -162,7 +162,7 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
      the sixth trick behaves exactly like any other. These three cases replace the ones that used
      to pin the fold, and now pin its absence instead. */
 
-  it('at bronze, a clean loss on the final trick still just wipes the streak and cashes nothing', () => {
+  it('at bronze, a Low Defeat on the final trick still just wipes the streak and cashes nothing', () => {
     const r = resolveTrickBank(STREAK, facts({ finalTrick: true }))
     expect(r.cashOut).toBe(0)
     expect(r.total).toBe(0)
@@ -190,12 +190,12 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('changes nothing on a Dodge — a marked trick the Quarry won is already banked', () => {
-    const bronzeDodge = resolveTrickBank(STREAK, facts({ skullTrick: true }))
-    const goldDodge = resolveTrickBank(
+  it('changes nothing on a Low Victory — a marked trick the Quarry took is already banked', () => {
+    const bronzeLowVictory = resolveTrickBank(STREAK, facts({ skullTrick: true }))
+    const goldLowVictory = resolveTrickBank(
       STREAK,
       facts({ skullTrick: true, swanKeepsMultiplier: true, swanKeepsBank: true }),
     )
-    expect(goldDodge).toEqual(bronzeDodge)
+    expect(goldLowVictory).toEqual(bronzeLowVictory)
   })
 })

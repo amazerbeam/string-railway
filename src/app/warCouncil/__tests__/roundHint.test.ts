@@ -33,7 +33,7 @@ const someResolvedTrick: ResolvedTrick = {
   ],
   winner: PlayerSide.Player,
   resolution: {
-    outcome: TrickOutcome.CleanWin,
+    outcome: TrickOutcome.HighVictory,
     trickDamage: { base: 1, buffDamage: 0, buffMult: 1, overlapBonus: 0, dealt: 1 },
     cashOut: 0,
     damageToPlayer: 0,

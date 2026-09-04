@@ -29,12 +29,12 @@ import { WildRefusal } from '../../../hunt'
 
 afterEach(cleanup)
 
-const BELL_TAKER = templateById('taker:bells:magnitude')!
-const SIDESTEP = templateById('sidestep:magnitude')!
+const BELL_HIGH = templateById('suitHigh:bells:magnitude')!
+const SKULL_LOW = templateById('skullLow:magnitude')!
 
-const bellTaker = (id: BuffId, tier: BuffTier = BuffTier.Bronze): Buff =>
-  mintFromTemplate(BELL_TAKER, tier, id)
-const sidestep = (id: BuffId): Buff => mintFromTemplate(SIDESTEP, BuffTier.Bronze, id)
+const bellHigh = (id: BuffId, tier: BuffTier = BuffTier.Bronze): Buff =>
+  mintFromTemplate(BELL_HIGH, tier, id)
+const skullLow = (id: BuffId): Buff => mintFromTemplate(SKULL_LOW, BuffTier.Bronze, id)
 
 function renderPanel(buffs: readonly Buff[]) {
   const view = manageBuffsView(buffs)
@@ -74,19 +74,19 @@ function LiveWild({ initial }: { readonly initial: readonly Buff[] }) {
 
 describe('the wildcard band (DLR-162)', () => {
   it('renders no band at all when the player holds no wildcard', () => {
-    renderPanel([bellTaker(1), bellTaker(2)])
+    renderPanel([bellHigh(1), bellHigh(2)])
     expect(screen.queryByText(new RegExp(MANAGE_BUFFS_WILD_BAND))).toBeNull()
     expect(screen.queryByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL })).toBeNull()
   })
 
   it('shows the band with its held count once a wildcard is held', () => {
-    renderPanel([wildcardBuff(BuffTier.Bronze, 1), wildcardBuff(BuffTier.Bronze, 2), bellTaker(3)])
+    renderPanel([wildcardBuff(BuffTier.Bronze, 1), wildcardBuff(BuffTier.Bronze, 2), bellHigh(3)])
     expect(screen.getByText(new RegExp(`${MANAGE_BUFFS_WILD_BAND} · 2`))).toBeTruthy()
     expect(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL })).toBeTruthy()
   })
 
   it('arms the target mode from the band, replacing the combine bands', () => {
-    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellTaker(2), bellTaker(3)])
+    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellHigh(2), bellHigh(3)])
     expect(screen.getByRole('group', { name: MANAGE_BUFFS_READY_BAND })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL }))
@@ -96,43 +96,43 @@ describe('the wildcard band (DLR-162)', () => {
   })
 
   it('renders a refused target as a non-interactive tile carrying its reason', () => {
-    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellTaker(2), sidestep(3)])
+    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellHigh(2), skullLow(3)])
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL }))
 
-    // Two targets refuse for want of a suit here: the Sidestep and the wildcard itself.
+    // Two targets refuse for want of a suit here: the Skull Low and the wildcard itself.
     expect(
       screen.getAllByText(WILD_REFUSAL_MESSAGE[WildRefusal.NoSuit], { selector: 'span' }),
     ).toHaveLength(2)
     // A refused target is an <li>, never a button — an affordance that cannot act would lie.
-    expect(screen.queryByRole('button', { name: /Sidestep/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Skull Low/ })).toBeNull()
   })
 
   it('puts the confirmation on the target tile, naming what is destroyed and what is made', () => {
-    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellTaker(2)])
+    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellHigh(2)])
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL }))
-    fireEvent.click(screen.getByRole('button', { name: /Bell-Taker \(Blade\)/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Bell High \(Blade\)/ }))
 
     expect(screen.getByText('1 × Bronze Wildcard')).toBeTruthy()
-    expect(screen.getByText(/1 × Bronze Wild Taker \(Blade\)/)).toBeTruthy()
+    expect(screen.getByText(/1 × Bronze Wild High \(Blade\)/)).toBeTruthy()
     expect(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_COMMIT_LABEL })).toBeTruthy()
   })
 
   it('commits the spend, converts the card, and announces it through the ledger', () => {
-    render(<LiveWild initial={[wildcardBuff(BuffTier.Bronze, 1), bellTaker(2)]} />)
+    render(<LiveWild initial={[wildcardBuff(BuffTier.Bronze, 1), bellHigh(2)]} />)
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL }))
-    fireEvent.click(screen.getByRole('button', { name: /Bell-Taker \(Blade\)/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Bell High \(Blade\)/ }))
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_COMMIT_LABEL }))
 
     // The band is gone — the wildcard was spent — and the converted card names itself.
     expect(screen.queryByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL })).toBeNull()
-    expect(screen.getByRole('status').textContent).toContain('Bronze Wild Taker (Blade)')
+    expect(screen.getByRole('status').textContent).toContain('Bronze Wild High (Blade)')
   })
 
   it('cancels the armed target with Escape, then leaves the mode with a second Escape', () => {
-    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellTaker(2), bellTaker(3)])
+    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellHigh(2), bellHigh(3)])
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL }))
     const grid = screen.getByRole('group', { name: MANAGE_BUFFS_WILD_TARGET_BAND })
-    fireEvent.click(screen.getByRole('button', { name: /Bell-Taker \(Blade\)/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Bell High \(Blade\)/ }))
     expect(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_COMMIT_LABEL })).toBeTruthy()
 
     fireEvent.keyDown(grid, { key: 'Escape' })
@@ -145,7 +145,7 @@ describe('the wildcard band (DLR-162)', () => {
   })
 
   it('returns focus to the band after leaving the mode', () => {
-    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellTaker(2), bellTaker(3)])
+    renderPanel([wildcardBuff(BuffTier.Bronze, 1), bellHigh(2), bellHigh(3)])
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL }))
     fireEvent.keyDown(screen.getByRole('group', { name: MANAGE_BUFFS_WILD_TARGET_BAND }), {
       key: 'Escape',
@@ -158,8 +158,8 @@ describe('the wildcard band (DLR-162)', () => {
   it('moves between targets with the arrow keys, one tab stop for the whole grid', () => {
     renderPanel([
       wildcardBuff(BuffTier.Bronze, 1),
-      bellTaker(2),
-      mintFromTemplate(templateById('taker:keys:magnitude')!, BuffTier.Bronze, 3),
+      bellHigh(2),
+      mintFromTemplate(templateById('suitHigh:keys:magnitude')!, BuffTier.Bronze, 3),
     ])
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_WILD_SPEND_LABEL }))
     const grid = screen.getByRole('group', { name: MANAGE_BUFFS_WILD_TARGET_BAND })
@@ -174,16 +174,16 @@ describe('the wildcard band (DLR-162)', () => {
 
 describe('a wild pile names both cards it destroys (DLR-162)', () => {
   it('names both cards a wild combine destroys, not "2 ×" of a card the player owns one of', () => {
-    renderPanel([wildenedBuff(bellTaker(1)), bellTaker(2)])
-    fireEvent.click(screen.getByRole('button', { name: /Wild Taker \(Blade\)/ }))
+    renderPanel([wildenedBuff(bellHigh(1)), bellHigh(2)])
+    fireEvent.click(screen.getByRole('button', { name: /Wild High \(Blade\)/ }))
     expect(
-      screen.getByText('1 × Bronze Wild Taker (Blade) + 1 × Bronze Bell-Taker (Blade)'),
+      screen.getByText('1 × Bronze Wild High (Blade) + 1 × Bronze Bell High (Blade)'),
     ).toBeTruthy()
   })
 
   it('still says "2 ×" for an ordinary same-card combine', () => {
-    renderPanel([bellTaker(1), bellTaker(2)])
-    fireEvent.click(screen.getByRole('button', { name: /Bell-Taker \(Blade\)/ }))
-    expect(screen.getByText('2 × Bronze Bell-Taker (Blade)')).toBeTruthy()
+    renderPanel([bellHigh(1), bellHigh(2)])
+    fireEvent.click(screen.getByRole('button', { name: /Bell High \(Blade\)/ }))
+    expect(screen.getByText('2 × Bronze Bell High (Blade)')).toBeTruthy()
   })
 })

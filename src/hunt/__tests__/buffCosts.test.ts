@@ -31,22 +31,22 @@ const AP_COSTS_PER_FAMILY_AND_REWARD: Readonly<
     }
   >
 > = {
-  Taker: {
-    kind: BuffKind.Taker,
+  SuitHigh: {
+    kind: BuffKind.SuitHigh,
     Blade: [1, 2, 3],
     Purse: [2, 3, 4],
     SecondWind: [1, 1, 1],
     Momentum: [2, 3, 5],
   },
-  Feeder: {
-    kind: BuffKind.Feeder,
+  SuitLow: {
+    kind: BuffKind.SuitLow,
     Blade: [2, 3, 4],
     Purse: [3, 4, 5],
     SecondWind: [2, 2, 2],
     Momentum: [3, 4, 6],
   },
   MarkOfRank: { kind: BuffKind.MarkOfRank, Blade: [1, 1, 2], Momentum: [1, 2, 4] },
-  Sidestep: { kind: BuffKind.Sidestep, Blade: [1, 1, 2], Momentum: [1, 2, 4] },
+  SkullLow: { kind: BuffKind.SkullLow, Blade: [1, 1, 2], Momentum: [1, 2, 4] },
   Glutton: {
     kind: BuffKind.Glutton,
     Blade: [1, 2, 3],
@@ -109,12 +109,12 @@ describe('buffApCost — DLR-111 AP costs, per family and reward, cell for cell'
 })
 
 describe('the four worked examples DLR-111 publishes', () => {
-  it('Bell-Taker (Blade) bronze costs 1 AP', () => {
-    expect(buffApCost(BuffKind.Taker, Magnitude, Bronze)).toBe(1)
+  it('Bell High (Blade) bronze costs 1 AP', () => {
+    expect(buffApCost(BuffKind.SuitHigh, Magnitude, Bronze)).toBe(1)
   })
 
-  it('Key-Feeder (Blade) silver costs 3 AP', () => {
-    expect(buffApCost(BuffKind.Feeder, Magnitude, Silver)).toBe(3)
+  it('Key Low (Blade) silver costs 3 AP', () => {
+    expect(buffApCost(BuffKind.SuitLow, Magnitude, Silver)).toBe(3)
   })
 
   it('Mark of the 9 (Momentum) gold costs 4 AP', () => {

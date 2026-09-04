@@ -150,7 +150,7 @@ describe('WarCouncilRound', () => {
       advanceTrickDwell()
       // DLR-160 AC11 — the felt's own well and the resolution panel now both say the outcome word
       // at once (both read `resolutionOutcome.ts`), so this reads `getAllByText`.
-      expect(screen.getAllByText(/clean win/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/high victory/i).length).toBeGreaterThan(0)
       carryOnFromResolution()
       // The hand is back, interactive, and the played card is gone — not a permanently locked
       // felt, which is the actual failure this defect causes when the landing depends on
@@ -192,7 +192,7 @@ describe('WarCouncilRound', () => {
       // `setTimeout` is not created until the flight's landing dispatch has already re-rendered.
       act(() => vi.advanceTimersByTime(1000))
       advanceTrickDwell()
-      expect(screen.getAllByText(/clean win/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/high victory/i).length).toBeGreaterThan(0)
       carryOnFromResolution()
       // 7 of Bells committed as the player's original intent — gone from the hand; 2 of Bells,
       // never touched, is still held.
@@ -278,7 +278,7 @@ describe('WarCouncilRound', () => {
     // DLR-156 — the deciding trick resolves and completes the hand in the same commit, but its
     // cards and winner must be visible — on the resolution panel now, overlaid on the felt
     // (DLR-160 AC11) — before the hand-over panel replaces the whole tree.
-    expect(screen.getAllByText(/clean win/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/high victory/i).length).toBeGreaterThan(0)
     expect(screen.queryByRole('heading', { name: 'The hand is over' })).toBeNull()
     carryOnFromResolution()
     // `roundReducer.ts`'s Task 15 chaining clears the held reveal and finds the hand already

@@ -55,27 +55,27 @@ function quarryLed(lead: Card, hand: readonly Card[], cursedCards: readonly Card
 }
 
 describe('playCard — a cursed card flips its trick', () => {
-  it('AC5 — losing a trick carrying the player`s own curse is a DODGE: it banks, no health lost', () => {
+  it('AC5 — going low on a trick carrying the player`s own curse is a LOW VICTORY: it banks, no health lost', () => {
     const state = quarryLed(bells9, [bells2], [bells2])
 
     const result = playCard(state, PlayerSide.Player, bells2, undefined, { handFloor: 0 })
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.Dodge)
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.LowVictory)
     expect(result.state.lastResolution?.damageToPlayer).toBe(0)
     expect(result.state.total).toBeGreaterThan(0)
     expect(result.state.roll).toBe(1)
   })
 
-  it('the same trick WITHOUT the curse is an ordinary clean loss that hurts', () => {
+  it('the same trick WITHOUT the curse is an ordinary Low Defeat that hurts', () => {
     const state = quarryLed(bells9, [bells2], [])
 
     const result = playCard(state, PlayerSide.Player, bells2, undefined, { handFloor: 0 })
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.CleanLoss)
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.LowDefeat)
     expect(result.state.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
     expect(result.state.total).toBe(0)
   })
@@ -87,7 +87,7 @@ describe('playCard — a cursed card flips its trick', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.SkullWin)
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.HighDefeat)
     expect(result.state.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
     expect(result.state.total).toBe(0)
     expect(result.state.roll).toBe(0)
@@ -107,14 +107,14 @@ function riding(active: readonly Buff[]): BuffHandInput {
   }
 }
 
-/** A bronze Sidestep on the Blade axis — condition `skullTrick && !playerWon`, the exact shape a
- *  Curse-made dodge satisfies (AC9). */
-function sidestepBuff(id: number): Buff {
-  return mintFromTemplate(templateById('sidestep:magnitude')!, BuffTier.Bronze, id)
+/** A bronze Skull Low on the Blade axis — condition `skullTrick && !playerWentHigh`, the exact
+ *  shape a Curse-made Low Victory satisfies (AC9). */
+function skullLowBuff(id: number): Buff {
+  return mintFromTemplate(templateById('skullLow:magnitude')!, BuffTier.Bronze, id)
 }
 
 describe('playCard — Curse pays into the trick it cursed (AC6)', () => {
-  it("adds a silver Curse's +2 to the dodged trick's damage", () => {
+  it("adds a silver Curse's +2 to the Low Victory trick's damage", () => {
     const curse = curseBuff(BuffTier.Silver, 1)
     const state = quarryLed(bells9, [bells2], [bells2])
 
@@ -159,48 +159,48 @@ describe('playCard — Curse pays into the trick it cursed (AC6)', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    // The trick hurts, so it banks nothing at all; no "only on a dodge" condition exists.
-    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.SkullWin)
+    // The trick hurts, so it banks nothing at all; no "only on a Low Victory" condition exists.
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.HighDefeat)
     expect(result.state.lastResolution?.trickDamage).toBeNull()
     expect(result.state.total).toBe(0)
   })
 })
 
-describe('playCard — Sidestep fires on a Curse-made dodge (AC9)', () => {
+describe('playCard — Skull Low fires on a Curse-made Low Victory (AC9)', () => {
   it('pays both cards on the same trick', () => {
     const curse = curseBuff(BuffTier.Silver, 1)
-    const sidestep = sidestepBuff(2)
+    const skullLow = skullLowBuff(2)
     const state = quarryLed(bells9, [bells2], [bells2])
 
     const result = playCard(state, PlayerSide.Player, bells2, undefined, {
       handFloor: 0,
-      buffs: riding([curse, sidestep]),
+      buffs: riding([curse, skullLow]),
     })
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.Dodge)
-    // Only Sidestep FIRES — a Curse is Activated and has no condition to come true.
-    expect(result.state.lastResolution?.firedBuffIds).toEqual([sidestep.id])
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.LowVictory)
+    // Only Skull Low FIRES — a Curse is Activated and has no condition to come true.
+    expect(result.state.lastResolution?.firedBuffIds).toEqual([skullLow.id])
 
     const damage = result.state.lastResolution?.trickDamage
     expect(damage?.base).toBe(BASE_DAMAGE + 2)
-    expect(damage?.buffDamage).toBe(sidestep.reward.value)
-    expect(damage?.dealt).toBe(BASE_DAMAGE + 2 + sidestep.reward.value)
+    expect(damage?.buffDamage).toBe(skullLow.reward.value)
+    expect(damage?.dealt).toBe(BASE_DAMAGE + 2 + skullLow.reward.value)
   })
 
-  it('does not fire Sidestep on the same trick without the curse', () => {
-    const sidestep = sidestepBuff(2)
+  it('does not fire Skull Low on the same trick without the curse', () => {
+    const skullLow = skullLowBuff(2)
     const state = quarryLed(bells9, [bells2], [])
 
     const result = playCard(state, PlayerSide.Player, bells2, undefined, {
       handFloor: 0,
-      buffs: riding([sidestep]),
+      buffs: riding([skullLow]),
     })
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.CleanLoss)
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.LowDefeat)
     expect(result.state.lastResolution?.firedBuffIds).toEqual([])
   })
 })

@@ -21,31 +21,31 @@ import { cheatBuff, curseBuff, wildcardBuff } from './buffCatalog'
  *
  * DLR-132 added `ActivatedBuffTemplate` and its two activated cards, taking the pool to 73.
  *
- * DLR-145 PARED the pool to 13 — 6 Taker + 3 Feeder + 2 Sidestep condition templates plus the same
+ * DLR-145 PARED the pool to 13 — 6 Suit High + 3 Suit Low + 2 Skull Low condition templates plus the same
  * 2 activated ones — so that card scarcity, not a refilling action-points pool, is the limit on how
  * hard a hand can be pushed. `TEMPLATE_FAMILIES` now lists only these three families. The eight cut
  * families (MarkOfRank, Glutton, Hoarder, Unbloodied, DebtCollector, Keepsake, Miser, Cornered) are
  * NOT deleted from `BuffKind`, `CONDITION_MODIFIER`, `buffFires` or `BUFF_CADENCE` — they simply
- * have no row here any more, exactly as DLR-116 left Cheat and Whetstone
- * priced but off the shop shelf. Restoring one is a `TEMPLATE_FAMILIES` row, not a design from
- * scratch. `MintableConditionKind` and `MintableRewardAxis` (below) are what make a cut family or a
+ * have no row here any more, exactly as DLR-116 left Cheat and Whetstone priced but off the shop
+ * shelf. Restoring one is a `TEMPLATE_FAMILIES` row, not a design from scratch.
+ * `MintableConditionKind` and `MintableRewardAxis` (below) are what make a cut family or a
  * cut axis UNCONSTRUCTIBLE rather than merely unweighted — narrowing the template's own types,
  * not zeroing a slot weight, is what the plan calls out as the actual mechanism.
  *
- * DLR-150 RESTORES Feeder's Momentum row, taking the pool to 16 — 6 Taker + 6 Feeder + 2 Sidestep
- * condition templates plus the same 2 activated ones. Feeder was cut to Blade-only by DLR-145
- * because a multiplier raised on a Loss trick was wiped by that same trick's reset before it could
- * ever be spent; the feeder carry (`src/hunt/buffAccrual.ts`'s `BuffCarry`) removes exactly that
- * failure mode by diverting a Loss-fired Feeder's reward out of the hand before the reset runs, so
- * Momentum is safe to mint again. The eight cut families and the two cut reward axes (Purse, Second
- * Wind) stay unreachable — this ticket restores one row, not the pruning itself.
+ * DLR-150 RESTORES the Suit Low family's Momentum row, taking the pool to 16 — 6 Suit High +
+ * 6 Suit Low + 2 Skull Low condition templates plus the same 2 activated ones. Suit Low was cut to
+ * Blade-only by DLR-145 because a multiplier raised on a Defeat trick was wiped by that trick's own
+ * reset before it could be spent; the low carry (`buffAccrual.ts`'s `BuffCarry`) removes exactly
+ * that failure mode by diverting a Defeat-fired Suit Low reward out of the hand before the reset
+ * runs. The eight cut families and the two cut reward axes (Purse, Second Wind) stay unreachable —
+ * this ticket restores one row, not the pruning itself.
  *
  * DLR-161 ADDS two more condition families, Skull Helmet and Skull Tether, taking the pool to 18 —
  * the same 14 generated condition templates as DLR-150 plus 2 new one-template families (no suit
  * parameter) plus the same 2 activated ones. Their reward axis is `Protection`, the first reward
  * that is neither damage nor multiplier: the card keeps one of the streak's two figures through a
  * trick that hurt the player rather than paying into a per-hand pool. This restores the
- * "eat a skull with this card" condition for these two families ONLY — `BuffKind.Glutton` and the
+ * "go high on a skull" condition for these two families ONLY — `BuffKind.Glutton` and the
  * other seven cut families are NOT restored and gain no row here.
  *
  * DLR-166 REMOVES the second activated card outright, taking the pool to 17 — the same 14 generated
@@ -75,11 +75,14 @@ import { cheatBuff, curseBuff, wildcardBuff } from './buffCatalog'
  *  unchanged in every field, now tagged `form: 'condition'` (DLR-132). */
 export interface ConditionBuffTemplate {
   readonly form: 'condition'
-  /** Stable identifier, `<kind>[:<param>]:<axis>` — e.g. `taker:bells:magnitude`. PERSISTED as
+  /** Stable identifier, `<kind>[:<param>]:<axis>` — e.g. `suitHigh:bells:magnitude`. PERSISTED as
    *  of DLR-113: the Vault stores boosts and grants by this id, so the FORMAT is frozen and a
    *  renamed `BuffKind` or `BuffRewardAxis` value orphans saved entries. `reconcileVault` drops
    *  an id it cannot resolve rather than corrupting anything, but the currency spent on it is
-   *  gone — a future rename must ship a migration. (Was documented "NOT persisted" by DLR-112;
+   *  gone. DLR-165 PERFORMED exactly such a rename (`taker:`/`feeder:`/`sidestep:` →
+   *  `suitHigh:`/`suitLow:`/`skullLow:`) and bumped `SAVE_SCHEMA_VERSION` to 2 in the same change
+   *  rather than shipping a migration map, deliberately: a map would keep the dead vocabulary
+   *  alive in code. A future rename does the same. (Was documented "NOT persisted" by DLR-112;
    *  DLR-113 overturned that deliberately, see that ticket's plan.md → Approach.) */
   readonly id: string
   readonly kind: MintableConditionKind
@@ -93,9 +96,9 @@ export interface ConditionBuffTemplate {
  *  `BUFF_CADENCE` row; they are simply unreachable, exactly as DLR-116 left Cheat and
  *  Whetstone priced but off the shelf. Restoring one is a row in `TEMPLATE_FAMILIES`. */
 export type MintableConditionKind =
-  | typeof BuffKind.Taker
-  | typeof BuffKind.Feeder
-  | typeof BuffKind.Sidestep
+  | typeof BuffKind.SuitHigh
+  | typeof BuffKind.SuitLow
+  | typeof BuffKind.SkullLow
   // DLR-161 — the two protective families. This is the widening the ticket names as the
   // mechanism; the other eight cut families stay unconstructible and Glutton in particular is
   // NOT restored — these two carry their own `buffFires` cases (AC2).
@@ -169,15 +172,16 @@ interface TemplateFamily {
 const PROTECTION_ONLY: readonly MintableRewardAxis[] = [BuffRewardAxis.Protection]
 
 const TEMPLATE_FAMILIES: readonly TemplateFamily[] = [
-  { kind: BuffKind.Taker, axes: BLADE_AND_MOMENTUM, param: 'suit' },
-  // DLR-150 AC5 — Momentum restored. Feeder was Blade-only because `buffFires` reads it as
-  // `!ctx.playerWon`, covering both a clean loss and a dodge, and a multiplier raised on the
-  // loss half was wiped by that loss's own reset. The carry removes exactly that: on the loss
-  // half the bonus leaves the hand before the reset, and the dodge half never had the problem.
-  { kind: BuffKind.Feeder, axes: BLADE_AND_MOMENTUM, param: 'suit' },
-  { kind: BuffKind.Sidestep, axes: BLADE_AND_MOMENTUM },
+  { kind: BuffKind.SuitHigh, axes: BLADE_AND_MOMENTUM, param: 'suit' },
+  // DLR-150 AC5 — Momentum restored. Suit Low was Blade-only because `buffFires` reads it as
+  // `!ctx.playerWentHigh`, covering both a Low Defeat and a Low Victory, and a multiplier raised on
+  // the Low Defeat half was wiped by that Defeat's own reset. The carry removes exactly that: on
+  // the Low Defeat half the bonus leaves the hand before the reset, and the Low Victory half never
+  // had the problem.
+  { kind: BuffKind.SuitLow, axes: BLADE_AND_MOMENTUM, param: 'suit' },
+  { kind: BuffKind.SkullLow, axes: BLADE_AND_MOMENTUM },
   // DLR-161 — no `param`: neither card targets a suit. One template each, three tiers apiece
-  // decided at draw time by the reel-match rules, exactly like Sidestep. Persisted ids:
+  // decided at draw time by the reel-match rules, exactly like Skull Low. Persisted ids:
   // `skullHelmet:protection`, `skullTether:protection`, composed by `templateIdFor`.
   { kind: BuffKind.SkullHelmet, axes: PROTECTION_ONLY },
   { kind: BuffKind.SkullTether, axes: PROTECTION_ONLY },
@@ -223,8 +227,8 @@ function makeTemplate(
     : { form: 'condition', id, kind, axis, target }
 }
 
-/** DLR-167's pool: 19 templates — 16 GENERATED condition templates (6 Taker + 6 Feeder +
- *  2 Sidestep + 1 Skull Helmet + 1 Skull Tether) plus the 3 activated ones (`ACTIVATED_TEMPLATES`:
+/** DLR-167's pool: 19 templates — 16 GENERATED condition templates (6 Suit High + 6 Suit Low +
+ *  2 Skull Low + 1 Skull Helmet + 1 Skull Tether) plus the 3 activated ones (`ACTIVATED_TEMPLATES`:
  *  Cheat, the wildcard and Curse).
  *  The 5 consumable templates (Ward and its four siblings) are still absent — see this file's own
  *  docblock above for why that is a scope boundary, not a gap. */

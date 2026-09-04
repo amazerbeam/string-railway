@@ -23,7 +23,7 @@ import {
 /** Defaults for every field of `BuffTrickContext` — false / empty / zero — overridable per case. */
 function ctx(overrides: Partial<BuffTrickContext> = {}): BuffTrickContext {
   return {
-    playerWon: false,
+    playerWentHigh: false,
     skullTrick: false,
     playerHit: false,
     finalTrick: false,
@@ -51,7 +51,7 @@ const HAND_CONTEXT: BuffHandContext = {
 
 /** Mints a REAL v1 template through `templateById` + `mintFromTemplate` — never a synthetic
  *  literal, per AC5's requirement. A `templateById` miss fails loudly, not silently. Only usable
- *  for the three families DLR-145 kept mintable (Taker, Feeder, Sidestep) — the id must resolve. */
+ *  for the three families DLR-145 kept mintable (Suit High, Suit Low, Skull Low) — the id must resolve. */
 function fromTemplate(id: string, tier: BuffTier, buffId: BuffId): Buff {
   const template = templateById(id)
   if (template === undefined) {
@@ -61,11 +61,10 @@ function fromTemplate(id: string, tier: BuffTier, buffId: BuffId): Buff {
 }
 
 /** DLR-145 pruned the other eight condition families out of `BUFF_TEMPLATES` — they are still
- *  DECLARED on `BuffKind`, priced by `CONDITION_MODIFIER`, and read by `buffFires`'s own switch
- *  (`buffTemplates.ts`'s module docblock), so `buffFires` must still evaluate them correctly even
- *  though no template mints one any more. Builds the `Buff` directly rather than through
- *  `templateById`, which is exactly the `undefined` DLR-113's `reconcileVault` already expects for
- *  these ids. */
+ *  DECLARED on `BuffKind`, priced by `CONDITION_MODIFIER`, and read by `buffFires`'s own switch, so
+ *  `buffFires` must still evaluate them correctly even though no template mints one. Builds the
+ *  `Buff` directly rather than through `templateById`, which is the `undefined` `reconcileVault`
+ *  already expects for these ids. */
 function directBuff(
   kind: BuffKind,
   buffId: BuffId,
@@ -82,79 +81,105 @@ function directBuff(
 }
 
 describe('buffFires — one case per condition family (AC5)', () => {
-  it('Taker — wins the trick with the named suit', () => {
-    const taker = fromTemplate('taker:bells:magnitude', BuffTier.Bronze, 1)
-    expect(buffFires(taker, ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Bells] }))).toBe(
-      true,
-    )
-    // Near-miss: right suit, but the trick was lost.
-    expect(buffFires(taker, ctx({ playerWon: false, playerSuits: [BuffTargetSuit.Bells] }))).toBe(
-      false,
-    )
+  it('Suit High — goes high on a trick with the named suit', () => {
+    const suitHigh = fromTemplate('suitHigh:bells:magnitude', BuffTier.Bronze, 1)
+    expect(
+      buffFires(suitHigh, ctx({ playerWentHigh: true, playerSuits: [BuffTargetSuit.Bells] })),
+    ).toBe(true)
+    // Near-miss: right suit, but the player went low.
+    expect(
+      buffFires(suitHigh, ctx({ playerWentHigh: false, playerSuits: [BuffTargetSuit.Bells] })),
+    ).toBe(false)
   })
 
-  it('Feeder — loses the trick with the named suit', () => {
-    const feeder = fromTemplate('feeder:keys:magnitude', BuffTier.Bronze, 2)
-    expect(buffFires(feeder, ctx({ playerWon: false, playerSuits: [BuffTargetSuit.Keys] }))).toBe(
-      true,
-    )
-    // Near-miss: right suit, but the trick was won.
-    expect(buffFires(feeder, ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Keys] }))).toBe(
-      false,
-    )
+  it('Suit Low — goes low on a trick with the named suit', () => {
+    const suitLow = fromTemplate('suitLow:keys:magnitude', BuffTier.Bronze, 2)
+    expect(
+      buffFires(suitLow, ctx({ playerWentHigh: false, playerSuits: [BuffTargetSuit.Keys] })),
+    ).toBe(true)
+    // Near-miss: right suit, but the player went high.
+    expect(
+      buffFires(suitLow, ctx({ playerWentHigh: true, playerSuits: [BuffTargetSuit.Keys] })),
+    ).toBe(false)
   })
 
-  it('Mark of the R — wins the trick with the named rank (DLR-145: still declared, no longer mintable)', () => {
+  // DLR-165 — the Suit Low predicate has NO SKULL TERM. It pays on a Low Victory (a skull trick
+  // the player did not take) and on a Low Defeat (a clean trick they did not take) alike. That is
+  // deliberate, and this spec is what stops a later reading from adding a skull term to it.
+  it('Suit Low — fires on BOTH a Low Victory and a Low Defeat, because it reads only the act', () => {
+    const suitLow = fromTemplate('suitLow:keys:magnitude', BuffTier.Bronze, 2)
+    const low = (skullTrick: boolean) =>
+      ctx({ playerWentHigh: false, skullTrick, playerSuits: [BuffTargetSuit.Keys] })
+    expect(buffFires(suitLow, low(true))).toBe(true) // Low Victory
+    expect(buffFires(suitLow, low(false))).toBe(true) // Low Defeat
+  })
+
+  it('Mark of the R — goes high on a trick with the named rank (DLR-145: no longer mintable)', () => {
     const markOfRank = directBuff(BuffKind.MarkOfRank, 3, BuffRewardAxis.Magnitude, { rank: 9 })
-    expect(buffFires(markOfRank, ctx({ playerWon: true, playerRanks: [9] }))).toBe(true)
-    // Near-miss: won, but with a different rank.
-    expect(buffFires(markOfRank, ctx({ playerWon: true, playerRanks: [8] }))).toBe(false)
+    expect(buffFires(markOfRank, ctx({ playerWentHigh: true, playerRanks: [9] }))).toBe(true)
+    // Near-miss: went high, but with a different rank.
+    expect(buffFires(markOfRank, ctx({ playerWentHigh: true, playerRanks: [8] }))).toBe(false)
   })
 
-  it('Sidestep — dodges (loses) a skull trick with this card', () => {
-    const sidestep = fromTemplate('sidestep:magnitude', BuffTier.Bronze, 4)
-    expect(buffFires(sidestep, ctx({ skullTrick: true, playerWon: false }))).toBe(true)
+  it('Skull Low — goes low on a skull', () => {
+    const skullLow = fromTemplate('skullLow:magnitude', BuffTier.Bronze, 4)
+    expect(buffFires(skullLow, ctx({ skullTrick: true, playerWentHigh: false }))).toBe(true)
     // Near-miss: no skull in the trick at all.
-    expect(buffFires(sidestep, ctx({ skullTrick: false, playerWon: false }))).toBe(false)
+    expect(buffFires(skullLow, ctx({ skullTrick: false, playerWentHigh: false }))).toBe(false)
   })
 
-  it('Glutton — eats (wins) a skull trick with this card (DLR-145: still declared, no longer mintable)', () => {
+  // DLR-165 — Skull Low is the ONE condition card that can never fire on a bad outcome. Its
+  // predicate is `skullTrick && !playerWentHigh`, which is exactly the Low Victory cell of the
+  // four-outcome table; the other three cells are all false.
+  it('Skull Low — fires ONLY on a Low Victory, never on any Defeat', () => {
+    const skullLow = fromTemplate('skullLow:magnitude', BuffTier.Bronze, 4)
+    // Low Victory — the only cell it fires on.
+    expect(buffFires(skullLow, ctx({ skullTrick: true, playerWentHigh: false }))).toBe(true)
+    // High Defeat — took a skulled trick.
+    expect(buffFires(skullLow, ctx({ skullTrick: true, playerWentHigh: true }))).toBe(false)
+    // Low Defeat — did not take a clean trick.
+    expect(buffFires(skullLow, ctx({ skullTrick: false, playerWentHigh: false }))).toBe(false)
+    // High Victory — took a clean trick.
+    expect(buffFires(skullLow, ctx({ skullTrick: false, playerWentHigh: true }))).toBe(false)
+  })
+
+  it('Glutton — goes high on a skull (DLR-145: still declared, no longer mintable)', () => {
     const glutton = directBuff(BuffKind.Glutton, 5, BuffRewardAxis.Coins)
-    expect(buffFires(glutton, ctx({ skullTrick: true, playerWon: true }))).toBe(true)
+    expect(buffFires(glutton, ctx({ skullTrick: true, playerWentHigh: true }))).toBe(true)
     // Near-miss: a skull trick that was lost, not eaten.
-    expect(buffFires(glutton, ctx({ skullTrick: true, playerWon: false }))).toBe(false)
+    expect(buffFires(glutton, ctx({ skullTrick: true, playerWentHigh: false }))).toBe(false)
   })
 
-  it('DLR-161 — Skull Helmet bronze fires on an eaten skull only', () => {
+  it('DLR-161 — Skull Helmet bronze fires on a High Defeat only', () => {
     const bronzeHelmet = fromTemplate('skullHelmet:protection', BuffTier.Bronze, 20)
-    expect(buffFires(bronzeHelmet, ctx({ skullTrick: true, playerWon: true }))).toBe(true) // skull win
-    expect(buffFires(bronzeHelmet, ctx({ skullTrick: true, playerWon: false }))).toBe(false) // dodge
-    expect(buffFires(bronzeHelmet, ctx({ skullTrick: false, playerWon: false }))).toBe(false) // clean loss
-    expect(buffFires(bronzeHelmet, ctx({ skullTrick: false, playerWon: true }))).toBe(false) // clean win
+    expect(buffFires(bronzeHelmet, ctx({ skullTrick: true, playerWentHigh: true }))).toBe(true) // High Defeat
+    expect(buffFires(bronzeHelmet, ctx({ skullTrick: true, playerWentHigh: false }))).toBe(false) // Low Victory
+    expect(buffFires(bronzeHelmet, ctx({ skullTrick: false, playerWentHigh: false }))).toBe(false) // Low Defeat
+    expect(buffFires(bronzeHelmet, ctx({ skullTrick: false, playerWentHigh: true }))).toBe(false) // High Victory
   })
 
-  it('DLR-161 — Skull Helmet silver fires on the skull win AND the clean loss', () => {
+  it('DLR-161 — Skull Helmet silver fires on the High Defeat AND the Low Defeat', () => {
     const silverHelmet = fromTemplate('skullHelmet:protection', BuffTier.Silver, 21)
-    expect(buffFires(silverHelmet, ctx({ skullTrick: true, playerWon: true }))).toBe(true)
-    expect(buffFires(silverHelmet, ctx({ skullTrick: false, playerWon: false }))).toBe(true)
-    expect(buffFires(silverHelmet, ctx({ skullTrick: true, playerWon: false }))).toBe(false) // dodge
-    expect(buffFires(silverHelmet, ctx({ skullTrick: false, playerWon: true }))).toBe(false) // clean win
+    expect(buffFires(silverHelmet, ctx({ skullTrick: true, playerWentHigh: true }))).toBe(true)
+    expect(buffFires(silverHelmet, ctx({ skullTrick: false, playerWentHigh: false }))).toBe(true)
+    expect(buffFires(silverHelmet, ctx({ skullTrick: true, playerWentHigh: false }))).toBe(false) // Low Victory
+    expect(buffFires(silverHelmet, ctx({ skullTrick: false, playerWentHigh: true }))).toBe(false) // High Victory
   })
 
-  it('DLR-161 — Skull Tether bronze fires on an eaten skull only', () => {
+  it('DLR-161 — Skull Tether bronze fires on a High Defeat only', () => {
     const bronzeTether = fromTemplate('skullTether:protection', BuffTier.Bronze, 22)
-    expect(buffFires(bronzeTether, ctx({ skullTrick: true, playerWon: true }))).toBe(true)
-    expect(buffFires(bronzeTether, ctx({ skullTrick: true, playerWon: false }))).toBe(false)
-    expect(buffFires(bronzeTether, ctx({ skullTrick: false, playerWon: false }))).toBe(false)
-    expect(buffFires(bronzeTether, ctx({ skullTrick: false, playerWon: true }))).toBe(false)
+    expect(buffFires(bronzeTether, ctx({ skullTrick: true, playerWentHigh: true }))).toBe(true)
+    expect(buffFires(bronzeTether, ctx({ skullTrick: true, playerWentHigh: false }))).toBe(false)
+    expect(buffFires(bronzeTether, ctx({ skullTrick: false, playerWentHigh: false }))).toBe(false)
+    expect(buffFires(bronzeTether, ctx({ skullTrick: false, playerWentHigh: true }))).toBe(false)
   })
 
-  it('DLR-161 — Skull Tether silver fires on the skull win AND the clean loss', () => {
+  it('DLR-161 — Skull Tether silver fires on the High Defeat AND the Low Defeat', () => {
     const silverTether = fromTemplate('skullTether:protection', BuffTier.Silver, 23)
-    expect(buffFires(silverTether, ctx({ skullTrick: true, playerWon: true }))).toBe(true)
-    expect(buffFires(silverTether, ctx({ skullTrick: false, playerWon: false }))).toBe(true)
-    expect(buffFires(silverTether, ctx({ skullTrick: true, playerWon: false }))).toBe(false)
-    expect(buffFires(silverTether, ctx({ skullTrick: false, playerWon: true }))).toBe(false)
+    expect(buffFires(silverTether, ctx({ skullTrick: true, playerWentHigh: true }))).toBe(true)
+    expect(buffFires(silverTether, ctx({ skullTrick: false, playerWentHigh: false }))).toBe(true)
+    expect(buffFires(silverTether, ctx({ skullTrick: true, playerWentHigh: false }))).toBe(false)
+    expect(buffFires(silverTether, ctx({ skullTrick: false, playerWentHigh: true }))).toBe(false)
   })
 
   it("Hoarder — the bank after this trick reaches bronze's threshold (2) (DLR-145: still declared, no longer mintable)", () => {
@@ -221,7 +246,7 @@ describe('buffFires — one case per condition family (AC5)', () => {
             condition: { kind },
             reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
           },
-          ctx({ playerWon: true, skullTrick: true, finalTrick: true, bankAfterTrick: 9 }),
+          ctx({ playerWentHigh: true, skullTrick: true, finalTrick: true, bankAfterTrick: 9 }),
         ),
       ).toBe(false)
     }
@@ -235,9 +260,9 @@ describe('buffFires — one case per condition family (AC5)', () => {
   })
 
   it('an event family fires on every trick its condition holds', () => {
-    const taker = fromTemplate('taker:bells:magnitude', BuffTier.Bronze, 8)
-    const c = ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Bells] })
-    expect(firedBuffs([taker], [8], c)).toHaveLength(1)
+    const suitHigh = fromTemplate('suitHigh:bells:magnitude', BuffTier.Bronze, 8)
+    const c = ctx({ playerWentHigh: true, playerSuits: [BuffTargetSuit.Bells] })
+    expect(firedBuffs([suitHigh], [8], c)).toHaveLength(1)
   })
 
   it('Keepsake fires only at the final trick', () => {
@@ -256,7 +281,7 @@ describe('firesOncePerHand', () => {
         directBuff(BuffKind.Keepsake, 21, BuffRewardAxis.Coins, { suit: BuffTargetSuit.Moons }),
       ),
     ).toBe(true)
-    expect(firesOncePerHand(fromTemplate('taker:bells:magnitude', BuffTier.Bronze, 22))).toBe(false)
+    expect(firesOncePerHand(fromTemplate('suitHigh:bells:magnitude', BuffTier.Bronze, 22))).toBe(false)
   })
 })
 
@@ -269,30 +294,30 @@ describe('advanceTricksWithoutHit', () => {
 })
 
 describe('AC3/AC4 — apply-to-card targeting and additive stacking', () => {
-  it('AC3 — the same generic Sidestep template fires off two different played cards in one hand', () => {
-    const sidestep = fromTemplate('sidestep:magnitude', BuffTier.Bronze, 3)
-    // Trick 1: the player dodges with a Bells card. Trick 2: with a Keys card. The template names
-    // neither, and fires on both — "this card" is the card played on the trick it was bought for.
+  it('AC3 — the same generic Skull Low template fires off two different played cards in one hand', () => {
+    const skullLow = fromTemplate('skullLow:magnitude', BuffTier.Bronze, 3)
+    // Trick 1: the player goes low with a Bells card. Trick 2: with a Keys card. The template names
+    // neither, and fires on both — a buff rides the trick, it does not attach to a card.
     expect(
       buffFires(
-        sidestep,
-        ctx({ skullTrick: true, playerWon: false, playerSuits: [BuffTargetSuit.Bells] }),
+        skullLow,
+        ctx({ skullTrick: true, playerWentHigh: false, playerSuits: [BuffTargetSuit.Bells] }),
       ),
     ).toBe(true)
     expect(
       buffFires(
-        sidestep,
-        ctx({ skullTrick: true, playerWon: false, playerSuits: [BuffTargetSuit.Keys] }),
+        skullLow,
+        ctx({ skullTrick: true, playerWentHigh: false, playerSuits: [BuffTargetSuit.Keys] }),
       ),
     ).toBe(true)
     // …and does NOT fire on a trick with no skull, whichever card was played.
     expect(
-      buffFires(sidestep, ctx({ playerWon: false, playerSuits: [BuffTargetSuit.Bells] })),
+      buffFires(skullLow, ctx({ playerWentHigh: false, playerSuits: [BuffTargetSuit.Bells] })),
     ).toBe(false)
   })
 
   it('AC4 — two satisfied buffs on one trick add within their axis, plus the Overlap Bonus', () => {
-    const blade = fromTemplate('taker:bells:magnitude', BuffTier.Silver, 1) // +3 damage
+    const blade = fromTemplate('suitHigh:bells:magnitude', BuffTier.Silver, 1) // +3 damage
     const second = directBuff(BuffKind.MarkOfRank, 2, BuffRewardAxis.Magnitude, { rank: 9 }) // +1 damage
     const out = resolveTrickBuffs(
       {
@@ -301,7 +326,7 @@ describe('AC3/AC4 — apply-to-card targeting and additive stacking', () => {
         firedThisHand: [],
         hand: HAND_CONTEXT,
       },
-      ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Bells], playerRanks: [9] }),
+      ctx({ playerWentHigh: true, playerSuits: [BuffTargetSuit.Bells], playerRanks: [9] }),
       false,
     )
     expect(out.firedIds).toEqual([1, 2])
@@ -328,45 +353,45 @@ describe('Keepsake — the known open defect, pinned', () => {
 })
 
 describe('a wild condition ignores the suit but nothing else (DLR-162 AC3)', () => {
-  const wildTaker: Buff = {
+  const wildSuitHigh: Buff = {
     id: 40,
-    kind: BuffKind.Taker,
+    kind: BuffKind.SuitHigh,
     tier: BuffTier.Bronze,
-    condition: { kind: BuffKind.Taker, wild: true },
+    condition: { kind: BuffKind.SuitHigh, wild: true },
     reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
   }
-  const wildFeeder: Buff = {
-    ...wildTaker,
+  const wildSuitLow: Buff = {
+    ...wildSuitHigh,
     id: 41,
-    kind: BuffKind.Feeder,
-    condition: { kind: BuffKind.Feeder, wild: true },
+    kind: BuffKind.SuitLow,
+    condition: { kind: BuffKind.SuitLow, wild: true },
   }
 
-  it('fires a wild Taker on a won trick of a suit it never named', () => {
-    expect(buffFires(wildTaker, ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Moons] }))).toBe(
-      true,
-    )
-    expect(buffFires(wildTaker, ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Keys] }))).toBe(
-      true,
-    )
+  it('fires a wild Suit High card on a high trick of a suit it never named', () => {
+    expect(
+      buffFires(wildSuitHigh, ctx({ playerWentHigh: true, playerSuits: [BuffTargetSuit.Moons] })),
+    ).toBe(true)
+    expect(
+      buffFires(wildSuitHigh, ctx({ playerWentHigh: true, playerSuits: [BuffTargetSuit.Keys] })),
+    ).toBe(true)
   })
 
-  it('still refuses a wild Taker on a LOST trick - the mechanical term is untouched', () => {
+  it('still refuses a wild Suit High card on a LOW trick - the mechanical term is untouched', () => {
     expect(
-      buffFires(wildTaker, ctx({ playerWon: false, playerSuits: [BuffTargetSuit.Moons] })),
+      buffFires(wildSuitHigh, ctx({ playerWentHigh: false, playerSuits: [BuffTargetSuit.Moons] })),
     ).toBe(false)
   })
 
-  it('fires a wild Feeder on a lost trick of any suit, and never on a won one', () => {
+  it('fires a wild Suit Low card on a low trick of any suit, and never on a high one', () => {
     expect(
-      buffFires(wildFeeder, ctx({ playerWon: false, playerSuits: [BuffTargetSuit.Bells] })),
+      buffFires(wildSuitLow, ctx({ playerWentHigh: false, playerSuits: [BuffTargetSuit.Bells] })),
     ).toBe(true)
-    expect(buffFires(wildFeeder, ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Bells] }))).toBe(
-      false,
-    )
+    expect(
+      buffFires(wildSuitLow, ctx({ playerWentHigh: true, playerSuits: [BuffTargetSuit.Bells] })),
+    ).toBe(false)
   })
 
   it('fires a wild card even when the player played NO suit this trick', () => {
-    expect(buffFires(wildTaker, ctx({ playerWon: true, playerSuits: [] }))).toBe(true)
+    expect(buffFires(wildSuitHigh, ctx({ playerWentHigh: true, playerSuits: [] }))).toBe(true)
   })
 })

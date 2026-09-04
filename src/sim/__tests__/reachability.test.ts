@@ -16,9 +16,9 @@ describe('reachability — the DLR-120 audit', () => {
     expect(mintable.size).toBe(8)
     expect([...mintable].sort()).toEqual(
       [
-        BuffKind.Taker,
-        BuffKind.Feeder,
-        BuffKind.Sidestep,
+        BuffKind.SuitHigh,
+        BuffKind.SuitLow,
+        BuffKind.SkullLow,
         BuffKind.SkullHelmet,
         BuffKind.SkullTether,
         BuffKind.Cheat,

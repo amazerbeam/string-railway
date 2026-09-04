@@ -47,7 +47,7 @@ function uiFrom(
   })
 }
 
-/** A single clean win, Bells 9 over Bells 2 — no buffs, so the beats are just Base and Banked. */
+/** A single High Victory, Bells 9 over Bells 2 — no buffs, so the beats are just Base and Banked. */
 function winningRound(total: number, roll: number): WarCouncilState {
   return makeRound({
     leader: PlayerSide.Player,
@@ -62,7 +62,7 @@ function winningRound(total: number, roll: number): WarCouncilState {
   })
 }
 
-/** A single clean loss, Bells 2 under Bells 9 — the hurt branch, one Hurt beat. */
+/** A single Low Defeat, Bells 2 under Bells 9 — the hurt branch, one Hurt beat. */
 function losingRound(total: number, roll: number): WarCouncilState {
   return makeRound({
     leader: PlayerSide.Player,
@@ -83,7 +83,7 @@ describe('AC14 — a banked trick sets ui.resolution to a non-null view', () => 
     ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
 
-    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.HighVictory)
     const view = ui.resolution as ResolutionView
     expect(view).not.toBeNull()
     expect(view.cards.map((tc) => tc.card)).toEqual([card(Suit.Bells, 9), card(Suit.Bells, 2)])
@@ -99,19 +99,19 @@ describe('AC14 — a banked trick sets ui.resolution to a non-null view', () => 
 
 describe('DLR-160 AC2/AC3/AC6/AC7 — the widened resolution view', () => {
   it('carries the skulled cards in this trick, the decree, and a dead buff', () => {
-    // A Feeder pays only on a trick the player LOSES — `!playerWon && suit matches`, with no
-    // skull term in its condition at all (`CLAUDE.md`'s win/lose axis note). Playing the skulled
-    // card here WINS the trick (Bells 9 beats Bells 2), so the Feeder is armed and dies — it is
-    // not "corrected" into firing on the eaten skull.
-    const [feederTemplate] = templatesForFamily(BuffKind.Feeder)
-    const feeder = mintFromTemplate(feederTemplate, BuffTier.Bronze, 101)
+    // A Suit Low card pays only on a trick the player goes LOW on — `!playerWentHigh && suit
+    // matches`, with no skull term in its condition at all (`CLAUDE.md`'s two-axis note). Playing
+    // the skulled card here TAKES the trick (Bells 9 beats Bells 2), so the card is armed and dies
+    // — it is not "corrected" into firing on the High Defeat.
+    const [suitLowTemplate] = templatesForFamily(BuffKind.SuitLow)
+    const suitLow = mintFromTemplate(suitLowTemplate, BuffTier.Bronze, 101)
     const skulledCard = card(Suit.Bells, 9)
     const round = winningRound(0, 0)
 
-    let ui = uiFrom({ ...round, skulledCards: [skulledCard] }, startEncounter(0), [feeder])
+    let ui = uiFrom({ ...round, skulledCards: [skulledCard] }, startEncounter(0), [suitLow])
     ui = roundReducer(ui, { kind: RoundUiActionKind.ToggleLoadout })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: feeder.id })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: feeder.id })
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: suitLow.id })
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: suitLow.id })
     ui = roundReducer(ui, tap(skulledCard))
     ui = roundReducer(ui, tap(skulledCard))
 
@@ -119,7 +119,7 @@ describe('DLR-160 AC2/AC3/AC6/AC7 — the widened resolution view', () => {
     expect(view).not.toBeNull()
     expect(view.skulledInTrick).toEqual([skulledCard])
     expect(view.decree).toEqual(ui.round.decree)
-    expect(view.deadBuffs.map((buff) => buff.id)).toContain(feeder.id)
+    expect(view.deadBuffs.map((buff) => buff.id)).toContain(suitLow.id)
   })
 
   it('marks the pot lethal when applying it would end the fight, through applyDamage/isEncounterResolved', () => {
@@ -185,7 +185,7 @@ describe('AC7 — the hurt branch has nothing to decide', () => {
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
 
-    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.LowDefeat)
     const view = ui.resolution as ResolutionView
     expect(view.beats.map((beat) => beat.kind)).toEqual([BeatKind.Hurt])
     expect(ui.round.total).toBe(0)
@@ -253,7 +253,7 @@ describe('the two actions are TOTAL and GUARDED — never a throw', () => {
       cards: [],
       winner: PlayerSide.Player,
       resolution: {
-        outcome: TrickOutcome.CleanWin,
+        outcome: TrickOutcome.HighVictory,
         trickDamage: { base: 1, buffDamage: 0, buffMult: 1, overlapBonus: 0, dealt: 1 },
         cashOut: 0,
         damageToPlayer: 0,

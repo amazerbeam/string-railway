@@ -1,8 +1,8 @@
 /**
  * DLR-167 — the player's own skull.
  *
- * A skull inverts a trick: a trick carrying one is a trick you want to LOSE, because losing it is a
- * dodge — it banks and costs no health. Until this module the Quarry was the only side that could
+ * A skull inverts a trick: a trick carrying one is a trick you want to go LOW on, because going low
+ * on it is a Low Victory — it banks and costs no health. Until this module the Quarry was the only side that could
  * ever hold one. Curse gives the player the lever: mark a card in your own hand, play it, and the
  * trick flips.
  *

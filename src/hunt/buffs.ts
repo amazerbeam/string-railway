@@ -24,10 +24,17 @@ export const BuffKind = {
   Unassigned: 'unassigned',
   Cheat: 'cheat',
   // 11 shipping condition families (DLR-111 finding 1)
-  Taker: 'taker',
-  Feeder: 'feeder',
+  // DLR-165 — renamed from Taker / Feeder / Sidestep. The condition each names is the MECHANICAL
+  // axis: High = the player physically took the cards, Low = they did not. `SuitHigh` rather than
+  // a bare `High` because `BuffKind.High` read inside `buffFires` collides with "the higher card",
+  // which is the ambiguity this ticket exists to remove.
+  // The VALUE change is BREAKING for persisted template ids — `templateIdFor` composes
+  // `suitHigh:bells:magnitude` from it, and the Vault has `taker:bells:magnitude` on disk.
+  // `SAVE_SCHEMA_VERSION` is bumped to 2 in this same change; see `src/persistence/config.ts`.
+  SuitHigh: 'suitHigh',
+  SuitLow: 'suitLow',
   MarkOfRank: 'markOfRank',
-  Sidestep: 'sidestep',
+  SkullLow: 'skullLow',
   Glutton: 'glutton',
   Hoarder: 'hoarder',
   Unbloodied: 'unbloodied',
@@ -111,7 +118,7 @@ export type BuffTargetSuit = (typeof BuffTargetSuit)[keyof typeof BuffTargetSuit
 export const BUFF_TARGET_RANK_MIN = 1
 export const BUFF_TARGET_RANK_MAX = 11
 
-/** Present only on suit- or rank-parameterised families (DLR-111 finding 3) — e.g. Bell-Taker
+/** Present only on suit- or rank-parameterised families (DLR-111 finding 3) — e.g. Bell High
  *  (`suit`) or Mark of the 9 (`rank`). Optional because most families need neither. */
 export interface BuffTarget {
   readonly suit?: BuffTargetSuit
@@ -209,10 +216,10 @@ export type BuffCadence = (typeof BuffCadence)[keyof typeof BuffCadence]
 export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
   [BuffKind.Unassigned]: BuffCadence.Activated,
   [BuffKind.Cheat]: BuffCadence.Activated,
-  [BuffKind.Taker]: BuffCadence.Event,
-  [BuffKind.Feeder]: BuffCadence.Event,
+  [BuffKind.SuitHigh]: BuffCadence.Event,
+  [BuffKind.SuitLow]: BuffCadence.Event,
   [BuffKind.MarkOfRank]: BuffCadence.Event,
-  [BuffKind.Sidestep]: BuffCadence.Event,
+  [BuffKind.SkullLow]: BuffCadence.Event,
   [BuffKind.Glutton]: BuffCadence.Event,
   [BuffKind.DebtCollector]: BuffCadence.Event,
   [BuffKind.Hoarder]: BuffCadence.Threshold,

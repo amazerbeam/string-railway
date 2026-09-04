@@ -206,7 +206,7 @@ describe('SlotMachinePanel', () => {
     expect(group.textContent).toContain(expectedText)
     // `buffLine` states the tier word itself as part of the sentence — the award row's text ends
     // with it, exactly once, with no separate duplicate tier prefix ahead of the sentence
-    // (the duplication this test used to guard against, e.g. "Silver — Silver Bell-Taker …").
+    // (the duplication this test used to guard against, e.g. "Silver — Silver Bell High …").
     const awardItem = screen
       .getAllByRole('listitem')
       .find((item) => item.textContent?.endsWith(expectedText))

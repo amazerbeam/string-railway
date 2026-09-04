@@ -5,7 +5,7 @@ import { ShopItem } from '../../hunt/shop'
 import { resolveTrickBank, type StreakState, type TrickFacts } from '../streak'
 
 const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
-  playerWon: false,
+  playerWentHigh: false,
   skullTrick: false,
   finalTrick: false,
   baseDamageBonus: 0,
@@ -30,7 +30,7 @@ describe('DLR-96 AC3 / DLR-156 AC7 — Whetstone climbs the total, but a hit sti
     // Three taken tricks at bonus 2: each banks (BASE_DAMAGE + 2) = 3, roll climbs by 1 each time.
     let state: StreakState = { total: 0, roll: 0 }
     for (let i = 0; i < 3; i++) {
-      const taken = resolveTrickBank(state, facts({ playerWon: true, baseDamageBonus: bonus }))
+      const taken = resolveTrickBank(state, facts({ playerWentHigh: true, baseDamageBonus: bonus }))
       state = { total: taken.total, roll: taken.roll }
     }
     expect(state).toEqual({ total: 9, roll: 3 })

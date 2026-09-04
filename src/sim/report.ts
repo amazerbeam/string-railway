@@ -76,16 +76,23 @@ export function formatSummary(summary: SimSummary): string {
 
   const oc = hands.reduce(
     (sum, hand) => ({
-      cleanWin: sum.cleanWin + hand.trickOutcomes.cleanWin,
-      dodge: sum.dodge + hand.trickOutcomes.dodge,
-      cleanLoss: sum.cleanLoss + hand.trickOutcomes.cleanLoss,
-      skullWin: sum.skullWin + hand.trickOutcomes.skullWin,
+      highVictory: sum.highVictory + hand.trickOutcomes.highVictory,
+      lowVictory: sum.lowVictory + hand.trickOutcomes.lowVictory,
+      lowDefeat: sum.lowDefeat + hand.trickOutcomes.lowDefeat,
+      highDefeat: sum.highDefeat + hand.trickOutcomes.highDefeat,
       hurtLeading: sum.hurtLeading + hand.trickOutcomes.hurtLeading,
       hurtFollowing: sum.hurtFollowing + hand.trickOutcomes.hurtFollowing,
     }),
-    { cleanWin: 0, dodge: 0, cleanLoss: 0, skullWin: 0, hurtLeading: 0, hurtFollowing: 0 },
+    {
+      highVictory: 0,
+      lowVictory: 0,
+      lowDefeat: 0,
+      highDefeat: 0,
+      hurtLeading: 0,
+      hurtFollowing: 0,
+    },
   )
-  const allTricks = oc.cleanWin + oc.dodge + oc.cleanLoss + oc.skullWin
+  const allTricks = oc.highVictory + oc.lowVictory + oc.lowDefeat + oc.highDefeat
   // A card is ACTIVATED for a trick and then its condition is checked when that trick resolves, so
   // "fired" and "paid" are different questions. Cheat carries no condition, so it can
   // never read as paid — it is excluded rather than counted as a permanent failure.
@@ -138,8 +145,8 @@ export function formatSummary(summary: SimSummary): string {
     '',
     'Tricks',
     `  mean tricks per hand: ${mean(hands.map((hand) => hand.tricksPlayed))}  counted here: ${(allTricks / Math.max(1, hands.length)).toFixed(2)}`,
-    `  banked ${percent(oc.cleanWin + oc.dodge, allTricks)} — clean wins ${oc.cleanWin}, dodges ${oc.dodge}`,
-    `  hurt   ${percent(oc.cleanLoss + oc.skullWin, allTricks)} — clean losses ${oc.cleanLoss}, ate a skull ${oc.skullWin}`,
+    `  banked ${percent(oc.highVictory + oc.lowVictory, allTricks)} — high victories ${oc.highVictory}, low victories ${oc.lowVictory}`,
+    `  hurt   ${percent(oc.lowDefeat + oc.highDefeat, allTricks)} — low defeats ${oc.lowDefeat}, high defeats ${oc.highDefeat}`,
     `  hurt while leading: ${oc.hurtLeading}   while following: ${oc.hurtFollowing}`,
     '',
     'The Cheat',

@@ -79,7 +79,7 @@ function shield(id = 93): Buff {
   }
 }
 
-/** A condition-family buff — Taker, Feeder, Sidestep, or any of the eight still-declared-but-cut
+/** A condition-family buff — Suit High, Suit Low, Skull Low, or any of the eight still-declared-but-cut
  *  families (e.g. Glutton). Built inline for the same reason `itemBuff` is: nothing in `src/hunt/`
  *  mints one yet. */
 function conditionBuff(kind: BuffKind, tier: BuffTier, id = 1): Buff {
@@ -363,17 +363,17 @@ describe('absorbWithWard — up to N of one hit, and no remainder to carry', () 
 })
 
 describe('CONDITION_CARD_SINGLE_USE (DLR-145 AC1)', () => {
-  it.each([BuffKind.Taker, BuffKind.Feeder, BuffKind.Sidestep])(
+  it.each([BuffKind.SuitHigh, BuffKind.SuitLow, BuffKind.SkullLow])(
     'reports a %s as a consumable item',
     (kind) => {
       expect(isConsumableItem(conditionBuff(kind, BuffTier.Bronze, 1))).toBe(true)
     },
   )
 
-  it('defaults to true for Taker, Feeder and Sidestep', () => {
-    expect(CONDITION_CARD_SINGLE_USE[BuffKind.Taker]).toBe(true)
-    expect(CONDITION_CARD_SINGLE_USE[BuffKind.Feeder]).toBe(true)
-    expect(CONDITION_CARD_SINGLE_USE[BuffKind.Sidestep]).toBe(true)
+  it('defaults to true for Suit High, Suit Low and Skull Low', () => {
+    expect(CONDITION_CARD_SINGLE_USE[BuffKind.SuitHigh]).toBe(true)
+    expect(CONDITION_CARD_SINGLE_USE[BuffKind.SuitLow]).toBe(true)
+    expect(CONDITION_CARD_SINGLE_USE[BuffKind.SkullLow]).toBe(true)
   })
 
   it('leaves the five DLR-111 items and the three activated cards unchanged', () => {
@@ -385,9 +385,9 @@ describe('CONDITION_CARD_SINGLE_USE (DLR-145 AC1)', () => {
     expect(isConsumableItem(conditionBuff(BuffKind.Glutton, BuffTier.Bronze, 4))).toBe(false)
   })
 
-  it('spendConsumable removes exactly the spent Taker and leaves its twin', () => {
-    const a = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
-    const b = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 2)
+  it('spendConsumable removes exactly the spent Suit High card and leaves its twin', () => {
+    const a = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
+    const b = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 2)
     expect(spendConsumable([a, b], 1).map((buff) => buff.id)).toEqual([2])
   })
 })

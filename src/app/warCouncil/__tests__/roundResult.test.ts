@@ -38,7 +38,7 @@ describe('roundResultFor', () => {
     expect(roundResultFor(uiWithCoins).coinsEarned).toBe(7)
   })
 
-  // DLR-156 AC8 — the regression `WarCouncilRound.feederCarry.test.tsx` was written to prevent, for
+  // DLR-156 AC8 — the regression `WarCouncilRound.lowCarry.test.tsx` was written to prevent, for
   // the streak: a carry can reach `WarCouncilMountProps` and `RoundUiSeed` correctly and still be
   // dropped between the seed and the reducer's own opening state, or between the reducer's state
   // and what `roundResultFor` reads back. This crosses BOTH seams — `createRoundUiState`'s seeding

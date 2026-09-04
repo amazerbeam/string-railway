@@ -45,9 +45,9 @@ export type SlotAxisWeights = Readonly<Record<MintableRewardAxis, number>>
 // ticket's to make (`tasks.md` → Developer decides or observes).
 export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeights>> = {
   [SlotMachineId.Skirmisher]: {
-    [BuffKind.Taker]: 5,
-    [BuffKind.Feeder]: 4,
-    [BuffKind.Sidestep]: 2,
+    [BuffKind.SuitHigh]: 5,
+    [BuffKind.SuitLow]: 4,
+    [BuffKind.SkullLow]: 2,
     // DLR-132 — NOBODY CHOSE THIS NUMBER. The card is an in-hand tactical play. Only RATIOS
     // matter within one machine's table. UNIT: relative weight, >= 0, unitless.
     [BuffKind.Cheat]: 3,
@@ -74,9 +74,9 @@ export const SLOT_FAMILY_WEIGHTS: Readonly<Record<SlotMachineId, SlotFamilyWeigh
     [BuffKind.Curse]: 3,
   },
   [SlotMachineId.Strongbox]: {
-    [BuffKind.Taker]: 2,
-    [BuffKind.Feeder]: 2,
-    [BuffKind.Sidestep]: 1,
+    [BuffKind.SuitHigh]: 2,
+    [BuffKind.SuitLow]: 2,
+    [BuffKind.SkullLow]: 1,
     // DLR-132 — see the Skirmisher table's comment above; same nobody-approved status.
     [BuffKind.Cheat]: 1,
     // DLR-161 — see the Skirmisher table's comment above; same nobody-approved status.
@@ -203,7 +203,7 @@ export function weightedDrawWithoutReplacement<T>(
 
 /**
  * DLR-145 — `weightedDrawWithoutReplacement`'s sibling, for a draw where a REPEAT IS THE POINT
- * rather than a bug: an opening pile of 20 from a 16-template pool, where three Bell-Takers is the
+ * rather than a bug: an opening pile of 20 from a 16-template pool, where three Bell Highs is the
  * intended shape (design §3.4). EXACTLY ONE `rng()` call per item drawn, with the same
  * last-candidate fallback that catches float drift, and the total computed once because — unlike
  * the without-replacement version — the pool never changes.

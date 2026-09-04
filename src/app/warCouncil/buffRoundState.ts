@@ -44,7 +44,7 @@ export interface BuffHandState {
 
 /** A fresh hand's bookkeeping — nothing fired, nothing pressed, the no-hit streak at zero.
  *  DLR-150 AC3 — `carriedIn` is no longer always empty: it seeds the accrual's payable axes with
- *  whatever the previous hand's Loss-firing Feeders diverted into the carry pool. */
+ *  whatever the previous hand's Defeat-firing Suit Low cards diverted into the carry pool. */
 export function startBuffHand(carriedIn?: BuffCarry): BuffHandState {
   return {
     accrual: startHandAccrual(carriedIn),
@@ -61,7 +61,7 @@ export function startBuffHand(carriedIn?: BuffCarry): BuffHandState {
 export function buffHandInputFor(state: RoundUiState): BuffHandInput {
   // DLR-145 — the pile AND the cards spent out of it this trick. `activateFromPile` removes a
   // consumed card from `state.buffs` at the commit tap, so filtering the pile alone would find
-  // nothing and a spent Taker would pay nothing. The two sets are disjoint by construction — a
+  // nothing and a spent Suit High card would pay nothing. The two sets are disjoint by construction — a
   // spent card is no longer offered — so no de-duplication is needed and the overlap-bonus count
   // stays correct.
   const candidates = [...offeredBuffs(state), ...state.buffActivation.spentThisTrick]

@@ -101,8 +101,9 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
   const options = playOptions(state)
   const finalTrick = state.round.tricksPlayed + 1 === HAND_SIZE
   const remainingHand = state.round.hands[PlayerSide.Player].filter((c) => !sameCard(c, card))
-  const shared: Omit<TrickFacts, 'playerWon'> = {
-    // DLR-167 — the UNION, so a preview of a card the player has cursed reads as the dodge it is.
+  const shared: Omit<TrickFacts, 'playerWentHigh'> = {
+    // DLR-167 — the UNION, so a preview of a card the player has cursed reads as the Low Victory
+    // it is.
     skullTrick: trickIsSkulled(skullsOn(state.round), visible),
     // DLR-163 AC8/AC10 — derived exactly as `playCard.ts` derives it, over the cards the player
     // can actually see, so the preview's "this card costs 2" is right for a Treasure trick.
@@ -123,8 +124,8 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
   }
 
   const streak = { total: state.round.total, roll: state.round.roll }
-  const winResolution = resolveTrickBank(streak, { ...shared, playerWon: true })
-  const loseResolution = resolveTrickBank(streak, { ...shared, playerWon: false })
+  const winResolution = resolveTrickBank(streak, { ...shared, playerWentHigh: true })
+  const loseResolution = resolveTrickBank(streak, { ...shared, playerWentHigh: false })
 
   return {
     win: branchFor(state, winResolution),

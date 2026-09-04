@@ -29,7 +29,7 @@ interface BankMeterProps {
  * DLR-156 — the pending-buff-bonus and forced-cash-out readouts are GONE: a buff no longer pools
  * across the hand into a spendable balance (`buffAccrual.ts`'s `trickBonusFor` pays only the
  * trick it fired on), and a hit no longer pays a reduced share. `carriedIn`/`carryOut` survive
- * unchanged — the coin, AP-refund and Feeder-carry axes are untouched by this ticket.
+ * unchanged — the coin, AP-refund and low-carry axes are untouched by this ticket.
  *
  * DLR-160 — this is now the HEAD of `PotCard.tsx`'s merged card (mockup-left-damage-block-v2.html):
  * the pot figure (`cash`) is the big headline, and total×roll — restyled to a small sub-line via

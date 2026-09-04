@@ -78,7 +78,7 @@ describe('leadBankOdds', () => {
     expect(leadBankOdds(high, 'keys' as never, clean)).toBeGreaterThan(
       leadBankOdds(low, 'keys' as never, clean),
     )
-    // Every card in the suit skulled: the low card banks by losing — a dodge.
+    // Every card in the suit skulled: the low card banks by going low — a Low Victory.
     expect(leadBankOdds(low, 'keys' as never, skully)).toBeGreaterThan(
       leadBankOdds(high, 'keys' as never, skully),
     )
@@ -99,7 +99,7 @@ describe('chooseFollow — the decision that costs health', () => {
     const hand = [card('bells', 2), card('bells', 9), card('bells', 11)]
     const state = quarryLeads(lead, hand, [lead])
     expect(isSkulled(state.skulledCards, lead)).toBe(true)
-    // Winning this is eating the skull — 1 health. Losing it is a dodge, which banks.
+    // Going high on this is a High Defeat — 1 health. Going low is a Low Victory, which banks.
     expect(chooseSkilledCard(state)).toEqual(card('bells', 2))
   })
 
@@ -191,8 +191,8 @@ describe('the strategy as a whole', () => {
       for (let seed = 1; seed <= 40; seed += 1) {
         for (const hand of playRun(seed, POLICIES[policy]).hands) {
           const o = hand.trickOutcomes
-          banked += o.cleanWin + o.dodge
-          total += o.cleanWin + o.dodge + o.cleanLoss + o.skullWin
+          banked += o.highVictory + o.lowVictory
+          total += o.highVictory + o.lowVictory + o.lowDefeat + o.highDefeat
         }
       }
       return total === 0 ? 0 : banked / total

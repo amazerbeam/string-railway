@@ -104,7 +104,7 @@
   color: var(--wc-moons);
 }
 
-.shop-strip-chip-glyph[data-glyph='sidestep'],
+.shop-strip-chip-glyph[data-glyph='skullLow'],
 .shop-strip-chip-glyph[data-glyph='cheat'] {
   color: var(--wc-chalk-dim);
 }

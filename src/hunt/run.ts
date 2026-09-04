@@ -161,12 +161,12 @@ export interface RunState {
    *  `apCapacityBonus`, which stack, a rank is a RUNG and `steppedTo` refuses a third step.
    *  NEVER persisted, exactly as `coins` above. */
   readonly rankTiers: RankTierTable
-  /** DLR-150 AC3/AC4 — the Feeder carry, carried across every hand WITHIN a fight and wiped at
+  /** DLR-150 AC3/AC4 — the low carry, carried across every hand WITHIN a fight and wiped at
    *  the fight boundary, exactly as `discardsRemaining` is. The hand owns it for its life and hands
    *  the survivor back through `WarCouncilRoundResult`. NEVER persisted, exactly as `coins`. */
-  readonly feederCarry: BuffCarry
+  readonly lowCarry: BuffCarry
   /** DLR-156 AC8/AC9 — the streak carried between the HANDS of one fight. Lives on the run
-   *  rather than on `EncounterState` for `feederCarry`'s stated reason: the card layer owns it
+   *  rather than on `EncounterState` for `lowCarry`'s stated reason: the card layer owns it
    *  for the life of a hand and hands it back, and the run is what survives between hands.
    *  Wiped at the fight boundary by `streakAfter`. NEVER persisted, exactly as `coins` above. */
   readonly streak: StreakState
@@ -222,7 +222,7 @@ export function startRun(
     // DLR-122 AC1 — every rank at bronze, which IS the ability printed today, so a run that buys
     // nothing plays exactly as it plays now.
     rankTiers: ALL_BRONZE,
-    feederCarry: EMPTY_BUFF_CARRY,
+    lowCarry: EMPTY_BUFF_CARRY,
     // DLR-156 AC8 — a literal, not the imported `EMPTY_STREAK`: that constant is a VALUE export
     // of `src/warCouncil/streak.ts`, and importing it here would be the runtime circular import
     // the type-only import above avoids. The shape is trivial and structural, not a tunable.

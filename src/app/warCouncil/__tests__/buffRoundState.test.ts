@@ -30,7 +30,7 @@ const buff = (id: string, tier: BuffTier, buffId: number): Buff =>
 // Hoarder has no surviving template (DLR-145) — it stays declared on `BuffKind`, keeps its
 // `BUFF_CADENCE` row and its `buffFires` case, so it is built directly as a `Buff` literal here,
 // the same idiom `buffEvaluation.test.ts` and `buffTemplates.test.ts` already use for it.
-// `taker:bells:magnitude` is still mintable — an Event family, the same row
+// `suitHigh:bells:magnitude` is still mintable — an Event family, the same row
 // `buffEvaluation.test.ts` pins its cadence with.
 const hoarder: Buff = {
   id: 1,
@@ -39,7 +39,7 @@ const hoarder: Buff = {
   condition: { kind: BuffKind.Hoarder },
   reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
 }
-const taker = buff('taker:bells:magnitude', BuffTier.Bronze, 2)
+const suitHigh = buff('suitHigh:bells:magnitude', BuffTier.Bronze, 2)
 
 function uiFrom(over: { buffs?: readonly Buff[]; coins?: number } = {}): RoundUiState {
   return createRoundUiState({
@@ -53,7 +53,7 @@ function uiFrom(over: { buffs?: readonly Buff[]; coins?: number } = {}): RoundUi
 }
 
 const RESOLUTION: TrickResolution = {
-  outcome: TrickOutcome.CleanWin,
+  outcome: TrickOutcome.HighVictory,
   trickDamage: { base: 1, buffDamage: 0, buffMult: 1, overlapBonus: 0, dealt: 1 },
   cashOut: 0,
   damageToPlayer: 0,
@@ -91,28 +91,28 @@ describe('startBuffHand', () => {
 
 describe('buffHandInputFor', () => {
   it('assembles only the buffs activated for this trick, never the whole offered pile', () => {
-    const ui = uiFrom({ buffs: [hoarder, taker], coins: 7 })
+    const ui = uiFrom({ buffs: [hoarder, suitHigh], coins: 7 })
     const activated = {
       ...ui,
-      buffActivation: { ...ui.buffActivation, activatedThisTrick: [taker.id] },
+      buffActivation: { ...ui.buffActivation, activatedThisTrick: [suitHigh.id] },
     }
     const input = buffHandInputFor(activated)
-    expect(input.active).toEqual([taker])
+    expect(input.active).toEqual([suitHigh])
     expect(input.coins).toBe(7)
   })
 
   it('a consumed card is no longer in the pile but is still active for THIS trick (DLR-145)', () => {
-    const seeded = uiFrom({ buffs: [taker] })
-    const { activation, buffs } = activateFromPile(seeded.buffActivation, seeded.buffs, taker, true)
+    const seeded = uiFrom({ buffs: [suitHigh] })
+    const { activation, buffs } = activateFromPile(seeded.buffActivation, seeded.buffs, suitHigh, true)
     const spentState = { ...seeded, buffs, buffActivation: activation }
 
     expect(offeredBuffs(spentState)).toHaveLength(0)
-    expect(buffHandInputFor(spentState).active.map((buff) => buff.id)).toEqual([taker.id])
+    expect(buffHandInputFor(spentState).active.map((buff) => buff.id)).toEqual([suitHigh.id])
   })
 
   it('drops it from the active set once the window reopens', () => {
-    const seeded = uiFrom({ buffs: [taker] })
-    const { activation, buffs } = activateFromPile(seeded.buffActivation, seeded.buffs, taker, true)
+    const seeded = uiFrom({ buffs: [suitHigh] })
+    const { activation, buffs } = activateFromPile(seeded.buffActivation, seeded.buffs, suitHigh, true)
     const nextTrick = { ...seeded, buffs, buffActivation: openBuffWindow(activation) }
     expect(buffHandInputFor(nextTrick).active).toEqual([])
   })
@@ -154,8 +154,8 @@ describe('foldBuffOutcome', () => {
   })
 
   it('an event family that fired is NOT recorded, so it can fire again', () => {
-    const prev = uiFrom({ buffs: [taker] })
-    const next = withResolved(prev, { buffAccrual: startHandAccrual() }, [taker.id])
+    const prev = uiFrom({ buffs: [suitHigh] })
+    const next = withResolved(prev, { buffAccrual: startHandAccrual() }, [suitHigh.id])
     const folded = foldBuffOutcome(prev, next)
     expect(folded.buffHand.firedThisHand).toEqual([])
   })

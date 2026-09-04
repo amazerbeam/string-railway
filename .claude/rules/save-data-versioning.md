@@ -12,6 +12,8 @@ Storage keys and persisted field names bind by string and sit outside the type c
 
 Any ticket that adds a field to a persisted shape, changes an existing field's type, renames a section, or reads/writes storage at all. Queued consumers as of DLR-106: DLR-113 (Vault), DLR-118 (Vault end-of-run screen), and DLR-123 (persistent deck).
 
+**DLR-165 is the first ticket that actually tripped reject condition 4 in production.** Renaming three `BuffKind` values changed every persisted template id the Vault keys its `oddsBoosts` and `startingGrants` on (`taker:bells:magnitude` → `suitHigh:bells:magnitude`), so the bump to `SAVE_SCHEMA_VERSION = 2` was mandatory in the same change; the Vault resets once, by design, rather than shipping a migration map that would have kept the dead vocabulary alive in code. Note the failure mode it avoided: without the bump the payload is still shape-valid, so `reconcileVault` would have loaded it with outcome `Loaded` and silently dropped every entry — the "silent success" shape condition 6 forbids, reached by a route condition 6 does not describe.
+
 ## How to verify
 
 - **Lint-enforced, not just grep-checked.** `eslint.config.js` restricts the `localStorage` and `sessionStorage` globals across `src/**/*.{ts,tsx}`, with `src/persistence/browserStorage.ts` as the sole `ignores` entry — `npm run lint` fails on any other file that names either global directly.

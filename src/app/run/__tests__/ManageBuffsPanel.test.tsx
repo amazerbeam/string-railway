@@ -23,11 +23,11 @@ import {
 
 afterEach(cleanup)
 
-const MOON_FEEDER = templateById('feeder:moons:magnitude')!
-const BELL_FEEDER = templateById('feeder:bells:magnitude')!
-const BELL_TAKER_GOLD_TEMPLATE = templateById('taker:bells:multiplier')!
+const MOON_LOW = templateById('suitLow:moons:magnitude')!
+const BELL_LOW = templateById('suitLow:bells:magnitude')!
+const BELL_HIGH_GOLD_TEMPLATE = templateById('suitHigh:bells:multiplier')!
 
-function card(template = MOON_FEEDER, tier: BuffTier = BuffTier.Bronze, id = 1): Buff {
+function card(template = MOON_LOW, tier: BuffTier = BuffTier.Bronze, id = 1): Buff {
   return mintFromTemplate(template, tier, id)
 }
 
@@ -74,16 +74,16 @@ function LiveManageBuffs({ initial }: { readonly initial: readonly Buff[] }) {
 
 describe('ManageBuffsPanel', () => {
   it('groups identical copies into one tile, with its count', () => {
-    renderPanel([card(MOON_FEEDER, BuffTier.Bronze, 1), card(MOON_FEEDER, BuffTier.Bronze, 2)])
+    renderPanel([card(MOON_LOW, BuffTier.Bronze, 1), card(MOON_LOW, BuffTier.Bronze, 2)])
     expect(screen.getAllByRole('button', { name: /Combine two into one/ })).toHaveLength(1)
     expect(screen.getByRole('button', { name: /2 held/ })).toBeTruthy()
   })
 
   it('offers a combine on a ready pile, and carries the exact refusal sentence with no button on a refused one', () => {
     renderPanel([
-      card(MOON_FEEDER, BuffTier.Bronze, 1),
-      card(MOON_FEEDER, BuffTier.Bronze, 2),
-      card(BELL_FEEDER, BuffTier.Bronze, 3),
+      card(MOON_LOW, BuffTier.Bronze, 1),
+      card(MOON_LOW, BuffTier.Bronze, 2),
+      card(BELL_LOW, BuffTier.Bronze, 3),
     ])
     expect(screen.getByRole('button', { name: /Combine two into one/ })).toBeTruthy()
     const refused = screen.getByText(COMBINE_REFUSAL_MESSAGE.noPair)
@@ -95,8 +95,8 @@ describe('ManageBuffsPanel', () => {
 
   it('arms on the first click, showing the destroyed and produced cards and the pile count dropping by one', () => {
     const { view } = renderPanel([
-      card(MOON_FEEDER, BuffTier.Bronze, 1),
-      card(MOON_FEEDER, BuffTier.Bronze, 2),
+      card(MOON_LOW, BuffTier.Bronze, 1),
+      card(MOON_LOW, BuffTier.Bronze, 2),
     ])
     fireEvent.click(screen.getByRole('button', { name: /Combine two into one/ }))
     expect(screen.getByText(/2 × Bronze/)).toBeTruthy()
@@ -107,8 +107,8 @@ describe('ManageBuffsPanel', () => {
 
   it('commits on the second click, calling onCombine with the pile key', () => {
     const { view, onCombine } = renderPanel([
-      card(MOON_FEEDER, BuffTier.Bronze, 1),
-      card(MOON_FEEDER, BuffTier.Bronze, 2),
+      card(MOON_LOW, BuffTier.Bronze, 1),
+      card(MOON_LOW, BuffTier.Bronze, 2),
     ])
     fireEvent.click(screen.getByRole('button', { name: /Combine two into one/ }))
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_COMMIT_LABEL }))
@@ -118,8 +118,8 @@ describe('ManageBuffsPanel', () => {
 
   it('cancels an armed pile on Escape without calling onCombine', () => {
     const { onCombine } = renderPanel([
-      card(MOON_FEEDER, BuffTier.Bronze, 1),
-      card(MOON_FEEDER, BuffTier.Bronze, 2),
+      card(MOON_LOW, BuffTier.Bronze, 1),
+      card(MOON_LOW, BuffTier.Bronze, 2),
     ])
     fireEvent.click(screen.getByRole('button', { name: /Combine two into one/ }))
     fireEvent.keyDown(screen.getByRole('group', { name: /Ready to combine/ }), { key: 'Escape' })
@@ -128,7 +128,7 @@ describe('ManageBuffsPanel', () => {
   })
 
   it('returns focus to the tile after Escape cancels it, rather than dropping to the body', () => {
-    renderPanel([card(MOON_FEEDER, BuffTier.Bronze, 1), card(MOON_FEEDER, BuffTier.Bronze, 2)])
+    renderPanel([card(MOON_LOW, BuffTier.Bronze, 1), card(MOON_LOW, BuffTier.Bronze, 2)])
     const tile = screen.getByRole('button', { name: /Combine two into one/ })
     fireEvent.click(tile)
     fireEvent.keyDown(screen.getByRole('group', { name: /Ready to combine/ }), { key: 'Escape' })
@@ -139,7 +139,7 @@ describe('ManageBuffsPanel', () => {
   })
 
   it('returns focus to the tile after Cancel is clicked, rather than dropping to the body', () => {
-    renderPanel([card(MOON_FEEDER, BuffTier.Bronze, 1), card(MOON_FEEDER, BuffTier.Bronze, 2)])
+    renderPanel([card(MOON_LOW, BuffTier.Bronze, 1), card(MOON_LOW, BuffTier.Bronze, 2)])
     fireEvent.click(screen.getByRole('button', { name: /Combine two into one/ }))
     fireEvent.click(screen.getByRole('button', { name: MANAGE_BUFFS_CANCEL_LABEL }))
     expect(document.activeElement).toBe(
@@ -152,8 +152,8 @@ describe('ManageBuffsPanel', () => {
     render(
       <LiveManageBuffs
         initial={[
-          card(BELL_TAKER_GOLD_TEMPLATE, BuffTier.Bronze, 1),
-          card(BELL_TAKER_GOLD_TEMPLATE, BuffTier.Bronze, 2),
+          card(BELL_HIGH_GOLD_TEMPLATE, BuffTier.Bronze, 1),
+          card(BELL_HIGH_GOLD_TEMPLATE, BuffTier.Bronze, 2),
         ]}
       />,
     )
@@ -165,8 +165,8 @@ describe('ManageBuffsPanel', () => {
 
   it('leaves the screen on Escape when nothing is armed', () => {
     const { onLeave } = renderPanel([
-      card(MOON_FEEDER, BuffTier.Bronze, 1),
-      card(MOON_FEEDER, BuffTier.Bronze, 2),
+      card(MOON_LOW, BuffTier.Bronze, 1),
+      card(MOON_LOW, BuffTier.Bronze, 2),
     ])
     fireEvent.keyDown(screen.getByRole('group', { name: /Ready to combine/ }), { key: 'Escape' })
     expect(onLeave).toHaveBeenCalledOnce()
@@ -174,10 +174,10 @@ describe('ManageBuffsPanel', () => {
 
   it('moves focus across ready piles with the arrow keys', () => {
     renderPanel([
-      card(MOON_FEEDER, BuffTier.Bronze, 1),
-      card(MOON_FEEDER, BuffTier.Bronze, 2),
-      card(BELL_FEEDER, BuffTier.Bronze, 3),
-      card(BELL_FEEDER, BuffTier.Bronze, 4),
+      card(MOON_LOW, BuffTier.Bronze, 1),
+      card(MOON_LOW, BuffTier.Bronze, 2),
+      card(BELL_LOW, BuffTier.Bronze, 3),
+      card(BELL_LOW, BuffTier.Bronze, 4),
     ])
     const piles = screen.getAllByRole('button', { name: /Combine two into one/ })
     expect(piles).toHaveLength(2)
@@ -192,8 +192,8 @@ describe('ManageBuffsPanel', () => {
     render(
       <LiveManageBuffs
         initial={[
-          card(BELL_TAKER_GOLD_TEMPLATE, BuffTier.Bronze, 1),
-          card(BELL_TAKER_GOLD_TEMPLATE, BuffTier.Bronze, 2),
+          card(BELL_HIGH_GOLD_TEMPLATE, BuffTier.Bronze, 1),
+          card(BELL_HIGH_GOLD_TEMPLATE, BuffTier.Bronze, 2),
         ]}
       />,
     )

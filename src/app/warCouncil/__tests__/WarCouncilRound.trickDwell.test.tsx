@@ -58,7 +58,7 @@ describe('WarCouncilRound — the trick dwell (DLR-156 play-test fix 1)', () => 
       // yet (`WarCouncilRound.tsx`'s table is now always mounted, so absence of the body — not
       // absence of the felt — is what this checks). `.wc-resolve-body` is the pot card's own
       // class, rendered only once a resolution is showing, so this cannot collide with the felt's
-      // own outcome wording (`TrickWell.tsx`, which can share a word like "Clean win").
+      // own outcome wording (`TrickWell.tsx`, which can share a word like "High Victory").
       expect(container.querySelector('.wc-resolve-body')).toBeNull()
       // The played card landed in the well (`ui.resolvedTrick`), condensed rather than gone.
       expect(
@@ -92,7 +92,7 @@ describe('WarCouncilRound — the trick dwell (DLR-156 play-test fix 1)', () => 
       unmount()
 
       expect(() => act(() => vi.advanceTimersByTime(FALLBACK_DWELL_MS * 5))).not.toThrow()
-      expect(screen.queryByText(/clean win/i)).toBeNull()
+      expect(screen.queryByText(/high victory/i)).toBeNull()
     } finally {
       vi.useRealTimers()
     }

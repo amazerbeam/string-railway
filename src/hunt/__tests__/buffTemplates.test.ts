@@ -16,14 +16,14 @@ import { wildcardBuff } from '../buffCatalog'
 import { apCostOf, isConditionFamily } from '../buffCosts'
 
 describe('BUFF_TEMPLATES', () => {
-  // DLR-167 — 19: 6 Taker + 6 Feeder + 2 Sidestep + 1 Skull Helmet + 1 Skull Tether, plus the
+  // DLR-167 — 19: 6 Suit High + 6 Suit Low + 2 Skull Low + 1 Skull Helmet + 1 Skull Tether, plus the
   // three activated cards Cheat, the wildcard and Curse. (DLR-166 deleted a fourth outright.)
   it('holds exactly the 19 templates DLR-167 leaves', () => {
     expect(BUFF_TEMPLATES).toHaveLength(19)
     expect(BUFF_TEMPLATE_COUNT).toBe(19)
-    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Taker)).toHaveLength(6)
-    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)).toHaveLength(6)
-    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Sidestep)).toHaveLength(2)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SuitHigh)).toHaveLength(6)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SuitLow)).toHaveLength(6)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullLow)).toHaveLength(2)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullHelmet)).toHaveLength(1)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SkullTether)).toHaveLength(1)
     expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(3)
@@ -34,10 +34,21 @@ describe('BUFF_TEMPLATES', () => {
     expect(templateById('skullTether:protection')).toBeDefined()
   })
 
-  it('resolves the three Momentum Feeder ids DLR-150 restored, persisted by the Vault', () => {
-    expect(templateById('feeder:bells:multiplier')).toBeDefined()
-    expect(templateById('feeder:keys:multiplier')).toBeDefined()
-    expect(templateById('feeder:moons:multiplier')).toBeDefined()
+  it('resolves the three Momentum Suit Low ids DLR-150 restored, persisted by the Vault', () => {
+    expect(templateById('suitLow:bells:multiplier')).toBeDefined()
+    expect(templateById('suitLow:keys:multiplier')).toBeDefined()
+    expect(templateById('suitLow:moons:multiplier')).toBeDefined()
+  })
+
+  it('composes template ids from the current BuffKind values, which are PERSISTED', () => {
+    // DLR-165 — a rename of any of these values orphans every Vault entry keyed on the old id.
+    // If this test fails, the fix is a SAVE_SCHEMA_VERSION bump in the same change, not a new
+    // expectation string. See `.claude/rules/save-data-versioning.md`.
+    const ids = BUFF_TEMPLATES.map((t) => t.id)
+    expect(ids).toContain('suitHigh:bells:magnitude')
+    expect(ids).toContain('suitLow:bells:multiplier')
+    expect(ids).toContain('skullLow:magnitude')
+    expect(ids.some((id) => /^(taker|feeder|sidestep)[:$]/.test(id))).toBe(false)
   })
 
   it('mints no card on a cut reward axis', () => {
@@ -51,10 +62,10 @@ describe('BUFF_TEMPLATES', () => {
     }
   })
 
-  it('every Feeder pays on Blade or Momentum', () => {
-    const feeders = BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)
+  it('every Suit Low card pays on Blade or Momentum', () => {
+    const suitLows = BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.SuitLow)
     expect(
-      feeders.every(
+      suitLows.every(
         (t) =>
           t.form === 'condition' &&
           (t.axis === BuffRewardAxis.Magnitude || t.axis === BuffRewardAxis.Multiplier),
@@ -73,7 +84,7 @@ describe('BUFF_TEMPLATES', () => {
     }
   })
 
-  it('parameterises exactly the suit-carrying Taker and Feeder templates', () => {
+  it('parameterises exactly the suit-carrying Suit High and Suit Low templates', () => {
     expect(
       BUFF_TEMPLATES.filter((t) => t.form === 'condition' && t.target !== undefined),
     ).toHaveLength(6 + 6)
@@ -95,13 +106,13 @@ describe('REWARD_TIER_VALUE', () => {
 
 describe('mintFromTemplate', () => {
   it('mints a priceable Buff carrying the callers id and the tiers reward value', () => {
-    const template = templatesForFamily(BuffKind.Taker)[0]
-    if (template.form !== 'condition') throw new Error('Taker is a condition family')
+    const template = templatesForFamily(BuffKind.SuitHigh)[0]
+    if (template.form !== 'condition') throw new Error('SuitHigh is a condition family')
     const buff = mintFromTemplate(template, BuffTier.Silver, 42)
     expect(buff.id).toBe(42)
-    expect(buff.kind).toBe(BuffKind.Taker)
+    expect(buff.kind).toBe(BuffKind.SuitHigh)
     expect(buff.tier).toBe(BuffTier.Silver)
-    expect(buff.condition.kind).toBe(BuffKind.Taker)
+    expect(buff.condition.kind).toBe(BuffKind.SuitHigh)
     expect(buff.reward.value).toBe(REWARD_TIER_VALUE[template.axis][BuffTier.Silver])
     expect(() => apCostOf(buff)).not.toThrow()
   })
@@ -121,11 +132,11 @@ describe('mintFromTemplate', () => {
   })
 
   it('carries the suit onto the minted conditions target', () => {
-    const taker = templatesForFamily(BuffKind.Taker).find(
+    const suitHigh = templatesForFamily(BuffKind.SuitHigh).find(
       (t) => t.form === 'condition' && t.target?.suit !== undefined,
     )
-    expect(taker).toBeDefined()
-    expect(mintFromTemplate(taker!, BuffTier.Gold, 1).condition.target?.suit).toBeDefined()
+    expect(suitHigh).toBeDefined()
+    expect(mintFromTemplate(suitHigh!, BuffTier.Gold, 1).condition.target?.suit).toBeDefined()
   })
 })
 
@@ -145,8 +156,8 @@ describe('conditionThresholdOf', () => {
   })
 
   it('returns null — a real answer — for a family with no threshold', () => {
-    const taker = templatesForFamily(BuffKind.Taker)[0]
-    expect(conditionThresholdOf(mintFromTemplate(taker, BuffTier.Bronze, 1))).toBeNull()
+    const suitHigh = templatesForFamily(BuffKind.SuitHigh)[0]
+    expect(conditionThresholdOf(mintFromTemplate(suitHigh, BuffTier.Bronze, 1))).toBeNull()
   })
 })
 

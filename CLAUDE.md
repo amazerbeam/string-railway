@@ -72,62 +72,58 @@ Two consequences worth stating, because both are easy to get wrong:
 - **`the-hunt.md` is the ruleset, not a changelog.** It is organised in playing order, marks every rule `[settled]` / `[provisional]` / `[open]` / `[not built]`, cites `hybrid-design.md §N` rather than reproducing its reasoning, and names no functions outside its Status register. `implementation-doc-writer` owns it and `/fb-apply` updates it every run that changes a rule — never edit it by hand, and never add a per-ticket section to it.
 - **`.docs/game_rules/fox-in-the-forest.md` is not part of this split.** It is the base game's published rulebook, transcribed, and it is a fixed reference — nothing in the pipeline maintains it.
 
-### "Win" and "lose" mean two different things — say which one you mean
+### The four names a trick can have — use them in prose, not only in code
 
-A skull **inverts** a trick, so the mechanical act and the outcome come apart, and the codebase uses
-one pair of words for both. This is the single most common source of wrong statements about the
-game — including in conversation with the developer. Before writing "win" or "lose" anywhere, work
-out which axis you are on:
+A skull **inverts** a trick, so the mechanical act and the outcome come apart. DLR-165 gave each
+fact its own words, and the two combine into exactly four names:
 
-- **The mechanical axis — did the player physically take the cards.** This is what `playerWon` in
-  `BuffTrickContext` means, and its docblock says so: *"The player won the trick physically (before
-  the skull inverts what that is worth)."* **Every buff condition reads this axis and nothing else.**
-- **The outcome axis — did the player gain or get hurt.** This is what the bank, the multiplier, the
-  damage and the cash-out read.
+- **Victory** and **Defeat** name the **outcome** and nothing else. A Victory banks; a Defeat hurts.
+- **High** and **Low** name the **mechanical act** — whether the player physically took the cards.
+  This is what `playerWentHigh` in `BuffTrickContext` means, and **every buff condition reads this
+  axis and nothing else**. "High" means winning the contest, trump included — not the higher numeral.
 
 The four outcomes, which `.docs/game_rules/the-hunt.md` §7 owns:
 
 | | Clean trick | Skull trick |
 |---|---|---|
-| **Took the trick** | clean win — **banks**: the trick's damage into `total`, `roll` +1 | **ate the skull** — **hurts**: −1 health, `total` and `roll` to zero, the Quarry paid nothing |
-| **Did not take it** | clean loss — **hurts**: −1 health, `total` and `roll` to zero, the Quarry paid nothing | **dodge** — **banks**: the trick's damage into `total`, `roll` +1 |
+| **Went high** (took the cards) | **High Victory** — **banks**: the trick's damage into `total`, `roll` +1 | **High Defeat** (ate the skull) — **hurts**: −1 health, `total` and `roll` to zero, the Quarry paid nothing |
+| **Went low** (did not) | **Low Defeat** — **hurts**: −1 health, `total` and `roll` to zero, the Quarry paid nothing | **Low Victory** (the dodge) — **banks**: the trick's damage into `total`, `roll` +1 |
 
 DLR-156 replaced `bank × multiplier` with a per-trick pot. A banked trick adds
 `(BASE_DAMAGE + baseDamageBonus + buffDamage) × buffMult` to `total` and climbs `roll` by one; the
 pot is `total × roll`, and it is paid **only** when the player chooses *apply* on the resolution
-screen. **A hurt trick pays the Quarry nothing** — the old two-thirds consolation is gone.
+screen. **A Defeat pays the Quarry nothing** — the old two-thirds consolation is gone.
 
-Three consequences that are routinely got wrong:
+**These are the words to use everywhere, not only in shipped strings** — in conversation with the
+developer, in a plan, in a ticket, in an agent dispatch prompt, and in a reviewer finding. "Win a
+trick" is never an acceptable way to describe a Low Victory. A sentence about a trick either names
+one of the four outcomes or says high/low.
 
-- **A dodge is a good outcome reached by losing the trick.** Playing a 2 under a skulled 5 is the
-  correct play — no damage, and the trick banks. Damage on a skull trick comes from **winning**
-  it, never from losing it.
-- **Feeder fires on both.** Its predicate is `!playerWon && suit matches` — there is no skull term
-  in it at all, so a Feeder pays whether the trick was a dodge or a clean loss. That is deliberate,
-  not a bug. Sidestep, by contrast, is `skullTrick && !playerWon`, which makes it the only condition
-  card that can never fire on a bad outcome.
-- **A card's printed text may contradict the code.** Sidestep and Glutton read "…with this card", a
-  leftover from an unbuilt "Apply-to-card" category in `v1-buff-card-list.md`. **No buff attaches to
-  a card.** A buff is activated for a trick and checked when that trick resolves.
+Two consequences that are routinely got wrong:
 
-**A vocabulary rename is banked and NOT built.** The proposal, revised 2026-09-03: **Victory** and
-**Defeat** name the outcome only (banks / hurts), **High** and **Low** name whether the player
-physically took the cards, and the two combine into the four names **High Victory** (clean win),
-**Low Victory** (dodge), **High Defeat** (ate the skull), **Low Defeat** (clean loss). A buff card
-uses High or Low and never names Victory or Defeat. It is written up in
-`.docs/design/Balatro-Forbidden-Solitaire/ideas.md`. Until a ticket ships it, the vocabulary above is
-what the code and the ruleset actually say. Do not use these words in code, in `the-hunt.md`, or in a
-plan as though they were live.
+- **A Low Victory is a good outcome reached by going low.** Playing a 2 under a skulled 5 is the
+  correct play — no damage, and the trick banks. Damage on a skull trick comes from going **high**
+  on it, never from going low.
+- **The Low family fires on both.** Suit Low's predicate is `!playerWentHigh && suit matches` —
+  there is no skull term in it at all, so it pays whether the trick was a Low Victory or a Low
+  Defeat. That is deliberate, not a bug. Skull Low, by contrast, is `skullTrick && !playerWentHigh`,
+  which makes it the only condition card that can never fire on a bad outcome.
+
+Card text now states its own condition, so the old warning that a card's printed text may contradict
+the code is gone — DLR-165 fixed it. **No buff attaches to a card**: a buff is activated for a trick
+and checked when that trick resolves.
 
 ### Cut buffs are cut until a ticket brings them back
 
-DLR-145 pared the mintable buff pool to 13 templates, and DLR-150 restored Feeder's Momentum row,
-bringing it to **16 templates** — Taker (3 suits × Blade/Momentum), Feeder (3 suits ×
-Blade/Momentum), Sidestep (Blade/Momentum), plus the two activated cards Cheat and Timebomb.
+DLR-145 pared the mintable buff pool to 13 templates. It now stands at **19 templates** (the figure
+`src/hunt/__tests__/buffTemplates.test.ts` asserts): 16 condition templates — Suit High (3 suits ×
+Blade/Momentum), Suit Low (3 suits × Blade/Momentum), Skull Low (Blade/Momentum), Skull Helmet and
+Skull Tether (one each, Guard) — plus the three activated cards Cheat, the wildcard and Curse.
 `src/hunt/buffTemplates.ts` is the owner; `MintableConditionKind` and `MintableRewardAxis` narrow
 the *types*, so everything outside that set is **unconstructible, not merely unweighted**. Momentum
-was unsafe on Feeder while a multiplier raised on a Loss trick was wiped by that trick's own reset;
-the feeder carry lets it escape the hand first, which is what made the row safe to restore.
+was unsafe on Suit Low while a multiplier raised on a Defeat trick was wiped by that trick's own
+reset; the low carry lets it escape the hand first, which is what made the row safe to restore
+(DLR-150).
 
 Everything cut is **removed from the game until a ticket explicitly restores it** — treat it as
 absent when planning, reviewing, writing docs, or answering a question about what the game contains:

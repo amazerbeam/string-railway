@@ -15,7 +15,7 @@ import type { Card } from './types'
  * DLR-152 — "if I play THIS card, what do my riding buffs pay — whether or not I take the
  * trick". A THIN ADAPTER, never a calculator: it builds a `BuffTrickContext` from plain values
  * and hands it to `firedBuffs` and `resolveFiredBuffs`, the same two functions the real trick
- * resolution calls. Cadence, the four per-hand caps, the Overlap Bonus and DLR-150's Feeder
+ * resolution calls. Cadence, the four per-hand caps, the Overlap Bonus and DLR-150's low
  * carry are therefore INHERITED, not restated — which is the whole point. The DLR-147 mockup
  * re-derived the predicates in the view layer and reported +6 damage for a load whose ceiling
  * was +4; a preview built on a second copy of the rules drifts from the rules.
@@ -32,12 +32,12 @@ import type { Card } from './types'
  *  supplies the rest as plain values — never a `RoundState`.
  *
  *  NOTE: `playerHit` and `bankAfterTrick` are held constant across both branches even though they
- *  genuinely differ in the real game (a `bankAfterTrick` after a win is not the same number as
- *  after a loss). This is currently inert only because Hoarder and Unbloodied are unconstructible
+ *  genuinely differ in the real game (a `bankAfterTrick` after going high is not the same number as
+ *  after going low). This is currently inert only because Hoarder and Unbloodied are unconstructible
  *  — see `CLAUDE.md`'s cut-buffs section before restoring either family into this module. */
 export type BuffProjectionFacts = Omit<
   BuffTrickContext,
-  'playerWon' | 'skullTrick' | 'playerSuits' | 'playerRanks' | 'remainingSuits'
+  'playerWentHigh' | 'skullTrick' | 'playerSuits' | 'playerRanks' | 'remainingSuits'
 >
 
 export interface BuffProjectionInput {
@@ -67,8 +67,8 @@ export interface BuffBranchOutcome {
 export interface BuffBranchProjection {
   /** The MECHANICAL axis — the player physically took the cards, before the skull inverts what
    *  that is worth. This is the axis every buff condition reads. NOT `bank.ts`'s `isTaken`,
-   *  which is the OUTCOME axis and counts a Dodge as taken. */
-  readonly playerWon: boolean
+   *  which is the OUTCOME axis and counts a Low Victory as banked. */
+  readonly playerWentHigh: boolean
   /** Buffs that fire on this branch under EVERY still-possible skull reading. */
   readonly fired: readonly Buff[]
   /** DLR-153 — buffs that fire on THIS branch under some still-possible skull reading but not
@@ -79,8 +79,8 @@ export interface BuffBranchProjection {
    *  `skullKnown` is true. */
   readonly mayFire: readonly Buff[]
   /** One entry per still-possible `TrickOutcome`: exactly one when the skull is known, two while
-   *  the player leads. Never empty. Two entries can differ in more than their label — a Feeder
-   *  pays into THIS hand on a Dodge and into the carry on a Clean Loss (DLR-150). */
+   *  the player leads. Never empty. Two entries can differ in more than their label — a Suit Low
+   *  card pays into THIS hand on a Low Victory and into the carry on a Low Defeat (DLR-150). */
   readonly outcomes: readonly BuffBranchOutcome[]
 }
 
@@ -88,7 +88,7 @@ export interface BuffProjection {
   readonly won: BuffBranchProjection
   readonly lost: BuffBranchProjection
   /** Buffs that fire under some still-possible skull reading but not all. Today that is only
-   *  `sidestep`, and only on a lead — but this is DERIVED by diffing the fired sets across the
+   *  `skullLow`, and only on a lead — but this is DERIVED by diffing the fired sets across the
    *  readings, never by naming a family, so a future skull-reading family is handled here with
    *  no edit. The UI words these as "may fire" rather than printing a figure. */
   readonly indeterminate: readonly Buff[]
@@ -150,13 +150,13 @@ function branchFor(
   candidate: Card,
   remainingSuits: readonly ReturnType<typeof targetSuitOf>[],
   readings: readonly boolean[],
-  playerWon: boolean,
+  playerWentHigh: boolean,
 ): { readonly branch: BuffBranchProjection; readonly indeterminate: readonly Buff[] } {
   const perReading = readings.map((skullTrick) =>
     firedBuffs(
       input.active,
       input.firedThisHand,
-      contextFor(input, candidate, remainingSuits, playerWon, skullTrick),
+      contextFor(input, candidate, remainingSuits, playerWentHigh, skullTrick),
     ),
   )
   const certain = perReading[0].filter((buff) =>
@@ -167,11 +167,11 @@ function branchFor(
 
   return {
     branch: {
-      playerWon,
+      playerWentHigh,
       fired: certain,
       mayFire: deduped,
       outcomes: readings.map((skullTrick) => {
-        const outcome = trickOutcomeFor(playerWon, skullTrick)
+        const outcome = trickOutcomeFor(playerWentHigh, skullTrick)
         return {
           outcome,
           // `bank.ts`'s `TAKEN` table is the SINGLE statement of the skull inversion; this reads
@@ -191,12 +191,12 @@ function contextFor(
   input: BuffProjectionInput,
   candidate: Card,
   remainingSuits: readonly ReturnType<typeof targetSuitOf>[],
-  playerWon: boolean,
+  playerWentHigh: boolean,
   skullTrick: boolean,
 ): BuffTrickContext {
   return {
     ...input.facts,
-    playerWon,
+    playerWentHigh,
     skullTrick,
     playerSuits: [targetSuitOf(candidate.suit)],
     playerRanks: [candidate.rank],

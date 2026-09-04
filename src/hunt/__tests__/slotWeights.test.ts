@@ -65,8 +65,8 @@ describe('templateWeightFor', () => {
   // DLR-145 — the "leans the two machines in opposite directions" case this file used to carry is
   // GONE, not broken: it compared `Glutton`'s event-family share against `Hoarder`/`Unbloodied`'s
   // threshold-family share, and all three families were cut from `SLOT_FAMILY_WEIGHTS` along with
-  // the coins/apRefund axis lean Strongbox rode on. Every surviving weight (Taker, Feeder,
-  // Sidestep, Cheat; Magnitude, Multiplier) is unchanged from before the pruning — see
+  // the coins/apRefund axis lean Strongbox rode on. Every surviving weight (Suit High, Suit Low,
+  // Skull Low, Cheat; Magnitude, Multiplier) is unchanged from before the pruning — see
   // `slotWeights.ts`'s own comments on both tables — so there is no new lean to assert; a
   // replacement lean is a developer decision this ticket does not make.
 })
@@ -201,12 +201,12 @@ describe('the wildcard on the strip (DLR-162 AC1/AC10)', () => {
   })
 
   it('leaves every CONDITION template weight untouched - no condition template was added', () => {
-    // The wildcard is an ACTIVATED template, so it never enters `FAMILY_AXIS_TOTAL`. A Bell-Taker
+    // The wildcard is an ACTIVATED template, so it never enters `FAMILY_AXIS_TOTAL`. A Bell High
     // (Blade) on the Skirmisher is family 5, axis 3, family-axis total 6 templates x 3 = 18
-    // -> 5 * 3 / 18 = 0.8333, exactly as before. (The plan quoted 2.5 off a two-template Taker
+    // -> 5 * 3 / 18 = 0.8333, exactly as before. (The plan quoted 2.5 off a two-template Suit High
     // family; the family has held six templates since DLR-150.)
     expect(
-      templateWeightFor(SlotMachineId.Skirmisher, templateById('taker:bells:magnitude')!),
+      templateWeightFor(SlotMachineId.Skirmisher, templateById('suitHigh:bells:magnitude')!),
     ).toBeCloseTo(5 / 6)
   })
 

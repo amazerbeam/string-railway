@@ -13,8 +13,8 @@ import type {
 } from '../hunt'
 import type { RoundUiState } from '../app/warCouncil/roundUiState'
 
-/** A card and, for a Fox — the only rank that carries one since DLR-163 — the ability choice that
- *  must accompany it. Exactly `CpuMove`'s shape, so `chooseCpuMove` satisfies it with no wrapper. */
+/** A card and, for a Fox — the only rank that carries one since DLR-163 — its ability choice.
+ *  Exactly `CpuMove`'s shape, so `chooseCpuMove` satisfies it with no wrapper. */
 export interface CardChoice {
   readonly card: Card
   readonly choice?: AbilityChoice
@@ -28,15 +28,14 @@ export type ShopAction =
   | { readonly kind: 'flask' }
   /** play-tester (2026-09-02) — the Manage Buffs screen's combine, keyed by `buffCombineKey`: two
    *  identical cards at the same tier become one of the next tier. Added because `ShopAction` had
-   *  no member for it, so no measurement this project has ever taken exercised the upgrade path at
-   *  all. Executed defensively like every other action — the driver re-asks `combineRefusalFor`. */
+   *  no member for it, so no measurement had ever exercised the upgrade path. Executed defensively
+   *  like every other action — the driver re-asks `combineRefusalFor`. */
   | { readonly kind: 'combine'; readonly key: string }
 
 /** A Cheat buff to spend from the pile and the off-suit card to play with it. Named TOGETHER,
  *  deliberately: arming a Cheat and then playing a card that was follow-suit-legal anyway spends
- *  the card for nothing, which would report the Cheat as harmful rather than as unexercised.
- *  DLR-132 — `cheatId` is now a `BuffId`: the Cheat is an ordinary pile member spent through
- *  `TapBuff`, not a rail card with its own id space. */
+ *  the card for nothing, reporting the Cheat as harmful rather than as unexercised. DLR-132 —
+ *  `cheatId` is a `BuffId`: the Cheat is a pile member spent through `TapBuff`, not a rail card. */
 export interface CheatPlay {
   readonly cheatId: BuffId
   readonly card: Card
@@ -89,20 +88,18 @@ export interface SimPolicy {
    *  `false` rolls the pot over (`RoundUiActionKind.RollOver`).
    *
    *  Optional for `chooseDiscard`'s own reason: a stub would turn "this policy does not consider
-   *  the push" into "considers it and declines every time", which is a different claim about what
-   *  the printed figures mean. When a policy supplies no method, `playHand.ts`'s driver applies the
-   *  MODELLING DEFAULT documented there — apply whenever a pot stands, never rolling the dice — a
-   *  deliberate floor, not a claim about optimal play. */
+   *  the push" into "considers it and declines every time", a different claim about what the
+   *  printed figures mean. With no method, `playHand.ts`'s driver applies the MODELLING DEFAULT
+   *  documented there — apply whenever a pot stands — a floor, not a claim about optimal play. */
   wantsApplyPot?(ui: RoundUiState): boolean
 }
 
 /** One buff, as it stood the moment a between-tricks window opened — BEFORE that window's own
- *  activations run, so an earlier activation in the same window never biases a later buff's
- *  `refusal` (e.g. spending AP first would make a later buff read `InsufficientAp` for a reason
- *  that has nothing to do with the buff itself). `refusal: null` means it was activatable right
- *  then, whether or not the policy chose to. Recorded independently of `policy.chooseBuffs` —
- *  unlike `buffsActivated`, a kind the policy never even attempts still shows up here, which is
- *  what makes this answer "which buffs CAN'T be used" rather than "which buffs got used". */
+ *  activations run, so an earlier activation never biases a later buff's `refusal` (spending AP
+ *  first would make a later buff read `InsufficientAp` for a reason unrelated to it). `refusal:
+ *  null` means it was activatable right then, whether or not the policy chose to. Recorded
+ *  independently of `policy.chooseBuffs`, so a kind the policy never attempts still shows up —
+ *  which is what makes this "which buffs CAN'T be used" rather than "which got used". */
 export interface BuffWindowObservation {
   readonly kind: BuffKind
   readonly refusal: BuffActivationRefusal | null
@@ -114,22 +111,19 @@ export interface BuffWindowObservation {
 }
 
 /** One buff that was ACTIVATED for one trick (spent its AP, `activatedThisTrick` included its id),
- *  and whether `buffFires` actually paid it off on that trick — see `buffFires`
- *  (`src/hunt/buffEvaluation.ts`), the pure condition check this mirrors. `refusal`/`fired` are
- *  deliberately separate questions: `BuffWindowObservation` asks "could this be pressed", this asks
- *  "given it WAS pressed, did its condition ever come true" — a buff can be legally activated every
- *  trick and still never fire, if what it needs (e.g. Cornered's health threshold, Miser's coin
- *  threshold) cannot yet be true this early in a run. One row per activation-trick pairing, so a
- *  buff activated on three tricks in one hand contributes three rows. */
+ *  and whether `buffFires` (`src/hunt/buffEvaluation.ts`) actually paid it off on that trick.
+ *  `refusal`/`fired` are deliberately separate questions: `BuffWindowObservation` asks "could this
+ *  be pressed", this asks "given it WAS pressed, did its condition ever come true" — a buff can be
+ *  legally activated every trick and still never fire, if what it needs (e.g. Cornered's health
+ *  threshold) cannot yet be true this early in a run. One row per activation-trick pairing. */
 export interface BuffFireOutcome {
   readonly kind: BuffKind
   readonly fired: boolean
-  /** 2026-08-25 — WHICH quantity this card pays on when it fires: `Magnitude` (flat damage),
-   *  `Coins`, `ApRefund`, or `Multiplier`. A card is a condition CROSSED WITH a reward axis
-   *  (`buffTemplates.ts` → `TEMPLATE_FAMILIES`), so "did Taker help" is not answerable without it:
-   *  Bell-Taker on Magnitude and Bell-Taker on Coins share a trigger and pay in different
-   *  currencies. Read off `buff.reward.axis` at activation time, beside `kind`, for the reason
-   *  `kind` itself is captured there — `activatedThisTrick` clears when the trick resolves. */
+  /** 2026-08-25 — WHICH quantity this card pays on when it fires. A card is a condition CROSSED
+   *  WITH a reward axis (`buffTemplates.ts` → `TEMPLATE_FAMILIES`), so "did Suit High help" is not
+   *  answerable without it: Bell High on Magnitude and Bell High on Coins share a trigger and pay
+   *  in different currencies. Read off `buff.reward.axis` at activation time, beside `kind`, for
+   *  the reason `kind` is captured there — `activatedThisTrick` clears when the trick resolves. */
   readonly axis: BuffRewardAxis
   /** The tier that supplied `axis`'s value — bronze/silver/gold. Opening-pile cards are all bronze
    *  (`startingPile.ts`), so this separates an opening card from a slot-won upgrade. */
@@ -141,44 +135,43 @@ export interface BuffFireOutcome {
   /** 2026-08-25 — WHICH trick of the hand this activation belonged to (`round.tricksPlayed` as the
    *  trick resolved). The flat `buffFireOutcomes` array cannot otherwise be grouped back into
    *  tricks, and the Overlap Bonus (`buffAccrual.ts` → `overlapBonusFor`) pays
-   *  `max(0, firedCount - 1)` multiplier points for buffs firing on ONE trick — so "how many fired
-   *  together" is a different, and mechanically rewarded, question from "how many fired this hand".
-   *  UNIT: trick ordinal within the hand, 1-based. */
+   *  `max(0, firedCount - 1)` for buffs firing on ONE trick — so "how many fired together" is a
+   *  different, mechanically rewarded question. UNIT: trick ordinal in the hand, 1-based. */
   readonly trickOfHand: number
-  /** DLR-150 — whether the trick this activation resolved on was a LOSS on the OUTCOME axis (a
-   *  clean loss, or an eaten skull), as opposed to a Win (a clean win, or a dodge). A FEEDER firing
-   *  on a Loss banks its reward into the hand's carry instead of paying it this hand; every other
-   *  family and every Win pays as before. Recorded so "did this fire carry or pay" is answerable
-   *  without re-deriving the skull inversion, which `bank.ts`'s `TAKEN` table states exactly once. */
-  readonly trickWasLoss: boolean
+  /** DLR-150 — whether the trick this activation resolved on was a DEFEAT on the OUTCOME axis, as
+   *  opposed to a Victory. A SUIT LOW card firing on a Defeat banks its reward into the hand's
+   *  carry instead of paying it this hand; every other family and every Victory pays as before.
+   *  Recorded so "did this fire carry or pay" is answerable without re-deriving the skull
+   *  inversion, which `bank.ts`'s `TAKEN` table states once. Was `trickWasLoss` before DLR-165. */
+  readonly trickWasDefeat: boolean
   /** play-tester (2026-09-02) — the SUIT this card's condition is keyed to, or `null` for a family
-   *  that is not suit-parameterised (Sidestep) and for the activated cards. A Taker keyed to Bells
-   *  means nothing in a trace unless the suit actually led is beside it. */
+   *  that is not suit-parameterised (Skull Low) and for the activated cards. A Suit High card keyed
+   *  to Bells means nothing in a trace unless the suit actually led is beside it. */
   readonly target: string | null
 }
 
 /** play-tester (2026-09-02) — the four outcomes of `the-hunt.md` §7, counted, plus where the hurt
- *  ones happened. `cleanWin` and `dodge` BANK; `cleanLoss` and `skullWin` HURT, and cost exactly 1
- *  health each. `hurtLeading + hurtFollowing` therefore equals `cleanLoss + skullWin`. */
+ *  ones happened. DLR-165 renamed all four onto the two-axis scheme: the two VICTORIES bank and the
+ *  two DEFEATS hurt, costing exactly 1 health each, which is now what the names themselves say.
+ *  `hurtLeading + hurtFollowing` therefore equals `lowDefeat + highDefeat`. */
 export interface TrickOutcomeCounts {
-  readonly cleanWin: number
-  readonly dodge: number
-  readonly cleanLoss: number
-  readonly skullWin: number
+  readonly highVictory: number
+  readonly lowVictory: number
+  readonly lowDefeat: number
+  readonly highDefeat: number
   /** Hurt tricks the player was LEADING into — a bet on an unseen answer. */
   readonly hurtLeading: number
-  /** Hurt tricks the player was FOLLOWING — the lead was face up, so the outcome was chooseable
-   *  unless no legal card reached it. */
+  /** Hurt tricks the player was FOLLOWING — the lead was face up, so the outcome was chooseable. */
   readonly hurtFollowing: number
 }
 
 /** play-tester (2026-09-02) — the read taken before the buff window arms anything. */
 export interface TrickIntentRecord {
   /** The suit expected to decide the trick — chosen when the player leads, predicted from
-   *  `suitShape`'s posted counts when the Quarry does. */
+   *  `suitShape`'s posted counts otherwise. */
   readonly suit: string
-  /** Whether the plan was to TAKE the trick (a clean suit) or to LOSE it (a skull-heavy one, where
-   *  a dodge banks). Taker pays only on the first, Feeder and Sidestep only on the second. */
+  /** Whether the plan was to go HIGH on the trick (a clean suit) or LOW on it (a skull-heavy one,
+   *  where a Low Victory banks). Suit High pays on the first, Suit Low and Skull Low on the second. */
   readonly willTake: boolean
   /** False when the Quarry leads: the suit is a prediction, so fewer cards ride on it. */
   readonly certain: boolean
@@ -186,8 +179,7 @@ export interface TrickIntentRecord {
   readonly playerLeads: boolean
   /** The share of the Quarry's holding in `suit` that is skulled — the figure `willTake` turns on. */
   readonly skullOdds: number
-  /** How much of that suit the Quarry holds, and how much of it is skulled. Straight off the
-   *  screen's own readout. */
+  /** How much of that suit the Quarry holds, and how much is skulled. Off the screen's readout. */
   readonly held: number
   readonly skulled: number
   /** The card the plan meant to lead — `suit` and `rank` — or `null` when the Quarry leads. */
@@ -225,7 +217,7 @@ export interface TrickDamageRecord {
   readonly outcome: string
   /** play-tester (2026-09-02) — the two cards, in the engine's load-bearing lead-then-follow order,
    *  with the lead's skull mark. Without these a trace says which buffs were spent but not what was
-   *  played, and a Taker keyed to Bells only means anything beside the suit actually led. */
+   *  played, and a Suit High card keyed to Bells only means anything beside the suit actually led. */
   readonly cards: readonly TrickCardRecord[]
   /** The suit that was trump as this trick resolved — after any suit a Fox named in it. */
   readonly trumpSuit: string
@@ -305,14 +297,14 @@ export interface HandReport {
   /** Every activation-trick pairing this hand and whether it fired — see `BuffFireOutcome`. `[]`
    *  for a hand where nothing was ever activated. */
   readonly buffFireOutcomes: readonly BuffFireOutcome[]
-  /** DLR-150 — the Feeder carry this hand OPENED on, seeded from `RunState.feederCarry`
+  /** DLR-150 — the low carry this hand OPENED on, seeded from `RunState.lowCarry`
    *  (`accrual.carriedIn`). Zero on the first hand of every fight, because the carry is wiped at
    *  the fight boundary. UNIT: bonus points, per axis. */
-  readonly feederCarriedIn: BuffCarry
-  /** DLR-150 — the Feeder carry this hand BANKED for the next one (`accrual.carryOut`) — rewards
-   *  from Feeders that fired on a LOSS, which paid nothing in this hand. UNIT: bonus points,
-   *  per axis. */
-  readonly feederCarryOut: BuffCarry
+  readonly lowCarryIn: BuffCarry
+  /** DLR-150 — the low carry this hand BANKED for the next one (`accrual.carryOut`) — rewards
+   *  from Suit Low cards that fired on a DEFEAT, which paid nothing in this hand. UNIT: bonus
+   *  points, per axis. */
+  readonly lowCarryOut: BuffCarry
   /** play-tester (2026-09-02) — the player's health and ceiling as this hand OPENED, read off the
    *  hand's frozen `openingEncounter` and `RunState.maxPlayerHealth`. `damageToPlayer` says what a
    *  hand cost; these say what it was spent out of, which is the difference between a hand that
@@ -400,10 +392,9 @@ export interface SimOptions {
   readonly runs: number
   readonly baseSeed: number
   /** play-tester (2026-08-25) — OPTIONAL what-if weighting for the run's opening buff pile
-   *  (`src/sim/openingPileVariants.ts`). Absent means the production draw, unchanged, which is what
-   *  every existing caller gets. Present means each run's opening pile is redrawn under this
-   *  weighting from the SAME seed, so a variant batch differs from its baseline only by the
-   *  weighting. Deliberately on `SimOptions` and not on `SimPolicy`: the opening pile is game
-   *  configuration, not a decision the simulated player makes. */
+   *  (`src/sim/openingPileVariants.ts`). Absent means the production draw, unchanged. Present means
+   *  each run's opening pile is redrawn under this weighting from the SAME seed, so a variant batch
+   *  differs from its baseline only by the weighting. Deliberately on `SimOptions` and not on
+   *  `SimPolicy`: the opening pile is game configuration, not a decision the player makes. */
   readonly openingPileWeightOf?: (template: BuffTemplate) => number
 }

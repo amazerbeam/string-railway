@@ -94,10 +94,10 @@ export function playHand(
   const potsApplied: number[] = []
   const trickDamage: TrickDamageRecord[] = []
   const outcomes = {
-    cleanWin: 0,
-    dodge: 0,
-    cleanLoss: 0,
-    skullWin: 0,
+    highVictory: 0,
+    lowVictory: 0,
+    lowDefeat: 0,
+    highDefeat: 0,
     hurtLeading: 0,
     hurtFollowing: 0,
   }
@@ -120,11 +120,11 @@ export function playHand(
   // (`buffActivation.ts`), so this is the only place that window's active set survives to be
   // reconciled against `resolvedTrick.resolution.firedBuffIds` below. Carries the reward axis/tier
   // with the kind for the same reason: the `Buff` object is in hand HERE and gone later.
-  // `fired`, `trickOfHand` and `trickWasLoss` are ALL supplied at resolution, not here: this map is
+  // `fired`, `trickOfHand` and `trickWasDefeat` are ALL supplied at resolution, not here: this map is
   // built when the window opens, before the trick it belongs to has resolved.
   let pendingActive: ReadonlyMap<
     BuffId,
-    Omit<BuffFireOutcome, 'fired' | 'trickOfHand' | 'trickWasLoss'>
+    Omit<BuffFireOutcome, 'fired' | 'trickOfHand' | 'trickWasDefeat'>
   > = new Map()
   // 2026-08-25 — summed at each spend site rather than read as `capacity - endingApPool`: under
   // `ApRefreshCadence.PerTrick` the pool refills mid-hand, so a start/end diff would only ever
@@ -156,7 +156,7 @@ export function playHand(
 
     if (ui.resolvedTrick !== null) {
       const fired = ui.resolvedTrick.resolution.firedBuffIds
-      const trickWasLoss = !isTaken(ui.resolvedTrick.resolution.outcome)
+      const trickWasDefeat = !isTaken(ui.resolvedTrick.resolution.outcome)
       const outcome = ui.resolvedTrick.resolution.outcome
       outcomes[outcome] += 1
       if (!isTaken(outcome)) {
@@ -168,7 +168,7 @@ export function playHand(
           ...card,
           fired: fired.includes(id),
           trickOfHand: ui.round.tricksPlayed,
-          trickWasLoss,
+          trickWasDefeat,
         })
       }
       pendingActive = new Map()
@@ -282,7 +282,7 @@ export function playHand(
       // clears the moment this trick resolves, before `buffFireOutcomes` above gets to read it.
       // DLR-145 — union `offeredBuffs` with `spentThisTrick`, the same fix `buffHandInputFor`
       // (`src/app/warCouncil/buffRoundState.ts`) already applies: a single-use condition card
-      // (Taker/Feeder/Sidestep) is removed from the pile — and so from `offeredBuffs` — the
+      // (Suit High/Suit Low/Skull Low) is removed from the pile — and so from `offeredBuffs` — the
       // instant `activateFromPile` consumes it, so looking it up in `offeredBuffs` alone silently
       // drops it here even though `buffsActivated` counted it. Keep these two readings in step.
       const candidates = [...offeredBuffs(ui), ...ui.buffActivation.spentThisTrick]
@@ -374,8 +374,8 @@ export function playHand(
     fault,
     buffWindowObservations,
     buffFireOutcomes,
-    feederCarriedIn: ui.buffHand.accrual.carriedIn,
-    feederCarryOut: ui.buffHand.accrual.carryOut,
+    lowCarryIn: ui.buffHand.accrual.carriedIn,
+    lowCarryOut: ui.buffHand.accrual.carryOut,
     streakIn: run.streak,
     streakOut: result.streak,
   }

@@ -16,16 +16,16 @@ const buff = (id: string, tier: BuffTier, buffId: number): Buff =>
 
 // Three suit/family variants, all on the Momentum axis at Bronze (+2), so the fired-text cases
 // below can add the Overlap Bonus (also Momentum) without a second axis in the mix.
-const taker = buff('taker:bells:multiplier', BuffTier.Bronze, 1)
-// Feeder is Blade-only in the pared pool (DLR-145) — `feeder:keys:multiplier` has no surviving
-// template (`TEMPLATE_FAMILIES` lists only `[BuffRewardAxis.Magnitude]` for Feeder). The
+const bellHigh = buff('suitHigh:bells:multiplier', BuffTier.Bronze, 1)
+// Suit Low is Blade-only in the pared pool (DLR-145) — `suitLow:keys:multiplier` has no surviving
+// template (`TEMPLATE_FAMILIES` lists only `[BuffRewardAxis.Magnitude]` for Suit Low). The
 // Multiplier version is still declared on `BuffKind`/`buffFires`, just off the shelf — see
 // `buffTemplates.ts`'s own comment on restoring it — so it is built directly as a `Buff` literal.
-const feeder: Buff = {
+const keyLow: Buff = {
   id: 2,
-  kind: BuffKind.Feeder,
+  kind: BuffKind.SuitLow,
   tier: BuffTier.Bronze,
-  condition: { kind: BuffKind.Feeder, target: { suit: BuffTargetSuit.Keys } },
+  condition: { kind: BuffKind.SuitLow, target: { suit: BuffTargetSuit.Keys } },
   reward: { axis: BuffRewardAxis.Multiplier, value: 2 },
 }
 // Hoarder has no surviving template (DLR-145) — still declared on `BuffKind`, so built directly
@@ -51,14 +51,14 @@ describe('overlapBonusText', () => {
 
 describe('firedBuffNames', () => {
   it('resolves ids against the offered pile, in fired order', () => {
-    expect(firedBuffNames([feeder.id, taker.id], [taker, feeder])).toEqual([
-      'Key-Feeder (Momentum)',
-      'Bell-Taker (Momentum)',
+    expect(firedBuffNames([keyLow.id, bellHigh.id], [bellHigh, keyLow])).toEqual([
+      'Key Low (Momentum)',
+      'Bell High (Momentum)',
     ])
   })
 
   it('drops an id with no match rather than rendering undefined into a sentence', () => {
-    expect(firedBuffNames([999], [taker])).toEqual([])
+    expect(firedBuffNames([999], [bellHigh])).toEqual([])
   })
 })
 
@@ -68,12 +68,12 @@ describe('buffFiredText', () => {
   })
 
   it('names one fired buff and its reward', () => {
-    expect(buffFiredText([taker.id], [taker])).toBe('Bell-Taker (Momentum): +2 multiplier.')
+    expect(buffFiredText([bellHigh.id], [bellHigh])).toBe('Bell High (Momentum): +2 multiplier.')
   })
 
   it('names several, and the Overlap Bonus after them', () => {
-    expect(buffFiredText([taker.id, feeder.id, hoarder.id], [taker, feeder, hoarder])).toBe(
-      'Bell-Taker (Momentum): +2 multiplier. Key-Feeder (Momentum): +2 multiplier. ' +
+    expect(buffFiredText([bellHigh.id, keyLow.id, hoarder.id], [bellHigh, keyLow, hoarder])).toBe(
+      'Bell High (Momentum): +2 multiplier. Key Low (Momentum): +2 multiplier. ' +
         'Hoarder (Momentum): +2 multiplier. Overlap Bonus +2 Momentum.',
     )
   })

@@ -18,13 +18,13 @@ function fromTemplate(id: string, tier: BuffTier, buffId: BuffId): Buff {
   return mintFromTemplate(template, tier, buffId)
 }
 
-const bellTaker = (tier: BuffTier, id: BuffId) => fromTemplate('taker:bells:magnitude', tier, id)
-const sidestep = (tier: BuffTier, id: BuffId) => fromTemplate('sidestep:magnitude', tier, id)
-const wildBronzeTaker = (id: BuffId) => wildenedBuff(bellTaker(BuffTier.Bronze, id))
+const bellHigh = (tier: BuffTier, id: BuffId) => fromTemplate('suitHigh:bells:magnitude', tier, id)
+const skullLow = (tier: BuffTier, id: BuffId) => fromTemplate('skullLow:magnitude', tier, id)
+const wildBronzeHigh = (id: BuffId) => wildenedBuff(bellHigh(BuffTier.Bronze, id))
 
 describe('the wildcard band (DLR-162)', () => {
   it('lists every held wildcard id, ascending, and is empty when none are held', () => {
-    expect(manageBuffsView([bellTaker(BuffTier.Bronze, 1)]).wildcards).toEqual([])
+    expect(manageBuffsView([bellHigh(BuffTier.Bronze, 1)]).wildcards).toEqual([])
     expect(
       manageBuffsView([wildcardBuff(BuffTier.Bronze, 5), wildcardBuff(BuffTier.Silver, 2)])
         .wildcards,
@@ -35,9 +35,9 @@ describe('the wildcard band (DLR-162)', () => {
 describe('the target grid (DLR-162 AC5)', () => {
   const pile = [
     wildcardBuff(BuffTier.Bronze, 1),
-    bellTaker(BuffTier.Bronze, 2),
-    sidestep(BuffTier.Bronze, 3),
-    wildBronzeTaker(4),
+    bellHigh(BuffTier.Bronze, 2),
+    skullLow(BuffTier.Bronze, 3),
+    wildBronzeHigh(4),
   ]
 
   it('includes every held card, refused ones with their reason', () => {
@@ -69,17 +69,17 @@ describe('the target grid (DLR-162 AC5)', () => {
 
 describe('a wild pile names the card it eats (DLR-162)', () => {
   it('reports the suited partner on the group, and null for an ordinary combine', () => {
-    const wildPile = manageBuffsView([wildBronzeTaker(1), bellTaker(BuffTier.Bronze, 2)]).groups
+    const wildPile = manageBuffsView([wildBronzeHigh(1), bellHigh(BuffTier.Bronze, 2)]).groups
     const wildGroup = wildPile.find((g) => g.refusal === null)!
     expect(wildGroup.partner?.id).toBe(2)
 
-    const plain = manageBuffsView([bellTaker(BuffTier.Bronze, 1), bellTaker(BuffTier.Bronze, 2)])
+    const plain = manageBuffsView([bellHigh(BuffTier.Bronze, 1), bellHigh(BuffTier.Bronze, 2)])
       .groups
     expect(plain.find((g) => g.refusal === null)!.partner).toBeNull()
   })
 
   it('previews the wild product a wild pile makes, not a suited one', () => {
-    const groups = manageBuffsView([wildBronzeTaker(1), bellTaker(BuffTier.Bronze, 2)]).groups
+    const groups = manageBuffsView([wildBronzeHigh(1), bellHigh(BuffTier.Bronze, 2)]).groups
     const ready = groups.find((g) => g.refusal === null)!
     expect(buffIsWild(ready.produces!)).toBe(true)
     expect(ready.produces!.tier).toBe(BuffTier.Silver)

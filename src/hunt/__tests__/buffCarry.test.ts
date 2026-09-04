@@ -10,39 +10,39 @@ import {
 import { BuffKind, BuffRewardAxis, BuffTargetSuit, BuffTier, type Buff } from '../buffs'
 
 /**
- * DLR-150 AC1/AC2/AC3/AC7 — the four named cases on the pure accrual: a Loss-firing Feeder
- * carries and pays nothing this hand, the same card firing on a dodge pays this hand as today,
- * the carry seeds the next hand and survives a later same-axis accrual unclipped, and a non-Feeder
- * firing on a Loss is unchanged.
+ * DLR-150 AC1/AC2/AC3/AC7 — the four named cases on the pure accrual: a Defeat-firing Suit Low card
+ * carries and pays nothing this hand, the same card firing on a Low Victory pays this hand as
+ * today, the carry seeds the next hand and survives a later same-axis accrual unclipped, and a
+ * non-Suit-Low card firing on a Defeat is unchanged.
  */
 
-const bladeFeeder: Buff = {
+const bladeSuitLow: Buff = {
   id: 1,
-  kind: BuffKind.Feeder,
+  kind: BuffKind.SuitLow,
   tier: BuffTier.Bronze,
-  condition: { kind: BuffKind.Feeder, target: { suit: BuffTargetSuit.Bells } },
+  condition: { kind: BuffKind.SuitLow, target: { suit: BuffTargetSuit.Bells } },
   reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
 }
 
-const momentumFeeder: Buff = {
+const momentumSuitLow: Buff = {
   id: 2,
-  kind: BuffKind.Feeder,
+  kind: BuffKind.SuitLow,
   tier: BuffTier.Bronze,
-  condition: { kind: BuffKind.Feeder, target: { suit: BuffTargetSuit.Keys } },
+  condition: { kind: BuffKind.SuitLow, target: { suit: BuffTargetSuit.Keys } },
   reward: { axis: BuffRewardAxis.Multiplier, value: 2 },
 }
 
-const bladeTaker: Buff = {
+const bladeSuitHigh: Buff = {
   id: 3,
-  kind: BuffKind.Taker,
+  kind: BuffKind.SuitHigh,
   tier: BuffTier.Bronze,
-  condition: { kind: BuffKind.Taker, target: { suit: BuffTargetSuit.Bells } },
+  condition: { kind: BuffKind.SuitHigh, target: { suit: BuffTargetSuit.Bells } },
   reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
 }
 
-describe('DLR-150 AC1 — a Feeder firing on a Loss carries and pays nothing this hand', () => {
+describe('DLR-150 AC1 — a Suit Low card firing on a Defeat carries and pays nothing this hand', () => {
   it('routes the reward into carryOut, not the payable axis', () => {
-    const carried = resolveFiredBuffs(startHandAccrual(), [bladeFeeder], true)
+    const carried = resolveFiredBuffs(startHandAccrual(), [bladeSuitLow], true)
     expect(carried.carryOut).toEqual({ multiplierBonus: 0, flatDamageBonus: 1 })
     expect({
       multiplierBonus: carried.multiplierBonus,
@@ -51,9 +51,9 @@ describe('DLR-150 AC1 — a Feeder firing on a Loss carries and pays nothing thi
   })
 })
 
-describe('DLR-150 AC2 — the same card firing on a dodge pays this hand', () => {
+describe('DLR-150 AC2 — the same card firing on a Low Victory pays this hand', () => {
   it('pays this hand and a second fired buff still adds the Overlap Bonus', () => {
-    const paid = resolveFiredBuffs(startHandAccrual(), [bladeFeeder, momentumFeeder], false)
+    const paid = resolveFiredBuffs(startHandAccrual(), [bladeSuitLow, momentumSuitLow], false)
     expect(paid.carryOut).toEqual(EMPTY_BUFF_CARRY)
     expect({
       multiplierBonus: paid.multiplierBonus,
@@ -81,11 +81,11 @@ describe('DLR-150 AC3 — the carry seeds the next hand', () => {
   })
 })
 
-describe('a non-Feeder firing on a Loss is unchanged', () => {
-  it('a Taker that ate a skull still pays this hand', () => {
-    const takerLoss = resolveFiredBuffs(startHandAccrual(), [bladeTaker], true)
-    expect(takerLoss.carryOut).toEqual(EMPTY_BUFF_CARRY)
-    expect(takerLoss.flatDamageBonus).toBe(1)
+describe('a non-Suit-Low card firing on a Defeat is unchanged', () => {
+  it('a Suit High card on a High Defeat still pays this hand', () => {
+    const suitHighDefeat = resolveFiredBuffs(startHandAccrual(), [bladeSuitHigh], true)
+    expect(suitHighDefeat.carryOut).toEqual(EMPTY_BUFF_CARRY)
+    expect(suitHighDefeat.flatDamageBonus).toBe(1)
   })
 })
 

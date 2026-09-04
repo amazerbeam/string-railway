@@ -42,7 +42,7 @@ function wardBuff(tier: BuffTier, id: number): Buff {
 }
 
 /** A condition-family buff, DLR-145 — `kind` is the caller's, so the same helper builds a
- *  consumed family (Taker) and a kept one (MarkOfRank). `reward.axis` is `Magnitude` so
+ *  consumed family (SuitHigh) and a kept one (MarkOfRank). `reward.axis` is `Magnitude` so
  *  `apCostOf` can price it through `REWARD_BASE`. */
 function conditionBuff(kind: BuffKind, tier: BuffTier, id: number): Buff {
   return {
@@ -326,8 +326,8 @@ describe('AP_ENABLED is off (DLR-145) — the pool never actually drops, however
 
 describe('spentThisTrick (DLR-145)', () => {
   it('records a consumed condition card, and drops it from the returned pile', () => {
-    const taker = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
-    const { activation, buffs } = activateFromPile(startBuffActivation(), [taker], taker, true)
+    const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
+    const { activation, buffs } = activateFromPile(startBuffActivation(), [suitHigh], suitHigh, true)
     expect(buffs).toHaveLength(0)
     expect(activation.spentThisTrick.map((buff) => buff.id)).toEqual([1])
     expect(activation.activatedThisTrick).toEqual([1])
@@ -341,16 +341,16 @@ describe('spentThisTrick (DLR-145)', () => {
   })
 
   it('openBuffWindow clears spentThisTrick on the SAME edge as activatedThisTrick', () => {
-    const taker = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
-    const { activation } = activateFromPile(startBuffActivation(), [taker], taker, true)
+    const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
+    const { activation } = activateFromPile(startBuffActivation(), [suitHigh], suitHigh, true)
     const next = openBuffWindow(activation)
     expect(next.spentThisTrick).toEqual([])
     expect(next.activatedThisTrick).toEqual([])
   })
 
   it('refreshBuffsForNewHand clears it too', () => {
-    const taker = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
-    const { activation } = activateFromPile(startBuffActivation(), [taker], taker, true)
+    const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
+    const { activation } = activateFromPile(startBuffActivation(), [suitHigh], suitHigh, true)
     expect(refreshBuffsForNewHand(activation).spentThisTrick).toEqual([])
   })
 })

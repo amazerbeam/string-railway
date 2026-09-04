@@ -16,13 +16,15 @@ import {
   type IncomingDamage,
 } from '../hunt'
 
-/** §3.2's four rows. Named rather than a pair of booleans at every branch, so the rule reads
- *  out of the code the way it reads out of the design's table. */
+/** §3.2's four rows. Renamed by DLR-165 onto the two-axis scheme: the first word is the
+ *  MECHANICAL act (High = the player took the cards), the second is the OUTCOME (Victory = banks,
+ *  Defeat = hurts). Named rather than a pair of booleans at every branch, so the rule reads out of
+ *  the code the way it reads out of the design's table. */
 export const TrickOutcome = {
-  CleanWin: 'cleanWin', // AC4 — take the trick
-  Dodge: 'dodge', // AC5 — take the trick
-  CleanLoss: 'cleanLoss', // AC6 — take the damage
-  SkullWin: 'skullWin', // AC7 — take the damage
+  HighVictory: 'highVictory', // was CleanWin  — AC4, took a clean trick
+  LowVictory: 'lowVictory', // was Dodge     — AC5, did not take a skulled trick
+  LowDefeat: 'lowDefeat', // was CleanLoss — AC6, did not take a clean trick
+  HighDefeat: 'highDefeat', // was SkullWin  — AC7, took a skulled trick
 } as const
 export type TrickOutcome = (typeof TrickOutcome)[keyof typeof TrickOutcome]
 
@@ -81,7 +83,9 @@ export interface TrickResolution extends StreakState {
  * transposed pair of booleans type-checks cleanly and produces plausible numbers.
  */
 export interface TrickFacts {
-  readonly playerWon: boolean
+  /** DLR-165 — the MECHANICAL axis: the player physically took the cards, before the skull
+   *  inverts what that is worth. */
+  readonly playerWentHigh: boolean
   /** Any card played into the trick carries a skull (§3.2). */
   readonly skullTrick: boolean
   /** The last trick of the hand, so AC8's end-of-hand cash applies. */
@@ -94,7 +98,7 @@ export interface TrickFacts {
    *  Swan into this trick. A plain FACT handed in, never a run figure read, exactly as
    *  `baseDamageBonus` above: this module must not learn who holds which card.
    *  `rankTierRules.ts`'s `swanTierFactsFor` is the single producer, and AC3's player-only gate
-   *  lives there. Only ever consulted on a CLEAN LOSS — see `resolveTrickBank`. */
+   *  lives there. Only ever consulted on a LOW DEFEAT — see `resolveTrickBank`. */
   readonly swanKeepsMultiplier: boolean
   /** DLR-122 AC5 — as above, at gold. Gold IMPLIES silver, and `resolveTrickBank` folds that
    *  implication in itself rather than trusting the caller, so a hand-built fact object cannot
@@ -113,20 +117,22 @@ export interface TrickFacts {
   readonly treasureTrick: boolean
 }
 
-/** §3.2's table as a total function. The skull inverts the trick: on a clean trick you want to
- *  win it, on a skull trick you want to lose it. */
-export function trickOutcomeFor(playerWon: boolean, skullTrick: boolean): TrickOutcome {
-  if (playerWon) {
-    return skullTrick ? TrickOutcome.SkullWin : TrickOutcome.CleanWin
+/** §3.2's table as a total function. The skull inverts the trick: on a clean trick you want to go
+ *  high, on a skull trick you want to go low. */
+export function trickOutcomeFor(playerWentHigh: boolean, skullTrick: boolean): TrickOutcome {
+  if (playerWentHigh) {
+    return skullTrick ? TrickOutcome.HighDefeat : TrickOutcome.HighVictory
   }
-  return skullTrick ? TrickOutcome.Dodge : TrickOutcome.CleanLoss
+  return skullTrick ? TrickOutcome.LowVictory : TrickOutcome.LowDefeat
 }
 
+/** Whether the outcome BANKS. The two Victories do, the two Defeats do not — which is now what
+ *  the names themselves say. */
 const TAKEN: Readonly<Record<TrickOutcome, boolean>> = {
-  [TrickOutcome.CleanWin]: true,
-  [TrickOutcome.Dodge]: true,
-  [TrickOutcome.CleanLoss]: false,
-  [TrickOutcome.SkullWin]: false,
+  [TrickOutcome.HighVictory]: true,
+  [TrickOutcome.LowVictory]: true,
+  [TrickOutcome.LowDefeat]: false,
+  [TrickOutcome.HighDefeat]: false,
 }
 
 /** Whether an outcome banks the cards (AC4/AC5) or takes damage (AC6/AC7). A total `Record`
@@ -171,25 +177,26 @@ function safeBonus(bonus: number): number {
  * producible from the inputs this takes.
  */
 export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickResolution {
-  const outcome = trickOutcomeFor(trick.playerWon, trick.skullTrick)
+  const outcome = trickOutcomeFor(trick.playerWentHigh, trick.skullTrick)
   const taken = isTaken(outcome)
 
   let total = before.total
   let roll = before.roll
   let trickDamage: TrickDamage | null = null
 
-  // A hit is a trick the player did not take — a clean loss or a skull win.
+  // A hit is a trick that hurt — a Low Defeat or a High Defeat.
   const trickHit = !taken
 
-  // DLR-122 AC4/AC5 — the Swan ladder, gated on CLEAN LOSS here rather than at the call site.
+  // DLR-122 AC4/AC5 — the Swan ladder, gated on LOW DEFEAT here rather than at the call site.
   // "Not an eaten skull" is a rule about OUTCOMES, and outcomes are this module's subject; a
   // caller-side gate would put half of AC4 in `playCard.ts`, where no bank spec would ever see
-  // it. A Dodge and a Clean Win have no hit to spare and a Skull Win is the eaten skull AC4
-  // excludes by name, so `CleanLoss` is the whole of it.
-  const swanCleanLoss = outcome === TrickOutcome.CleanLoss
-  const swanKeepsBank = swanCleanLoss && trick.swanKeepsBank
+  // it. A Low Victory and a High Victory have no hit to spare and a High Defeat is the eaten skull
+  // AC4 excludes by name, so `LowDefeat` is the whole of it. Keyed on the OUTCOME rather than on
+  // the player going low, deliberately — a Low Victory is also a trick the player did not take.
+  const swanLowDefeat = outcome === TrickOutcome.LowDefeat
+  const swanKeepsBank = swanLowDefeat && trick.swanKeepsBank
   // Gold implies silver, folded in HERE rather than trusted from the caller.
-  const swanKeepsMultiplier = swanCleanLoss && (trick.swanKeepsMultiplier || trick.swanKeepsBank)
+  const swanKeepsMultiplier = swanLowDefeat && (trick.swanKeepsMultiplier || trick.swanKeepsBank)
 
   // DLR-163 AC10 — a Treasure REPLACES the flat hit rather than adding to it. This is the line
   // that retires the-hunt.md §8's "damage to the player, per event: 1, every time" — every
@@ -207,7 +214,7 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
 
   // DLR-124 R3/R4 — condition evaluation, unchanged in shape: DLR-156 moves the DAMAGE axes
   // (Blade/Momentum) off this accrual and onto `trickBonusFor` below, but coins, the AP refund
-  // and the Feeder carry still run through here exactly as before. Cited, never restated:
+  // and the low carry still run through here exactly as before. Cited, never restated:
   // hybrid-design.md §5.
   const buffOutcome =
     trick.buffs === null
@@ -215,7 +222,7 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
       : resolveTrickBuffs(
           trick.buffs,
           {
-            playerWon: trick.playerWon,
+            playerWentHigh: trick.playerWentHigh,
             skullTrick: trick.skullTrick,
             playerHit: damageToPlayer > 0,
             finalTrick: trick.finalTrick,
@@ -254,7 +261,7 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     // Reads `trick.buffs.active`, NOT `fired`: a Curse is `BuffCadence.Activated`, so it is
     // excluded from the fired set by design and its payoff is owed for the trick it was ACTIVATED
     // for. Only a BANKED trick reaches this branch at all, which is what makes AC6's reward
-    // self-gating with no "only on a dodge" condition written anywhere.
+    // self-gating with no "only on a Low Victory" condition written anywhere.
     const curse = trick.buffs === null ? EMPTY_CURSE_BONUS : curseBonusOf(trick.buffs.active)
     const base = BASE_DAMAGE + safeBonus(trick.baseDamageBonus) + safeBonus(curse.damage)
     const buffMult = 1 + bonus.multiplierBonus + bonus.overlapBonus + safeBonus(curse.multiplier)
@@ -275,7 +282,7 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     // is lost, full stop. That is the change that makes the roll-over choice a real bet.
     //
     // DLR-122 AC5 — gold spares the streak from this reset entirely. This is the
-    // poisoned-clean-loss exception's own shape (`the-hunt.md` §7) reached by a different
+    // poisoned-Low-Defeat exception's own shape (`the-hunt.md` §7) reached by a different
     // trigger, not a second implementation of it: `replaced` above already skips the hit for the
     // same reason, and this skips the reset one branch below it. The DAMAGE is untouched either
     // way — it was booked into `damageToPlayer` above and no Swan rung insures against it.
@@ -310,8 +317,8 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     // DLR-163 AC8 — reported OUT, never applied here. The fight's base-damage figure is RUN state
     // and this module has never been allowed to see one — the same contract `baseDamageBonus`
     // states from the other direction. `taken` is the OUTCOME axis, which is exactly AC9's
-    // "victorious means the outcome axis, not the mechanical one": a dodge earns it and an eaten
-    // skull does not.
+    // "Victory means the outcome axis, not the mechanical one": a Low Victory earns it and a High
+    // Defeat does not.
     treasureBonusEarned: trick.treasureTrick && taken,
     total,
     roll,

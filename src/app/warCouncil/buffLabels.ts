@@ -20,10 +20,13 @@ import type { BuffStack } from './buffGalleryModel'
  *  so their words are this ticket's own PLACEHOLDER copy. Keyed over the closed `BuffKind` union so
  *  a member added later fails to compile here rather than rendering `undefined`. */
 export const BUFF_FAMILY_WORD: Readonly<Record<BuffKind, string>> = {
-  [BuffKind.Taker]: 'Taker',
-  [BuffKind.Feeder]: 'Feeder',
+  // DLR-165 — the family word is now an adjective naming the card's own condition. The two
+  // suit-parameterised families take the suit prefix in `buffName`; `SkullLow` is suitless and so
+  // carries its whole name here.
+  [BuffKind.SuitHigh]: 'High',
+  [BuffKind.SuitLow]: 'Low',
   [BuffKind.MarkOfRank]: 'Mark of the',
-  [BuffKind.Sidestep]: 'Sidestep',
+  [BuffKind.SkullLow]: 'Skull Low',
   [BuffKind.Glutton]: 'Glutton',
   [BuffKind.Hoarder]: 'Hoarder',
   [BuffKind.Unbloodied]: 'Unbloodied',
@@ -48,20 +51,27 @@ export const BUFF_FAMILY_WORD: Readonly<Record<BuffKind, string>> = {
   [BuffKind.Curse]: 'Curse',
 }
 
-/** The condition half, in sentence form. The eleven family rows are TRANSCRIBED from the same
- *  table; the activated cards have no condition at all, which is what `ACTIVATED_BUFF_CONDITION`
- *  already says, so they read as an action the player takes. Suit and rank are substituted by
- *  `buffConditionSentence` below. */
+/** The condition half, in sentence form. Suit and rank are substituted by `buffConditionSentence`
+ *  below.
+ *
+ *  DLR-165 AC5 — every row is phrased on the MECHANICAL axis and NO ROW NAMES VICTORY OR DEFEAT.
+ *  That is the rule that stops the two vocabularies re-merging: the moment a card can be read as
+ *  being about the outcome, the original confusion is back. The eight CUT families are re-phrased
+ *  too — no player can reach them, but leaving outcome words in this table is how the retired
+ *  vocabulary comes back the day a family is restored. A spec in `buffLabels.test.ts` guards it.
+ *
+ *  The `{suit}` rows say "on {suit}" rather than "on a {suit} trick" because DLR-162 substitutes
+ *  `any suit` for a wild card, and the article would produce "on a any suit trick". */
 export const BUFF_CONDITION_SENTENCE: Readonly<Record<BuffKind, string>> = {
-  [BuffKind.Taker]: 'win a trick with {suit}',
-  [BuffKind.Feeder]: 'lose a trick with {suit}',
-  [BuffKind.MarkOfRank]: 'win a trick with a {rank}',
+  [BuffKind.SuitHigh]: 'go high on {suit}',
+  [BuffKind.SuitLow]: 'go low on {suit}',
+  [BuffKind.MarkOfRank]: 'go high on a trick with a {rank}',
   // DLR-167 AC10 — the old wording claimed the buff attached to a card. NO BUFF ATTACHES TO A
   // CARD: a buff is activated FOR A TRICK and checked when that trick resolves. It came from the
   // unbuilt "Apply-to-card" category in `v1-buff-card-list.md`, which was never built.
-  // COPY IS THE DEVELOPER'S CALL — see `tasks.md` -> Developer decides or observes.
-  [BuffKind.Sidestep]: 'a skull trick you do not take',
-  [BuffKind.Glutton]: 'eat a skull with this card',
+  // DLR-165 AC7 — and it is now stated on the High/Low axis, which is what the card actually reads.
+  [BuffKind.SkullLow]: 'go low on a skull',
+  [BuffKind.Glutton]: 'go high on a skull',
   [BuffKind.Hoarder]: 'reach a high bank this hand',
   [BuffKind.Unbloodied]: 'survive several tricks without a hit',
   [BuffKind.DebtCollector]: 'apply damage this hand',
@@ -76,9 +86,10 @@ export const BUFF_CONDITION_SENTENCE: Readonly<Record<BuffKind, string>> = {
   [BuffKind.Foresight]: 'look at the draw pile',
   [BuffKind.Spyglass]: "look at the Quarry's hand",
   [BuffKind.Unassigned]: 'nothing yet',
-  // DLR-161 — the BRONZE reading for both. PLACEHOLDER copy.
-  [BuffKind.SkullHelmet]: 'eat a skull with this card',
-  [BuffKind.SkullTether]: 'eat a skull with this card',
+  // DLR-161 — the BRONZE reading for both. PLACEHOLDER copy. DLR-165 moved it onto the High/Low
+  // axis and dropped the same false "with this card" AC7 corrects on Skull Low.
+  [BuffKind.SkullHelmet]: 'go high on a skull',
+  [BuffKind.SkullTether]: 'go high on a skull',
   // DLR-162 — it has no trigger, so it reads as the action the player takes, exactly as Cheat's
   // row does. PLACEHOLDER copy.
   [BuffKind.Wildcard]: 'spend it on a suited card between fights',
@@ -87,13 +98,15 @@ export const BUFF_CONDITION_SENTENCE: Readonly<Record<BuffKind, string>> = {
   [BuffKind.Curse]: 'put a skull on a card in your hand',
 }
 
-/** DLR-161 AC5 — silver and gold print a WIDER sentence than bronze, because they fire on a clean
- *  loss as well as an eaten skull. A `Partial` beside the total table above, selected by
+/** DLR-161 AC5 — silver and gold print a WIDER sentence than bronze, because they fire on a Low
+ *  Defeat as well as a High Defeat. A `Partial` beside the total table above, selected by
  *  `conditionIsWidened`, so the tier rule is READ from `src/hunt/buffProtection.ts` and never
- *  restated here — the drift this codebase repeatedly designs against. PLACEHOLDER copy. */
+ *  restated here — the drift this codebase repeatedly designs against. PLACEHOLDER copy.
+ *
+ *  DLR-165 AC5 — "eat a skull, or lose a trick" named the OUTCOME axis on a card face. */
 export const BUFF_WIDENED_CONDITION_SENTENCE: Partial<Readonly<Record<BuffKind, string>>> = {
-  [BuffKind.SkullHelmet]: 'eat a skull, or lose a trick',
-  [BuffKind.SkullTether]: 'eat a skull, or lose a trick',
+  [BuffKind.SkullHelmet]: 'go high on a skull, or low on a clean trick',
+  [BuffKind.SkullTether]: 'go high on a skull, or low on a clean trick',
 }
 
 /** The reward suffix half. The four priced axes are TRANSCRIBED from the same document's
@@ -120,9 +133,11 @@ const SUIT_WORD: Readonly<Record<BuffTargetSuit, string>> = {
   [BuffTargetSuit.Moons]: 'Moons',
 }
 
-/** `Bell-Taker (Momentum)` / `Mark of the 9 (Blade)` / `Cheat (Free Rein)` — the naming grammar
- *  `v1-buff-card-list.md` sets: the three suit-parameterised families prefix the suit, ranks are
- *  substituted into the family word, and the reward suffix closes in parentheses. */
+/** `Bell High (Momentum)` / `Skull Low (Blade)` / `Mark of the 9 (Blade)` / `Cheat (Free Rein)` —
+ *  the naming grammar `v1-buff-card-list.md` sets: the suit-parameterised families prefix the suit,
+ *  ranks are substituted into the family word, and the reward suffix closes in parentheses.
+ *  DLR-165 replaced DLR-114's hyphenated `Bell-Taker` join with a SPACE: the family word is now an
+ *  adjective phrase ("High"), not a noun ("Taker"), and a hyphen reads wrong on one. */
 export function buffName(buff: Buff): string {
   const suit = buffTargetSuitOf(buff)
   const rank = buffTargetRankOf(buff)
@@ -136,7 +151,7 @@ export function buffName(buff: Buff): string {
     : rank !== null
       ? `${family} ${rank}`
       : suit !== null
-        ? `${SUIT_WORD[suit].replace(/s$/, '')}-${family}`
+        ? `${SUIT_WORD[suit].replace(/s$/, '')} ${family}`
         : family
   return `${head} (${BUFF_REWARD_SUFFIX[buff.reward.axis]})`
 }
@@ -200,7 +215,7 @@ const BUFF_TIER_WORD: Readonly<Record<BuffTier, string>> = {
 
 /** THE one glanceable line, and the row's own accessible name — one string, so what a sighted
  *  player reads and what a screen reader announces cannot drift.
- *  `Bronze Bell-Taker (Momentum) — win a trick with Bells: +2 multiplier.`
+ *  `Bronze Bell High (Momentum) — go high on Bells: +2 multiplier.`
  *  DLR-145 AC2 — the trailing `N AP.` is gone with action points. The parameter is REMOVED rather
  *  than passed a zero: a row that reads "0 AP" still claims a resource exists. */
 export function buffLine(buff: Buff): string {
@@ -252,25 +267,26 @@ const CADENCE_WORD: Readonly<Record<BuffCadence, string>> = {
 export const BUFF_CADENCE_WORD: Readonly<Record<BuffCadence, string>> = CADENCE_WORD
 
 /** `Event` is shared by three live families that fire on different branches of the trick, so the
- *  word is narrowed by kind. MECHANICAL vocabulary — TAKE / MISS / DODGE — because every buff
- *  condition reads `playerWon`, "did the player physically take the cards", NOT the outcome axis
- *  the bank and the damage read. `CLAUDE.md` names this as the single most common source of wrong
- *  statements about this game: a `WIN` pill on a Taker beside a readout saying "if you take the
- *  trick" is the two axes given one pair of words. A `Partial` over the closed `BuffKind` union —
- *  the eight cut families fall through to `BUFF_CADENCE_WORD` via `BUFF_CADENCE`, through
- *  `buffCadenceWord` below. */
+ *  word is narrowed by kind. MECHANICAL vocabulary, because every buff condition reads
+ *  `playerWentHigh`, "did the player physically take the cards", NOT the outcome axis the bank and
+ *  the damage read.
+ *
+ *  DLR-165 removed that collision at its source: the pill now uses the SAME two words the cards and
+ *  the resolution headline do. The four-way scheme those words belong to is stated in `CLAUDE.md`.
+ *
+ *  `SKULL` on the two protective families is a DEVELOPER DECISION recorded in this contract's file
+ *  map: they fire going high on a skull at bronze and on ANY Defeat at silver/gold, so no single
+ *  High/Low word is true at both tiers. `SKULL` is accurate at bronze and merely incomplete above
+ *  it; the card's own condition sentence carries the difference. PLACEHOLDER copy.
+ *
+ *  A `Partial` over the closed `BuffKind` union — the eight cut families fall through to
+ *  `BUFF_CADENCE_WORD` via `BUFF_CADENCE`, through `buffCadenceWord` below. */
 export const BUFF_EVENT_WORD: Partial<Readonly<Record<BuffKind, string>>> = {
-  [BuffKind.Taker]: 'TAKE',
-  [BuffKind.Feeder]: 'MISS',
-  // DLR-167 AC10 — the old face word collided with the card's own name AND with "dodge" as the
-  // name of a trick outcome. Still MECHANICAL vocabulary, per this table's own docblock: it names
-  // the branch the buff fires on, not the outcome. PLACEHOLDER copy.
-  [BuffKind.Sidestep]: 'SKULL LOSS',
-  // DLR-161 — the mechanical word for the branch these fire on. Bronze fires on an eaten skull
-  // and silver/gold on any hurt trick; `HURT` covers both without claiming the wider one at
-  // bronze, and the card's own condition sentence states the difference. PLACEHOLDER copy.
-  [BuffKind.SkullHelmet]: 'HURT',
-  [BuffKind.SkullTether]: 'HURT',
+  [BuffKind.SuitHigh]: 'HIGH',
+  [BuffKind.SuitLow]: 'LOW',
+  [BuffKind.SkullLow]: 'LOW',
+  [BuffKind.SkullHelmet]: 'SKULL',
+  [BuffKind.SkullTether]: 'SKULL',
 }
 
 /** The cadence word a buff's card states — never free text (AC9). */

@@ -10,7 +10,7 @@ import {
   type BuffId,
   type BuffTargetSuit,
 } from './buffs'
-import { protectionCoversCleanLoss } from './buffProtection'
+import { protectionCoversLowDefeat } from './buffProtection'
 import { conditionThresholdOf } from './buffTemplates'
 import { PLAYER_START_HEALTH } from './config'
 
@@ -29,8 +29,9 @@ import { PLAYER_START_HEALTH } from './config'
  *  TrickCard. The per-trick half is derived by warCouncil/buffTrickFacts.ts; the hand-scoped half
  *  comes from app/warCouncil/buffRoundState.ts. */
 export interface BuffTrickContext {
-  /** The player won the trick physically (before the skull inverts what that is worth). */
-  readonly playerWon: boolean
+  /** The player went HIGH on this trick — they physically took the cards, before the skull
+   *  inverts what that is worth. Every buff condition reads this axis and nothing else. */
+  readonly playerWentHigh: boolean
   /** Any card in the trick carries a skull. */
   readonly skullTrick: boolean
   /** This trick cost the player health — Unbloodied's counter and nothing else reads it. */
@@ -67,24 +68,24 @@ export function buffFires(buff: Buff, ctx: BuffTrickContext): boolean {
   const suit = buffTargetSuitOf(buff)
   const rank = buffTargetRankOf(buff)
   const threshold = conditionThresholdOf(buff)
-  // DLR-162 AC3 — a wild condition drops the SUIT term and nothing else. The `playerWon` term
-  // below is the mechanical axis (`BuffTrickContext.playerWon`'s own docblock) and is untouched:
-  // a wild Taker still has to take the trick, a wild Feeder still has to lose one.
+  // DLR-162 AC3 — a wild condition drops the SUIT term and nothing else. The `playerWentHigh` term
+  // below is the mechanical axis (`BuffTrickContext.playerWentHigh`'s own docblock) and is
+  // untouched: a wild Suit High still has to go high, a wild Suit Low still has to go low.
   const wild = buffIsWild(buff)
   switch (buff.kind) {
-    case 'taker':
-      return ctx.playerWon && (wild || (suit !== null && ctx.playerSuits.includes(suit)))
-    case 'feeder':
-      return !ctx.playerWon && (wild || (suit !== null && ctx.playerSuits.includes(suit)))
+    case 'suitHigh':
+      return ctx.playerWentHigh && (wild || (suit !== null && ctx.playerSuits.includes(suit)))
+    case 'suitLow':
+      return !ctx.playerWentHigh && (wild || (suit !== null && ctx.playerSuits.includes(suit)))
     case 'markOfRank':
-      return ctx.playerWon && rank !== null && ctx.playerRanks.includes(rank)
-    // DLR-167 AC10 — "a skull trick you do not take": the trick this buff was activated FOR is a
-    // Dodge. NO BUFF ATTACHES TO A CARD; a buff rides the trick and is checked when it resolves.
-    case 'sidestep':
-      return ctx.skullTrick && !ctx.playerWon
-    // "Eat a skull with this card" — the same trick is a Skull Win.
+      return ctx.playerWentHigh && rank !== null && ctx.playerRanks.includes(rank)
+    // "Go low on a skull" — the player did not take a trick that carried one, which is a Low
+    // Victory. NO BUFF ATTACHES TO A CARD; a buff rides the trick and is checked when it resolves.
+    case 'skullLow':
+      return ctx.skullTrick && !ctx.playerWentHigh
+    // "Go high on a skull" — the same trick is a High Defeat.
     case 'glutton':
-      return ctx.skullTrick && ctx.playerWon
+      return ctx.skullTrick && ctx.playerWentHigh
     case 'hoarder':
       return threshold !== null && ctx.bankAfterTrick >= threshold
     case 'unbloodied':
@@ -99,19 +100,19 @@ export function buffFires(buff: Buff, ctx: BuffTrickContext): boolean {
     // Integer both sides — no division, so no NaN can reach a rendered heart row.
     case 'cornered':
       return threshold !== null && ctx.playerHealth * 100 < threshold * PLAYER_START_HEALTH
-    // DLR-161 AC2/AC5 — bronze fires on an EATEN SKULL only, which is `glutton`'s predicate; the
+    // DLR-161 AC2/AC5 — bronze fires on a HIGH DEFEAT only, which is `glutton`'s predicate; the
     // family is NOT restored, these two carry their own case. Silver and gold widen it to any
-    // trick that HURT the player, and the union of a skull win and a clean loss is exactly
-    // `skullTrick === playerWon` on the mechanical axis this context reads:
-    //   skull win   true  === true   -> fires
-    //   clean loss  false === false  -> fires
-    //   dodge       true  === false  -> does not
-    //   clean win   false === true   -> does not
+    // Defeat, and the union of a High Defeat and a Low Defeat is exactly
+    // `skullTrick === playerWentHigh` on the mechanical axis this context reads:
+    //   High Defeat   true  === true   -> fires
+    //   Low Defeat    false === false  -> fires
+    //   Low Victory   true  === false  -> does not
+    //   High Victory  false === true   -> does not
     case 'skullHelmet':
     case 'skullTether':
-      return protectionCoversCleanLoss(buff.tier)
-        ? ctx.skullTrick === ctx.playerWon
-        : ctx.skullTrick && ctx.playerWon
+      return protectionCoversLowDefeat(buff.tier)
+        ? ctx.skullTrick === ctx.playerWentHigh
+        : ctx.skullTrick && ctx.playerWentHigh
   }
 }
 
@@ -179,17 +180,17 @@ export interface BuffTrickOutcome {
 }
 
 /** R4's cadence and R1/R2/R5/R6 in one call, so `bank.ts` states R3's ORDER and nothing else.
- *  `trickIsLoss` is the OUTCOME axis and is passed straight through to `resolveFiredBuffs` — it
+ *  `trickIsDefeat` is the OUTCOME axis and is passed straight through to `resolveFiredBuffs` — it
  *  arrives from `bank.ts`'s `!isTaken(outcome)` because `src/hunt/` deliberately does not hold a
  *  second statement of the skull inversion. */
 export function resolveTrickBuffs(
   input: BuffTrickInput,
   ctx: BuffTrickContext,
-  trickIsLoss: boolean,
+  trickIsDefeat: boolean,
 ): BuffTrickOutcome {
   const fired = firedBuffs(input.active, input.firedThisHand, ctx)
   return {
-    accrual: resolveFiredBuffs(input.accrual, fired, trickIsLoss),
+    accrual: resolveFiredBuffs(input.accrual, fired, trickIsDefeat),
     firedIds: fired.map((buff) => buff.id),
   }
 }

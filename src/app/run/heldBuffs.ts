@@ -60,7 +60,7 @@ export function heldBuffStacks(buffs: readonly Buff[]): readonly HeldBuffStack[]
 }
 
 /** Total copies held — the figure the tray's heading prints. Counts COPIES, not piles, so two
- *  Bell-Takers read as two cards and not as one. */
+ *  Bell Highs read as two cards and not as one. */
 export function heldBuffCount(buffs: readonly Buff[]): number {
   return buffs.length
 }

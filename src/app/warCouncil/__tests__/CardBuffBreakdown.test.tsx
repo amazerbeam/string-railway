@@ -10,14 +10,14 @@ import { BuffTier, mintFromTemplate, templateById } from '../../../hunt'
 
 afterEach(cleanup)
 
-const bellsTaker = mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, 1)
-const bellsFeeder = mintFromTemplate(templateById('feeder:bells:multiplier')!, BuffTier.Bronze, 2)
+const bellsHigh = mintFromTemplate(templateById('suitHigh:bells:magnitude')!, BuffTier.Bronze, 1)
+const bellsLow = mintFromTemplate(templateById('suitLow:bells:multiplier')!, BuffTier.Bronze, 2)
 
 const card = { suit: Suit.Bells, rank: 2 } as const
 
 const ridingFixture: readonly RidingBuffRow[] = [
-  { buff: bellsTaker, reach: 2, revocable: true },
-  { buff: bellsFeeder, reach: 1, revocable: true },
+  { buff: bellsHigh, reach: 2, revocable: true },
+  { buff: bellsLow, reach: 1, revocable: true },
 ]
 
 function fullBreakdown(overrides: Partial<CardBuffBreakdownModel> = {}): CardBuffBreakdownModel {
@@ -27,7 +27,7 @@ function fullBreakdown(overrides: Partial<CardBuffBreakdownModel> = {}): CardBuf
     firingCountText: '1 buff could fire on this card',
     dead: [
       {
-        buff: bellsFeeder,
+        buff: bellsLow,
         reasonText: 'Needs Bells — this card is Bells.',
         elsewhereText: ' It is lighting 1 of your Bells cards instead.',
       },
@@ -38,9 +38,9 @@ function fullBreakdown(overrides: Partial<CardBuffBreakdownModel> = {}): CardBuf
         headingText: 'If you take this trick',
         rows: [
           {
-            buff: bellsTaker,
+            buff: bellsHigh,
             conditionText: 'Play a Bells card and win the trick',
-            buffNameText: 'Bells Taker',
+            buffNameText: 'Bell High',
             payoffText: '+2 damage',
             mayFire: false,
           },
@@ -120,7 +120,7 @@ describe('CardBuffBreakdown', () => {
 
   it('shows each condition row with its buff name and its condition sentence (AC11)', () => {
     renderBreakdown()
-    expect(screen.getByText('Bells Taker')).toBeTruthy()
+    expect(screen.getByText('Bell High')).toBeTruthy()
     expect(screen.getByText('Play a Bells card and win the trick')).toBeTruthy()
   })
 
@@ -131,7 +131,7 @@ describe('CardBuffBreakdown', () => {
     expect(deadRow!.textContent).toMatch(/Needs Bells/i)
     expect(screen.getByText(/lighting 1 of your Bells cards instead/i)).toBeTruthy()
     const html = container.innerHTML
-    expect(html.indexOf('Needs Bells')).toBeLessThan(html.indexOf('Bells Taker'))
+    expect(html.indexOf('Needs Bells')).toBeLessThan(html.indexOf('Bell High'))
   })
 
   it('renders fully expanded with no expand control (AC13)', () => {
@@ -168,24 +168,24 @@ describe('CardBuffBreakdown', () => {
   it('gives every condition row a remove control that calls onRemove with that buff id (Correction 2)', () => {
     const onRemove = vi.fn()
     renderBreakdown({}, onRemove)
-    const control = screen.getByRole('button', { name: /take bell-taker.*off the trick/i })
+    const control = screen.getByRole('button', { name: /take bell high.*off the trick/i })
     fireEvent.click(control)
     expect(onRemove).toHaveBeenCalledTimes(1)
-    expect(onRemove).toHaveBeenCalledWith(bellsTaker.id)
+    expect(onRemove).toHaveBeenCalledWith(bellsHigh.id)
   })
 
   it('gives every struck-through dead row a remove control too — a dead row is still riding (Correction 2)', () => {
     const onRemove = vi.fn()
     renderBreakdown({}, onRemove)
-    const control = screen.getByRole('button', { name: /take bell-feeder.*off the trick/i })
+    const control = screen.getByRole('button', { name: /take bell low.*off the trick/i })
     fireEvent.click(control)
     expect(onRemove).toHaveBeenCalledTimes(1)
-    expect(onRemove).toHaveBeenCalledWith(bellsFeeder.id)
+    expect(onRemove).toHaveBeenCalledWith(bellsLow.id)
   })
 
   it('names the trick and what goes dark, never a single card, reusing removeBuffLabel unchanged (Correction 2)', () => {
     renderBreakdown()
-    const control = screen.getByRole('button', { name: /take bell-taker.*off the trick/i })
+    const control = screen.getByRole('button', { name: /take bell high.*off the trick/i })
     const accessibleName = control.getAttribute('aria-label') ?? ''
     expect(accessibleName).toMatch(/off the trick/)
     expect(accessibleName).toMatch(/\d+ cards? go dark/)
@@ -196,7 +196,7 @@ describe('CardBuffBreakdown', () => {
   it('does not close when a control inside it fires blur (AC18)', () => {
     renderBreakdown()
     const panel = screen.getByRole('group', { name: 'What this card is worth' })
-    const control = within(panel).getByRole('button', { name: /take bell-taker.*off the trick/i })
+    const control = within(panel).getByRole('button', { name: /take bell high.*off the trick/i })
     control.focus()
     expect(document.activeElement).toBe(control)
     fireEvent.blur(control)

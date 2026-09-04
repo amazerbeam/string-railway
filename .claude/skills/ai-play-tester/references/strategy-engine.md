@@ -19,9 +19,9 @@ guessing:
 
 - **`src/warCouncil/cpuPlayer.ts` → `chooseCpuCard`.** Leading: always the lowest legal card
   (`lowestCard`, sorted by rank then suit index `[bells, keys, moons]`). Following, in strict
-  priority: (1) the lowest legal card that is *both* skulled and would lose — the Quarry actively
-  tries to dump a skull into a trick it loses, forcing the player to win it and eat the skull; (2)
-  else the lowest legal card that would win; (3) else the lowest legal card, full stop.
+  priority: (1) the lowest legal card that is *both* skulled and would go under — the Quarry
+  actively tries to dump a skull into a trick it will not take, forcing a High Defeat on the player;
+  (2) else the lowest legal card that would take the trick; (3) else the lowest legal card.
 - **`src/warCouncil/legalMoves.ts`** — the same follow-suit/Monarch-narrowing rule for both sides.
 - **`src/warCouncil/resolveTrick.ts` → `resolveTrickWinner`** — trump/Witch/rank comparison, called
   with `(lead, follow)` order load-bearing.
@@ -87,11 +87,11 @@ function bestLead(myHand, cpuHand, skulled, trumpSuit){
     const winner = resolveWinner(X,'player',predicted,'cpu',trumpSuit);
     const trickSkulled = isSkulled(skulled, predicted);
     let outcome;
-    if (winner==='player' && !trickSkulled) outcome='cleanWin';
-    else if (winner==='player' && trickSkulled) outcome='ateSkull';
-    else if (winner==='cpu' && !trickSkulled) outcome='cleanLoss';
-    else outcome='dodge';
-    return { card:X, predicted, outcome, good: outcome==='cleanWin' || outcome==='dodge' };
+    if (winner==='player' && !trickSkulled) outcome='highVictory';
+    else if (winner==='player' && trickSkulled) outcome='highDefeat';
+    else if (winner==='cpu' && !trickSkulled) outcome='lowDefeat';
+    else outcome='lowVictory';
+    return { card:X, predicted, outcome, good: outcome==='highVictory' || outcome==='lowVictory' };
   });
   const good = options.filter(o=>o.good);
   const pool = good.length? good : options;
@@ -104,7 +104,7 @@ function bestFollow(myHand, ledCard, skulled, trumpSuit){
   const wouldWin = (c)=> resolveWinner(ledCard,'cpu',c,'player',trumpSuit)==='player';
   if (skulledTrick){
     const losers = legal.filter(c=>!wouldWin(c));
-    return losers.length? lowest(losers) : lowest(legal); // forced win = unavoidable skull-eat
+    return losers.length? lowest(losers) : lowest(legal); // forced high = unavoidable High Defeat
   }
   const winners = legal.filter(wouldWin);
   return winners.length? lowest(winners) : lowest(legal);
@@ -113,11 +113,11 @@ window.__strategy = { isSkulled, legalMoves, resolveWinner, predictCpuFollow, be
 'strategy-installed'
 ```
 
-`bestLead` returns `{ card, predicted, outcome, good }` — `outcome` is one of `cleanWin` / `dodge`
-(good — win a clean trick, or lose a skull trick on purpose) / `ateSkull` / `cleanLoss` (bad — the
-best available lead still loses, or still wins into a skull). `bestFollow` returns just the card,
-since the follow decision is a closed rule once the led card is known (skull trick → lose on purpose
-if any legal card can; clean trick → win if any legal card can).
+`bestLead` returns `{ card, predicted, outcome, good }` — `outcome` is one of `highVictory` /
+`lowVictory` (good — go high on a clean trick, or low on a skull trick on purpose) / `highDefeat` /
+`lowDefeat` (bad — the best available lead still goes low on a clean trick, or still goes high into
+a skull). `bestFollow` returns just the card, since the follow decision is a closed rule once the
+led card is known (skull trick → go low if any legal card can; clean trick → go high if any can).
 
 ## Wiring it into the driver
 
@@ -150,7 +150,7 @@ if (r.interactive) {
 Section 7 of `the-hunt.md` ("Applying damage") makes proactive cash-out a real lever: pressing
 `Apply Damage` while leader-and-nothing-committed-yet banks the *whole* `bank × multiplier` (queued,
 lands next trick) instead of risking the two-thirds rate a forced hit pays. When `bestLead`'s chosen
-outcome is `ateSkull` or `cleanLoss` (no legal lead avoids a bad result) and the bank is worth
+outcome is `highDefeat` or `lowDefeat` (no legal lead avoids a Defeat) and the bank is worth
 protecting, press the bar button matched by `aria-label` prefix `"Apply Damage"` twice (poise, then
 commit — same two-tap grammar as everything else on the bar) *before* leading. Check `r.applyRefusal`
 (top-level on `window.__DEBUG_STATE__.round`, not under `.ui`) is `null`/falsy first — it names why a

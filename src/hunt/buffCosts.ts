@@ -44,10 +44,10 @@ export type BuffMintedAxis = BuffCostAxis | typeof BuffRewardAxis.Protection
 
 /** The 11 shipping condition families DLR-111 finding 1 names, plus the two DLR-161 adds. */
 export type BuffConditionKind =
-  | typeof BuffKind.Taker
-  | typeof BuffKind.Feeder
+  | typeof BuffKind.SuitHigh
+  | typeof BuffKind.SuitLow
   | typeof BuffKind.MarkOfRank
-  | typeof BuffKind.Sidestep
+  | typeof BuffKind.SkullLow
   | typeof BuffKind.Glutton
   | typeof BuffKind.Hoarder
   | typeof BuffKind.Unbloodied
@@ -86,10 +86,10 @@ export const REWARD_BASE: Readonly<Record<BuffMintedAxis, Readonly<Record<BuffTi
 // see that section's "Why the condition modifier is a discount, not a surcharge". UNIT: action
 // points, added to REWARD_BASE before the clamp.
 export const CONDITION_MODIFIER: Readonly<Record<BuffConditionKind, number>> = {
-  [BuffKind.Taker]: 0,
-  [BuffKind.Feeder]: 1,
+  [BuffKind.SuitHigh]: 0,
+  [BuffKind.SuitLow]: 1,
   [BuffKind.MarkOfRank]: -1,
-  [BuffKind.Sidestep]: -1,
+  [BuffKind.SkullLow]: -1,
   [BuffKind.Glutton]: 0,
   [BuffKind.Hoarder]: 0,
   [BuffKind.Unbloodied]: 0,
@@ -97,7 +97,7 @@ export const CONDITION_MODIFIER: Readonly<Record<BuffConditionKind, number>> = {
   [BuffKind.Keepsake]: 0,
   [BuffKind.Miser]: -1,
   [BuffKind.Cornered]: -1,
-  // DLR-161 — NOBODY CHOSE THESE TWO NUMBERS. 0 is the neutral row Taker and Glutton already
+  // DLR-161 — NOBODY CHOSE THESE TWO NUMBERS. 0 is the neutral row Suit High and Glutton already
   // take. UNIT: action points. See `tasks.md` → Developer decides or observes.
   [BuffKind.SkullHelmet]: 0,
   [BuffKind.SkullTether]: 0,

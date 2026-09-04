@@ -47,7 +47,7 @@ describe('trickConsequence — silence (AC14)', () => {
 })
 
 describe('trickConsequence — the skull pair (AC13)', () => {
-  it('a skulled 4 produces exactly two rows, Win then Lose, with the dodge-quadrant tones', () => {
+  it('a skulled 4 produces exactly two rows, High then Low, with the Low-Victory-quadrant tones', () => {
     const view = trickConsequence(facts({ led: ledBy(PlayerSide.Cpu, 4), skulled: true }))
     expect(view).not.toBeNull()
     expect(view!.rows).toHaveLength(2)

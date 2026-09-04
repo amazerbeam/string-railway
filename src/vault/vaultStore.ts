@@ -12,8 +12,12 @@ import { EMPTY_VAULT, isValidVaultState, reconcileVault, type VaultState } from 
  * `src/vault/` is plain in-memory `VaultState` arithmetic; this module is the sole caller of
  * `createSaveStore`, per `.claude/rules/save-data-versioning.md`.
  *
- * `SAVE_SCHEMA_VERSION` is NOT bumped here — this is the first shape ever written, at version 1,
- * so there is nothing to bump from (`plan.md` → Out-of-scope).
+ * DLR-165 — the persisted SHAPE is unchanged by that ticket, but the CONTENT of its `templateId`
+ * strings is: renaming three `BuffKind` values changed every id `templateIdFor` composes, so every
+ * id already on disk names a family that no longer exists. `SAVE_SCHEMA_VERSION` moved 1 → 2 in the
+ * same change, which is why a version-1 payload is now REJECTED by version — `saveStore` returns
+ * `SaveReadOutcome.VersionMismatch` and the default — rather than being reconciled, which would
+ * have silently dropped every boost and grant through `reconcileVault` with no message.
  */
 
 /** Key suffix handed to `saveKeyFor` inside `createSaveStore`. NEVER concatenated with

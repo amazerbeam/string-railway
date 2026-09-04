@@ -36,7 +36,7 @@ export const COMBINE_REFUSAL_MESSAGE: Readonly<Record<CombineRefusal, string>> =
   [CombineRefusal.Untiered]: 'Every wildcard is the same — combining one would waste it',
 }
 
-/** `Bronze Moon-Feeder (Blade)` — the card named the way every other surface names it. */
+/** `Bronze Moon Low (Blade)` — the card named the way every other surface names it. */
 export function combineCardText(buff: Buff): string {
   return `${TIER_WORD[buff.tier]} ${buffName(buff)}`
 }
@@ -102,7 +102,7 @@ export function wildConfirmDestroyText(tier: BuffTier): string {
   return `1 × ${TIER_WORD[tier]} Wildcard`
 }
 
-/** `1 × Bronze Wild Taker (Blade) — +1 damage` — what the spend makes. */
+/** `1 × Bronze Wild High (Blade) — +1 damage` — what the spend makes. */
 export function wildConfirmMakeText(made: Buff): string {
   return `1 × ${combineCardText(made)} — ${combinePayoffText(made)}`
 }

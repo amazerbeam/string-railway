@@ -24,21 +24,21 @@ function templateFor(predicate: (template: BuffTemplate) => boolean): BuffTempla
   return template
 }
 
-const bellTakerBladeTemplate = templateFor(
+const bellHighBladeTemplate = templateFor(
   (t) =>
     t.form === 'condition' &&
-    t.kind === 'taker' &&
+    t.kind === 'suitHigh' &&
     t.target?.suit === 'bells' &&
     t.axis === 'magnitude',
 )
-const bellTakerMomentumTemplate = templateFor(
+const bellHighMomentumTemplate = templateFor(
   (t) =>
     t.form === 'condition' &&
-    t.kind === 'taker' &&
+    t.kind === 'suitHigh' &&
     t.target?.suit === 'bells' &&
     t.axis === 'multiplier',
 )
-const sidestepTemplate = templateFor((t) => t.form === 'condition' && t.kind === 'sidestep')
+const skullLowTemplate = templateFor((t) => t.form === 'condition' && t.kind === 'skullLow')
 const cheatTemplate = templateFor((t) => t.form === 'activated' && t.kind === 'cheat')
 
 let nextId = 1
@@ -49,12 +49,12 @@ function mint(template: BuffTemplate, tier: BuffTier = BuffTier.Bronze): Buff {
 const noRefusal = () => null
 
 describe('buffRunOf — which run a card belongs to', () => {
-  it('a Bells-targeting Taker lands in Bells', () => {
-    expect(buffRunOf(mint(bellTakerBladeTemplate))).toBe(BuffRunKind.Bells)
+  it('a Bells-targeting Suit High card lands in Bells', () => {
+    expect(buffRunOf(mint(bellHighBladeTemplate))).toBe(BuffRunKind.Bells)
   })
 
-  it('a Sidestep lands in Suitless', () => {
-    expect(buffRunOf(mint(sidestepTemplate))).toBe(BuffRunKind.Suitless)
+  it('a Skull Low lands in Suitless', () => {
+    expect(buffRunOf(mint(skullLowTemplate))).toBe(BuffRunKind.Suitless)
   })
 
   it('Cheat lands in Press, not Suitless (AC4)', () => {
@@ -73,7 +73,7 @@ describe('buildBuffGallery — run order', () => {
       BuffRunKind.Press,
     ])
 
-    const pile = [mint(cheatTemplate), mint(bellTakerBladeTemplate), mint(sidestepTemplate)]
+    const pile = [mint(cheatTemplate), mint(bellHighBladeTemplate), mint(skullLowTemplate)]
     const view = buildBuffGallery(pile, noRefusal)
     expect(view.runs.map((run) => run.kind)).toEqual([
       BuffRunKind.Bells,
@@ -84,9 +84,9 @@ describe('buildBuffGallery — run order', () => {
 })
 
 describe('buildBuffGallery — exact-identity collapse', () => {
-  it('two identical Bell-Takers collapse to one stack with count 2 and both ids (AC7)', () => {
-    const a = mint(bellTakerBladeTemplate)
-    const b = mint(bellTakerBladeTemplate)
+  it('two identical Bell Highs collapse to one stack with count 2 and both ids (AC7)', () => {
+    const a = mint(bellHighBladeTemplate)
+    const b = mint(bellHighBladeTemplate)
     const view = buildBuffGallery([a, b], noRefusal)
     expect(view.runs).toHaveLength(1)
     const [stack] = view.runs[0].stacks
@@ -94,16 +94,16 @@ describe('buildBuffGallery — exact-identity collapse', () => {
     expect(stack.ids).toEqual([a.id, b.id])
   })
 
-  it('a bronze and a gold Bell-Taker (Blade) do NOT collapse — tier is part of identity', () => {
-    const bronze = mint(bellTakerBladeTemplate, BuffTier.Bronze)
-    const gold = mint(bellTakerBladeTemplate, BuffTier.Gold)
+  it('a bronze and a gold Bell High (Blade) do NOT collapse — tier is part of identity', () => {
+    const bronze = mint(bellHighBladeTemplate, BuffTier.Bronze)
+    const gold = mint(bellHighBladeTemplate, BuffTier.Gold)
     const view = buildBuffGallery([bronze, gold], noRefusal)
     expect(view.runs[0].stacks).toHaveLength(2)
   })
 
-  it('a Bell-Taker (Blade) and a Bell-Taker (Momentum) do NOT collapse — reward axis is part of identity', () => {
-    const blade = mint(bellTakerBladeTemplate)
-    const momentum = mint(bellTakerMomentumTemplate)
+  it('a Bell High (Blade) and a Bell High (Momentum) do NOT collapse — reward axis is part of identity', () => {
+    const blade = mint(bellHighBladeTemplate)
+    const momentum = mint(bellHighMomentumTemplate)
     const view = buildBuffGallery([blade, momentum], noRefusal)
     expect(view.runs[0].stacks).toHaveLength(2)
   })
@@ -111,9 +111,9 @@ describe('buildBuffGallery — exact-identity collapse', () => {
 
 describe('buildBuffGallery — total order within a run', () => {
   it('stacks are tier-descending then buffStackKey ascending, regardless of input order', () => {
-    const gold = mint(bellTakerBladeTemplate, BuffTier.Gold)
-    const silverBlade = mint(bellTakerBladeTemplate, BuffTier.Silver)
-    const silverMomentum = mint(bellTakerMomentumTemplate, BuffTier.Silver)
+    const gold = mint(bellHighBladeTemplate, BuffTier.Gold)
+    const silverBlade = mint(bellHighBladeTemplate, BuffTier.Silver)
+    const silverMomentum = mint(bellHighMomentumTemplate, BuffTier.Silver)
 
     const viewA = buildBuffGallery([gold, silverBlade, silverMomentum], noRefusal)
     const viewB = buildBuffGallery([silverMomentum, gold, silverBlade], noRefusal)
@@ -130,7 +130,7 @@ describe('buildBuffGallery — total order within a run', () => {
 
 describe('buildBuffGallery — the fence', () => {
   it('a stack whose refusalFor returns non-null is absent from runs and present in fence, whatever its run (AC8)', () => {
-    const buff = mint(bellTakerBladeTemplate)
+    const buff = mint(bellHighBladeTemplate)
     const view = buildBuffGallery([buff], () => BuffActivationRefusal.WindowClosed)
     expect(view.runs).toHaveLength(0)
     expect(view.fence.stacks).toHaveLength(1)
@@ -138,9 +138,9 @@ describe('buildBuffGallery — the fence', () => {
   })
 
   it('fence.reason is the shared refusal when every fenced stack agrees, and null when they do not', () => {
-    const a = mint(bellTakerBladeTemplate)
-    const b = mint(bellTakerMomentumTemplate)
-    const c = mint(sidestepTemplate)
+    const a = mint(bellHighBladeTemplate)
+    const b = mint(bellHighMomentumTemplate)
+    const c = mint(skullLowTemplate)
 
     const agreeing = buildBuffGallery([a, b], () => BuffActivationRefusal.WindowClosed)
     expect(agreeing.fence.reason).toBe(BuffActivationRefusal.WindowClosed)
@@ -156,11 +156,11 @@ describe('buildBuffGallery — the fence', () => {
 
 describe('buildBuffGallery — totals', () => {
   it('held is the sum of every count, usable is the sum over unfenced stacks only', () => {
-    const a = mint(bellTakerBladeTemplate)
-    const b = mint(bellTakerBladeTemplate)
-    const c = mint(sidestepTemplate)
+    const a = mint(bellHighBladeTemplate)
+    const b = mint(bellHighBladeTemplate)
+    const c = mint(skullLowTemplate)
     const view = buildBuffGallery([a, b, c], (buff) =>
-      buff.kind === 'sidestep' ? BuffActivationRefusal.WindowClosed : null,
+      buff.kind === 'skullLow' ? BuffActivationRefusal.WindowClosed : null,
     )
     expect(view.held).toBe(3)
     expect(view.usable).toBe(2)
@@ -178,8 +178,8 @@ describe('buildBuffGallery — totals', () => {
 
 describe('buildBuffGallery — refusalFor call count', () => {
   it('calls refusalFor once per stack, not once per held copy', () => {
-    const a = mint(bellTakerBladeTemplate)
-    const b = mint(bellTakerBladeTemplate)
+    const a = mint(bellHighBladeTemplate)
+    const b = mint(bellHighBladeTemplate)
     let calls = 0
     buildBuffGallery([a, b], () => {
       calls += 1
@@ -190,9 +190,9 @@ describe('buildBuffGallery — refusalFor call count', () => {
 })
 
 describe('the Wild run (DLR-162 AC9)', () => {
-  it('puts a wild card in its own run, not in Suitless beside Sidestep', () => {
-    expect(buffRunOf(wildenedBuff(mint(bellTakerBladeTemplate)))).toBe(BuffRunKind.Wild)
-    expect(buffRunOf(mint(sidestepTemplate))).toBe(BuffRunKind.Suitless)
+  it('puts a wild card in its own run, not in Suitless beside Skull Low', () => {
+    expect(buffRunOf(wildenedBuff(mint(bellHighBladeTemplate)))).toBe(BuffRunKind.Wild)
+    expect(buffRunOf(mint(skullLowTemplate))).toBe(BuffRunKind.Suitless)
   })
 
   it('leaves the wildcard itself in Press - it is a card you spend, not a wild card', () => {
@@ -210,7 +210,7 @@ describe('the Wild run (DLR-162 AC9)', () => {
 
   it('counts wild cards in the chip row', () => {
     const view = buildBuffGallery(
-      [wildenedBuff(mint(bellTakerBladeTemplate)), wildenedBuff(mint(bellTakerBladeTemplate))],
+      [wildenedBuff(mint(bellHighBladeTemplate)), wildenedBuff(mint(bellHighBladeTemplate))],
       noRefusal,
     )
     expect(runCountsFor(view, 'all')[BuffRunKind.Wild]).toBe(2)

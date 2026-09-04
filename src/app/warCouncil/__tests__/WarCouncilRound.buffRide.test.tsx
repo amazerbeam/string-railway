@@ -21,7 +21,7 @@ import {
 
 afterEach(cleanup)
 
-const bellsTaker = mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, 1)
+const bellsHigh = mintFromTemplate(templateById('suitHigh:bells:magnitude')!, BuffTier.Bronze, 1)
 
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   return render(
@@ -35,7 +35,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       coins={overrides.coins ?? coinsFixture}
       baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
-      buffs={overrides.buffs ?? [bellsTaker]}
+      buffs={overrides.buffs ?? [bellsHigh]}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )
@@ -45,9 +45,9 @@ function openLoadout() {
   fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
 }
 
-function activateBellsTaker() {
+function activateBellsHigh() {
   openLoadout()
-  const button = screen.getByRole('button', { name: /Taker/i })
+  const button = screen.getByRole('button', { name: /Bell High/i })
   fireEvent.click(button)
   fireEvent.click(button)
 }
@@ -55,13 +55,13 @@ function activateBellsTaker() {
 describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
   it('activates with no card-selection step and no refusal about choosing a card (AC1)', () => {
     renderRound()
-    activateBellsTaker()
+    activateBellsHigh()
     expect(screen.queryByText(/choose a card/i)).toBeNull()
   })
 
   it('lights exactly the legal cards of the activated suit with a badge (AC2)', () => {
     renderRound()
-    activateBellsTaker()
+    activateBellsHigh()
     // Close the gallery so the hand fan (which carries the badges) is on screen again.
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
     expect(screen.getByRole('button', { name: /2 of Bells$/ }).textContent).toMatch(/1/)
@@ -76,7 +76,7 @@ describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
   // the badge was gated on `interactive` rather than on rules-legality alone.
   it('renders exactly as many badges as the riding list reports reaching, between tricks (hand-gate fix)', () => {
     renderRound()
-    activateBellsTaker()
+    activateBellsHigh()
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
     expect(screen.getByText(/lights up 2 of your cards/i)).toBeTruthy()
     const hand = screen.getByRole('group', { name: 'Your hand' })
@@ -85,7 +85,7 @@ describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
 
   it('clears the removal announcement on the next dispatch even when it is neither a hand tap nor a cancel (Fix 4)', () => {
     renderRound()
-    activateBellsTaker()
+    activateBellsHigh()
     const removeButton = screen.getByRole('button', { name: /off the trick/i })
     fireEvent.click(removeButton)
     expect(screen.getByText(/taken off the trick/i)).toBeTruthy()
@@ -105,7 +105,7 @@ describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
 
   it('shows the riding list with the reach sentence immediately, and the breakdown only on hovering a lit card (AC9/AC13, Phase 8 Correction 1)', () => {
     renderRound()
-    activateBellsTaker()
+    activateBellsHigh()
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
     expect(screen.getByRole('group', { name: 'Riding this trick' })).toBeTruthy()
     expect(screen.getByText(/lights up 2 of your cards/i)).toBeTruthy()
@@ -119,7 +119,7 @@ describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
 
   it('removing a buff returns the card to the gallery, clears every badge, and announces what went dark (AC10)', () => {
     renderRound()
-    activateBellsTaker()
+    activateBellsHigh()
     const removeButton = screen.getByRole('button', { name: /off the trick/i })
     fireEvent.click(removeButton)
     expect(screen.queryByRole('group', { name: 'Riding this trick' })).toBeNull()
@@ -133,7 +133,7 @@ describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
 
   it('the breakdown, once opened by hover, survives a mouseLeave fired on the hand group itself (AC13)', () => {
     renderRound()
-    activateBellsTaker()
+    activateBellsHigh()
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
     const lit = screen.getByRole('button', { name: /2 of Bells$/ })
     fireEvent.pointerEnter(lit.closest('.wc-fan-slot')!, { pointerType: 'mouse' })
@@ -151,7 +151,7 @@ describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
   // showed `bestLitCard` and never switched under the pointer.
   it('switches the breakdown to a second, differently-lit legal card on hover (AC13/AC14)', () => {
     renderRound()
-    activateBellsTaker()
+    activateBellsHigh()
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
     // Hover-only default (Phase 8 Correction 1): opens on the FIRST card entered, `2 of Bells`.
     const first = screen.getByRole('button', { name: /2 of Bells$/ })
@@ -176,7 +176,7 @@ describe('WarCouncilRound — buff ride wiring (DLR-153 Task 15)', () => {
     vi.useFakeTimers()
     try {
       renderRound()
-      activateBellsTaker()
+      activateBellsHigh()
       fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
 
       const other = screen.getByRole('button', { name: /7 of Bells$/ })

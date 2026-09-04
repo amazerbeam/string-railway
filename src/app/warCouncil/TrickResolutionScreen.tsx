@@ -61,7 +61,7 @@ export default function TrickResolutionScreen({
   const { held, settle } = useResolveHold()
 
   const hurt = trickDamage === null
-  // DLR-156 B2 — a REPLACED clean loss (DLR-90 AC5) reaches this branch too (`trickDamage` is
+  // DLR-156 B2 — a REPLACED Low Defeat (DLR-90 AC5) reaches this branch too (`trickDamage` is
   // `null` on every non-taken outcome), but resets NOTHING: `damageToPlayer === 0` here can only
   // mean the ordinary hit did not fire (`resolutionBeats.ts`'s own docblock
   // proves the implication).

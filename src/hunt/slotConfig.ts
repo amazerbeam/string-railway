@@ -20,7 +20,7 @@ export type SlotMachineId = (typeof SlotMachineId)[keyof typeof SlotMachineId]
  *  Skirmisher's in-fight lean. DLR-145 cut both of those axes from the game, which removed the only
  *  thing that made it a different machine — `slotWeights.ts` says so in its own comment and leaves
  *  the replacement lean as a developer decision. Measured on the surviving tables the two machines
- *  landed within a point of each other on every family (Taker 29.4% vs 28.6%, and an identical
+ *  landed within a point of each other on every family (Suit High 29.4% vs 28.6%, and an identical
  *  50/50 Blade–Momentum split), so choosing between them was a decision with no consequence.
  *
  *  Cut, NOT deleted, exactly as `buffTemplates.ts` treats its eight cut condition families:

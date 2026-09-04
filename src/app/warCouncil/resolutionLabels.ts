@@ -16,13 +16,13 @@ export function baseBeatLabel(base: number): string {
   return `Base damage +${base}`
 }
 
-/** `Bell-Taker (Blade) bronze +1 DMG` — the tier word is not carried on `Buff` itself, so this
+/** `Bell High (Blade) bronze +1 DMG` — the tier word is not carried on `Buff` itself, so this
  *  states the card's name and its own printed value only, matching `ui-notes.md` §3's table. */
 export function bladeBeatLabel(buff: Buff, amount: number): string {
   return `${buffName(buff)} +${amount} DMG`
 }
 
-/** `Bell-Taker (Momentum) bronze +2 MULT`. */
+/** `Bell High (Momentum) bronze +2 MULT`. */
 export function momentumBeatLabel(buff: Buff, amount: number): string {
   return `${buffName(buff)} +${amount} MULT`
 }
@@ -43,7 +43,7 @@ export function hurtBeatLabel(damageToPlayer: number, potLost: number): string {
   return `Hurt — −${damageToPlayer} health, ${potLost} pot lost`
 }
 
-/** DLR-156 B2 — a REPLACED clean loss (a primed card the Quarry wins cleanly, DLR-90 AC5):
+/** DLR-156 B2 — a REPLACED Low Defeat (a primed card the Quarry takes cleanly, DLR-90 AC5):
  *  `resolveTrickBank` skips both the hit and the streak reset entirely, so nothing was actually
  *  lost. `hurtBeatLabel` said "Hurt" and named a pot that was never touched — this is the
  *  correct, separate wording for the branch that costs nobody anything. */

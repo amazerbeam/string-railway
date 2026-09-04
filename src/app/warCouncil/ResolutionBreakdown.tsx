@@ -31,8 +31,8 @@ const MULTIPLIER_KINDS: readonly BeatKind[] = [BeatKind.Momentum, BeatKind.Overl
  * a second, contradicting way of saying the same thing, so that branch renders the beat's own
  * label as a plain note instead of the numeric final rule.
  *
- * This is also the fix for the session's false bug report: a Key-Feeder was armed, pays only on a
- * trick the player loses, and the player won — so it correctly paid nothing, and nothing on
+ * This is also the fix for the session's false bug report: a Key Low card was armed, pays only on a
+ * trick the player goes LOW on, and the player went high — so it correctly paid nothing, and nothing on
  * screen said so. Every dead entry renders under a dashed rule with an `✕` mark and no value
  * cell at all, so it can never read as "fired and paid zero".
  */

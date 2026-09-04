@@ -135,7 +135,7 @@ describe('the preview reads the rank-tier ladder the commit will (DLR-122)', () 
   const GOLD_SWAN = steppedTo(steppedTo(ALL_BRONZE, TieredRank.Swan), TieredRank.Swan)
   const swan = card(Suit.Bells, CardRank.Swan)
 
-  it('shows a clean loss costing health either way — DLR-156 AC7 pays the Quarry nothing at any tier', () => {
+  it('shows a Low Defeat costing health either way — DLR-156 AC7 pays the Quarry nothing at any tier', () => {
     const bronze = seededUi({ total: 3, roll: 2 })
     const gold = seededUi({ total: 3, roll: 2 }, encounterFixture, GOLD_SWAN)
     const bronzeLose = cardDamagePreview(bronze, swan)!.lose

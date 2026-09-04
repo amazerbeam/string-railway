@@ -35,10 +35,10 @@ describe('BuffKind (DLR-166 left 21; DLR-162 added the wildcard; DLR-167 adds Cu
   })
 
   it('carries the 11 shipping condition families', () => {
-    expect(BuffKind.Taker).toBe('taker')
-    expect(BuffKind.Feeder).toBe('feeder')
+    expect(BuffKind.SuitHigh).toBe('suitHigh')
+    expect(BuffKind.SuitLow).toBe('suitLow')
     expect(BuffKind.MarkOfRank).toBe('markOfRank')
-    expect(BuffKind.Sidestep).toBe('sidestep')
+    expect(BuffKind.SkullLow).toBe('skullLow')
     expect(BuffKind.Glutton).toBe('glutton')
     expect(BuffKind.Hoarder).toBe('hoarder')
     expect(BuffKind.Unbloodied).toBe('unbloodied')
@@ -138,10 +138,10 @@ describe('isValidBuffTarget — the rank bound (1..11)', () => {
 describe('BUFF_CADENCE — DLR-124 R4’s classification, transcribed', () => {
   it('classifies the six event families as event', () => {
     for (const kind of [
-      BuffKind.Taker,
-      BuffKind.Feeder,
+      BuffKind.SuitHigh,
+      BuffKind.SuitLow,
       BuffKind.MarkOfRank,
-      BuffKind.Sidestep,
+      BuffKind.SkullLow,
       BuffKind.Glutton,
       BuffKind.DebtCollector,
     ]) {
@@ -197,9 +197,9 @@ describe('buffIsWild (DLR-162)', () => {
   it('is false for a card whose condition names a suit', () => {
     const buff: Buff = {
       id: 1,
-      kind: BuffKind.Taker,
+      kind: BuffKind.SuitHigh,
       tier: BuffTier.Bronze,
-      condition: { kind: BuffKind.Taker, target: { suit: BuffTargetSuit.Bells } },
+      condition: { kind: BuffKind.SuitHigh, target: { suit: BuffTargetSuit.Bells } },
       reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
     }
     expect(buffIsWild(buff)).toBe(false)
@@ -208,9 +208,9 @@ describe('buffIsWild (DLR-162)', () => {
   it('is false for a card whose condition names no suit and is not wild', () => {
     const buff: Buff = {
       id: 2,
-      kind: BuffKind.Sidestep,
+      kind: BuffKind.SkullLow,
       tier: BuffTier.Bronze,
-      condition: { kind: BuffKind.Sidestep },
+      condition: { kind: BuffKind.SkullLow },
       reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
     }
     expect(buffIsWild(buff)).toBe(false)
@@ -219,9 +219,9 @@ describe('buffIsWild (DLR-162)', () => {
   it('is true only when the condition carries the flag', () => {
     const buff: Buff = {
       id: 3,
-      kind: BuffKind.Taker,
+      kind: BuffKind.SuitHigh,
       tier: BuffTier.Bronze,
-      condition: { kind: BuffKind.Taker, wild: true },
+      condition: { kind: BuffKind.SuitHigh, wild: true },
       reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
     }
     expect(buffIsWild(buff)).toBe(true)

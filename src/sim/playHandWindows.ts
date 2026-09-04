@@ -45,7 +45,7 @@ export function seedFor(run: RunState, dealt: WarCouncilState): RoundUiSeed {
     rankTiers: playerRankTiersFor(run),
     apCapacity: apCapacityFor(run.apCapacityBonus),
     coins: run.coins,
-    feederCarry: run.feederCarry,
+    lowCarry: run.lowCarry,
     streak: run.streak,
     // DLR-163 AC5/AC8 — the two per-fight figures, seeded exactly as `App.tsx`'s mount seeds
     // them. Omitting these would default both to 0 on every hand, so a simulated fight would

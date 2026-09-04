@@ -68,7 +68,7 @@ export default function WarCouncilRound({
   buffs,
   apCapacity,
   rankTiers,
-  feederCarry,
+  lowCarry,
   streak,
   discardCapBonus,
   treasureDamageBonus,
@@ -85,7 +85,7 @@ export default function WarCouncilRound({
       apCapacity,
       rankTiers,
       coins,
-      feederCarry,
+      lowCarry,
       streak,
       // DLR-163 AC5/AC8 — the two per-fight figures this hand opens on.
       discardCapBonus,

@@ -65,7 +65,7 @@ export type { StreakProtection, BuffProtectiveKind } from './buffProtection'
 export {
   NO_STREAK_PROTECTION,
   isProtectiveKind,
-  protectionCoversCleanLoss,
+  protectionCoversLowDefeat,
   conditionIsWidened,
   streakProtectionFor,
 } from './buffProtection'

@@ -50,7 +50,7 @@ export interface BreakdownDeadRow {
 
 /** The totals for one branch. NEITHER branch is emphasised anywhere in the view (AC11); this type
  *  carries no "preferred" flag for that reason. `carryText` is non-null only when this branch's
- *  outcome diverts a Feeder into the next hand's carry (DLR-150), read off
+ *  outcome diverts a Suit Low card into the next hand's carry (DLR-150), read off
  *  `BuffBranchOutcome.accrual`, never recomputed. */
 export interface BreakdownTotals {
   readonly branch: BreakdownBranch
@@ -170,7 +170,8 @@ function payoffPhrase(buff: Buff): string {
  *  pick as a settled fact: `estimate` is `true` whenever `outcomes.length === 2`, i.e. the skull is
  *  genuinely unknowable yet, so the row carries the SAME qualified-figure signal
  *  `CardBuffLight.estimate` already uses rather than a second one. The two outcomes can only
- *  disagree in figures when a riding Feeder's carry depends on Dodge vs. Clean Loss; the condition
+ *  disagree in figures when a riding Suit Low card's carry depends on Low Victory vs. Low Defeat;
+ *  the condition
  *  rows above are unaffected either way — `fired`/`mayFire` are already the union across
  *  readings. */
 function totalsFor(
@@ -188,7 +189,7 @@ function totalsFor(
   }
 }
 
-/** `null` unless this branch's resolution diverted a Feeder's reward into `carryOut` (DLR-150) —
+/** `null` unless this branch's resolution diverted a Suit Low card's reward into `carryOut` (DLR-150) —
  *  read as a delta off `BuffBranchOutcome.accrual`, never recomputed. */
 function carryTextFor(before: BuffBonusAccrual, outcome: BuffBranchOutcome): string | null {
   const damage = outcome.accrual.carryOut.flatDamageBonus - before.carryOut.flatDamageBonus

@@ -18,7 +18,7 @@ function firedBuff(
 ): Buff {
   return {
     id: 1,
-    kind: BuffKind.Taker,
+    kind: BuffKind.SuitHigh,
     tier: BuffTier.Bronze,
     condition: ACTIVATED_BUFF_CONDITION,
     reward: { axis, value },

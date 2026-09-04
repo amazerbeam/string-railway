@@ -7,7 +7,7 @@
 // `run.*.test.ts` specs) needed to change. A pure move: no expression, name, or signature below
 // differs from what `run.ts` held before this split.
 //
-// DLR-158 Phase 1 — the fight-boundary carry helpers (`guardAfter`, `feederCarryAfter`,
+// DLR-158 Phase 1 — the fight-boundary carry helpers (`guardAfter`, `lowCarryAfter`,
 // `streakAfter`, `handOfFightAfter`, `flaskAfter`) moved out to `./runCarry`, a second pure move,
 // to make room under the same 400-line budget for the max-health purchase. `healedBy` stayed here
 // — it is the health writer two transitions in this file call.
@@ -32,7 +32,7 @@ import {
   slotVisitStockFor,
   type RunState,
 } from './run'
-import { feederCarryAfter, flaskAfter, handOfFightAfter, streakAfter } from './runCarry'
+import { lowCarryAfter, flaskAfter, handOfFightAfter, streakAfter } from './runCarry'
 // DLR-156 — type-only, erased under `verbatimModuleSyntax` (see `run.ts`'s import).
 import type { StreakState } from '../warCouncil'
 
@@ -78,15 +78,15 @@ export function recordEncounter(
    *  DELIBERATELY untouched: ids are minted forward-only, and reissuing a spent card's id would
    *  make two different cards indistinguishable to `activatedThisTrick` and `firedThisHand`. */
   buffs?: readonly Buff[],
-  /** DLR-150 — OPTIONAL and defaulted to `undefined`, which keeps `run.feederCarry`, so all 48
+  /** DLR-150 — OPTIONAL and defaulted to `undefined`, which keeps `run.lowCarry`, so all 48
    *  existing call sites are unchanged. `App.tsx` and `sim/playRun.ts` are the only callers that
    *  pass it. */
-  feederCarry?: BuffCarry,
-  /** DLR-156 AC8/AC9 — OPTIONAL, defaulted to `run.streak`, mirroring `feederCarry` immediately
+  lowCarry?: BuffCarry,
+  /** DLR-156 AC8/AC9 — OPTIONAL, defaulted to `run.streak`, mirroring `lowCarry` immediately
    *  above. `App.tsx` and `sim/playRun.ts` are the only callers that pass it. */
   streak?: StreakState,
   /** DLR-163 AC5 — the fight's Swap cap bonus after this hand. OPTIONAL and defaulted to
-   *  `run.discardCapBonus`, mirroring `feederCarry` and `streak` immediately above, so every
+   *  `run.discardCapBonus`, mirroring `lowCarry` and `streak` immediately above, so every
    *  existing call site is unchanged. `advanceRun`, not this function, resets it. */
   discardCapBonus?: number,
   /** DLR-163 AC8 — base damage earned this fight after this hand. OPTIONAL and defaulted to
@@ -129,7 +129,7 @@ export function recordEncounter(
     handOfFight: handOfFightAfter(run.handOfFight, encounter),
     flaskCharges: flaskAfter(run.encounterIndex, run.flaskCharges, wonThisEncounter),
     outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
-    feederCarry: feederCarryAfter(encounter, feederCarry ?? run.feederCarry),
+    lowCarry: lowCarryAfter(encounter, lowCarry ?? run.lowCarry),
     streak: streakAfter(encounter, streak ?? run.streak),
   }
 }

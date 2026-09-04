@@ -34,7 +34,7 @@ export interface WildTargetCardProps {
  * - **Refused** (`tile.refusal !== null`) — an `<li>`, never a `<button>`: nothing here can be
  *   acted on, and a card rendered as a button that cannot act is an affordance that lies. Every
  *   refused target is SHOWN rather than hidden, with its reason on the face, because a player who
- *   owns four Sidesteps needs to see why none of them can be targeted (AC5).
+ *   owns four Skull Lows needs to see why none of them can be targeted (AC5).
  * - **Selectable, unarmed** — a `<button>`, the first of the gesture's two taps. Its accessible
  *   name states what the card would become.
  * - **Armed** — the confirmation lives ON the tile: what is destroyed (one wildcard), what is made

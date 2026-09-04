@@ -12,7 +12,7 @@ import TrickWell from '../TrickWell'
 const buff = (id: string, tier: BuffTier, buffId: number): Buff =>
   mintFromTemplate(templateById(id)!, tier, buffId)
 
-const taker = buff('taker:bells:multiplier', BuffTier.Bronze, 1)
+const bellHigh = buff('suitHigh:bells:multiplier', BuffTier.Bronze, 1)
 
 afterEach(cleanup)
 
@@ -23,7 +23,7 @@ const resolvedTrick: ResolvedTrick = {
   ],
   winner: PlayerSide.Cpu,
   resolution: {
-    outcome: TrickOutcome.CleanLoss,
+    outcome: TrickOutcome.LowDefeat,
     trickDamage: null,
     cashOut: 0,
     damageToPlayer: 1,
@@ -85,8 +85,8 @@ describe('TrickWell — a resolved trick', () => {
       quarryToLead: false,
       onCarryOn: vi.fn(),
     })
-    // `resolvedTrick` fixture: the Cpu (Quarry) won, no skull in the trick — a clean loss.
-    expect(screen.getByText('Clean loss')).toBeDefined()
+    // `resolvedTrick` fixture: the Cpu (Quarry) took it, no skull in the trick — a Low Defeat.
+    expect(screen.getByText('Low Defeat')).toBeDefined()
     expect(
       screen.getByText(/they took it, and it carried no skull — your streak resets/),
     ).toBeDefined()
@@ -99,22 +99,22 @@ describe('TrickWell — DLR-119 clauses', () => {
   it('names a fired buff when its id resolves against the offered pile', () => {
     const fired: ResolvedTrick = {
       ...resolvedTrick,
-      resolution: { ...resolvedTrick.resolution, firedBuffIds: [taker.id] },
+      resolution: { ...resolvedTrick.resolution, firedBuffIds: [bellHigh.id] },
     }
     renderWell({
       currentTrick: [],
       resolvedTrick: fired,
-      offeredBuffs: [taker],
+      offeredBuffs: [bellHigh],
       quarryToLead: false,
       onCarryOn: vi.fn(),
     })
-    expect(screen.getByText('Bell-Taker (Momentum): +2 multiplier.')).toBeDefined()
+    expect(screen.getByText('Bell High (Momentum): +2 multiplier.')).toBeDefined()
   })
 
   it('narrates nothing when the fired id cannot be resolved against an empty offered pile', () => {
     const fired: ResolvedTrick = {
       ...resolvedTrick,
-      resolution: { ...resolvedTrick.resolution, firedBuffIds: [taker.id] },
+      resolution: { ...resolvedTrick.resolution, firedBuffIds: [bellHigh.id] },
     }
     renderWell({
       currentTrick: [],
@@ -123,7 +123,7 @@ describe('TrickWell — DLR-119 clauses', () => {
       quarryToLead: false,
       onCarryOn: vi.fn(),
     })
-    expect(screen.queryByText(/Bell-Taker/)).toBeNull()
+    expect(screen.queryByText(/Bell High/)).toBeNull()
   })
 
   it('renders no fired-buff clause when nothing fired', () => {

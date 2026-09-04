@@ -23,10 +23,10 @@ import {
 } from '../index'
 import { PLAYER_START_HEALTH } from '../config'
 
-const MOON_FEEDER_BLADE = templateById('feeder:moons:magnitude')!
-const BELL_FEEDER_BLADE = templateById('feeder:bells:magnitude')!
+const MOON_LOW_BLADE = templateById('suitLow:moons:magnitude')!
+const BELL_LOW_BLADE = templateById('suitLow:bells:magnitude')!
 
-function card(template = MOON_FEEDER_BLADE, tier: BuffTier = BuffTier.Bronze, id = 1): Buff {
+function card(template = MOON_LOW_BLADE, tier: BuffTier = BuffTier.Bronze, id = 1): Buff {
   return mintFromTemplate(template, tier, id)
 }
 
@@ -38,8 +38,8 @@ function runHolding(buffs: readonly Buff[]) {
 describe('the combine rule', () => {
   it('turns two identical bronzes into one silver of the same card', () => {
     const run = runHolding([
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 1),
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 2),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 1),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 2),
     ])
     const next = combineBuffs(run, buffCombineKey(run.buffs[0]))
     expect(next.buffs).toHaveLength(1)
@@ -52,8 +52,8 @@ describe('the combine rule', () => {
 
   it('turns two identical silvers into one gold', () => {
     const run = runHolding([
-      card(MOON_FEEDER_BLADE, BuffTier.Silver, 1),
-      card(MOON_FEEDER_BLADE, BuffTier.Silver, 2),
+      card(MOON_LOW_BLADE, BuffTier.Silver, 1),
+      card(MOON_LOW_BLADE, BuffTier.Silver, 2),
     ])
     const next = combineBuffs(run, buffCombineKey(run.buffs[0]))
     expect(next.buffs[0].tier).toBe(BuffTier.Gold)
@@ -61,10 +61,10 @@ describe('the combine rule', () => {
 
   it('drops the pile count by exactly one per combine', () => {
     const run = runHolding([
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 1),
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 2),
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 3),
-      card(BELL_FEEDER_BLADE, BuffTier.Bronze, 4),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 1),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 2),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 3),
+      card(BELL_LOW_BLADE, BuffTier.Bronze, 4),
     ])
     const next = combineBuffs(run, buffCombineKey(run.buffs[0]))
     expect(next.buffs).toHaveLength(3)
@@ -72,8 +72,8 @@ describe('the combine rule', () => {
 
   it('refuses a gold pile — there is no rung above it', () => {
     const gold = [
-      card(MOON_FEEDER_BLADE, BuffTier.Gold, 1),
-      card(MOON_FEEDER_BLADE, BuffTier.Gold, 2),
+      card(MOON_LOW_BLADE, BuffTier.Gold, 1),
+      card(MOON_LOW_BLADE, BuffTier.Gold, 2),
     ]
     expect(combineRefusalFor(gold, buffCombineKey(gold[0]))).toBe(CombineRefusal.AtMaxTier)
     expect(() => combineBuffs(runHolding(gold), buffCombineKey(gold[0]))).toThrow(RangeError)
@@ -81,16 +81,16 @@ describe('the combine rule', () => {
 
   it('refuses two copies of the same card at different tiers', () => {
     const mixed = [
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 1),
-      card(MOON_FEEDER_BLADE, BuffTier.Silver, 2),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 1),
+      card(MOON_LOW_BLADE, BuffTier.Silver, 2),
     ]
     expect(combineRefusalFor(mixed, buffCombineKey(mixed[0]))).toBe(CombineRefusal.NoPair)
   })
 
   it('refuses two different cards at the same tier', () => {
     const different = [
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 1),
-      card(BELL_FEEDER_BLADE, BuffTier.Bronze, 2),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 1),
+      card(BELL_LOW_BLADE, BuffTier.Bronze, 2),
     ]
     expect(buffCombineKey(different[0])).not.toBe(buffCombineKey(different[1]))
     expect(combineRefusalFor(different, buffCombineKey(different[0]))).toBe(CombineRefusal.NoPair)
@@ -98,9 +98,9 @@ describe('the combine rule', () => {
 
   it('consumes the two lowest ids and leaves the rest', () => {
     const three = [
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 5),
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 1),
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 3),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 5),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 1),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 3),
     ]
     const next = combineBuffs(runHolding(three), buffCombineKey(three[0]))
     expect(next.buffs.map((b) => b.id).sort((a, b) => a - b)).toEqual([5, 900])
@@ -125,10 +125,10 @@ describe('the combine rule', () => {
 
   it('produces a card that stacks with one the pool could already have dealt', () => {
     const pair = [
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 1),
-      card(MOON_FEEDER_BLADE, BuffTier.Bronze, 2),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 1),
+      card(MOON_LOW_BLADE, BuffTier.Bronze, 2),
     ]
-    const dealt = mintFromTemplate(MOON_FEEDER_BLADE, BuffTier.Silver, 77)
+    const dealt = mintFromTemplate(MOON_LOW_BLADE, BuffTier.Silver, 77)
     const next = combineBuffs(runHolding(pair), buffCombineKey(pair[0]))
     expect(buffCombineKey(next.buffs[0])).toBe(buffCombineKey(dealt))
   })
@@ -154,25 +154,25 @@ describe('BuffTier and AbilityTier', () => {
   })
 })
 
-const BELL_TAKER_BLADE = templateById('taker:bells:magnitude')!
-const KEYS_TAKER_BLADE = templateById('taker:keys:magnitude')!
-const MOONS_TAKER_BLADE = templateById('taker:moons:magnitude')!
-const BELL_TAKER_MOMENTUM = templateById('taker:bells:multiplier')!
-const SIDESTEP_BLADE = templateById('sidestep:magnitude')!
+const BELL_HIGH_BLADE = templateById('suitHigh:bells:magnitude')!
+const KEYS_HIGH_BLADE = templateById('suitHigh:keys:magnitude')!
+const MOONS_HIGH_BLADE = templateById('suitHigh:moons:magnitude')!
+const BELL_HIGH_MOMENTUM = templateById('suitHigh:bells:multiplier')!
+const SKULL_LOW_BLADE = templateById('skullLow:magnitude')!
 
-function wildBronzeTaker(id: number): Buff {
-  return wildenedBuff(mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, id))
+function wildBronzeSuitHigh(id: number): Buff {
+  return wildenedBuff(mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, id))
 }
 
 describe('the widened rule (DLR-162 AC6, AC8)', () => {
   it('pairs a wild card with a suited card of the same family, axis and tier', () => {
-    const pile = [wildBronzeTaker(1), mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, 2)]
+    const pile = [wildBronzeSuitHigh(1), mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, 2)]
     expect(combineRefusalFor(pile, buffCombineKey(pile[0]))).toBeNull()
     expect(combinePairFor(pile, buffCombineKey(pile[0]))?.map((b) => b.id)).toEqual([1, 2])
   })
 
   it('produces a card that is still wild, one tier up, paying what that tier pays (AC6)', () => {
-    const pile = [wildBronzeTaker(1), mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, 2)]
+    const pile = [wildBronzeSuitHigh(1), mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, 2)]
     const next = combineBuffs(runHolding(pile), buffCombineKey(pile[0]))
     expect(next.buffs).toHaveLength(1)
     expect(buffIsWild(next.buffs[0])).toBe(true)
@@ -182,39 +182,39 @@ describe('the widened rule (DLR-162 AC6, AC8)', () => {
   })
 
   it('refuses across families, across axes and across tiers even when one side is wild (AC8)', () => {
-    const wild = wildBronzeTaker(1)
+    const wild = wildBronzeSuitHigh(1)
     for (const other of [
-      mintFromTemplate(BELL_FEEDER_BLADE, BuffTier.Bronze, 2),
-      mintFromTemplate(BELL_TAKER_MOMENTUM, BuffTier.Bronze, 3),
-      mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Silver, 4),
+      mintFromTemplate(BELL_LOW_BLADE, BuffTier.Bronze, 2),
+      mintFromTemplate(BELL_HIGH_MOMENTUM, BuffTier.Bronze, 3),
+      mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Silver, 4),
     ]) {
       expect(combineRefusalFor([wild, other], buffCombineKey(wild))).toBe(CombineRefusal.NoPair)
     }
   })
 
   it('does NOT offer the combine from the suited pile - the wild pile owns it', () => {
-    const pile = [wildBronzeTaker(1), mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, 2)]
+    const pile = [wildBronzeSuitHigh(1), mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, 2)]
     expect(combineRefusalFor(pile, buffCombineKey(pile[1]))).toBe(CombineRefusal.NoPair)
   })
 
   it('prefers a suited partner over a second wild copy, so the player keeps more wild cards', () => {
     const pile = [
-      wildBronzeTaker(1),
-      wildBronzeTaker(2),
-      mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, 3),
+      wildBronzeSuitHigh(1),
+      wildBronzeSuitHigh(2),
+      mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, 3),
     ]
     expect(combinePairFor(pile, buffCombineKey(pile[0]))?.map((b) => b.id)).toEqual([1, 3])
   })
 
   it('still combines two wild copies when there is no suited partner', () => {
-    const pile = [wildBronzeTaker(1), wildBronzeTaker(2)]
+    const pile = [wildBronzeSuitHigh(1), wildBronzeSuitHigh(2)]
     expect(combinePairFor(pile, buffCombineKey(pile[0]))?.map((b) => b.id)).toEqual([1, 2])
   })
 
   it('leaves the ordinary same-card rule exactly as DLR-159 shipped it', () => {
     const pile = [
-      mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, 1),
-      mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, 2),
+      mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, 1),
+      mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, 2),
     ]
     const next = combineBuffs(runHolding(pile), buffCombineKey(pile[0]))
     expect(buffIsWild(next.buffs[0])).toBe(false)
@@ -227,12 +227,12 @@ describe('wildness is absorbing (DLR-162 AC7)', () => {
   // cards a combine would consume produces is wild if either of its inputs was.
   it('holds over every pair in a mixed pile', () => {
     const pile = [
-      wildBronzeTaker(1),
-      wildBronzeTaker(2),
-      mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, 3),
-      mintFromTemplate(KEYS_TAKER_BLADE, BuffTier.Bronze, 4),
-      mintFromTemplate(MOONS_TAKER_BLADE, BuffTier.Bronze, 5),
-      mintFromTemplate(BELL_FEEDER_BLADE, BuffTier.Bronze, 6),
+      wildBronzeSuitHigh(1),
+      wildBronzeSuitHigh(2),
+      mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, 3),
+      mintFromTemplate(KEYS_HIGH_BLADE, BuffTier.Bronze, 4),
+      mintFromTemplate(MOONS_HIGH_BLADE, BuffTier.Bronze, 5),
+      mintFromTemplate(BELL_LOW_BLADE, BuffTier.Bronze, 6),
     ]
     let checked = 0
     for (const key of new Set(pile.map(buffCombineKey))) {
@@ -248,9 +248,9 @@ describe('wildness is absorbing (DLR-162 AC7)', () => {
 
   it('never lets a repeated combine walk a wild card back to a suit', () => {
     let run = runHolding([
-      wildBronzeTaker(1),
-      mintFromTemplate(BELL_TAKER_BLADE, BuffTier.Bronze, 2),
-      mintFromTemplate(KEYS_TAKER_BLADE, BuffTier.Bronze, 3),
+      wildBronzeSuitHigh(1),
+      mintFromTemplate(BELL_HIGH_BLADE, BuffTier.Bronze, 2),
+      mintFromTemplate(KEYS_HIGH_BLADE, BuffTier.Bronze, 3),
     ])
     run = combineBuffs(run, buffCombineKey(run.buffs[0]))
     expect(run.buffs.filter((b) => buffIsWild(b))).toHaveLength(1)
@@ -271,8 +271,8 @@ describe('a wildcard cannot be combined (DLR-162)', () => {
 
 describe('buffCombineKey (DLR-162)', () => {
   it('tells a wild card apart from a suitless one', () => {
-    expect(buffCombineKey(wildBronzeTaker(1))).not.toBe(
-      buffCombineKey(mintFromTemplate(SIDESTEP_BLADE, BuffTier.Bronze, 2)),
+    expect(buffCombineKey(wildBronzeSuitHigh(1))).not.toBe(
+      buffCombineKey(mintFromTemplate(SKULL_LOW_BLADE, BuffTier.Bronze, 2)),
     )
   })
 })

@@ -36,7 +36,7 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
 }
 
 describe('playCard — banking and skulls', () => {
-  it('banks a clean win and clears the resolution on the next lead', () => {
+  it('banks a High Victory and clears the resolution on the next lead', () => {
     const state: RoundState = stateWith({
       hands: {
         player: [{ suit: 'moons', rank: 4 }],
@@ -49,7 +49,7 @@ describe('playCard — banking and skulls', () => {
     })
 
     const won = playCard(state, PlayerSide.Cpu, { suit: 'bells', rank: 2 })
-    expect(won.ok && won.state.lastResolution?.outcome).toBe(TrickOutcome.CleanWin)
+    expect(won.ok && won.state.lastResolution?.outcome).toBe(TrickOutcome.HighVictory)
 
     const led = playCard(won.ok ? won.state : state, PlayerSide.Player, {
       suit: 'moons',
@@ -73,7 +73,7 @@ describe('playCard — banking and skulls', () => {
     })
 
     const result = playCard(state, PlayerSide.Player, { suit: Suit.Bells, rank: 9 })
-    expect(result.ok && result.state.lastResolution?.outcome).toBe(TrickOutcome.SkullWin)
+    expect(result.ok && result.state.lastResolution?.outcome).toBe(TrickOutcome.HighDefeat)
     expect(result.ok && result.state.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
@@ -117,7 +117,7 @@ describe('playCard — banking and skulls', () => {
     })
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.CleanLoss)
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.LowDefeat)
     expect(result.state.lastResolution?.damageToPlayer).toBe(QUARRY_TREASURE_DAMAGE)
     expect(result.state.lastResolution?.treasureBonusEarned).toBe(false)
   })
@@ -134,7 +134,7 @@ describe('playCard — banking and skulls', () => {
     const result = playCard(state, PlayerSide.Player, treasure, undefined, { handFloor: 0 })
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.CleanWin)
+    expect(result.state.lastResolution?.outcome).toBe(TrickOutcome.HighVictory)
     expect(result.state.lastResolution?.treasureBonusEarned).toBe(true)
     expect(result.state.lastResolution?.damageToPlayer).toBe(0)
   })

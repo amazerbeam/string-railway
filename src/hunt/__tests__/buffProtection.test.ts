@@ -3,7 +3,7 @@ import {
   NO_STREAK_PROTECTION,
   conditionIsWidened,
   isProtectiveKind,
-  protectionCoversCleanLoss,
+  protectionCoversLowDefeat,
   streakProtectionFor,
 } from '../buffProtection'
 import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
@@ -11,7 +11,7 @@ import { mintFromTemplate } from '../buffTemplates'
 
 const HELMET_TEMPLATE = { form: 'condition', id: 'skullHelmet:protection', kind: BuffKind.SkullHelmet, axis: BuffRewardAxis.Protection } as const
 const TETHER_TEMPLATE = { form: 'condition', id: 'skullTether:protection', kind: BuffKind.SkullTether, axis: BuffRewardAxis.Protection } as const
-const TAKER_TEMPLATE = { form: 'condition', id: 'taker:bells:magnitude', kind: BuffKind.Taker, axis: BuffRewardAxis.Magnitude, target: { suit: 'bells' as const } } as const
+const SUIT_HIGH_TEMPLATE = { form: 'condition', id: 'suitHigh:bells:magnitude', kind: BuffKind.SuitHigh, axis: BuffRewardAxis.Magnitude, target: { suit: 'bells' as const } } as const
 
 function helmet(tier: BuffTier, id = 1): Buff {
   return mintFromTemplate(HELMET_TEMPLATE, tier, id)
@@ -19,8 +19,8 @@ function helmet(tier: BuffTier, id = 1): Buff {
 function tether(tier: BuffTier, id = 1): Buff {
   return mintFromTemplate(TETHER_TEMPLATE, tier, id)
 }
-function taker(tier: BuffTier, id = 1): Buff {
-  return mintFromTemplate(TAKER_TEMPLATE, tier, id)
+function suitHigh(tier: BuffTier, id = 1): Buff {
+  return mintFromTemplate(SUIT_HIGH_TEMPLATE, tier, id)
 }
 
 describe('streakProtectionFor', () => {
@@ -67,26 +67,26 @@ describe('streakProtectionFor', () => {
     expect(result.rollBonus).toBe(1)
   })
 
-  it('a fired Taker changes nothing', () => {
-    const result = streakProtectionFor([taker(BuffTier.Gold)])
+  it('a fired Suit High card changes nothing', () => {
+    const result = streakProtectionFor([suitHigh(BuffTier.Gold)])
     expect(result).toEqual(NO_STREAK_PROTECTION)
   })
 })
 
-describe('protectionCoversCleanLoss', () => {
+describe('protectionCoversLowDefeat', () => {
   it('is false at bronze', () => {
-    expect(protectionCoversCleanLoss(BuffTier.Bronze)).toBe(false)
+    expect(protectionCoversLowDefeat(BuffTier.Bronze)).toBe(false)
   })
 
   it('is true at silver and gold', () => {
-    expect(protectionCoversCleanLoss(BuffTier.Silver)).toBe(true)
-    expect(protectionCoversCleanLoss(BuffTier.Gold)).toBe(true)
+    expect(protectionCoversLowDefeat(BuffTier.Silver)).toBe(true)
+    expect(protectionCoversLowDefeat(BuffTier.Gold)).toBe(true)
   })
 })
 
 describe('conditionIsWidened', () => {
-  it('is false for a silver Taker — not a protective kind at all', () => {
-    expect(conditionIsWidened(taker(BuffTier.Silver))).toBe(false)
+  it('is false for a silver Suit High card — not a protective kind at all', () => {
+    expect(conditionIsWidened(suitHigh(BuffTier.Silver))).toBe(false)
   })
 
   it('is false for a bronze Helmet', () => {
@@ -103,6 +103,6 @@ describe('isProtectiveKind', () => {
   it('is true only for the two protective families', () => {
     expect(isProtectiveKind(BuffKind.SkullHelmet)).toBe(true)
     expect(isProtectiveKind(BuffKind.SkullTether)).toBe(true)
-    expect(isProtectiveKind(BuffKind.Taker)).toBe(false)
+    expect(isProtectiveKind(BuffKind.SuitHigh)).toBe(false)
   })
 })

@@ -1,7 +1,7 @@
 import { WildMark } from '../warCouncil/WildMark'
 
 /**
- * 2026-09-01 — the four drawn marks that are NOT a suit: Sidestep, Cheat, Skull Helmet
+ * 2026-09-01 — the four drawn marks that are NOT a suit: Skull Low, Cheat, Skull Helmet
  * and Skull Tether.
  *
  * Extracted from `SlotReel.tsx` when the strip list became glyph chips (`SlotStripChips.tsx`), so
@@ -15,12 +15,13 @@ import { WildMark } from '../warCouncil/WildMark'
  * DLR-161 — Skull Helmet and Skull Tether share ONE colour token (`--wc-guard`, both stylesheets),
  * so the two are told apart by SHAPE, not tint: the Helmet is a dome over a skull (the blow lands,
  * the dome takes it), the Tether is a taut line to an anchor (the roll stays tied on). Each also
- * reads distinctly from Sidestep's three chevrons with colour removed.
+ * reads distinctly from Skull Low's three chevrons with colour removed. (DLR-165 renamed the mark,
+ * not the drawing: the same three chevrons are still what the card shows.)
  */
 // DLR-167 — Curse's mark is an arrow coming DOWN onto a skull: the player puts the skull there,
 // which is what tells it apart from the Helmet's dome-over-skull with colour removed.
 export type SlotGlyphKind =
-  'sidestep' | 'cheat' | 'skullHelmet' | 'skullTether' | 'wildcard' | 'curse'
+  'skullLow' | 'cheat' | 'skullHelmet' | 'skullTether' | 'wildcard' | 'curse'
 
 interface SlotGlyphProps {
   readonly kind: SlotGlyphKind
@@ -35,7 +36,7 @@ export default function SlotGlyph({ kind, className }: SlotGlyphProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-        {kind === 'sidestep' && (
+        {kind === 'skullLow' && (
           <>
             <path d="M4 6.5 9.5 12 4 17.5" />
             <path d="M12.5 6.5 18 12l-5.5 5.5" opacity=".55" />

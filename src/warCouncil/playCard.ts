@@ -123,7 +123,7 @@ export function playCard(
   const lastResolution = resolveTrickBank(
     { total: next.total, roll: next.roll },
     {
-      playerWon: winner === PlayerSide.Player,
+      playerWentHigh: winner === PlayerSide.Player,
       // DLR-167 AC5 — the UNION of the Quarry's dealt skulls and the player's own curses, through
       // the rule that already exists: a trick is a skull trick iff any card played into it is
       // skulled. No new branch and no new outcome — a cursed player card simply flips this trick.

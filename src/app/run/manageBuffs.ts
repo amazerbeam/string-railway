@@ -26,7 +26,7 @@ import { heldBuffStacks } from './heldBuffs'
  * DLR-162 — the screen now has TWO gestures rather than one: combine a pile, and spend a wildcard
  * on a card to take its suit off. Both are arm-then-confirm-on-the-tile, and both take every
  * arithmetic answer from here. `wildTargets` lists EVERY held pile, refused ones included with
- * their reason, because a player who holds four Sidesteps needs to see why they cannot be targeted.
+ * their reason, because a player who holds four Skull Lows needs to see why they cannot be targeted.
  */
 
 /** One pile, as the screen reads it. */

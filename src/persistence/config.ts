@@ -16,7 +16,15 @@ export const SAVE_KEY_SEPARATOR = ':'
 
 /**
  * The schema version stamped into every envelope written today. A schema IDENTITY, not a tuning
- * value — there is exactly one correct value for the first version of a schema. Bump it when a
- * stored payload's shape changes incompatibly, and never otherwise.
+ * value — there is exactly one correct successor to any given version. Bump it when a stored
+ * payload's shape changes incompatibly, and never otherwise.
+ *
+ * DLR-165 — bumped 1 → 2. The `BuffKind` values that `templateIdFor` composes persisted template
+ * ids from were renamed (`taker:` → `suitHigh:`, `feeder:` → `suitLow:`, `sidestep:` →
+ * `skullLow:`), so every id already on disk is unresolvable. `reconcileVault` would drop each one
+ * silently and the developer's boosts and grants would vanish with no message; the bump makes
+ * `saveStore` return `SaveReadOutcome.VersionMismatch` and the default instead. This RESETS the
+ * Vault once, which is deliberate and preferred to a migration map that would keep the dead
+ * vocabulary alive in code. See `.claude/rules/save-data-versioning.md`.
  */
-export const SAVE_SCHEMA_VERSION = 1
+export const SAVE_SCHEMA_VERSION = 2

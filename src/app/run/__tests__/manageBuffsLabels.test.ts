@@ -31,7 +31,7 @@ function fromTemplate(id: string, tier: BuffTier, buffId: BuffId): Buff {
   return mintFromTemplate(template, tier, buffId)
 }
 
-const bellTaker = (tier: BuffTier, id: BuffId) => fromTemplate('taker:bells:magnitude', tier, id)
+const bellHigh = (tier: BuffTier, id: BuffId) => fromTemplate('suitHigh:bells:magnitude', tier, id)
 
 describe('the refusal tables are total', () => {
   it('words every combine refusal, including the wildcard one', () => {
@@ -49,22 +49,22 @@ describe('the refusal tables are total', () => {
 
 describe('combineConfirmDestroyPairText (DLR-162)', () => {
   it('says "2 ×" for an ordinary same-card combine', () => {
-    const card = bellTaker(BuffTier.Bronze, 1)
+    const card = bellHigh(BuffTier.Bronze, 1)
     expect(combineConfirmDestroyPairText(card, null)).toBe(combineConfirmDestroyText(card))
-    expect(combineConfirmDestroyPairText(card, null)).toBe('2 × Bronze Bell-Taker (Blade)')
+    expect(combineConfirmDestroyPairText(card, null)).toBe('2 × Bronze Bell High (Blade)')
   })
 
   it('names BOTH cards when a wild pile eats a suited one', () => {
-    const wild = wildenedBuff(bellTaker(BuffTier.Bronze, 1))
-    const suited = bellTaker(BuffTier.Bronze, 2)
+    const wild = wildenedBuff(bellHigh(BuffTier.Bronze, 1))
+    const suited = bellHigh(BuffTier.Bronze, 2)
     expect(combineConfirmDestroyPairText(wild, suited)).toBe(
-      '1 × Bronze Wild Taker (Blade) + 1 × Bronze Bell-Taker (Blade)',
+      '1 × Bronze Wild High (Blade) + 1 × Bronze Bell High (Blade)',
     )
   })
 })
 
 describe('the wildcard spend confirmation (DLR-162)', () => {
-  const suited = bellTaker(BuffTier.Silver, 3)
+  const suited = bellHigh(BuffTier.Silver, 3)
   const made = wildenedBuff(suited)
 
   it('names the wildcard destroyed, at its own tier', () => {
@@ -73,24 +73,24 @@ describe('the wildcard spend confirmation (DLR-162)', () => {
   })
 
   it('names the produced card with its payoff', () => {
-    expect(wildConfirmMakeText(made)).toBe('1 × Silver Wild Taker (Blade) — +3 damage')
+    expect(wildConfirmMakeText(made)).toBe('1 × Silver Wild High (Blade) — +3 damage')
   })
 
   it('announces the spend in the cards own terms', () => {
-    expect(wildDoneText(suited, made)).toContain('Silver Wild Taker (Blade)')
+    expect(wildDoneText(suited, made)).toContain('Silver Wild High (Blade)')
   })
 })
 
 describe('wildTargetTileAccessibleName (DLR-162)', () => {
   it('states what a selectable target would become', () => {
-    const suited = bellTaker(BuffTier.Bronze, 1)
+    const suited = bellHigh(BuffTier.Bronze, 1)
     const name = wildTargetTileAccessibleName(suited, 2, wildenedBuff(suited), null)
-    expect(name).toContain('Bronze Bell-Taker (Blade), 2 held.')
-    expect(name).toContain('Bronze Wild Taker (Blade)')
+    expect(name).toContain('Bronze Bell High (Blade), 2 held.')
+    expect(name).toContain('Bronze Wild High (Blade)')
   })
 
   it('carries the reason on a refused target', () => {
-    const wild = wildenedBuff(bellTaker(BuffTier.Bronze, 1))
+    const wild = wildenedBuff(bellHigh(BuffTier.Bronze, 1))
     expect(wildTargetTileAccessibleName(wild, 1, null, WildRefusal.AlreadyWild)).toContain(
       WILD_REFUSAL_MESSAGE[WildRefusal.AlreadyWild],
     )

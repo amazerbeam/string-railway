@@ -23,18 +23,18 @@ function handFixture(overrides: Partial<HandReport> = {}): HandReport {
     fault: null,
     buffWindowObservations: [],
     buffFireOutcomes: [],
-    feederCarriedIn: EMPTY_BUFF_CARRY,
-    feederCarryOut: EMPTY_BUFF_CARRY,
+    lowCarryIn: EMPTY_BUFF_CARRY,
+    lowCarryOut: EMPTY_BUFF_CARRY,
     streakIn: EMPTY_STREAK,
     streakOut: EMPTY_STREAK,
     potsApplied: [],
     playerHealthAtStart: 10,
     maxPlayerHealthAtStart: 10,
     trickOutcomes: {
-      cleanWin: 0,
-      dodge: 0,
-      cleanLoss: 0,
-      skullWin: 0,
+      highVictory: 0,
+      lowVictory: 0,
+      lowDefeat: 0,
+      highDefeat: 0,
       hurtLeading: 0,
       hurtFollowing: 0,
     },
@@ -75,6 +75,26 @@ describe('simulate + formatSummary', () => {
     const seedEleven = formatSummary(simulate({ runs: 5, baseSeed: 11 }, baselinePolicy))
     const seedTwelve = formatSummary(simulate({ runs: 5, baseSeed: 12 }, baselinePolicy))
     expect(seedEleven).not.toBe(seedTwelve)
+  })
+
+  // DLR-165 renamed the four outcome counters (`cleanWin`/`dodge`/`cleanLoss`/`skullWin` →
+  // `highVictory`/`lowVictory`/`lowDefeat`/`highDefeat`) and nothing else in this tree. This pins
+  // the invariant `TrickOutcomeCounts`'s own docblock states, which is what the rename could
+  // plausibly have broken: the two DEFEATS are exactly the hurt tricks, split by who was leading.
+  // A counter left keyed on a retired name shows up here as a mismatch rather than as a silently
+  // missing row in the printed report.
+  it('DLR-165 — the two renamed Defeat counters are exactly the hurt tricks', () => {
+    const summary = simulate({ runs: 8, baseSeed: 7 }, baselinePolicy)
+    let hurtSeen = 0
+    for (const run of summary.runs) {
+      for (const hand of run.hands) {
+        const oc = hand.trickOutcomes
+        expect(oc.lowDefeat + oc.highDefeat).toBe(oc.hurtLeading + oc.hurtFollowing)
+        hurtSeen += oc.hurtLeading + oc.hurtFollowing
+      }
+    }
+    // Guard against the assertion above passing vacuously on all-zero counters.
+    expect(hurtSeen).toBeGreaterThan(0)
   })
 
   it('terminates: every run of a 10-run batch is not Stalled and played at least one hand', () => {

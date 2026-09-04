@@ -31,8 +31,8 @@ import type { RunState } from './run'
 /** Why a wildcard cannot be spent on this card (AC5). A reason CODE, not a sentence —
  *  `src/app/run/manageBuffsLabels.ts` words it, as `COMBINE_REFUSAL_MESSAGE` words the other. */
 export const WildRefusal = {
-  /** The target names no suit at all — Sidestep, the two protective families, an activated card,
-   *  or another wildcard. AC5: Sidestep already asks for no suit and needs nothing in return. */
+  /** The target names no suit at all — Skull Low, the two protective families, an activated card,
+   *  or another wildcard. AC5: Skull Low already asks for no suit and needs nothing in return. */
   NoSuit: 'noSuit',
   /** The target is already wild; there is no second suit to take off. */
   AlreadyWild: 'alreadyWild',
@@ -54,7 +54,7 @@ export function wildRefusalFor(target: Buff): WildRefusal | null {
 }
 
 /** A wild card at `tier`, minted from the SAME `REWARD_TIER_VALUE` ladder `mintFromTemplate`
- *  reads, so a wild silver Taker pays exactly what a suited silver Taker pays. THROWS a
+ *  reads, so a wild silver Suit High card pays exactly what a suited silver one pays. THROWS a
  *  `RangeError` on an axis with no ladder rather than minting a zero-value card —
  *  `mintFromTemplate`'s own discipline, and a plausible-looking zero is the bug that type-checks.
  *  `id` is the CALLER's. */

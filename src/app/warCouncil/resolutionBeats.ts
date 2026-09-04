@@ -27,7 +27,7 @@ export const BeatKind = {
   Overlap: 'overlap', // AC16 — the Overlap Bonus, its own beat
   Banked: 'banked', // the summary row: total and roll before -> after
   Hurt: 'hurt', // the hurt branch: health taken, pot lost
-  // DLR-156 B2 — a REPLACED clean loss (DLR-90 AC5): `trickDamage === null` (not TAKEN) but
+  // DLR-156 B2 — a REPLACED Low Defeat (DLR-90 AC5): `trickDamage === null` (not TAKEN) but
   // NOTHING reset — no health taken, total and roll stand. Distinct from `Hurt` because the
   // wording is genuinely different, not a cosmetic variant of it.
   Absorbed: 'absorbed',
@@ -65,7 +65,7 @@ function resolveFired(firedBuffIds: readonly BuffId[], fired: readonly Buff[]): 
  *  two-thirds consolation, so the pot lost is the DIFFERENCE between the pre-trick pot and the
  *  post-trick pot — DLR-161: a Skull Helmet, a Skull Tether or a Swan rung can carry a figure
  *  through the reset, and reporting the whole pre-trick pot would narrate a streak as wiped when
- *  it in fact survived) — but a REPLACED clean loss (DLR-90 AC5, a primed card the Quarry wins cleanly)
+ *  it in fact survived) — but a REPLACED Low Defeat (DLR-90 AC5, a primed card the Quarry takes cleanly)
  *  resets NOTHING: `resolution.damageToPlayer === 0` is then a total and reliable test (§
  *  `streak.ts`'s own `trickHit` gate: it being true always makes
  *  `damageToPlayer` positive, so `0` here can only mean neither fired), and the beat is

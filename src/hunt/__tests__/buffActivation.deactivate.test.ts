@@ -43,10 +43,10 @@ function conditionBuff(kind: BuffKind, tier: BuffTier, id: number): Buff {
 }
 
 describe('isRevocableBuff — DLR-153 AC10, the one statement of which cards may be taken back', () => {
-  it('is true for the three condition families — Taker, Feeder, Sidestep', () => {
-    expect(isRevocableBuff(conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1))).toBe(true)
-    expect(isRevocableBuff(conditionBuff(BuffKind.Feeder, BuffTier.Bronze, 2))).toBe(true)
-    expect(isRevocableBuff(conditionBuff(BuffKind.Sidestep, BuffTier.Bronze, 3))).toBe(true)
+  it('is true for the three condition families — Suit High, Suit Low, Skull Low', () => {
+    expect(isRevocableBuff(conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1))).toBe(true)
+    expect(isRevocableBuff(conditionBuff(BuffKind.SuitLow, BuffTier.Bronze, 2))).toBe(true)
+    expect(isRevocableBuff(conditionBuff(BuffKind.SkullLow, BuffTier.Bronze, 3))).toBe(true)
   })
 
   it('is false for the Activated cards that stay non-revocable — Cheat, Ward, Shield', () => {
@@ -58,10 +58,10 @@ describe('isRevocableBuff — DLR-153 AC10, the one statement of which cards may
 
 describe('deactivateFromPile — DLR-153 AC10, the mirror of activateFromPile', () => {
   it('returns activatedThisTrick and spentThisTrick to empty, restores the card, and refunds the pool', () => {
-    const taker = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
-    const { activation, buffs } = activateFromPile(startBuffActivation(), [taker], taker, true)
+    const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
+    const { activation, buffs } = activateFromPile(startBuffActivation(), [suitHigh], suitHigh, true)
 
-    const reverted = deactivateFromPile(activation, buffs, taker)
+    const reverted = deactivateFromPile(activation, buffs, suitHigh)
 
     expect(reverted.activation.activatedThisTrick).toEqual([])
     expect(reverted.activation.spentThisTrick).toEqual([])
@@ -70,9 +70,9 @@ describe('deactivateFromPile — DLR-153 AC10, the mirror of activateFromPile', 
   })
 
   it('appends the restored card to the end of the pile rather than its old index', () => {
-    const first = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
-    const second = conditionBuff(BuffKind.Feeder, BuffTier.Bronze, 2)
-    const third = conditionBuff(BuffKind.Sidestep, BuffTier.Bronze, 3)
+    const first = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
+    const second = conditionBuff(BuffKind.SuitLow, BuffTier.Bronze, 2)
+    const third = conditionBuff(BuffKind.SkullLow, BuffTier.Bronze, 3)
     const pile: readonly Buff[] = [first, second, third]
 
     const { activation, buffs } = activateFromPile(startBuffActivation(), pile, first, true)
@@ -84,11 +84,11 @@ describe('deactivateFromPile — DLR-153 AC10, the mirror of activateFromPile', 
 
   it('does not add a card a second time when it never left the pile — a revocable buff whose card was never removed, e.g. under a CONDITION_CARD_SINGLE_USE = false toggle', () => {
     const kept = conditionBuff(BuffKind.MarkOfRank, BuffTier.Bronze, 1)
-    const taker = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 2)
-    const pile: readonly Buff[] = [kept, taker]
+    const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 2)
+    const pile: readonly Buff[] = [kept, suitHigh]
     const state = { ...startBuffActivation(), activatedThisTrick: [2], spentThisTrick: [] }
 
-    const reverted = deactivateFromPile(state, pile, taker)
+    const reverted = deactivateFromPile(state, pile, suitHigh)
     expect(reverted.buffs).toHaveLength(2)
     expect(reverted.buffs.map((b) => b.id).sort()).toEqual([1, 2])
   })
@@ -101,24 +101,24 @@ describe('deactivateFromPile — DLR-153 AC10, the mirror of activateFromPile', 
   })
 
   it('throws a RangeError naming the reason for a revocable buff that is not riding this trick', () => {
-    const taker = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
+    const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
     const state = startBuffActivation()
 
-    expect(() => deactivateFromPile(state, [taker], taker)).toThrow(RangeError)
+    expect(() => deactivateFromPile(state, [suitHigh], suitHigh)).toThrow(RangeError)
   })
 
   it('leaves the other activated buff in activatedThisTrick when only one of two is revoked', () => {
-    const taker = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
-    const feeder = conditionBuff(BuffKind.Feeder, BuffTier.Bronze, 2)
-    const pile: readonly Buff[] = [taker, feeder]
+    const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
+    const suitLow = conditionBuff(BuffKind.SuitLow, BuffTier.Bronze, 2)
+    const pile: readonly Buff[] = [suitHigh, suitLow]
 
-    const afterTaker = activateFromPile(startBuffActivation(), pile, taker, true)
-    const afterFeeder = activateFromPile(afterTaker.activation, afterTaker.buffs, feeder, true)
+    const afterSuitHigh = activateFromPile(startBuffActivation(), pile, suitHigh, true)
+    const afterSuitLow = activateFromPile(afterSuitHigh.activation, afterSuitHigh.buffs, suitLow, true)
 
-    const reverted = deactivateFromPile(afterFeeder.activation, afterFeeder.buffs, taker)
+    const reverted = deactivateFromPile(afterSuitLow.activation, afterSuitLow.buffs, suitHigh)
 
     expect(reverted.activation.activatedThisTrick).toEqual([2])
-    // Feeder is still spent — only the revoked Taker comes back into the pile.
+    // The Suit Low card is still spent — only the revoked Suit High card comes back into the pile.
     expect(reverted.buffs.map((b) => b.id)).toEqual([1])
   })
 })

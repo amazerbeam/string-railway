@@ -7,16 +7,16 @@ import { BeatKind, resolutionBeatsFor } from '../resolutionBeats'
 const buff = (id: string, tier: BuffTier, buffId: number): Buff =>
   mintFromTemplate(templateById(id)!, tier, buffId)
 
-const bladeTaker = buff('taker:bells:magnitude', BuffTier.Bronze, 1) // +1 DMG
-const momentumTakerA = buff('taker:bells:multiplier', BuffTier.Bronze, 2) // +2 MULT
-const momentumTakerB = buff('taker:bells:multiplier', BuffTier.Bronze, 3) // +2 MULT
+const bladeHigh = buff('suitHigh:bells:magnitude', BuffTier.Bronze, 1) // +1 DMG
+const momentumHighA = buff('suitHigh:bells:multiplier', BuffTier.Bronze, 2) // +2 MULT
+const momentumHighB = buff('suitHigh:bells:multiplier', BuffTier.Bronze, 3) // +2 MULT
 
 const BEFORE: StreakState = { total: 12, roll: 2 }
 
-/** `ui-notes.md` §3's worked run: three Bell-Takers riding, a Bells trick taken, opening total 12
+/** `ui-notes.md` §3's worked run: three Bell Highs riding, a Bells trick taken, opening total 12
  *  at roll 2 — Blade +1 DMG, then two Momentum +2 MULT, then the Overlap Bonus. */
 const WORKED_RESOLUTION: TrickResolution = {
-  outcome: TrickOutcome.CleanWin,
+  outcome: TrickOutcome.HighVictory,
   trickDamage: {
     base: 1,
     buffDamage: 1,
@@ -29,12 +29,12 @@ const WORKED_RESOLUTION: TrickResolution = {
   total: 26, // 12 + 14
   roll: 3,
   buffAccrual: null,
-  firedBuffIds: [bladeTaker.id, momentumTakerA.id, momentumTakerB.id],
+  firedBuffIds: [bladeHigh.id, momentumHighA.id, momentumHighB.id],
 
   treasureBonusEarned: false,
 }
 
-const WORKED_FIRED: readonly Buff[] = [bladeTaker, momentumTakerA, momentumTakerB]
+const WORKED_FIRED: readonly Buff[] = [bladeHigh, momentumHighA, momentumHighB]
 
 describe('resolutionBeatsFor — the worked run', () => {
   const beats = resolutionBeatsFor(WORKED_RESOLUTION, WORKED_FIRED, BEFORE)
@@ -95,11 +95,11 @@ describe('resolutionBeatsFor — edge shapes', () => {
       trickDamage: { base: 1, buffDamage: 1, buffMult: 1, overlapBonus: 0, dealt: 2 },
       total: 14,
       roll: 3,
-      firedBuffIds: [bladeTaker.id],
+      firedBuffIds: [bladeHigh.id],
 
       treasureBonusEarned: false,
     }
-    const beats = resolutionBeatsFor(resolution, [bladeTaker], BEFORE)
+    const beats = resolutionBeatsFor(resolution, [bladeHigh], BEFORE)
     expect(beats.map((beat) => beat.kind)).toEqual([BeatKind.Base, BeatKind.Blade, BeatKind.Banked])
     expect(beats.some((beat) => beat.kind === BeatKind.Overlap)).toBe(false)
     expect(beats[beats.length - 1]!.running).toBe(2)
@@ -108,7 +108,7 @@ describe('resolutionBeatsFor — edge shapes', () => {
   it('a hurt trick produces exactly one beat, Hurt, carrying the health taken and the pot lost', () => {
     const before: StreakState = { total: 12, roll: 2 }
     const resolution: TrickResolution = {
-      outcome: TrickOutcome.CleanLoss,
+      outcome: TrickOutcome.LowDefeat,
       trickDamage: null,
       cashOut: 0,
       damageToPlayer: 2,
@@ -131,7 +131,7 @@ describe('resolutionBeatsFor — edge shapes', () => {
   it('DLR-161 — a hurt trick a Helmet kept the total through reports the pot ACTUALLY lost, not the whole pre-trick pot', () => {
     const before: StreakState = { total: 8, roll: 2 }
     const resolution: TrickResolution = {
-      outcome: TrickOutcome.CleanLoss,
+      outcome: TrickOutcome.LowDefeat,
       trickDamage: null,
       cashOut: 0,
       damageToPlayer: 1,
@@ -153,7 +153,7 @@ describe('resolutionBeatsFor — edge shapes', () => {
   it('DLR-161 — a hurt trick both cards protected reports 0 lost, since the whole pot survived', () => {
     const before: StreakState = { total: 8, roll: 2 }
     const resolution: TrickResolution = {
-      outcome: TrickOutcome.CleanLoss,
+      outcome: TrickOutcome.LowDefeat,
       trickDamage: null,
       cashOut: 0,
       damageToPlayer: 1,
@@ -174,7 +174,7 @@ describe('resolutionBeatsFor — edge shapes', () => {
   it('DLR-161 — a hurt trick where a gold Helmet grows the total past the pre-trick pot clamps to 0, not negative', () => {
     const before: StreakState = { total: 8, roll: 2 }
     const resolution: TrickResolution = {
-      outcome: TrickOutcome.CleanLoss,
+      outcome: TrickOutcome.LowDefeat,
       trickDamage: null,
       cashOut: 0,
       damageToPlayer: 1,
@@ -194,10 +194,10 @@ describe('resolutionBeatsFor — edge shapes', () => {
     expect(beats[0]!.label).toBe('Hurt — −1 health, 0 pot lost')
   })
 
-  it('DLR-156 B2 — a REPLACED clean loss (DLR-90 AC5, a primed card the Quarry wins cleanly) produces exactly one beat, Absorbed, not Hurt — nothing was actually lost', () => {
+  it('DLR-156 B2 — a REPLACED Low Defeat (DLR-90 AC5, a primed card the Quarry takes cleanly) produces exactly one beat, Absorbed, not Hurt — nothing was actually lost', () => {
     const before: StreakState = { total: 12, roll: 2 }
     const resolution: TrickResolution = {
-      outcome: TrickOutcome.CleanLoss,
+      outcome: TrickOutcome.LowDefeat,
       trickDamage: null,
       cashOut: 0,
       // The replaced branch's own signature: zero, because neither the ordinary hit nor a

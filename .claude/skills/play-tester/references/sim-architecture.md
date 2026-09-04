@@ -43,7 +43,7 @@ to make it selectable via `--policy <name>`.
 
 `src/sim/types.ts`:
 
-- `HandReport` — one hand's facts (damage each way, tricks won, buffs activated, AP spent, Apply
+- `HandReport` — one hand's facts (damage each way, the four trick outcomes counted, buffs activated, AP spent, Apply
   Damage presses, coins from buffs, `activatableBuffsHeld` at hand start, discards/cheats used,
   `stalled`/`fault` bug signals).
 - `RunReport` — one run's facts (seed, `RunEnding`, fight reached, fights won, the hand-by-hand

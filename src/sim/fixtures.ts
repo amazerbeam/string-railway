@@ -96,19 +96,19 @@ export function fixtureRunAfterFirstFight(seed = 1301): RunState {
 
 /** Two cheap, real, activatable buffs — real templates minted via `mintFromTemplate`, exactly as
  *  `baselinePolicy.test.ts` does, because a fresh run's pile is a random draw (DLR-135) and this
- *  fixture needs two buffs of a KNOWN cost. Taker on the Magnitude
- *  axis at Bronze costs `1` AP each (`REWARD_BASE.magnitude.bronze + CONDITION_MODIFIER.taker` =
+ *  fixture needs two buffs of a KNOWN cost. Suit High on the Magnitude
+ *  axis at Bronze costs `1` AP each (`REWARD_BASE.magnitude.bronze + CONDITION_MODIFIER.suitHigh` =
  *  `1 + 0`), so both together cost `2` of `STARTING_AP`'s `6`, comfortably affordable. */
 function twoCheapActivatableBuffs(): readonly Buff[] {
-  const takerMagnitudeTemplates = templatesForFamily(BuffKind.Taker).filter(
+  const suitHighMagnitudeTemplates = templatesForFamily(BuffKind.SuitHigh).filter(
     (template) => template.form === 'condition' && template.axis === BuffRewardAxis.Magnitude,
   )
-  if (takerMagnitudeTemplates.length < 2) {
+  if (suitHighMagnitudeTemplates.length < 2) {
     throw new RangeError(
-      `twoCheapActivatableBuffs: expected at least 2 Taker/Magnitude templates, found ${takerMagnitudeTemplates.length}`,
+      `twoCheapActivatableBuffs: expected at least 2 SuitHigh/Magnitude templates, found ${suitHighMagnitudeTemplates.length}`,
     )
   }
-  return takerMagnitudeTemplates
+  return suitHighMagnitudeTemplates
     .slice(0, 2)
     .map((template, index) => mintFromTemplate(template, BuffTier.Bronze, 9001 + index))
 }

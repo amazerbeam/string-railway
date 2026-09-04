@@ -30,8 +30,10 @@ export interface CpuAdvanceResult {
 
 /** A trick resolved iff the engine wrote a `lastResolution` on `after` — the definitive signal
  *  now that the bank, not `tricksWon`, is what changed. The physical winner is recovered from
- *  the outcome itself (`CleanWin`/`SkullWin` favour the player, `Dodge`/`CleanLoss` favour the
- *  Quarry) rather than by diffing `tricksWon`, which `resolveTrickBank` already consulted once. */
+ *  the outcome itself — the two HIGH outcomes (`HighVictory`/`HighDefeat`) are the ones the player
+ *  physically took, the two LOW ones the Quarry did — rather than by diffing `tricksWon`, which
+ *  `resolveTrickBank` already consulted once. This reads the MECHANICAL axis, not the outcome axis:
+ *  a Victory favours the player and a Defeat favours the Quarry, whichever way the player went. */
 export function deriveResolvedTrick(
   before: WarCouncilState,
   after: WarCouncilState,
@@ -42,7 +44,8 @@ export function deriveResolvedTrick(
     return null
   }
   const winner =
-    resolution.outcome === TrickOutcome.CleanWin || resolution.outcome === TrickOutcome.SkullWin
+    resolution.outcome === TrickOutcome.HighVictory ||
+    resolution.outcome === TrickOutcome.HighDefeat
       ? PlayerSide.Player
       : PlayerSide.Cpu
   return {

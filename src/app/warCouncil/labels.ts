@@ -121,13 +121,15 @@ export function healthBarValueText(view: HealthBarView): string {
 
 export const FINISH_ROUND_LABEL = 'Deal the next Hunt'
 
-/** §3.2's four outcomes, as the player is told them. Placeholder copy: the wording is the
- *  developer's. */
+/** §3.2's four outcomes, as the player is told them on the bank meter — the second copy of outcome
+ *  wording, distinct from the resolution panel's headline. DLR-165 leads each with the four-way
+ *  name (AC1: the bank meter is a player-facing surface that named an outcome), then the
+ *  consequence. Placeholder copy: the wording after the name is the developer's. */
 export const TRICK_OUTCOME_MESSAGE: Readonly<Record<TrickOutcome, string>> = {
-  [TrickOutcome.CleanWin]: 'Clean trick, taken. The streak climbs.',
-  [TrickOutcome.Dodge]: 'Skull dodged. The streak climbs.',
-  [TrickOutcome.CleanLoss]: 'Clean trick lost. 1 damage — the streak is lost.',
-  [TrickOutcome.SkullWin]: 'You ate the skull. 1 damage — the streak is lost.',
+  [TrickOutcome.HighVictory]: 'High Victory. The streak climbs.',
+  [TrickOutcome.LowVictory]: 'Low Victory. The skull passed you by — the streak climbs.',
+  [TrickOutcome.LowDefeat]: 'Low Defeat. 1 damage — the streak is lost.',
+  [TrickOutcome.HighDefeat]: 'High Defeat. You took the skull. 1 damage — the streak is lost.',
 }
 
 export const SKULL_MARK_LABEL = 'Skull'
@@ -252,7 +254,7 @@ export function cardDamageGlyphText(preview: CardDamagePreview): string {
 }
 
 /** One branch, in words. Omits a zero rather than saying "0 damage to you", and says
- *  "no damage" when the branch costs nobody anything — a REPLACED clean loss (DLR-90 AC5) is
+ *  "no damage" when the branch costs nobody anything — a REPLACED Low Defeat (DLR-90 AC5) is
  *  exactly that, and it is the branch a player most needs stated plainly. */
 function cardDamageBranchText(branch: CardDamageBranch): string {
   const parts: string[] = []

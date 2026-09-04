@@ -24,12 +24,12 @@ export function guardAfter(encounter: EncounterState, held: boolean): boolean {
  *  rather than an inline ternary, exactly as `guardAfter` immediately above is and for its
  *  reason: a second transition adopting a hand's end state is what gets added without
  *  remembering this rule, and a named rule is what a reviewer finds. */
-export function feederCarryAfter(encounter: EncounterState, carry: BuffCarry): BuffCarry {
+export function lowCarryAfter(encounter: EncounterState, carry: BuffCarry): BuffCarry {
   return isEncounterResolved(encounter) ? EMPTY_BUFF_CARRY : carry
 }
 
 /** DLR-156 AC9 — "a streak does not outlive the fight that earned it", mirroring
- *  `feederCarryAfter` immediately above. Literal below, not an imported `EMPTY_STREAK` — see
+ *  `lowCarryAfter` immediately above. Literal below, not an imported `EMPTY_STREAK` — see
  *  `startRun`'s note on the runtime-cycle reason. */
 export function streakAfter(encounter: EncounterState, streak: StreakState): StreakState {
   return isEncounterResolved(encounter) ? { total: 0, roll: 0 } : streak
@@ -38,7 +38,7 @@ export function streakAfter(encounter: EncounterState, streak: StreakState): Str
 /**
  * DLR-95 AC3 — "a fight that continues moves on to its next hand; a fight that ended stays on
  * the hand it ended in, and `advanceRun` is what resets it" — a named function, following
- * `guardAfter` and `feederCarryAfter` above and for their reason.
+ * `guardAfter` and `lowCarryAfter` above and for their reason.
  *
  * Holding the counter still on the deciding hand — rather than incrementing past it — is what
  * lets the verdict and any later reader say which hand the kill landed in.

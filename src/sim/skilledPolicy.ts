@@ -116,11 +116,11 @@ function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
  *    `state.leader` already says who leads, and when it is the player the suit is entirely their
  *    own choice. `trickIntent` picks the lead FIRST and arms to match, so a suit-keyed card is
  *    aimed at the suit actually about to be played rather than at whatever the pile holds most of.
- * 2. ARMING TAKER AND FEEDER TOGETHER. Taker needs the trick TAKEN, Feeder needs it LOST — exactly
- *    one can fire, so arming both is a guaranteed 50% waste of the scarcest resource in the run.
- *    `intent.willTake` picks the side and arms only that one.
- * 3. ARMING SIDESTEP WHEN PLAYING TO WIN. Sidestep pays only on a dodge, which is a trick lost, so
- *    it cannot pay on a trick being played to take.
+ * 2. ARMING SUIT HIGH AND SUIT LOW TOGETHER. Suit High needs the player to go HIGH, Suit Low needs
+ *    them to go LOW — exactly one can fire, so arming both is a guaranteed 50% waste of the
+ *    scarcest resource in the run. `intent.willTake` picks the side and arms only that one.
+ * 3. ARMING SKULL LOW WHEN PLAYING TO GO HIGH. Skull Low pays only on a Low Victory, which is a
+ *    trick the player did not take, so it cannot pay on a trick being played to take.
  *
  * When the QUARRY leads, the suit is a prediction from `suitShape`'s posted counts rather than a
  * choice, so `intent.certain` is false and the stack is capped — a blind trick should not eat the
@@ -129,12 +129,13 @@ function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
 function canPayUnder(buff: Buff, intent: TrickIntent): boolean {
   const suit = buffTargetSuitOf(buff)
   switch (buff.kind) {
-    case BuffKind.Taker:
+    case BuffKind.SuitHigh:
       return intent.willTake && String(suit) === String(intent.suit)
-    case BuffKind.Feeder:
+    case BuffKind.SuitLow:
       return !intent.willTake && String(suit) === String(intent.suit)
-    case BuffKind.Sidestep:
-      // A dodge is a trick LOST to a skull, so Sidestep can only pay when the plan is to lose.
+    case BuffKind.SkullLow:
+      // A Low Victory is a trick the player did not take, so Skull Low can only pay when the plan
+      // is to go low.
       return !intent.willTake
     default:
       return false
@@ -167,7 +168,7 @@ function chooseBuffs(ui: RoundUiState): readonly BuffId[] {
 const RESERVED_KINDS: ReadonlySet<BuffKind> = new Set([BuffKind.Cheat])
 
 /** Diagnostic — the UNAIMED "fire everything the loadout accepts" rule. The control for
- *  `chooseBuffs` above: it arms Taker and Feeder of every suit together regardless of what the
+ *  `chooseBuffs` above: it arms Suit High and Suit Low of every suit together regardless of what the
  *  trick is going to be, which is what the trace showed spending four Keys cards on a Bells
  *  trick. Kept so that cost stays measurable rather than remembered. */
 function chooseBuffsUnaimed(ui: RoundUiState): readonly BuffId[] {
@@ -180,7 +181,7 @@ function chooseBuffsUnaimed(ui: RoundUiState): readonly BuffId[] {
 /**
  * Swap in service of the read, not on a fixed rule.
  *
- * The plan for a trick names a suit and an outcome — take it, or lose it and dodge. A hand can only
+ * The plan for a trick names a suit and a direction — go high on it, or go low for a Low Victory. A hand can only
  * deliver that plan if it holds the right END of that suit: a HIGH card to take the trick, a LOW one
  * to duck it. Holding neither, the plan cannot be played however well the buffs were chosen, and
  * that is precisely what the swap is for. The developer's example: the read said Bells was 100%

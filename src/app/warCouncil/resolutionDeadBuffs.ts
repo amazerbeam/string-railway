@@ -5,9 +5,9 @@
  * miss reasons that would drift from `src/hunt/buffEvaluation.ts`'s total switch. The discipline
  * `buffProjection.ts`'s docblock sets out.
  *
- * This is the fix for the session's false bug report: a Key-Feeder was armed, pays only on a trick
- * the player loses, and the player won — so it correctly paid nothing, and nothing on screen said
- * so.
+ * This is the fix for the session's false bug report: a Key Low card was armed, pays only on a trick
+ * the player goes LOW on, and the player went high — so it correctly paid nothing, and nothing on
+ * screen said so.
  */
 import { type Buff, type BuffId } from '../../hunt'
 import { buffConditionSentence, buffName } from './buffLabels'

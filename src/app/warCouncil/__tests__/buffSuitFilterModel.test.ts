@@ -15,17 +15,17 @@ function templateFor(predicate: (template: BuffTemplate) => boolean): BuffTempla
   return template
 }
 
-const keyTakerTemplate = templateFor(
+const keyHighTemplate = templateFor(
   (t) =>
     t.form === 'condition' &&
-    t.kind === 'taker' &&
+    t.kind === 'suitHigh' &&
     t.target?.suit === 'keys' &&
     t.axis === 'magnitude',
 )
-const bellTakerTemplate = templateFor(
+const bellHighTemplate = templateFor(
   (t) =>
     t.form === 'condition' &&
-    t.kind === 'taker' &&
+    t.kind === 'suitHigh' &&
     t.target?.suit === 'bells' &&
     t.axis === 'magnitude',
 )
@@ -43,26 +43,26 @@ function stacksFor(buffs: readonly Buff[]): readonly BuffStack[] {
 
 describe('buffSuitFilter — matchesFilter', () => {
   it('ALL_FILTERS matches every stack', () => {
-    const [stack] = stacksFor([mint(keyTakerTemplate, BuffTier.Bronze)])
+    const [stack] = stacksFor([mint(keyHighTemplate, BuffTier.Bronze)])
     expect(matchesFilter(stack, ALL_FILTERS)).toBe(true)
   })
 
   it('a tier-only filter matches on tier alone', () => {
-    const [stack] = stacksFor([mint(keyTakerTemplate, BuffTier.Silver)])
+    const [stack] = stacksFor([mint(keyHighTemplate, BuffTier.Silver)])
     expect(matchesFilter(stack, { tier: BuffTier.Silver, run: 'all' })).toBe(true)
     expect(matchesFilter(stack, { tier: BuffTier.Gold, run: 'all' })).toBe(false)
   })
 
   it('a run-only filter matches on run alone', () => {
-    const [stack] = stacksFor([mint(keyTakerTemplate, BuffTier.Bronze)])
+    const [stack] = stacksFor([mint(keyHighTemplate, BuffTier.Bronze)])
     expect(matchesFilter(stack, { tier: 'all', run: BuffRunKind.Keys })).toBe(true)
     expect(matchesFilter(stack, { tier: 'all', run: BuffRunKind.Bells })).toBe(false)
   })
 
   it('both together are an intersection: a silver Keys card passes, a bronze Keys card does not', () => {
     const stacks = stacksFor([
-      mint(keyTakerTemplate, BuffTier.Silver),
-      mint(keyTakerTemplate, BuffTier.Bronze),
+      mint(keyHighTemplate, BuffTier.Silver),
+      mint(keyHighTemplate, BuffTier.Bronze),
     ])
     const silverStack = stacks.find((s) => s.buff.tier === BuffTier.Silver)
     const bronzeStack = stacks.find((s) => s.buff.tier === BuffTier.Bronze)
@@ -79,9 +79,9 @@ describe('buffSuitFilter — runCountsFor', () => {
   it('counts over the stacks the TIER filter already allows, so the suit chips follow what a tier pick already hid', () => {
     const view = buildBuffGallery(
       [
-        mint(keyTakerTemplate, BuffTier.Bronze),
-        mint(keyTakerTemplate, BuffTier.Silver),
-        mint(bellTakerTemplate, BuffTier.Silver),
+        mint(keyHighTemplate, BuffTier.Bronze),
+        mint(keyHighTemplate, BuffTier.Silver),
+        mint(bellHighTemplate, BuffTier.Silver),
       ],
       noRefusal,
     )

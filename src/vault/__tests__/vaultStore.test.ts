@@ -82,6 +82,23 @@ describe('vaultStore', () => {
     expect(storage.getItem(key)).toBe(raw)
   })
 
+  it('DLR-165 — rejects a version-1 payload by VERSION, not by reconciling its old-vocabulary ids away', () => {
+    // The two failure modes look identical from the outside — both end at EMPTY_VAULT — so this
+    // asserts the OUTCOME, which is the only thing that tells them apart. A version-1 payload's
+    // `taker:bells:magnitude` no longer resolves; without the SAVE_SCHEMA_VERSION bump this would
+    // have loaded with `Loaded` and a silent `droppedCount`, losing the boost with no message.
+    const storage = createMemoryStorage()
+    const key = saveKeyFor(VAULT_SAVE_SECTION)
+    const legacy = { balance: 40, oddsBoosts: { 'taker:bells:magnitude': 2 }, startingGrants: [] }
+    storage.setItem(key, JSON.stringify({ version: 1, data: legacy }))
+
+    const loaded = loadVault(createVaultStore(storage))
+
+    expect(loaded.outcome).toBe(SaveReadOutcome.VersionMismatch)
+    expect(loaded.vault).toEqual(EMPTY_VAULT)
+    expect(loaded.droppedCount).toBe(0)
+  })
+
   it('loads with a dropped unknown templateId, balance intact', () => {
     const storage: StorageLike = createMemoryStorage()
     const stale: VaultState = {

@@ -6,8 +6,8 @@ import BankMeter from '../BankMeter'
 
 afterEach(cleanup)
 
-const cleanLoss: TrickResolution = {
-  outcome: TrickOutcome.CleanLoss,
+const lowDefeat: TrickResolution = {
+  outcome: TrickOutcome.LowDefeat,
   trickDamage: null,
   cashOut: 0,
   damageToPlayer: 1,
@@ -26,7 +26,7 @@ describe('BankMeter', () => {
   })
 
   it('says what the last trick did', () => {
-    render(<BankMeter total={0} roll={0} lastResolution={cleanLoss} />)
+    render(<BankMeter total={0} roll={0} lastResolution={lowDefeat} />)
     expect(screen.getByText(/the streak is lost/i)).toBeTruthy()
   })
 

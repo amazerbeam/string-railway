@@ -32,8 +32,8 @@ export const SKULL_WEIGHTS_UNIFORM: SkullRankWeights = {
   11: 1,
 }
 
-// Weight climbs with rank, so skulls land on high cards. NOT ACTIVE. High skulls mostly WIN their
-// own trick, and a skull trick the Quarry wins is a dodge for the player — so this is the gentlest
+// Weight climbs with rank, so skulls land on high cards. NOT ACTIVE. High skulls mostly TAKE their
+// own trick, and a skull trick the Quarry takes is a Low Victory for the player — so this is the gentlest
 // curve, not the harshest. Transcribed from the developer's sketch as `weight = rank - 1`.
 export const SKULL_WEIGHTS_RAMP: SkullRankWeights = {
   1: 0,
@@ -50,10 +50,11 @@ export const SKULL_WEIGHTS_RAMP: SkullRankWeights = {
 }
 
 // ACTIVE (see SKULL_RANK_WEIGHTS). Weight on the middle ranks, where the player's own card decides
-// who takes the trick: their skulled 6 loses to a 9 and beats a 4, so the outcome is the player's
+// who takes the trick: their skulled 6 falls under a 9 and beats a 4, so the outcome is the player's
 // choice rather than the deal's. The extremes are deliberately light — a very low skull is one the
-// Quarry can only lose with, so it is dumped into a trick the player has already won and eaten with
-// no counterplay; a very high skull wins its own trick, which is a dodge the player did not earn.
+// Quarry can never take with, so it is dumped into a trick the player was already going high on and
+// eaten with no counterplay; a very high skull takes its own trick, which is a Low Victory the
+// player did not earn.
 export const SKULL_WEIGHTS_HUMP: SkullRankWeights = {
   1: 0,
   2: 2,

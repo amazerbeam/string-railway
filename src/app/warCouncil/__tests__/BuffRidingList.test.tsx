@@ -8,7 +8,7 @@ import { MotionAnchorProvider } from '../MotionAnchors'
 
 afterEach(cleanup)
 
-const taker = mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, 1)
+const suitHigh = mintFromTemplate(templateById('suitHigh:bells:magnitude')!, BuffTier.Bronze, 1)
 const cheat = mintFromTemplate(templateById('cheat')!, BuffTier.Bronze, 2)
 
 // DLR-157 — `BuffRidingList` now calls `useMotionAnchors()` unconditionally (before its own
@@ -36,7 +36,7 @@ describe('BuffRidingList', () => {
 
   it('renders one row per row, naming the buff and its reach sentence (AC9)', () => {
     const rows: readonly RidingBuffRow[] = [
-      { buff: taker, reach: 3, revocable: true },
+      { buff: suitHigh, reach: 3, revocable: true },
       { buff: cheat, reach: 0, revocable: false },
     ]
     renderList(rows, vi.fn())
@@ -55,7 +55,7 @@ describe('BuffRidingList', () => {
 
   it('gives a revocable row a remove button naming the trick and the go-dark count (AC9/AC10)', () => {
     const rows: readonly RidingBuffRow[] = [
-      { buff: taker, reach: 3, revocable: true },
+      { buff: suitHigh, reach: 3, revocable: true },
     ]
     renderList(rows, vi.fn())
     const button = screen.getByRole('button', { name: /off the trick.*3 cards go dark/i })
@@ -74,18 +74,18 @@ describe('BuffRidingList', () => {
   it('calls onRemove once with the row buff id when its remove control is clicked', () => {
     const onRemove = vi.fn()
     const rows: readonly RidingBuffRow[] = [
-      { buff: taker, reach: 3, revocable: true },
+      { buff: suitHigh, reach: 3, revocable: true },
     ]
     renderList(rows, onRemove)
     fireEvent.click(screen.getByRole('button'))
     expect(onRemove).toHaveBeenCalledTimes(1)
-    expect(onRemove).toHaveBeenCalledWith(taker.id)
+    expect(onRemove).toHaveBeenCalledWith(suitHigh.id)
   })
 
   it('disables the remove button while a buff motion flight is airborne (QA fix — DLR-157 review)', () => {
     const onRemove = vi.fn()
     const rows: readonly RidingBuffRow[] = [
-      { buff: taker, reach: 3, revocable: true },
+      { buff: suitHigh, reach: 3, revocable: true },
     ]
     renderList(rows, onRemove, true)
     const button = screen.getByRole('button', {

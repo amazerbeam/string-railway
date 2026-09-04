@@ -36,7 +36,7 @@ const input = (over: Partial<BuffTrickInput> = {}): BuffTrickInput => ({
 })
 
 const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
-  playerWon: false,
+  playerWentHigh: false,
   skullTrick: false,
   finalTrick: false,
   baseDamageBonus: 0,
@@ -50,22 +50,22 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
 
 describe('resolveTrickBank — DLR-125/DLR-124 R5/R6 at resolution level', () => {
   it('R5 — three buffs firing on one trick still accrue the hand-long axes (coins, AP) plus the Overlap Bonus', () => {
-    const magnitude = buff('taker:bells:magnitude', BuffTier.Bronze, 1)
-    const momentum = buff('taker:bells:multiplier', BuffTier.Bronze, 2)
-    // `MintableRewardAxis` narrowed Taker to Magnitude/Multiplier (DLR-145) — Coins stays on
+    const magnitude = buff('suitHigh:bells:magnitude', BuffTier.Bronze, 1)
+    const momentum = buff('suitHigh:bells:multiplier', BuffTier.Bronze, 2)
+    // `MintableRewardAxis` narrowed Suit High to Magnitude/Multiplier (DLR-145) — Coins stays on
     // `BuffRewardAxis` with its `REWARD_TIER_VALUE` ladder, so it is built directly as a `Buff`
-    // literal rather than through `templateById('taker:bells:coins')`, which is now orphaned.
+    // literal rather than through `templateById('suitHigh:bells:coins')`, which is now orphaned.
     const coins: Buff = {
       id: 3,
-      kind: BuffKind.Taker,
+      kind: BuffKind.SuitHigh,
       tier: BuffTier.Bronze,
-      condition: { kind: BuffKind.Taker, target: { suit: BuffTargetSuit.Bells } },
+      condition: { kind: BuffKind.SuitHigh, target: { suit: BuffTargetSuit.Bells } },
       reward: { axis: BuffRewardAxis.Coins, value: 2 },
     }
     const r = resolveTrickBank(
       { total: 0, roll: 0 },
       facts({
-        playerWon: true,
+        playerWentHigh: true,
         buffs: input({ active: [magnitude, momentum, coins] }),
       }),
     )
@@ -84,11 +84,11 @@ describe('resolveTrickBank — DLR-125/DLR-124 R5/R6 at resolution level', () =>
   it('a null `buffs` fact reproduces the bare-rule figures exactly', () => {
     const withBuffs = resolveTrickBank(
       { total: 2, roll: 2 },
-      facts({ playerWon: true, finalTrick: true, buffs: null }),
+      facts({ playerWentHigh: true, finalTrick: true, buffs: null }),
     )
     const bare = resolveTrickBank(
       { total: 2, roll: 2 },
-      facts({ playerWon: true, finalTrick: true }),
+      facts({ playerWentHigh: true, finalTrick: true }),
     )
     expect(withBuffs).toEqual(bare)
     expect(withBuffs.total).toBe(3) // 2 + BASE_DAMAGE
@@ -98,49 +98,49 @@ describe('resolveTrickBank — DLR-125/DLR-124 R5/R6 at resolution level', () =>
     expect(withBuffs.firedBuffIds).toEqual([])
   })
 
-  it('DLR-150 — a Bells Feeder on a clean loss carries and the trick still pays nothing (AC7)', () => {
-    const feeder: Buff = {
+  it('DLR-150 — a Bell Low card on a Low Defeat carries and the trick still pays nothing (AC7)', () => {
+    const suitLow: Buff = {
       id: 9,
-      kind: BuffKind.Feeder,
+      kind: BuffKind.SuitLow,
       tier: BuffTier.Bronze,
-      condition: { kind: BuffKind.Feeder, target: { suit: BuffTargetSuit.Bells } },
+      condition: { kind: BuffKind.SuitLow, target: { suit: BuffTargetSuit.Bells } },
       reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
     }
-    const bare = resolveTrickBank({ total: 0, roll: 0 }, facts({ playerWon: false }))
-    const withFeeder = resolveTrickBank(
+    const bare = resolveTrickBank({ total: 0, roll: 0 }, facts({ playerWentHigh: false }))
+    const withSuitLow = resolveTrickBank(
       { total: 0, roll: 0 },
-      facts({ playerWon: false, buffs: input({ active: [feeder] }) }),
+      facts({ playerWentHigh: false, buffs: input({ active: [suitLow] }) }),
     )
-    expect(withFeeder.buffAccrual?.carryOut.flatDamageBonus).toBe(1)
-    expect(withFeeder.cashOut).toBe(bare.cashOut)
-    expect(withFeeder.trickDamage).toBeNull()
+    expect(withSuitLow.buffAccrual?.carryOut.flatDamageBonus).toBe(1)
+    expect(withSuitLow.cashOut).toBe(bare.cashOut)
+    expect(withSuitLow.trickDamage).toBeNull()
   })
 
-  it('DLR-150 — the same card on a dodge pays this hand and leaves carryOut empty', () => {
-    const feeder: Buff = {
+  it('DLR-150 — the same card on a Low Victory pays this hand and leaves carryOut empty', () => {
+    const suitLow: Buff = {
       id: 9,
-      kind: BuffKind.Feeder,
+      kind: BuffKind.SuitLow,
       tier: BuffTier.Bronze,
-      condition: { kind: BuffKind.Feeder, target: { suit: BuffTargetSuit.Bells } },
+      condition: { kind: BuffKind.SuitLow, target: { suit: BuffTargetSuit.Bells } },
       reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
     }
     const r = resolveTrickBank(
       { total: 0, roll: 0 },
-      facts({ playerWon: false, skullTrick: true, buffs: input({ active: [feeder] }) }),
+      facts({ playerWentHigh: false, skullTrick: true, buffs: input({ active: [suitLow] }) }),
     )
     expect(r.buffAccrual?.carryOut).toEqual(EMPTY_BUFF_CARRY)
     expect(r.buffAccrual?.flatDamageBonus).toBe(1)
-    // AC11 — the SAME Feeder also pays this trick's own damage, since a Dodge is banked.
+    // AC11 — the SAME Suit Low card also pays this trick's own damage, since a Low Victory banks.
     expect(r.trickDamage?.buffDamage).toBe(1)
   })
 })
 
 describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure', () => {
   describe('regression — the de-nesting is behaviour-neutral for every existing Swan case', () => {
-    it('neither rung: both figures zero on a clean loss', () => {
+    it('neither rung: both figures zero on a Low Defeat', () => {
       const r = resolveTrickBank(
         { total: 8, roll: 2 },
-        facts({ playerWon: false, skullTrick: false }),
+        facts({ playerWentHigh: false, skullTrick: false }),
       )
       expect(r.total).toBe(0)
       expect(r.roll).toBe(0)
@@ -150,7 +150,7 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
     it('silver only: the roll survives, the total zeroes', () => {
       const r = resolveTrickBank(
         { total: 8, roll: 2 },
-        facts({ playerWon: false, skullTrick: false, swanKeepsMultiplier: true }),
+        facts({ playerWentHigh: false, skullTrick: false, swanKeepsMultiplier: true }),
       )
       expect(r.total).toBe(0)
       expect(r.roll).toBe(2)
@@ -160,7 +160,7 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
     it('gold only, and gold-implies-silver: both figures survive', () => {
       const r = resolveTrickBank(
         { total: 8, roll: 2 },
-        facts({ playerWon: false, skullTrick: false, swanKeepsBank: true }),
+        facts({ playerWentHigh: false, skullTrick: false, swanKeepsBank: true }),
       )
       expect(r.total).toBe(8)
       expect(r.roll).toBe(2)
@@ -171,7 +171,7 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
       const r = resolveTrickBank(
         { total: 8, roll: 2 },
         facts({
-          playerWon: false,
+          playerWentHigh: false,
           skullTrick: false,
           swanKeepsBank: true,
           swanKeepsMultiplier: false,
@@ -185,7 +185,7 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
   describe('new — a Skull Helmet or Skull Tether on a skull the player took', () => {
     const START = { total: 8, roll: 2 }
     const skullTaken = (over: Partial<TrickFacts> = {}) =>
-      facts({ playerWon: true, skullTrick: true, ...over })
+      facts({ playerWentHigh: true, skullTrick: true, ...over })
 
     it('a bronze Helmet keeps the total, zeroes the roll', () => {
       const helmet = buff('skullHelmet:protection', BuffTier.Bronze, 1)
@@ -233,47 +233,47 @@ describe('resolveTrickBank — DLR-161 the reset block keeps a protected figure'
       expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
     })
 
-    it('AC5 — a silver Helmet also protects on a clean loss', () => {
+    it('AC5 — a silver Helmet also protects on a Low Defeat', () => {
       const helmet = buff('skullHelmet:protection', BuffTier.Silver, 1)
       const r = resolveTrickBank(
         START,
-        facts({ playerWon: false, skullTrick: false, buffs: input({ active: [helmet] }) }),
+        facts({ playerWentHigh: false, skullTrick: false, buffs: input({ active: [helmet] }) }),
       )
       expect(r.total).toBe(8)
       expect(r.roll).toBe(0)
       expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
     })
 
-    it('a bronze Helmet does NOT protect on the same clean loss', () => {
+    it('a bronze Helmet does NOT protect on the same Low Defeat', () => {
       const helmet = buff('skullHelmet:protection', BuffTier.Bronze, 1)
       const r = resolveTrickBank(
         START,
-        facts({ playerWon: false, skullTrick: false, buffs: input({ active: [helmet] }) }),
+        facts({ playerWentHigh: false, skullTrick: false, buffs: input({ active: [helmet] }) }),
       )
       expect(r.total).toBe(0)
       expect(r.roll).toBe(0)
       expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
     })
 
-    it('a gold Helmet does not fire and cannot protect a clean win, which banks anyway', () => {
+    it('a gold Helmet does not fire and cannot protect a High Victory, which banks anyway', () => {
       const helmet = buff('skullHelmet:protection', BuffTier.Gold, 1)
       const r = resolveTrickBank(
         { total: 0, roll: 0 },
-        facts({ playerWon: true, skullTrick: false, buffs: input({ active: [helmet] }) }),
+        facts({ playerWentHigh: true, skullTrick: false, buffs: input({ active: [helmet] }) }),
       )
-      // A clean win banks; the reset block is never reached.
+      // A High Victory banks; the reset block is never reached.
       expect(r.damageToPlayer).toBe(0)
       expect(r.total).toBeGreaterThan(0)
       expect(r.roll).toBe(1)
     })
 
-    it('a gold Tether does not fire and cannot protect a dodge, which banks anyway', () => {
+    it('a gold Tether does not fire and cannot protect a Low Victory, which banks anyway', () => {
       const tether = buff('skullTether:protection', BuffTier.Gold, 1)
       const r = resolveTrickBank(
         { total: 0, roll: 0 },
-        facts({ playerWon: false, skullTrick: true, buffs: input({ active: [tether] }) }),
+        facts({ playerWentHigh: false, skullTrick: true, buffs: input({ active: [tether] }) }),
       )
-      // A dodge banks; the reset block is never reached.
+      // A Low Victory banks; the reset block is never reached.
       expect(r.damageToPlayer).toBe(0)
       expect(r.total).toBeGreaterThan(0)
       expect(r.roll).toBe(1)

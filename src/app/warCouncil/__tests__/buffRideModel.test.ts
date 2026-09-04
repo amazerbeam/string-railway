@@ -34,20 +34,20 @@ function activate(ui: RoundUiState, ids: readonly number[]): RoundUiState {
   return { ...ui, buffActivation: { ...ui.buffActivation, activatedThisTrick: ids } }
 }
 
-const bellsTaker = (id: number) =>
-  mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, id)
-const bellsTakerMomentum = (id: number) =>
-  mintFromTemplate(templateById('taker:bells:multiplier')!, BuffTier.Bronze, id)
-const bellsFeeder = (id: number) =>
-  mintFromTemplate(templateById('feeder:bells:multiplier')!, BuffTier.Bronze, id)
-const sidestep = (id: number) =>
-  mintFromTemplate(templateById('sidestep:magnitude')!, BuffTier.Bronze, id)
+const bellsHigh = (id: number) =>
+  mintFromTemplate(templateById('suitHigh:bells:magnitude')!, BuffTier.Bronze, id)
+const bellsHighMomentum = (id: number) =>
+  mintFromTemplate(templateById('suitHigh:bells:multiplier')!, BuffTier.Bronze, id)
+const bellsLow = (id: number) =>
+  mintFromTemplate(templateById('suitLow:bells:multiplier')!, BuffTier.Bronze, id)
+const skullLow = (id: number) =>
+  mintFromTemplate(templateById('skullLow:magnitude')!, BuffTier.Bronze, id)
 const cheat = (id: number) => mintFromTemplate(templateById('cheat')!, BuffTier.Bronze, id)
 
 describe('rideInputFor', () => {
   it('reuses buffHandInputFor(state) for every field it shares, so the preview and the commit cannot disagree', () => {
-    const taker = bellsTaker(1)
-    const ui = activate(seededUi({}, [taker]), [taker.id])
+    const suitHigh = bellsHigh(1)
+    const ui = activate(seededUi({}, [suitHigh]), [suitHigh.id])
     const rideInput = rideInputFor(ui)
     const commitInput = buffHandInputFor(ui)
     expect(rideInput.active).toEqual(commitInput.active)
@@ -91,9 +91,9 @@ describe('skullReadingFor', () => {
 })
 
 describe('lightsForHand', () => {
-  it('lights only the legal Bells cards for a riding Bells Taker (AC2)', () => {
-    const taker = bellsTaker(1)
-    const ui = activate(seededUi({}, [taker]), [taker.id])
+  it('lights only the legal Bells cards for a riding Bell High (AC2)', () => {
+    const suitHigh = bellsHigh(1)
+    const ui = activate(seededUi({}, [suitHigh]), [suitHigh.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const lights = lightsForHand(ui, legal)
     expect(lights.has(cardKey(card(Suit.Bells, 2)))).toBe(true)
@@ -102,9 +102,9 @@ describe('lightsForHand', () => {
     expect(lights.has(cardKey(card(Suit.Moons, 5)))).toBe(false)
   })
 
-  it('lights every legal card for a suitless riding Sidestep, as an estimate (AC2, Assumption 5)', () => {
-    const dodge = sidestep(1)
-    const ui = activate(seededUi({}, [dodge]), [dodge.id])
+  it('lights every legal card for a suitless riding Skull Low, as an estimate (AC2, Assumption 5)', () => {
+    const card = skullLow(1)
+    const ui = activate(seededUi({}, [card]), [card.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const lights = lightsForHand(ui, legal)
     for (const c of legal) {
@@ -115,16 +115,16 @@ describe('lightsForHand', () => {
   })
 
   it('never lights a card the follow-suit rule makes illegal, even when it would otherwise match (AC3)', () => {
-    const taker = bellsTaker(1)
+    const suitHigh = bellsHigh(1)
     const ui = activate(
       seededUi(
         {
           currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Keys, 6) }],
           leader: PlayerSide.Cpu,
         },
-        [taker],
+        [suitHigh],
       ),
-      [taker.id],
+      [suitHigh.id],
     )
     const legal = legalMoves(ui.round, PlayerSide.Player)
     expect(legal.some((c) => c.suit === Suit.Bells)).toBe(false)
@@ -133,18 +133,18 @@ describe('lightsForHand', () => {
   })
 
   it('counts a card reached on both branches as ONE, never the sum of both branches (AC4)', () => {
-    const taker = bellsTaker(1)
-    const feeder = bellsFeeder(2)
-    const ui = activate(seededUi({}, [taker, feeder]), [taker.id, feeder.id])
+    const suitHigh = bellsHigh(1)
+    const suitLow = bellsLow(2)
+    const ui = activate(seededUi({}, [suitHigh, suitLow]), [suitHigh.id, suitLow.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const light = lightsForHand(ui, legal).get(cardKey(card(Suit.Bells, 2)))
     expect(light!.count).toBe(1)
   })
 
   it('counts two buffs firing on the SAME branch as two (AC4)', () => {
-    const taker1 = bellsTaker(1)
-    const taker2 = bellsTakerMomentum(2)
-    const ui = activate(seededUi({}, [taker1, taker2]), [taker1.id, taker2.id])
+    const suitHigh1 = bellsHigh(1)
+    const suitHigh2 = bellsHighMomentum(2)
+    const ui = activate(seededUi({}, [suitHigh1, suitHigh2]), [suitHigh1.id, suitHigh2.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const light = lightsForHand(ui, legal).get(cardKey(card(Suit.Bells, 2)))
     expect(light!.count).toBe(2)
@@ -153,29 +153,29 @@ describe('lightsForHand', () => {
 
 describe('ridingRowsFor', () => {
   it('returns one row per activated id, revocable for condition families and not for Cheat (AC9)', () => {
-    const taker = bellsTaker(1)
+    const suitHigh = bellsHigh(1)
     const cheatCard = cheat(2)
-    const ui = activate(seededUi({}, [taker, cheatCard]), [taker.id, cheatCard.id])
+    const ui = activate(seededUi({}, [suitHigh, cheatCard]), [suitHigh.id, cheatCard.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const rows = ridingRowsFor(ui, legal)
     expect(rows).toHaveLength(2)
-    const takerRow = rows.find((row) => row.buff.id === taker.id)!
+    const suitHighRow = rows.find((row) => row.buff.id === suitHigh.id)!
     const cheatRow = rows.find((row) => row.buff.id === cheatCard.id)!
-    expect(takerRow.revocable).toBe(true)
+    expect(suitHighRow.revocable).toBe(true)
     expect(cheatRow.revocable).toBe(false)
   })
 
   it('reports a zero reach for a riding buff whose suit is absent from the legal hand, and still lists it (AC9)', () => {
-    const taker = bellsTaker(1)
+    const suitHigh = bellsHigh(1)
     const ui = activate(
       seededUi(
         {
           currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Keys, 6) }],
           leader: PlayerSide.Cpu,
         },
-        [taker],
+        [suitHigh],
       ),
-      [taker.id],
+      [suitHigh.id],
     )
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const rows = ridingRowsFor(ui, legal)
@@ -184,16 +184,16 @@ describe('ridingRowsFor', () => {
   })
 
   it('excludes an illegal matching card from reach (AC3)', () => {
-    const taker = bellsTaker(1)
+    const suitHigh = bellsHigh(1)
     const ui = activate(
       seededUi(
         {
           currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Keys, 6) }],
           leader: PlayerSide.Cpu,
         },
-        [taker],
+        [suitHigh],
       ),
-      [taker.id],
+      [suitHigh.id],
     )
     const legal = legalMoves(ui.round, PlayerSide.Player)
     // A Bells card is in the hand but not in `legal` — must not count.

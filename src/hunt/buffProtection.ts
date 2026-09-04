@@ -12,6 +12,9 @@ import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from './buffs'
  * "plausible zero that type-checks". Protection is binary and is carried by the buff having fired
  * at all; the value is AC6's gold bonus added on top of the figure that survived. There is
  * deliberately no way to express "protects by N" — a total either survives or it does not.
+ *
+ * DLR-165 renamed `protectionCoversCleanLoss` to `protectionCoversLowDefeat`: the widened tiers
+ * cover any Defeat, and "clean loss" is retired vocabulary. No predicate changed.
  */
 
 /** The two families whose reward axis is `Protection`. */
@@ -44,9 +47,9 @@ export function isProtectiveKind(kind: BuffKind): kind is BuffProtectiveKind {
   return PROTECTIVE_KINDS.has(kind)
 }
 
-/** AC5 — silver and gold widen the condition from an eaten skull to ANY trick that hurt you. A
+/** AC5 — silver and gold widen the condition from a High Defeat to ANY Defeat. A
  *  total `Record` rather than `tier !== Bronze`, so a fourth tier is a compile error here. */
-const COVERS_CLEAN_LOSS: Readonly<Record<BuffTier, boolean>> = {
+const COVERS_LOW_DEFEAT: Readonly<Record<BuffTier, boolean>> = {
   [BuffTier.Bronze]: false,
   [BuffTier.Silver]: true,
   [BuffTier.Gold]: true,
@@ -55,13 +58,13 @@ const COVERS_CLEAN_LOSS: Readonly<Record<BuffTier, boolean>> = {
 /** THE one statement of AC5's widening. `buffFires` reads it to decide whether the card fires;
  *  `buffConditionSentence` reads it to decide which sentence the card face prints. Two readers,
  *  one rule — the shape `conditionThresholdOf` already established for a tier-scaled condition. */
-export function protectionCoversCleanLoss(tier: BuffTier): boolean {
-  return COVERS_CLEAN_LOSS[tier]
+export function protectionCoversLowDefeat(tier: BuffTier): boolean {
+  return COVERS_LOW_DEFEAT[tier]
 }
 
 /** The same question for a whole buff, so the label layer asks once rather than composing two. */
 export function conditionIsWidened(buff: Buff): boolean {
-  return isProtectiveKind(buff.kind) && protectionCoversCleanLoss(buff.tier)
+  return isProtectiveKind(buff.kind) && protectionCoversLowDefeat(buff.tier)
 }
 
 /** AC8 — protection does not stack. Bonuses fold with `Math.max`, never a sum: two gold Helmets

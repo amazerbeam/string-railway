@@ -109,9 +109,9 @@
   color: var(--wc-fig-moons-mid);
 }
 
-/* Sidestep and Cheat carry no suit, so they take the ink tone rather than borrowing one — the reel
+/* Skull Low and Cheat carry no suit, so they take the ink tone rather than borrowing one — the reel
    must never imply a suit a card does not target. */
-.shop-reel-glyph[data-glyph='sidestep'],
+.shop-reel-glyph[data-glyph='skullLow'],
 .shop-reel-glyph[data-glyph='cheat'] {
   color: var(--wc-ink-soft);
 }

@@ -28,23 +28,23 @@ function fromTemplate(id: string, tier: BuffTier, buffId: BuffId): Buff {
   return mintFromTemplate(template, tier, buffId)
 }
 
-function bellTaker(tier: BuffTier, id: BuffId): Buff {
-  return fromTemplate('taker:bells:magnitude', tier, id)
+function bellHigh(tier: BuffTier, id: BuffId): Buff {
+  return fromTemplate('suitHigh:bells:magnitude', tier, id)
 }
 
-function sidestep(tier: BuffTier, id: BuffId): Buff {
-  return fromTemplate('sidestep:magnitude', tier, id)
+function skullLow(tier: BuffTier, id: BuffId): Buff {
+  return fromTemplate('skullLow:magnitude', tier, id)
 }
 
 describe('wildRefusalFor (DLR-162 AC5)', () => {
   it('allows a suit-specific card', () => {
-    expect(wildRefusalFor(bellTaker(BuffTier.Bronze, 1))).toBeNull()
+    expect(wildRefusalFor(bellHigh(BuffTier.Bronze, 1))).toBeNull()
   })
-  it('refuses a card that names no suit — Sidestep needs nothing in return', () => {
-    expect(wildRefusalFor(sidestep(BuffTier.Bronze, 2))).toBe(WildRefusal.NoSuit)
+  it('refuses a card that names no suit — Skull Low needs nothing in return', () => {
+    expect(wildRefusalFor(skullLow(BuffTier.Bronze, 2))).toBe(WildRefusal.NoSuit)
   })
   it('refuses an already-wild card — there is no second suit to take off', () => {
-    expect(wildRefusalFor(wildenedBuff(bellTaker(BuffTier.Bronze, 3)))).toBe(
+    expect(wildRefusalFor(wildenedBuff(bellHigh(BuffTier.Bronze, 3)))).toBe(
       WildRefusal.AlreadyWild,
     )
   })
@@ -59,14 +59,14 @@ describe('wildRefusalFor (DLR-162 AC5)', () => {
 describe('isWildcardCard', () => {
   it('is true for the spendable card and false for a card made wild by one', () => {
     expect(isWildcardCard(wildcardBuff(BuffTier.Bronze, 1))).toBe(true)
-    expect(isWildcardCard(wildenedBuff(bellTaker(BuffTier.Bronze, 2)))).toBe(false)
-    expect(isWildcardCard(bellTaker(BuffTier.Bronze, 3))).toBe(false)
+    expect(isWildcardCard(wildenedBuff(bellHigh(BuffTier.Bronze, 2)))).toBe(false)
+    expect(isWildcardCard(bellHigh(BuffTier.Bronze, 3))).toBe(false)
   })
 })
 
 describe('wildenedBuff (AC2, AC4)', () => {
   it('keeps the id, kind, tier and reward, and drops only the suit', () => {
-    const before = bellTaker(BuffTier.Silver, 9)
+    const before = bellHigh(BuffTier.Silver, 9)
     const after = wildenedBuff(before)
     expect(after.id).toBe(before.id)
     expect(after.kind).toBe(before.kind)
@@ -81,7 +81,7 @@ describe('spendWildcard (AC4)', () => {
   it('removes the wildcard, keeps the target as the same card made wild, and does not advance nextBuffId', () => {
     const run = {
       ...startRun(),
-      buffs: [wildcardBuff(BuffTier.Bronze, 1), bellTaker(BuffTier.Bronze, 2)],
+      buffs: [wildcardBuff(BuffTier.Bronze, 1), bellHigh(BuffTier.Bronze, 2)],
       nextBuffId: 3,
     }
     const next = spendWildcard(run, 1, 2)
@@ -95,8 +95,8 @@ describe('spendWildcard (AC4)', () => {
       ...startRun(),
       buffs: [
         wildcardBuff(BuffTier.Bronze, 1),
-        bellTaker(BuffTier.Bronze, 2),
-        bellTaker(BuffTier.Bronze, 3),
+        bellHigh(BuffTier.Bronze, 2),
+        bellHigh(BuffTier.Bronze, 3),
       ],
       nextBuffId: 4,
     }
@@ -108,7 +108,7 @@ describe('spendWildcard (AC4)', () => {
   it('THROWS naming the refusal rather than returning the run unchanged', () => {
     const run = {
       ...startRun(),
-      buffs: [wildcardBuff(BuffTier.Bronze, 1), sidestep(BuffTier.Bronze, 2)],
+      buffs: [wildcardBuff(BuffTier.Bronze, 1), skullLow(BuffTier.Bronze, 2)],
       nextBuffId: 3,
     }
     expect(() => spendWildcard(run, 1, 2)).toThrow(RangeError)
@@ -117,7 +117,7 @@ describe('spendWildcard (AC4)', () => {
   it('THROWS when the spent card is not a wildcard, or is not in the pile at all', () => {
     const run = {
       ...startRun(),
-      buffs: [bellTaker(BuffTier.Bronze, 1), bellTaker(BuffTier.Bronze, 2)],
+      buffs: [bellHigh(BuffTier.Bronze, 1), bellHigh(BuffTier.Bronze, 2)],
       nextBuffId: 3,
     }
     expect(() => spendWildcard(run, 1, 2)).toThrow(RangeError)
@@ -127,13 +127,13 @@ describe('spendWildcard (AC4)', () => {
 
 describe('mintWildAtTier', () => {
   it('reads the same reward ladder mintFromTemplate reads', () => {
-    const card = mintWildAtTier(BuffKind.Taker, BuffRewardAxis.Magnitude, BuffTier.Gold, 50)
+    const card = mintWildAtTier(BuffKind.SuitHigh, BuffRewardAxis.Magnitude, BuffTier.Gold, 50)
     expect(card.reward).toEqual({ axis: BuffRewardAxis.Magnitude, value: 5 })
     expect(buffIsWild(card)).toBe(true)
   })
 
   it('THROWS on an axis with no ladder rather than minting a zero-value card', () => {
-    expect(() => mintWildAtTier(BuffKind.Taker, BuffRewardAxis.None, BuffTier.Bronze, 1)).toThrow(
+    expect(() => mintWildAtTier(BuffKind.SuitHigh, BuffRewardAxis.None, BuffTier.Bronze, 1)).toThrow(
       RangeError,
     )
   })

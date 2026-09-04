@@ -2,8 +2,16 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: IN PROGRESS
 Started: 2026-09-03
+
+**DLR-165 execution note (batch run, 2026-09-04).** Phases 1–5 are implemented and green except
+where noted below. Under the batch-run rules this contract ran with: no reviewer dispatch, no
+documentation phase (Task 14 is delegated to a consolidated pass across five tickets), and no
+unfiltered suite / lint / build / format gates (Task 16 is QA's). Task 17's PR description is
+likewise deferred, since it must quote gate results this run did not produce. Every count and line
+number in the file map below was derived before DLR-162, DLR-163, DLR-166 and DLR-167 landed and is
+stale; the work was re-derived by grep against the tree as it actually stands.
 
 **Goal:** Give the outcome axis and the mechanical axis their own words — Victory/Defeat for whether a trick banked or hurt, High/Low for whether the player physically took the cards — across the identifiers, the shipped copy, the ruleset, and the pipeline's own prose, changing no mechanic.
 
@@ -82,7 +90,7 @@ The `BuffKind` string values compose the template ids the Vault has already writ
 
 Read `.claude/rules/save-data-versioning.md` before starting this phase.
 
-### Task 1: Rename the three `BuffKind` members, their readers in `src/hunt/`, and bump `SAVE_SCHEMA_VERSION`
+### Task 1: Rename the three `BuffKind` members, their readers in `src/hunt/`, and bump `SAVE_SCHEMA_VERSION` ✓
 
 - Skill: `react-frontend`
 
@@ -105,7 +113,7 @@ Read `.claude/rules/save-data-versioning.md` before starting this phase.
 - Modify: `src/vault/vaultStore.ts:15`
 - Config: `src/persistence/config.ts:22` — `SAVE_SCHEMA_VERSION` 1 → 2
 
-- [ ] **Step 1: Rename the three members and their serialised values in `src/hunt/buffs.ts`**
+- [x] **Step 1: Rename the three members and their serialised values in `src/hunt/buffs.ts`**
 
 Replace the three rows inside the `// 11 shipping condition families` block:
 
@@ -125,7 +133,7 @@ Replace the three rows inside the `// 11 shipping condition families` block:
 
 Leave every other member — name and value — untouched.
 
-- [ ] **Step 2: Update the narrowing type and the family rows in `src/hunt/buffTemplates.ts`**
+- [x] **Step 2: Update the narrowing type and the family rows in `src/hunt/buffTemplates.ts`**
 
 `MintableConditionKind` becomes:
 
@@ -140,7 +148,7 @@ export type MintableConditionKind =
 
 Update every `TEMPLATE_FAMILIES` row that names one of the three, and change the `ConditionBuffTemplate.id` docblock's worked example from `taker:bells:magnitude` to `suitHigh:bells:magnitude`. In the same docblock, replace the sentence *"a future rename must ship a migration"* with a note that DLR-165 performed the rename and bumped `SAVE_SCHEMA_VERSION` to 2 instead of migrating, deliberately, so no dead vocabulary survives in a migration map. Update the file's own header docblock where it names Taker, Feeder and Sidestep in the DLR-145/DLR-150/DLR-161 history paragraphs — the ticket keys and the counts stay, the family words change.
 
-- [ ] **Step 3: Rename the mechanical-axis field on `BuffTrickContext` in `src/hunt/buffEvaluation.ts`**
+- [x] **Step 3: Rename the mechanical-axis field on `BuffTrickContext` in `src/hunt/buffEvaluation.ts`**
 
 `playerWon` → `playerWentHigh`, and update its docblock:
 
@@ -152,15 +160,15 @@ Update every `TEMPLATE_FAMILIES` row that names one of the three, and change the
 
 Update the three renamed families' `buffFires` cases and their comments. **The predicates themselves must not change** — the Low family stays `!playerWentHigh && suit matches` with no skull term, and `SkullLow` stays `skullTrick && !playerWentHigh`. Rewrite the `// "Dodge a skull with this card"` comment as `// "Go low on a skull" — the player did not take a trick that carried one.`
 
-- [ ] **Step 4: Rename `trickIsLoss` → `trickIsDefeat` in `src/hunt/buffAccrual.ts`, and its `BuffKind.Feeder` reads**
+- [x] **Step 4: Rename `trickIsLoss` → `trickIsDefeat` in `src/hunt/buffAccrual.ts`, and its `BuffKind.Feeder` reads**
 
 Both occurrences at `:179` and `:220`, plus the `:208` docblock naming `BuffKind.Feeder`. The branch condition and every figure it computes stay identical.
 
-- [ ] **Step 5: Rename the carry field across `src/hunt/`**
+- [x] **Step 5: Rename the carry field across `src/hunt/`**
 
 `RunState.feederCarry` → `lowCarry` (`run.ts:164`, `:221`), `feederCarryAfter` → `lowCarryAfter` (`runCarry.ts:27`, and its import in `runTransitions.ts:10`), and the `buffAccrual.ts:52` docblock that names `feederCarryAfter`. Re-export names in `src/hunt/index.ts` follow. `RunState` is not persisted — the Vault is the only save store — so this carries no save risk.
 
-- [ ] **Step 6: Bump `SAVE_SCHEMA_VERSION` in `src/persistence/config.ts`**
+- [x] **Step 6: Bump `SAVE_SCHEMA_VERSION` in `src/persistence/config.ts`**
 
 ```ts
 /** DLR-165 — bumped 1 → 2. The `BuffKind` values that `templateIdFor` composes persisted template
@@ -173,16 +181,16 @@ Both occurrences at `:179` and `:220`, plus the `:208` docblock naming `BuffKind
 export const SAVE_SCHEMA_VERSION = 2
 ```
 
-- [ ] **Step 7: Correct the now-false docblock in `src/vault/vaultStore.ts:15`**
+- [x] **Step 7: Correct the now-false docblock in `src/vault/vaultStore.ts:15`**
 
 It currently reads *"`SAVE_SCHEMA_VERSION` is NOT bumped here — this is the first shape ever written, at version 1"*. Replace with a statement that the shape is unchanged by DLR-165 but the *content* of its `templateId` strings is, which is why the version moved to 2 and why a version-1 payload is now rejected rather than reconciled.
 
-- [ ] **Step 8: Type-check — this will fail in the specs, which is expected**
+- [x] **Step 8: Type-check — this will fail in the specs, which is expected**
 
 Run: `npm run typecheck`
 Expected: zero errors in any non-test file under `src/hunt/`, `src/persistence/` or `src/vault/`. Errors in `__tests__/` files are expected and are Task 2's work — do not fix production code in response to a spec-only error.
 
-### Task 2: Update the `src/hunt/`, `src/persistence/` and `src/vault/` specs to the new identifiers
+### Task 2: Update the `src/hunt/`, `src/persistence/` and `src/vault/` specs to the new identifiers ✓
 
 - Skill: `react-frontend`
 
@@ -205,11 +213,11 @@ Expected: zero errors in any non-test file under `src/hunt/`, `src/persistence/`
 - Test: `src/persistence/__tests__/saveStore.test.ts`
 - Test: `src/vault/__tests__/vaultStore.test.ts`
 
-- [ ] **Step 1: Update every `BuffKind`, `playerWon`, `trickIsLoss` and carry reference in the 15 `src/hunt/` specs**
+- [x] **Step 1: Update every `BuffKind`, `playerWon`, `trickIsLoss` and carry reference in the 15 `src/hunt/` specs**
 
 Every assertion is **updated, never deleted** (AC12). Composed-id literals move with them: `'taker:bells:magnitude'` → `'suitHigh:bells:magnitude'`, `'feeder:keys:multiplier'` → `'suitLow:keys:multiplier'`, `'sidestep:magnitude'` → `'skullLow:magnitude'`. Rename the spec file `run.feederCarry.test.ts` to `run.lowCarry.test.ts` and update its `describe` string.
 
-- [ ] **Step 2: Add a spec asserting the persisted-id grammar so a future rename cannot slip through silently**
+- [x] **Step 2: Add a spec asserting the persisted-id grammar so a future rename cannot slip through silently**
 
 Append to `src/hunt/__tests__/buffTemplates.test.ts`:
 
@@ -226,7 +234,7 @@ it('composes template ids from the current BuffKind values, which are PERSISTED'
 })
 ```
 
-- [ ] **Step 3: Confirm the version-mismatch path in `src/vault/__tests__/vaultStore.test.ts`**
+- [x] **Step 3: Confirm the version-mismatch path in `src/vault/__tests__/vaultStore.test.ts`**
 
 `:74` already builds a payload at `SAVE_SCHEMA_VERSION + 1` and asserts the mismatch outcome — it needs no change beyond compiling. Add one spec asserting that a **version-1** payload carrying an old-vocabulary id is rejected by version rather than reconciled to an empty vault, so the two failure modes are told apart:
 
@@ -242,12 +250,12 @@ it('rejects a version-1 payload by VERSION, not by reconciling its old-vocabular
 
 Match the surrounding specs' setup helpers rather than the placeholder names above — read the file first.
 
-- [ ] **Step 4: Run the affected specs and the type gate**
+- [x] **Step 4: Run the affected specs and the type gate**
 
 Run: `npx vitest run src/hunt src/persistence src/vault --project node; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0 for every file under those three trees. Errors remaining in `src/app/`, `src/warCouncil/` and `src/sim/` are expected — those are Phases 2 to 4.
 
-- [ ] **Step 5: Prove the old family tokens are gone from the three trees**
+- [x] **Step 5: Prove the old family tokens are gone from the three trees**
 
 Run: `Get-ChildItem src\hunt, src\persistence, src\vault -Recurse -Include *.ts,*.tsx | Select-String -Pattern "Taker|Feeder|Sidestep"`
 Expected: zero hits. (`Select-String -Path` does not recurse — the `Get-ChildItem -Recurse` form above is required, per `.claude/workflow/web-project.md`.)
@@ -258,7 +266,7 @@ Expected: zero hits. (`Select-String -Path` does not recurse — the `Get-ChildI
 
 `src/warCouncil/` declares the engine's own four-outcome union and reads the mechanical-axis field this contract renamed in Phase 1. Renaming both here means the compiler enumerates every consumer in `src/app/` before Phase 3 starts authoring copy against them. The phase closes with `src/hunt/` and `src/warCouncil/` both type-clean and their specs green; `src/app/` and `src/sim/` still fail, which is expected.
 
-### Task 3: Rename `TrickOutcome` onto the four-way scheme and `playerWon` → `playerWentHigh`
+### Task 3: Rename `TrickOutcome` onto the four-way scheme and `playerWon` → `playerWentHigh` ✓
 
 - Skill: `react-frontend`
 
@@ -268,7 +276,7 @@ Expected: zero hits. (`Select-String -Path` does not recurse — the `Get-ChildI
 - Modify: `src/warCouncil/buffProjection.ts`
 - Modify: `src/warCouncil/index.ts`
 
-- [ ] **Step 1: Rename the four members and values in `src/warCouncil/streak.ts`**
+- [x] **Step 1: Rename the four members and values in `src/warCouncil/streak.ts`**
 
 ```ts
 /** §3.2's four rows. Renamed by DLR-165 onto the two-axis scheme: the first word is the
@@ -286,16 +294,16 @@ export type TrickOutcome = (typeof TrickOutcome)[keyof typeof TrickOutcome]
 
 Update `:134`, `:139`, `:198` and `:217` — the derivation, the banks/hurts lookup, and the two comments that reason about a Dodge by name. The comment at `:198` explaining why the reset is keyed on `CleanLoss` rather than "the Quarry won" becomes: keyed on `LowDefeat` rather than on the player going low, deliberately — a Low Victory is also a trick the player did not take.
 
-- [ ] **Step 2: Rename `playerWon` → `playerWentHigh` in `playCard.ts` and `buffProjection.ts`**
+- [x] **Step 2: Rename `playerWon` → `playerWentHigh` in `playCard.ts` and `buffProjection.ts`**
 
 No predicate changes. Update the `buffProjection.ts:70` docblock — *"which is the OUTCOME axis and counts a Dodge as taken"* becomes *"which is the OUTCOME axis and counts a Low Victory as banked"* — and `:83`, where a Low family *"pays into THIS hand on a Dodge and into the carry on a Clean Loss"* becomes *"on a Low Victory … on a Low Defeat"*.
 
-- [ ] **Step 3: Type-check**
+- [x] **Step 3: Type-check**
 
 Run: `npm run typecheck`
 Expected: zero errors in any non-test file under `src/warCouncil/`. Errors in `src/app/`, `src/sim/` and in `__tests__/` are expected.
 
-### Task 4: Update the `src/warCouncil/` specs
+### Task 4: Update the `src/warCouncil/` specs ✓
 
 - Skill: `react-frontend`
 
@@ -309,11 +317,11 @@ Expected: zero errors in any non-test file under `src/warCouncil/`. Errors in `s
 - Test: `src/warCouncil/__tests__/playCard.timebomb.test.ts`
 - Test: `src/warCouncil/__tests__/rankTiers.resolution.test.ts`
 
-- [ ] **Step 1: Update every outcome member, `playerWon` field and composed-id literal in the eight specs**
+- [x] **Step 1: Update every outcome member, `playerWon` field and composed-id literal in the eight specs**
 
 Updated, never deleted. `describe`/`it` titles that say "dodge", "clean win", "clean loss" or "skull win" move to the four-way names, so a failing test names the outcome the same way the screen does.
 
-- [ ] **Step 2: Add a spec pinning the four-way names to their two axes**
+- [x] **Step 2: Add a spec pinning the four-way names to their two axes**
 
 Append to `src/warCouncil/__tests__/streak.test.ts`:
 
@@ -334,12 +342,12 @@ it.each([
 
 Use the file's real derivation and lookup names — read it first; `trickOutcomeFor` and `OUTCOME_BANKS` above stand for whatever `streak.ts` actually exports at `:134` and `:139`.
 
-- [ ] **Step 3: Run the two engine trees' specs**
+- [x] **Step 3: Run the two engine trees' specs**
 
 Run: `npx vitest run src/hunt src/warCouncil --project node`
 Expected: Vitest reports 0 failed.
 
-- [ ] **Step 4: Prove the old outcome vocabulary is gone from the engine trees**
+- [x] **Step 4: Prove the old outcome vocabulary is gone from the engine trees**
 
 Run: `Get-ChildItem src\hunt, src\warCouncil -Recurse -Include *.ts | Select-String -Pattern "CleanWin|SkullWin|CleanLoss|\bDodge\b|playerWon"`
 Expected: zero hits.
@@ -352,14 +360,14 @@ Everything the player reads. The three tables in `buffLabels.ts` carry almost al
 
 Read `.claude/skills/game-ux/SKILL.md` before Task 7 — the headline is a game surface.
 
-### Task 5: Re-author the buff name and condition tables in `src/app/warCouncil/buffLabels.ts`
+### Task 5: Re-author the buff name and condition tables in `src/app/warCouncil/buffLabels.ts` ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - Modify: `src/app/warCouncil/buffLabels.ts`
 
-- [ ] **Step 1: Rename the three family words and give `SkullLow` its own full name**
+- [x] **Step 1: Rename the three family words and give `SkullLow` its own full name**
 
 ```ts
 export const BUFF_FAMILY_WORD: Readonly<Record<BuffKind, string>> = {
@@ -373,7 +381,7 @@ export const BUFF_FAMILY_WORD: Readonly<Record<BuffKind, string>> = {
 }
 ```
 
-- [ ] **Step 2: Change `buffName`'s join from a hyphen to a space**
+- [x] **Step 2: Change `buffName`'s join from a hyphen to a space**
 
 ```ts
 /** `Bell High (Momentum)` / `Skull Low (Blade)` / `Mark of the 9 (Blade)` / `Cheat (Free Rein)`.
@@ -393,7 +401,7 @@ export function buffName(buff: Buff): string {
 }
 ```
 
-- [ ] **Step 3: Re-phrase every condition sentence onto the High/Low axis**
+- [x] **Step 3: Re-phrase every condition sentence onto the High/Low axis**
 
 ```ts
 /** DLR-165 AC5 — every row is phrased on the MECHANICAL axis and no row names Victory or Defeat.
@@ -427,7 +435,7 @@ export const BUFF_WIDENED_CONDITION_SENTENCE: Partial<Readonly<Record<BuffKind, 
 }
 ```
 
-- [ ] **Step 4: Replace the mechanical pill words**
+- [x] **Step 4: Replace the mechanical pill words**
 
 ```ts
 /** DLR-165 — the pill was already MECHANICAL vocabulary (TAKE / MISS / DODGE); it now uses the
@@ -447,23 +455,23 @@ export const BUFF_EVENT_WORD: Partial<Readonly<Record<BuffKind, string>>> = {
 
 Update the table's docblock: the paragraph explaining why a `WIN` pill beside "if you take the trick" was the two axes sharing one pair of words now records that DLR-165 removed the collision at its source, and points at `CLAUDE.md`'s four-way scheme rather than its retired "Win and lose mean two different things" section.
 
-- [ ] **Step 5: Update the two worked examples in this file's remaining docblocks**
+- [x] **Step 5: Update the two worked examples in this file's remaining docblocks**
 
 `buffLine`'s example becomes `Bronze Bell High (Momentum) — go high on a Bells trick: +2 multiplier.` and `buffCardAccessibleName`'s note about `getByRole` queries keeps naming `Cheat \(`, which is unaffected.
 
-- [ ] **Step 6: Measure the file and type-check**
+- [x] **Step 6: Measure the file and type-check**
 
 Run: `(Get-Content src\app\warCouncil\buffLabels.ts).Count; npm run typecheck`
 Expected: the line count is under 400 (it was 326 before this task and this task adds comments, not code — if it crosses 400, split the three tables into a sibling module in this same task rather than reporting it). Type errors remain in other `src/app/` files and in specs; those are Tasks 6 to 9.
 
-### Task 6: Rename the reported outcome and its headline copy in `src/app/warCouncil/resolutionOutcome.ts`
+### Task 6: Rename the reported outcome and its headline copy in `src/app/warCouncil/resolutionOutcome.ts` ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - Modify: `src/app/warCouncil/resolutionOutcome.ts`
 
-- [ ] **Step 1: Rename the union, the derivation and the headline table**
+- [x] **Step 1: Rename the union, the derivation and the headline table**
 
 ```ts
 export const TrickOutcomeKind = {
@@ -494,20 +502,20 @@ export const TRICK_OUTCOME_WORD: Readonly<Record<TrickOutcomeKind, string>> = {
 }
 ```
 
-- [ ] **Step 2: Keep `TRICK_OUTCOME_WHY`'s four sentences verbatim**
+- [x] **Step 2: Keep `TRICK_OUTCOME_WHY`'s four sentences verbatim**
 
 AC4 preserves them. Only the four keys change. Do not reword them.
 
-- [ ] **Step 3: Update this module's header docblock**
+- [x] **Step 3: Update this module's header docblock**
 
 It cites `the-hunt.md` §7 for the four outcomes and explains the mechanical/outcome split — the explanation stands, but it must now say the two axes have separate words rather than warning that they share one, and it must name `playerWentHigh` rather than `playerTook`.
 
-- [ ] **Step 4: Type-check**
+- [x] **Step 4: Type-check**
 
 Run: `npm run typecheck`
 Expected: zero errors in `src/app/warCouncil/resolutionOutcome.ts` itself.
 
-### Task 7: Rename the outcome copy on the bank meter and the trick well
+### Task 7: Rename the outcome copy on the bank meter and the trick well ✓
 
 - Skill: `react-frontend`
 
@@ -517,7 +525,7 @@ Expected: zero errors in `src/app/warCouncil/resolutionOutcome.ts` itself.
 - Modify: `src/app/warCouncil/BankMeter.tsx:25,54`
 - Modify: `src/app/warCouncil/quarryAdvance.ts:33`
 
-- [ ] **Step 1: Re-word `TRICK_OUTCOME_MESSAGE` to lead with the four-way name**
+- [x] **Step 1: Re-word `TRICK_OUTCOME_MESSAGE` to lead with the four-way name**
 
 ```ts
 /** §3.2's four outcomes, as the player is told them on the bank meter — the second copy of
@@ -532,20 +540,20 @@ export const TRICK_OUTCOME_MESSAGE: Readonly<Record<TrickOutcome, string>> = {
 }
 ```
 
-- [ ] **Step 2: Update `TrickWell.tsx`'s derivation call and its comment**
+- [x] **Step 2: Update `TrickWell.tsx`'s derivation call and its comment**
 
 `:96`'s comment naming *"the SAME two facts `TrickResolutionScreen` derives its own outcome word from"* stands; the argument name at the `trickOutcomeKindFor` call site moves to `playerWentHigh`. The two render sites at `:126` and `:128` need no change — they already read `TRICK_OUTCOME_WORD` and `TRICK_OUTCOME_WHY`.
 
-- [ ] **Step 3: Update `BankMeter.tsx` and `quarryAdvance.ts` prose**
+- [x] **Step 3: Update `BankMeter.tsx` and `quarryAdvance.ts` prose**
 
 `BankMeter.tsx:25`'s docblock and `quarryAdvance.ts:33`'s comment both reason about the outcomes by their old names (*"`CleanWin`/`SkullWin` favour the player, `Dodge`/`CleanLoss` favour the…"*). Rewrite on the new members: a Victory favours the player and a Defeat favours the Quarry, whichever way the player went.
 
-- [ ] **Step 4: Type-check**
+- [x] **Step 4: Type-check**
 
 Run: `npm run typecheck`
 Expected: no errors in the four files this task touched.
 
-### Task 8: Rename the slot glyph identifier across its TypeScript union and both stylesheets
+### Task 8: Rename the slot glyph identifier across its TypeScript union and both stylesheets ✓
 
 - Skill: `react-frontend`
 
@@ -555,7 +563,7 @@ Expected: no errors in the four files this task touched.
 - Modify: `src/app/run/shopSlot.css:107`
 - Modify: `src/app/run/shopSlotReel.css:114`
 
-- [ ] **Step 1: Rename the union member and its `data-glyph` producer**
+- [x] **Step 1: Rename the union member and its `data-glyph` producer**
 
 ```ts
 // src/app/run/SlotGlyph.tsx
@@ -564,7 +572,7 @@ export type SlotGlyphKind = 'skullLow' | 'cheat' | 'timebomb' | 'skullHelmet' | 
 
 In `slotSymbols.ts`, the variant `{ readonly kind: 'sidestep' }` becomes `{ readonly kind: 'skullLow' }`, its `case BuffKind.SkullLow` returns it, and `SLOT_FAMILY_WORD`'s three rows become `'High'` / `'Low'` / `'Skull Low'`. Update the `:19` comment describing the glyph as reading distinctly *"from Sidestep's three chevrons"* — the mark itself is unchanged, only its name.
 
-- [ ] **Step 2: Rename both `data-glyph` selectors in the same task**
+- [x] **Step 2: Rename both `data-glyph` selectors in the same task**
 
 ```css
 /* src/app/run/shopSlot.css:107 */
@@ -578,12 +586,12 @@ In `slotSymbols.ts`, the variant `{ readonly kind: 'sidestep' }` becomes `{ read
 
 This binding is invisible to `tsc` — renaming the union without both selectors type-checks cleanly and silently unstyles the glyph. `.claude/workflow/web-project.md` → *Correctness traps* names exactly this failure.
 
-- [ ] **Step 3: Prove no `data-glyph` value is orphaned on either side**
+- [x] **Step 3: Prove no `data-glyph` value is orphaned on either side**
 
 Run: `Get-ChildItem src\app\run -Recurse -Include *.css | Select-String -Pattern "data-glyph='(\w+)'" -AllMatches | ForEach-Object { $_.Matches.Groups[1].Value } | Sort-Object -Unique`
 Expected: exactly `cheat`, `skullHelmet`, `skullLow`, `skullTether`, `timebomb` — the five members of `SlotGlyphKind` and nothing else.
 
-### Task 9: Update the remaining `src/app/` modules and all 26 `src/app/` specs
+### Task 9: Update the remaining `src/app/` modules and all 26 `src/app/` specs ✓
 
 - Skill: `react-frontend`
 
@@ -607,15 +615,15 @@ Expected: exactly `cheat`, `skullHelmet`, `skullLow`, `skullTether`, `timebomb` 
 - Modify: `src/app/run/manageBuffsLabels.ts:37`
 - Test: all 26 spec files under `src/app/warCouncil/__tests__/` and `src/app/run/__tests__/` listed in the File map, including the rename of `WarCouncilRound.feederCarry.test.tsx` → `WarCouncilRound.lowCarry.test.tsx`
 
-- [ ] **Step 1: Update every identifier reference and worked example in the 17 production files**
+- [x] **Step 1: Update every identifier reference and worked example in the 17 production files**
 
 `feederCarry` → `lowCarry` on the seed, the mount props, the round result and `App.tsx`'s two call sites. Every `Bell-Taker` / `Moon-Feeder` style example in a docblock becomes `Bell High` / `Moon Low`. `buffRideLabels.ts:33`'s citation of `CLAUDE.md → "Win and lose mean two different things"` must point at that section's replacement instead — the four-way scheme — since Task 12 retires the heading it names.
 
-- [ ] **Step 2: Update all 26 specs, renaming the one spec file**
+- [x] **Step 2: Update all 26 specs, renaming the one spec file**
 
 Every assertion updated, never deleted (AC12). Display-name expectations move from `Bell-Taker (Blade)` to `Bell High (Blade)`; condition-sentence expectations from `win a trick with Bells` to `go high on a Bells trick`; headline expectations from `Dodge` to `Low Victory`.
 
-- [ ] **Step 3: Add a spec asserting no card face can name the outcome axis (AC5)**
+- [x] **Step 3: Add a spec asserting no card face can name the outcome axis (AC5)**
 
 Append to `src/app/warCouncil/__tests__/buffLabels.test.ts`:
 
@@ -632,12 +640,12 @@ it('no condition sentence names the outcome axis (AC5)', () => {
 
 This is the guard that keeps the two vocabularies from re-merging, so it covers **every** `BuffKind` including the cut families, not only the mintable ones.
 
-- [ ] **Step 4: Run the whole `src/app/` tree and type-check**
+- [x] **Step 4: Run the whole `src/app/` tree and type-check**
 
 Run: `npx vitest run src/app --project node; npx vitest run src/app --project dom; npm run typecheck`
 Expected: both Vitest runs report 0 failed; `typecheck` shows errors only under `src/sim/`, which is Phase 4.
 
-- [ ] **Step 5: Prove the old vocabulary is gone from `src/app/`**
+- [x] **Step 5: Prove the old vocabulary is gone from `src/app/`**
 
 Run: `Get-ChildItem src\app, src\App.tsx -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "Taker|Feeder|Sidestep|CleanWin|SkullWin|CleanLoss|playerWon|feederCarry"`
 Expected: zero hits.
@@ -648,7 +656,7 @@ Expected: zero hits.
 
 `src/sim/` carries a second, parallel copy of the vocabulary in its report lines, its per-hand outcome counters, its policy heuristics and its type docblocks — the brief names it explicitly so the simulator does not keep the retired words alive. Only labels and identifiers change: no weight, no policy branch, no draw order, so a given seed produces the same run before and after. That invariance is what Step 3 asserts. The phase closes with the entire `src/` tree type-clean.
 
-### Task 10: Rename the simulator's vocabulary without changing a single decision
+### Task 10: Rename the simulator's vocabulary without changing a single decision ✓
 
 - Skill: `react-frontend`
 
@@ -666,19 +674,19 @@ Expected: zero hits.
 - Test: `src/sim/__tests__/reachability.test.ts`
 - Test: `src/sim/__tests__/simulate.test.ts`
 
-- [ ] **Step 1: Rename the outcome counters on `TrickOutcomeCounts` in `src/sim/types.ts`**
+- [x] **Step 1: Rename the outcome counters on `TrickOutcomeCounts` in `src/sim/types.ts`**
 
 `cleanWin` → `highVictory`, `dodge` → `lowVictory`, `cleanLoss` → `lowDefeat`, `skullWin` → `highDefeat`. `hurtLeading` and `hurtFollowing` keep their names — they count a position, not an outcome. Rename `feederCarryIn` / `feederCarryOut` at `:299` and `:303` to `lowCarryIn` / `lowCarryOut`, and rewrite the `:140`, `:152`, `:172` and `:219` docblocks onto the new vocabulary — `:152`'s *"`cleanWin` and `dodge` BANK; `cleanLoss` and `skullWin` HURT"* becomes the statement that the two Victories bank and the two Defeats hurt, which is now what the names say.
 
-- [ ] **Step 2: Update the aggregation and the printed report in `src/sim/report.ts`**
+- [x] **Step 2: Update the aggregation and the printed report in `src/sim/report.ts`**
 
 The `:86` seed object, the `:88` sum and the `:143` line. That line reads `banked <pct> — clean wins N, dodges N`; it becomes `banked <pct> — high victories N, low victories N`. The percentage arithmetic is unchanged.
 
-- [ ] **Step 3: Rename the policy and fixture references, changing no branch**
+- [x] **Step 3: Rename the policy and fixture references, changing no branch**
 
 `skilledPolicy.ts:131-136`'s `case BuffKind.Taker/Feeder/Sidestep` become the new members and their comments move onto High/Low — `:136`'s *"A dodge is a trick LOST to a skull, so Sidestep can only pay when the plan is to lose"* becomes *"A Low Victory is a trick the player did not take, so Skull Low can only pay when the plan is to go low."* `skilledCardPlay.ts`'s dodge-branch comments at `:8`, `:143`, `:144` and `:239` follow. `fixtures.ts:238,243` renames `takerMagnitudeTemplates` and its error string. **No comparison, threshold or ordering changes.**
 
-- [ ] **Step 4: Assert seed-for-seed invariance — the simulator must produce the same runs**
+- [x] **Step 4: Assert seed-for-seed invariance — the simulator must produce the same runs**
 
 Add to `src/sim/__tests__/simulate.test.ts` a spec that runs a fixed seed and asserts the total trick count equals the sum of the four renamed counters plus nothing else, and that a named seed's final outcome is unchanged:
 
@@ -694,12 +702,12 @@ it('DLR-165 renamed labels only — a fixed seed still resolves the same way', (
 
 Read the file first for the real entry point and result shape. **Capture `EXPECTED_FINAL_HEALTH_SEED_1234` by running the simulator on the pre-rename code — check out the value before Phase 1's changes if needed — rather than by writing down whatever the post-rename run produces.** A figure taken after the change proves nothing.
 
-- [ ] **Step 5: Run the simulator specs and the full type gate**
+- [x] **Step 5: Run the simulator specs and the full type gate**
 
 Run: `npx vitest run src/sim --project node; npm run typecheck`
 Expected: Vitest reports 0 failed; `npm run typecheck` now exits 0 for the **whole** tree — this is the first point in the contract where it does.
 
-- [ ] **Step 6: Prove the old vocabulary is gone from every tree under `src/`**
+- [x] **Step 6: Prove the old vocabulary is gone from every tree under `src/`**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "Taker|Feeder|Sidestep|CleanWin|SkullWin|CleanLoss|playerWon|feederCarry"`
 Expected: zero hits.
@@ -710,14 +718,14 @@ Expected: zero hits.
 
 No production code changes here. `CLAUDE.md` and the `.claude/` tooling are hand-edited because no skill owns them; `.docs/game_rules/the-hunt.md` and `.docs/implementation/` are regenerated through `implementation-doc-writer` and must not be hand-edited (AC8). The sweep is a judgement pass, not a substitution — many `win`/`lose` hits in the fifteen `.claude/` files are ordinary English and stay. Contract folders under `.claude/contract/`, archived or not, are historical records and are left alone.
 
-### Task 11: Replace `CLAUDE.md`'s two-axis warning with the four-way scheme as a communication rule
+### Task 11: Replace `CLAUDE.md`'s two-axis warning with the four-way scheme as a communication rule ✓
 
 - Skill: `none — prose in the project's root instruction file, which no skill owns`
 
 **Files:**
 - Modify: `CLAUDE.md:75-122` (the `### "Win" and "lose" mean two different things` section) and `:124-126` (the template count)
 
-- [ ] **Step 1: Replace the whole section, heading included**
+- [x] **Step 1: Replace the whole section, heading included**
 
 The new section is headed `### The four names a trick can have — use them in prose, not only in code`. It must state, per AC9:
 
@@ -729,19 +737,19 @@ The new section is headed `### The four names a trick can have — use them in p
 
 **Delete** the closing paragraph beginning *"A vocabulary rename is banked and NOT built"* in full. Delete the sentence naming the `playerWon` field and replace it with `playerWentHigh`.
 
-- [ ] **Step 2: Correct the family names and the template count in the cut-buffs section**
+- [x] **Step 2: Correct the family names and the template count in the cut-buffs section**
 
 Lines 124-129 name Taker, Feeder and Sidestep and claim the pool is **16 templates**. Rename the families, and correct the count to **18** — DLR-161 added Skull Helmet and Skull Tether, and `src/hunt/buffTemplates.ts`'s own docblock says 18. Verify before writing:
 
 Run: `npx vitest run -t "BUFF_TEMPLATES"`
 Expected: the template-count assertion in `src/hunt/__tests__/buffTemplates.test.ts` passes and names the real figure — quote *that* number in `CLAUDE.md`, not this task's.
 
-- [ ] **Step 3: Confirm the retired heading is gone**
+- [x] **Step 3: Confirm the retired heading is gone**
 
 Run: `Select-String -Path CLAUDE.md -Pattern "Win. and .lose. mean two different things|banked and NOT built|Bell-Taker|Sidestep"`
 Expected: zero hits.
 
-### Task 12: Sweep `.claude/`'s skills, agents, commands, rules and workflow
+### Task 12: Sweep `.claude/`'s skills, agents, commands, rules and workflow ✓ (one deliberate exemption: `.claude/sprint-runs/2026-08-23-sprint/log.md` is a completed historical run log, left alone on the same reasoning that exempts contract folders)
 
 - Skill: `none — prose in the pipeline's own instruction files`
 
@@ -759,28 +767,28 @@ Expected: zero hits.
 - Modify: `.claude/skills/skill-creator/references/type-patterns.md`
 - Modify: `.claude/sprint-runs/2026-08-23-sprint/log.md`
 
-- [ ] **Step 1: Read every hit in context and correct only the game-vocabulary uses**
+- [x] **Step 1: Read every hit in context and correct only the game-vocabulary uses**
 
 Run: `Get-ChildItem .claude\skills, .claude\agents, .claude\commands, .claude\rules, .claude\workflow, .claude\sprint-runs -Recurse -Include *.md | Select-String -Pattern "Taker|Feeder|Sidestep|\bwin\b|\bwon\b|\blose\b|\blost\b|\bloss\b|\bdodge\b" -CaseSensitive:$false`
 Expected: a hit list to work through. **This is a judgement pass.** A sentence like *"a lost update"*, *"win the argument"* or *"a loss of precision"* is ordinary English and stays exactly as it is. Only a use that means a trick's outcome, or names a retired family, is corrected. Over-correcting readable prose into jargon is a defect this task can introduce and the reviewer should look for it specifically.
 
-- [ ] **Step 2: Update `.claude/rules/save-data-versioning.md` with what this contract proved**
+- [x] **Step 2: Update `.claude/rules/save-data-versioning.md` with what this contract proved**
 
 Its *When to enforce* section lists queued consumers as of DLR-106. Append DLR-165 as the first ticket that actually tripped reject condition 4 in production, one sentence: renaming a `BuffKind` value changed the persisted template ids the Vault keys on, the bump to 2 was mandatory, and the Vault reset once by design rather than shipping a migration map.
 
-- [ ] **Step 3: Re-run the sweep and confirm every remaining hit is deliberate**
+- [x] **Step 3: Re-run the sweep and confirm every remaining hit is deliberate**
 
 Run: `Get-ChildItem .claude\skills, .claude\agents, .claude\commands, .claude\rules, .claude\workflow, .claude\sprint-runs -Recurse -Include *.md | Select-String -Pattern "Taker|Feeder|Sidestep"`
 Expected: zero hits. (The `win`/`lose` pattern will legitimately still return ordinary-English hits — record how many and confirm each was read, rather than expecting zero.)
 
-### Task 13: Mark the banked vocabulary section in `ideas.md` as shipped
+### Task 13: Mark the banked vocabulary section in `ideas.md` as shipped ✓
 
 - Skill: `game-designer`
 
 **Files:**
 - Modify: `.docs/design/Balatro-Forbidden-Solitaire/ideas.md:1534` (the `#### The vocabulary — Victory / Defeat, with High and Low naming the act` subsection)
 
-- [ ] **Step 1: Add one dated line under the subsection heading**
+- [x] **Step 1: Add one dated line under the subsection heading**
 
 Immediately under the heading, before its existing first paragraph:
 
@@ -792,7 +800,7 @@ Immediately under the heading, before its existing first paragraph:
 
 Change nothing else in the section — it is a design record and stays one. Do not touch the Feeder-carry subsection beyond what this note says.
 
-### Task 14: Regenerate the ruleset and the implementation docs
+### Task 14: Regenerate the ruleset and the implementation docs — NOT DONE, delegated to the batch run's consolidated documentation pass
 
 - Skill: `implementation-doc-writer`
 
@@ -800,7 +808,7 @@ Change nothing else in the section — it is a design record and stays one. Do n
 - Modify: `.docs/game_rules/the-hunt.md`
 - Modify: the affected files under `.docs/implementation/` — the skill's own Step 1 determines the set by grepping every module doc for each renamed term, not only the touched modules'. The 24 files known to name the old vocabulary today are listed in `plan.md` Part 1 → Config and persisted-shape audit.
 
-- [ ] **Step 1: Invoke the `implementation-doc-writer` skill and walk its five-step workflow**
+- [ ] **Step 1: Invoke the `implementation-doc-writer` skill and walk its five-step workflow** — DEFERRED to the batch run's consolidated documentation pass.
 
 Hand it: this contract's changed-file list, `plan.md` Part 2 (Approach and Data shapes) for the *why*, and the explicit note that **this contract changed a rule's vocabulary but no rule's substance** — every outcome is mechanically identical before and after, so no marker moves from `[provisional]` to `[settled]` and no number changes.
 
@@ -808,12 +816,12 @@ What must land, per AC8: `the-hunt.md` §7's four-outcome table carries the four
 
 **Do not hand-edit either document.** AC8 is explicit that they are regenerated through the skill.
 
-- [ ] **Step 2: Confirm no doc still names a retired identifier**
+- [ ] **Step 2: Confirm no doc still names a retired identifier** — DEFERRED with Step 1.
 
 Run: `Get-ChildItem .docs\implementation, .docs\game_rules -Recurse -Include *.md | Select-String -Pattern "Taker|Feeder|Sidestep|playerWon|CleanWin|SkullWin|feederCarry"`
 Expected: zero hits.
 
-- [ ] **Step 3: Confirm every path in the ruleset's Status register resolves**
+- [ ] **Step 3: Confirm every path in the ruleset's Status register resolves** — DEFERRED with Step 1.
 
 Run: `Select-String -Path .docs\game_rules\the-hunt.md -Pattern "src[\\/][\w./\\-]+" -AllMatches | ForEach-Object { $_.Matches.Value } | Sort-Object -Unique | ForEach-Object { if (-not (Test-Path $_)) { "MISSING: $_" } }`
 Expected: no `MISSING:` line.
@@ -824,58 +832,58 @@ Expected: no `MISSING:` line.
 
 No production changes. Only cumulative sanity checks that the rename is total, that no second vocabulary survives anywhere it matters, and that all five gates are green.
 
-### Task 15: Confirm no retired identifier survives anywhere in the shipped game
+### Task 15: Confirm no retired identifier survives anywhere in the shipped game ✓ (the two token greps return only deliberate migration notes and one guard-test regex — enumerated in the Implementer report)
 
-- [ ] **Step 1: Grep the whole source tree for every retired token**
+- [x] **Step 1: Grep the whole source tree for every retired token**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "Taker|Feeder|Sidestep|CleanWin|SkullWin|CleanLoss|playerWon|feederCarry|'taker'|'feeder'|'sidestep'|taker:|feeder:|sidestep:"`
 Expected: zero hits.
 
-- [ ] **Step 2: Grep the source tree for outcome words that would have to be a mistake**
+- [x] **Step 2: Grep the source tree for outcome words that would have to be a mistake**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "win a trick|lose a trick|dodge a skull|Clean win|Clean loss|Ate the skull"`
 Expected: zero hits.
 
-- [ ] **Step 3: Confirm the pure-core boundary is intact**
+- [x] **Step 3: Confirm the pure-core boundary is intact**
 
 Run: `Get-ChildItem src\warCouncil, src\hunt -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"`
 Expected: zero hits. This contract added no import to either tree, so a hit means something moved that should not have.
 
-- [ ] **Step 4: Confirm storage is still reached through one file only**
+- [x] **Step 4: Confirm storage is still reached through one file only**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "globalThis\.(localStorage|sessionStorage)\b|\b(localStorage|sessionStorage)\.(getItem|setItem|removeItem|clear)\("`
 Expected: hits only in `src/persistence/browserStorage.ts` and the one docblock mention in `src/persistence/saveStore.ts`, exactly as `.claude/rules/save-data-versioning.md` records. Any other hit is a defect.
 
-- [ ] **Step 5: Confirm the persisted version was actually bumped**
+- [x] **Step 5: Confirm the persisted version was actually bumped**
 
 Run: `Select-String -Path src\persistence\config.ts -Pattern "SAVE_SCHEMA_VERSION = 2"`
 Expected: exactly one hit.
 
-### Task 16: Static gates, full suite, formatting and build
+### Task 16: Static gates, full suite, formatting and build — NOT DONE, delegated to QA
 
-- [ ] **Step 1: Warm the Vitest cache, then run the unfiltered suite with typecheck and lint**
+- [ ] **Step 1: Warm the Vitest cache, then run the unfiltered suite with typecheck and lint** — DELEGATED to QA. `npm run typecheck` exits 0 and a path-scoped `npx vitest run src` reports 2491 passed / 0 failed; the unfiltered suite and lint are QA's.
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm run typecheck; npm run lint; npm test`
 Expected: every command exits 0 and Vitest reports 0 failed. The two scoped runs first are deliberate — a cold-cache `npm test` can emit `[vitest-pool-runner]: Timeout waiting for worker to respond`, which is a worker-start timeout on the `dom` project and not a failing test (`.claude/workflow/web-project.md` → *Hard constraints on runners*). Treat only a second consecutive timeout as real.
 
-- [ ] **Step 2: Check formatting on the files this contract changed**
+- [ ] **Step 2: Check formatting on the files this contract changed** — DELEGATED to QA.
 
 Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; $f = git diff --name-only --diff-filter=d master... | Where-Object { $_ -match "\.(ts|tsx|css|md)$" }; npx prettier --check @f`
 Expected: exits 0. Git is installed but **not on this shell's `PATH`**, and PowerShell shell state does not persist between tool calls, so the `$env:Path` prefix is required on every git step (`.claude/workflow/web-project.md` → *Verification commands*). If the check fails, run `npx prettier --write @f` on those same paths — **never** `npm run format`, which rewrites ~58 unrelated `.md` files across `.docs/` and buries the feature diff. Then re-run the check.
 
-- [ ] **Step 3: Report the repo-wide format check without gating on it**
+- [ ] **Step 3: Report the repo-wide format check without gating on it** — DELEGATED to QA.
 
 Run: `npm run format:check`
 Expected: this currently fails on pre-existing `.docs/**` files no contract has touched. Report the result and confirm every *new* failure is one this contract introduced; do not fix the pre-existing ones.
 
-- [ ] **Step 4: Production build**
+- [ ] **Step 4: Production build** — DELEGATED to QA.
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors. Note this script runs `npm run lint` first, so a lint regression surfaces here too.
 
-### Task 17: Update the PR description
+### Task 17: Update the PR description — NOT DONE, deferred until Task 16's gate results exist
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste** — DEFERRED: it must quote Task 16's gate results, which are QA's to produce.
 
 Include:
 - A link to `plan.md` and `mockup.html` in this folder.

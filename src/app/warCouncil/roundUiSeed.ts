@@ -40,13 +40,13 @@ export interface RoundUiSeed {
   readonly coins?: Coins
   /** DLR-150 AC3 — the carry this hand opens on. OPTIONAL and defaulted to `EMPTY_BUFF_CARRY` so
    *  all 11 existing seed literals reproduce today's game exactly, following `apCapacity`. */
-  readonly feederCarry?: BuffCarry
+  readonly lowCarry?: BuffCarry
   /** DLR-156 AC8 — the streak this hand opens on. OPTIONAL and defaulted to `EMPTY_STREAK`
-   *  (via `total: 0, roll: 0` below), following `feederCarry`, so every existing
+   *  (via `total: 0, roll: 0` below), following `lowCarry`, so every existing
    *  `createRoundUiState` site and fixture reproduces today's game. */
   readonly streak?: StreakState
   /** DLR-163 AC5 — the fight's Swap cap bonus at the START of this hand. OPTIONAL and defaulted
-   *  to 0, following `feederCarry` and `streak`, so every existing seed fixture reproduces
+   *  to 0, following `lowCarry` and `streak`, so every existing seed fixture reproduces
    *  today's game. */
   readonly discardCapBonus?: number
   /** DLR-163 AC8 — base damage earned this fight so far, at the START of this hand. OPTIONAL and
@@ -92,7 +92,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     buffs: seed.buffs,
     buffActivation: startBuffActivation(seed.apCapacity ?? STARTING_AP),
     loadout: null,
-    buffHand: startBuffHand(seed.feederCarry),
+    buffHand: startBuffHand(seed.lowCarry),
     coins: seed.coins ?? 0,
     // DLR-156 AC3/AC14 — the felt opens with the resolution screen closed.
     resolution: null,

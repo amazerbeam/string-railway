@@ -24,7 +24,7 @@ const WITH_MULTIPLIER: readonly ResolutionBeat[] = [
   { kind: BeatKind.Base, label: 'Base damage +1', amount: 1, damage: 1, mult: 1, running: 1 },
   {
     kind: BeatKind.Blade,
-    label: 'Sidestep (Blade)',
+    label: 'Skull Low (Blade)',
     amount: 1,
     damage: 2,
     mult: 1,
@@ -32,7 +32,7 @@ const WITH_MULTIPLIER: readonly ResolutionBeat[] = [
   },
   {
     kind: BeatKind.Momentum,
-    label: 'Key-Feeder (Momentum)',
+    label: 'Key Low (Momentum)',
     amount: 1,
     damage: 2,
     mult: 2,
@@ -52,7 +52,7 @@ const NO_MULTIPLIER: readonly ResolutionBeat[] = [
   { kind: BeatKind.Base, label: 'Base damage +1', amount: 1, damage: 1, mult: 1, running: 1 },
   {
     kind: BeatKind.Blade,
-    label: 'Moon-Taker (Blade)',
+    label: 'Moon High (Blade)',
     amount: 2,
     damage: 3,
     mult: 1,
@@ -115,15 +115,15 @@ describe('ResolutionBreakdown', () => {
   })
 
   it('DLR-160 AC3 — a dead buff renders its own condition text, with no value cell at all', () => {
-    const feeder = mint(BuffKind.Feeder, 1)
+    const suitLow = mint(BuffKind.SuitLow, 1)
     render(
       <ResolutionBreakdown
         beats={NO_MULTIPLIER}
         landed={NO_MULTIPLIER.length}
-        deadBuffs={[feeder]}
+        deadBuffs={[suitLow]}
       />,
     )
-    const row = screen.getByText(deadBuffReasonText(feeder)).closest('.wc-resolve-dead-row')
+    const row = screen.getByText(deadBuffReasonText(suitLow)).closest('.wc-resolve-dead-row')
     expect(row).toBeTruthy()
     expect(row?.querySelector('.wc-resolve-row-amt')).toBeNull()
   })
@@ -131,7 +131,7 @@ describe('ResolutionBreakdown', () => {
   it('only reveals beats up to `landed` — a progressive reveal, not the whole sequence at once', () => {
     render(<ResolutionBreakdown beats={WITH_MULTIPLIER} landed={1} deadBuffs={[]} />)
     expect(screen.getByText('Base damage +1')).toBeTruthy()
-    expect(screen.queryByText('Sidestep (Blade)')).toBeNull()
+    expect(screen.queryByText('Skull Low (Blade)')).toBeNull()
     expect(screen.queryByText('Damage')).toBeNull()
   })
 })

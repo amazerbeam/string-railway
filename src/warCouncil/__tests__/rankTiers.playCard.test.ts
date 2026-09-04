@@ -150,14 +150,14 @@ describe('the ladder through playCard (AC2/AC3/AC6)', () => {
     return result.state
   }
 
-  it('with no table threaded through, a clean loss resets total and roll (AC1)', () => {
+  it('with no table threaded through, a Low Defeat resets total and roll (AC1)', () => {
     const after = loseWithPlayersSwan(undefined)
     expect(after.total).toBe(0)
     expect(after.roll).toBe(0)
     expect(after.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('at silver the roll survives the clean loss and the total still wipes, cashing nothing (AC4)', () => {
+  it('at silver the roll survives the Low Defeat and the total still wipes, cashing nothing (AC4)', () => {
     const after = loseWithPlayersSwan(SILVER_SWAN)
     expect(after.roll).toBe(3)
     expect(after.total).toBe(0)

@@ -73,12 +73,12 @@ export interface WarCouncilMountProps {
   readonly rankTiers?: RankTierTable
   /** DLR-150 AC3 — the carry this hand OPENS on. OPTIONAL and defaulted to `EMPTY_BUFF_CARRY`,
    *  following `apCapacity`, so every existing mount site and fixture reproduces today's game. */
-  readonly feederCarry?: BuffCarry
+  readonly lowCarry?: BuffCarry
   /** DLR-156 AC8 — the streak this hand OPENS on. OPTIONAL and defaulted to `EMPTY_STREAK`,
-   *  following `feederCarry`, so every existing mount site and fixture reproduces today's game. */
+   *  following `lowCarry`, so every existing mount site and fixture reproduces today's game. */
   readonly streak?: StreakState
   /** DLR-163 AC5 — the fight's Swap cap bonus at the START of this hand. OPTIONAL and defaulted
-   *  to 0, following `feederCarry` and `streak`, so every existing mount site and seed fixture
+   *  to 0, following `lowCarry` and `streak`, so every existing mount site and seed fixture
    *  reproduces today's game. */
   readonly discardCapBonus?: number
   /** DLR-163 AC8 — base damage earned this fight so far, at the START of this hand. OPTIONAL and
@@ -125,11 +125,11 @@ export interface WarCouncilRoundResult {
   readonly coinsEarned: Coins
   /** DLR-150 AC1 — what this hand banked for the next one. REQUIRED, following `coinsEarned`,
    *  so the compiler enumerates every construction site. */
-  readonly feederCarry: BuffCarry
-  /** DLR-156 AC8 — the streak after this hand. REQUIRED, following `feederCarry`, so the
+  readonly lowCarry: BuffCarry
+  /** DLR-156 AC8 — the streak after this hand. REQUIRED, following `lowCarry`, so the
    *  compiler enumerates every construction site. */
   readonly streak: StreakState
-  /** DLR-163 AC5 — the fight's Swap cap bonus after this hand. REQUIRED, following `feederCarry`,
+  /** DLR-163 AC5 — the fight's Swap cap bonus after this hand. REQUIRED, following `lowCarry`,
    *  so the compiler enumerates every construction site. */
   readonly discardCapBonus: number
   /** DLR-163 AC8 — base damage earned this fight after this hand. REQUIRED, as above. */

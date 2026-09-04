@@ -158,7 +158,7 @@ function App() {
       result.unplayedAtResolve,
       result.coinsEarned,
       result.buffs,
-      result.feederCarry,
+      result.lowCarry,
       result.streak,
       // DLR-163 AC5/AC8 — the two per-fight figures, carried into the next hand of this fight.
       result.discardCapBonus,
@@ -382,7 +382,7 @@ function App() {
       runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)}
       coins={run.coins}
       discardsRemaining={run.discardsRemaining}
-      feederCarry={run.feederCarry}
+      lowCarry={run.lowCarry}
       streak={run.streak}
       discardCapBonus={run.discardCapBonus}
       treasureDamageBonus={run.treasureDamageBonus}

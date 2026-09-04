@@ -12,12 +12,12 @@ import {
 } from '../buffRideLabels'
 import type { RidingBuffRow } from '../buffRideModel'
 
-const bellsTaker = mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, 1)
-const sidestep = mintFromTemplate(templateById('sidestep:magnitude')!, BuffTier.Bronze, 2)
+const bellsHigh = mintFromTemplate(templateById('suitHigh:bells:magnitude')!, BuffTier.Bronze, 1)
+const skullLow = mintFromTemplate(templateById('skullLow:magnitude')!, BuffTier.Bronze, 2)
 const keysCard: Card = { suit: Suit.Keys, rank: 5 }
 
-const takerRow: RidingBuffRow = {
-  buff: bellsTaker,
+const suitHighRow: RidingBuffRow = {
+  buff: bellsHigh,
   reach: 3,
   revocable: true,
 }
@@ -38,36 +38,36 @@ describe('buffReachText', () => {
 
 describe('removeBuffLabel', () => {
   it('names the trick, not a single card, and never uses "card" for the unload itself', () => {
-    const label = removeBuffLabel(bellsTaker, 3)
+    const label = removeBuffLabel(bellsHigh, 3)
     expect(label).toContain('trick')
     expect(label.toLowerCase().startsWith('take')).toBe(true)
   })
 
   it('states the zero-reach case as nothing going dark', () => {
-    expect(removeBuffLabel(bellsTaker, 0)).toContain('nothing goes dark')
+    expect(removeBuffLabel(bellsHigh, 0)).toContain('nothing goes dark')
   })
 })
 
 describe('deadRowReasonText', () => {
   it('names both the buff’s target suit and the card’s own suit', () => {
-    const text = deadRowReasonText(bellsTaker, keysCard)
+    const text = deadRowReasonText(bellsHigh, keysCard)
     expect(text).toContain('Bells')
     expect(text).toContain('Keys')
   })
 
   it('gives a suit-neutral reading for a suitless buff', () => {
-    const text = deadRowReasonText(sidestep, keysCard)
+    const text = deadRowReasonText(skullLow, keysCard)
     expect(text).not.toContain('Needs')
   })
 })
 
 describe('deadRowElsewhereText', () => {
   it('falls back to the zero-reach sentence when reach is 0', () => {
-    expect(deadRowElsewhereText(bellsTaker, 0)).toBe(' No card in your hand can fire it.')
+    expect(deadRowElsewhereText(bellsHigh, 0)).toBe(' No card in your hand can fire it.')
   })
 
   it('names the reach elsewhere at a non-zero reach', () => {
-    const text = deadRowElsewhereText(bellsTaker, 2)
+    const text = deadRowElsewhereText(bellsHigh, 2)
     expect(text).toContain('2')
     expect(text).toContain('instead')
   })
@@ -75,18 +75,18 @@ describe('deadRowElsewhereText', () => {
 
 describe('buffRemovedText', () => {
   it('names the buff and how many cards went dark', () => {
-    const text = buffRemovedText(bellsTaker, 3)
+    const text = buffRemovedText(bellsHigh, 3)
     expect(text).toContain('3 cards went dark')
   })
 
   it('states the zero case as nothing going dark', () => {
-    expect(buffRemovedText(bellsTaker, 0)).toContain('nothing went dark')
+    expect(buffRemovedText(bellsHigh, 0)).toContain('nothing went dark')
   })
 })
 
 describe('ridingRowText', () => {
   it('reports the row on the reach sentence', () => {
-    expect(ridingRowText(takerRow)).toBe(buffReachText(takerRow.reach))
+    expect(ridingRowText(suitHighRow)).toBe(buffReachText(suitHighRow.reach))
   })
 })
 

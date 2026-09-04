@@ -23,18 +23,18 @@ function activate(ui: RoundUiState, ids: readonly number[]): RoundUiState {
   return { ...ui, buffActivation: { ...ui.buffActivation, activatedThisTrick: ids } }
 }
 
-const bellsTakerBlade = (id: number) =>
-  mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, id)
-const bellsTakerMomentum = (id: number) =>
-  mintFromTemplate(templateById('taker:bells:multiplier')!, BuffTier.Bronze, id)
-const moonsTaker = (id: number) =>
-  mintFromTemplate(templateById('taker:moons:magnitude')!, BuffTier.Bronze, id)
-const keysTaker = (id: number) =>
-  mintFromTemplate(templateById('taker:keys:magnitude')!, BuffTier.Bronze, id)
-const moonsFeeder = (id: number) =>
-  mintFromTemplate(templateById('feeder:moons:magnitude')!, BuffTier.Bronze, id)
-const bellsFeederMomentum = (id: number) =>
-  mintFromTemplate(templateById('feeder:bells:multiplier')!, BuffTier.Bronze, id)
+const bellsHighBlade = (id: number) =>
+  mintFromTemplate(templateById('suitHigh:bells:magnitude')!, BuffTier.Bronze, id)
+const bellsHighMomentum = (id: number) =>
+  mintFromTemplate(templateById('suitHigh:bells:multiplier')!, BuffTier.Bronze, id)
+const moonsHigh = (id: number) =>
+  mintFromTemplate(templateById('suitHigh:moons:magnitude')!, BuffTier.Bronze, id)
+const keysHigh = (id: number) =>
+  mintFromTemplate(templateById('suitHigh:keys:magnitude')!, BuffTier.Bronze, id)
+const moonsLow = (id: number) =>
+  mintFromTemplate(templateById('suitLow:moons:magnitude')!, BuffTier.Bronze, id)
+const bellsLowMomentum = (id: number) =>
+  mintFromTemplate(templateById('suitLow:bells:multiplier')!, BuffTier.Bronze, id)
 
 describe('breakdownFor', () => {
   it('returns null for a card with no light-map entry', () => {
@@ -45,8 +45,8 @@ describe('breakdownFor', () => {
   })
 
   it('reports totals with exactly two entries, in branch order, carrying no preferred flag (AC11)', () => {
-    const taker = bellsTakerBlade(1)
-    const ui = activate(seededUi({}, [taker]), [taker.id])
+    const suitHigh = bellsHighBlade(1)
+    const ui = activate(seededUi({}, [suitHigh]), [suitHigh.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const lights = lightsForHand(ui, legal)
     const breakdown = breakdownFor(ui, legal, lights, card(Suit.Bells, 2))!
@@ -64,8 +64,8 @@ describe('breakdownFor', () => {
     // makeRound's defaults are a lead (leader: Player, currentTrick: []) with an unskulled
     // candidate — `skullReadingFor` returns null, so `projectBuffBranches` returns TWO outcomes
     // per branch and `totalsFor` used to pick outcomes[0] and render it as a flat certainty.
-    const taker = bellsTakerBlade(1)
-    const ui = activate(seededUi({}, [taker]), [taker.id])
+    const suitHigh = bellsHighBlade(1)
+    const ui = activate(seededUi({}, [suitHigh]), [suitHigh.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const lights = lightsForHand(ui, legal)
     const breakdown = breakdownFor(ui, legal, lights, card(Suit.Bells, 2))!
@@ -75,16 +75,16 @@ describe('breakdownFor', () => {
   })
 
   it('does not mark the totals as an estimate once the skull is known — a follow with the Quarry already on the table', () => {
-    const taker = bellsTakerBlade(1)
+    const suitHigh = bellsHighBlade(1)
     const ui = activate(
       seededUi(
         {
           currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Bells, 9) }],
           leader: PlayerSide.Cpu,
         },
-        [taker],
+        [suitHigh],
       ),
-      [taker.id],
+      [suitHigh.id],
     )
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const lights = lightsForHand(ui, legal)
@@ -95,14 +95,14 @@ describe('breakdownFor', () => {
   })
 
   it('rates the Overlap Bonus off the higher-firing branch and hides the row when it is zero (AC11)', () => {
-    const single = bellsTakerBlade(1)
+    const single = bellsHighBlade(1)
     const soloUi = activate(seededUi({}, [single]), [single.id])
     const soloLegal = legalMoves(soloUi.round, PlayerSide.Player)
     const soloLights = lightsForHand(soloUi, soloLegal)
     expect(breakdownFor(soloUi, soloLegal, soloLights, card(Suit.Bells, 2))!.overlapText).toBeNull()
 
-    const blade = bellsTakerBlade(1)
-    const momentum = bellsTakerMomentum(2)
+    const blade = bellsHighBlade(1)
+    const momentum = bellsHighMomentum(2)
     const pairUi = activate(seededUi({}, [blade, momentum]), [blade.id, momentum.id])
     const pairLegal = legalMoves(pairUi.round, PlayerSide.Player)
     const pairLights = lightsForHand(pairUi, pairLegal)
@@ -111,9 +111,9 @@ describe('breakdownFor', () => {
     expect(pairBreakdown.overlapText).toContain('1')
   })
 
-  it('names the buff on every condition row, and two Takers of the same suit share the condition text but not the name (AC11)', () => {
-    const blade = bellsTakerBlade(1)
-    const momentum = bellsTakerMomentum(2)
+  it('names the buff on every condition row, and two Suit High cards of the same suit share the condition text but not the name (AC11)', () => {
+    const blade = bellsHighBlade(1)
+    const momentum = bellsHighMomentum(2)
     const ui = activate(seededUi({}, [blade, momentum]), [blade.id, momentum.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const lights = lightsForHand(ui, legal)
@@ -128,8 +128,8 @@ describe('breakdownFor', () => {
   })
 
   it('strikes a riding buff that cannot fire on this card, naming both suits and its reach elsewhere (AC12)', () => {
-    const lighter = moonsTaker(1)
-    const dead = keysTaker(2)
+    const lighter = moonsHigh(1)
+    const dead = keysHigh(2)
     const ui = activate(
       seededUi(
         {
@@ -153,8 +153,8 @@ describe('breakdownFor', () => {
   })
 
   it('names a dead buff’s reach elsewhere when it is non-zero (AC12)', () => {
-    const bells = bellsTakerBlade(1)
-    const moons = moonsFeeder(2)
+    const bells = bellsHighBlade(1)
+    const moons = moonsLow(2)
     const ui = activate(seededUi({}, [bells, moons]), [bells.id, moons.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const lights = lightsForHand(ui, legal)
@@ -165,8 +165,8 @@ describe('breakdownFor', () => {
   })
 
   it('places dead rows first, furthest from the card, in the returned shape', () => {
-    const bells = bellsTakerBlade(1)
-    const moons = moonsFeeder(2)
+    const bells = bellsHighBlade(1)
+    const moons = moonsLow(2)
     const ui = activate(seededUi({}, [bells, moons]), [bells.id, moons.id])
     const legal = legalMoves(ui.round, PlayerSide.Player)
     const lights = lightsForHand(ui, legal)
@@ -176,44 +176,44 @@ describe('breakdownFor', () => {
     )
   })
 
-  it('carries a Feeder’s reward on a Clean Loss and pays it ordinarily on a Dodge (DLR-150)', () => {
-    const feeder = bellsFeederMomentum(1)
+  it('carries a Suit Low card’s reward on a Low Defeat and pays it ordinarily on a Low Victory (DLR-150)', () => {
+    const suitLow = bellsLowMomentum(1)
     const led = card(Suit.Bells, 9)
     const candidate = card(Suit.Bells, 2)
 
-    const cleanLossUi = activate(
+    const lowDefeatUi = activate(
       seededUi(
         {
           currentTrick: [{ side: PlayerSide.Cpu, card: led }],
           leader: PlayerSide.Cpu,
           skulledCards: [],
         },
-        [feeder],
+        [suitLow],
       ),
-      [feeder.id],
+      [suitLow.id],
     )
-    const cleanLegal = legalMoves(cleanLossUi.round, PlayerSide.Player)
-    const cleanLights = lightsForHand(cleanLossUi, cleanLegal)
-    const cleanBreakdown = breakdownFor(cleanLossUi, cleanLegal, cleanLights, candidate)!
+    const cleanLegal = legalMoves(lowDefeatUi.round, PlayerSide.Player)
+    const cleanLights = lightsForHand(lowDefeatUi, cleanLegal)
+    const cleanBreakdown = breakdownFor(lowDefeatUi, cleanLegal, cleanLights, candidate)!
     expect(cleanBreakdown.totals[1].branch).toBe(BreakdownBranch.DidNotTake)
     expect(cleanBreakdown.totals[1].carryText).not.toBeNull()
     expect(cleanBreakdown.totals[1].multiplier).toBe(0)
 
-    const dodgeUi = activate(
+    const lowVictoryUi = activate(
       seededUi(
         {
           currentTrick: [{ side: PlayerSide.Cpu, card: led }],
           leader: PlayerSide.Cpu,
           skulledCards: [led],
         },
-        [feeder],
+        [suitLow],
       ),
-      [feeder.id],
+      [suitLow.id],
     )
-    const dodgeLegal = legalMoves(dodgeUi.round, PlayerSide.Player)
-    const dodgeLights = lightsForHand(dodgeUi, dodgeLegal)
-    const dodgeBreakdown = breakdownFor(dodgeUi, dodgeLegal, dodgeLights, candidate)!
-    expect(dodgeBreakdown.totals[1].carryText).toBeNull()
-    expect(dodgeBreakdown.totals[1].multiplier).toBeGreaterThan(0)
+    const lowVictoryLegal = legalMoves(lowVictoryUi.round, PlayerSide.Player)
+    const lowVictoryLights = lightsForHand(lowVictoryUi, lowVictoryLegal)
+    const lowVictoryBreakdown = breakdownFor(lowVictoryUi, lowVictoryLegal, lowVictoryLights, candidate)!
+    expect(lowVictoryBreakdown.totals[1].carryText).toBeNull()
+    expect(lowVictoryBreakdown.totals[1].multiplier).toBeGreaterThan(0)
   })
 })

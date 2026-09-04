@@ -8,7 +8,7 @@ import SlotGlyph from './SlotGlyph'
  * 2026-09-01 — the machine's face-up strip, as GLYPH CHIPS rather than eight sentences.
  *
  * The strip is decision-critical, so `game-ux` forbids putting it behind hover — but the previous
- * rendering, eight rows of "Moon-Taker (Momentum) — win a trick with Moons", was most of what made
+ * rendering, eight rows of "Moon High (Momentum) — go high on Moons", was most of what made
  * the developer call this screen a wall of information. A chip carries the same three facts the
  * reel window carries (suit glyph, family, reward axis), in the same shape, so the strip can be
  * compared against the three windows at a glance instead of read.

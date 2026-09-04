@@ -44,7 +44,7 @@ function uiFrom(
 }
 
 describe('DLR-156 AC7 — a hit pays the Quarry NOTHING, replacing the old forced two-thirds cash-out', () => {
-  it('a clean loss deals no damage to the Quarry and resets total/roll, only the player is hit', () => {
+  it('a Low Defeat deals no damage to the Quarry and resets total/roll, only the player is hit', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
@@ -59,7 +59,7 @@ describe('DLR-156 AC7 — a hit pays the Quarry NOTHING, replacing the old force
     let ui = uiFrom(round)
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
-    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.LowDefeat)
     // AC7 — no two-thirds consolation any more: a hit pays the Quarry nothing at all.
     expect(ui.resolvedTrick?.resolution.cashOut).toBe(0)
     expect(ui.round.total).toBe(0)
@@ -84,7 +84,7 @@ describe('DLR-156 AC7 — a hit pays the Quarry NOTHING, replacing the old force
     let ui = uiFrom(round, encounter)
     ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
-    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.HighVictory)
     expect(ui.resolvedTrick?.resolution.cashOut).toBe(0)
     // Same reference, not just equal values — `applyResolution` skips `applyDamage` entirely
     // when nothing moved, so an all-zero event never bumps `damageEventsApplied`.
@@ -111,7 +111,7 @@ describe('DLR-156 AC7 — a hit pays the Quarry NOTHING, replacing the old force
     let ui = uiFrom(round)
     ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
-    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.HighVictory)
     expect(ui.resolution).not.toBeNull()
 
     // The pot on offer (potValue(501, 3) = 1503) comfortably exceeds this encounter's 10-health
@@ -143,14 +143,14 @@ describe('DLR-156 AC7 — a hit pays the Quarry NOTHING, replacing the old force
         // play its only Keys card here. A Fox forced into play always resolves its ability
         // (chooseCpuMove never leaves it unanswered), which would exchange trump away from
         // Bells and hand the Quarry the decree instead of its Moons 6 — breaking trick 3's
-        // matchup below. Keys 6 carries no ability, so trick 2 stays a plain clean win.
+        // matchup below. Keys 6 carries no ability, so trick 2 stays a plain High Victory.
         [PlayerSide.Cpu]: [card(Suit.Bells, 2), card(Suit.Keys, 6), card(Suit.Moons, 6)],
       },
       currentTrick: [],
     })
     let ui = uiFrom(round)
 
-    // Trick 1 — the Player's Bells 11 beats the Quarry's only Bells card: a clean win.
+    // Trick 1 — the Player's Bells 11 beats the Quarry's only Bells card: a High Victory.
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
     expect(ui.round.roll).toBe(1)
@@ -166,7 +166,7 @@ describe('DLR-156 AC7 — a hit pays the Quarry NOTHING, replacing the old force
     // both the total and the streak to zero.
     ui = roundReducer(ui, tap(card(Suit.Moons, 4)))
     ui = roundReducer(ui, tap(card(Suit.Moons, 4)))
-    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.LowDefeat)
     expect(ui.round.roll).toBe(0)
     expect(ui.round.total).toBe(0)
   })

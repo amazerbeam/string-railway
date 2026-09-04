@@ -48,9 +48,9 @@ export interface BuffBonusAccrual {
    *  nothing reads it to decide a payout, because the seed is already inside those two figures.
    *  Kept so AC6's opening figure is legible for the whole hand, not only at trick 0. */
   readonly carriedIn: BuffCarry
-  /** DLR-150 AC1 — rewards a Feeder earned on a LOSS this hand. Never payable this hand;
+  /** DLR-150 AC1 — rewards a Suit Low card earned on a DEFEAT this hand. Never payable this hand;
    *  UNCAPPED, because R6's caps bound what a hand may PAY and this pays nothing. Handed to the
-   *  run at hand end and wiped at the fight boundary by `feederCarryAfter`. */
+   *  run at hand end and wiped at the fight boundary by `lowCarryAfter`. */
   readonly carryOut: BuffCarry
 }
 
@@ -66,7 +66,7 @@ export const EMPTY_BUFF_ACCRUAL: BuffBonusAccrual = {
 /** The value a new hand's accrual starts at. The ONLY reset this module exports — see the module
  *  docblock's R6 note. `carriedIn` (DLR-150 AC3) seeds `multiplierBonus`/`flatDamageBonus`
  *  directly, exactly as any other hand-long contribution to those axes (coins, AP refund and the
- *  Feeder carry — DLR-156 moved the damage axes off this pool onto `trickBonusFor`, per trick).
+ *  low carry — DLR-156 moved the damage axes off this pool onto `trickBonusFor`, per trick).
  *  The carry itself sits outside R6's caps deliberately — R6 bounds what a hand may PAY, and the
  *  carry paid nothing in the hand that earned it. A distinct named function rather than exporting
  *  the constant directly under two names, so a caller's intent ("start a new hand") is legible at
@@ -123,7 +123,7 @@ export function overlapBonusFor(firedCount: number): number {
   return Math.max(0, firedCount - 1)
 }
 
-/** AC1 — one Loss-firing Feeder's reward into `carryOut`. UNCAPPED: R6's caps bound what a hand
+/** AC1 — one Defeat-firing Suit Low reward into `carryOut`. UNCAPPED: R6's caps bound what a hand
  *  may PAY, and this pays nothing this hand. Throws on an axis that cannot carry rather than
  *  accruing a plausible zero — `mintFromTemplate`'s discipline. Never mutates `accrual`. */
 export function accrueCarry(
@@ -156,10 +156,11 @@ export function accrueCarry(
   }
 }
 
-/** R1/R2/R5 for one trick's fired buffs, plus DLR-150 AC1/AC2's outcome split. `trickIsLoss` is
+/** R1/R2/R5 for one trick's fired buffs, plus DLR-150 AC1/AC2's outcome split. `trickIsDefeat` is
  *  supplied by `streak.ts` from `!isTaken(outcome)` — this module never re-derives the skull
- *  inversion, which is stated exactly once, in `streak.ts`'s `TAKEN` table. A FEEDER firing on a
- *  Loss carries; every other family and every Win is unchanged, and so is the Overlap Bonus.
+ *  inversion, which is stated exactly once, in `streak.ts`'s `TAKEN` table. A SUIT LOW card firing
+ *  on a Defeat carries; every other family and every Victory is unchanged, and so is the Overlap
+ *  Bonus.
  *  Reflects R3's five-step order (Second Wind → Momentum → cash-out → Blade → Purse) in the
  *  sequence contributions are applied, but does NOT perform the cash-out step itself — that is
  *  `streak.ts`'s job for the hand-long axes; `trickBonusFor` above does the per-trick damage
@@ -167,7 +168,7 @@ export function accrueCarry(
 export function resolveFiredBuffs(
   accrual: BuffBonusAccrual,
   fired: readonly Buff[],
-  trickIsLoss: boolean,
+  trickIsDefeat: boolean,
 ): BuffBonusAccrual {
   let next = fired.reduce((running, buff) => {
     // DLR-161 — a protective card pays into NO per-hand pool: its reward is the streak figure
@@ -177,7 +178,7 @@ export function resolveFiredBuffs(
     // Overlap Bonus exactly as any other pair would".
     if (isProtectiveAxis(buff.reward.axis)) return running
     const axis = narrowToCostAxis(buff.reward.axis, 'Fired buff reward axis')
-    return trickIsLoss && buff.kind === BuffKind.Feeder
+    return trickIsDefeat && buff.kind === BuffKind.SuitLow
       ? accrueCarry(running, axis, buff.reward.value)
       : accrueAxisBonus(running, axis, buff.reward.value)
   }, accrual)
@@ -232,19 +233,19 @@ const EMPTY_TRICK_BONUS: TrickBuffBonus = {
  *  tricks any more: a Blade fired on trick 1 and the same Blade fired on trick 6 both pay into
  *  their own trick's `(base + bd) x bm` and neither survives it.
  *
- *  Reads `buff.reward` through the same `narrowToCostAxis` and the same `BuffKind.Feeder` /
- *  `trickIsLoss` split `resolveFiredBuffs` uses, so cadence, the Feeder carry and the tier
+ *  Reads `buff.reward` through the same `narrowToCostAxis` and the same `BuffKind.SuitLow` /
+ *  `trickIsDefeat` split `resolveFiredBuffs` uses, so cadence, the low carry and the tier
  *  table are inherited rather than restated. The Overlap Bonus is returned SEPARATELY rather
  *  than folded into `multiplierBonus`, so the resolution screen can give it its own beat
  *  (AC16) without re-deriving `overlapBonusFor`.
  *
  *  R6's four per-hand caps are deliberately NOT applied here. They bound what a HAND may pay,
  *  and this figure is per TRICK; both damage caps are `Number.POSITIVE_INFINITY` today, so no
- *  number moves either way. Coins, the AP refund and the Feeder carry still run through
+ *  number moves either way. Coins, the AP refund and the low carry still run through
  *  `resolveFiredBuffs` and its caps, untouched. */
-export function trickBonusFor(fired: readonly Buff[], trickIsLoss: boolean): TrickBuffBonus {
+export function trickBonusFor(fired: readonly Buff[], trickIsDefeat: boolean): TrickBuffBonus {
   const totals = fired.reduce((running, buff) => {
-    if (trickIsLoss && buff.kind === BuffKind.Feeder) {
+    if (trickIsDefeat && buff.kind === BuffKind.SuitLow) {
       // DLR-150 AC1 — carries out instead of paying this trick.
       return running
     }

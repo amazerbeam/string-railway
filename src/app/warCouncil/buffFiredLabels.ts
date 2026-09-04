@@ -51,7 +51,7 @@ export function buffFiredText(
   if (fired.length === 0) return null
   // DLR-119 review fix: the clauses join on '. ', not ' '. `buffRewardPhrase` never ends in a stop,
   // so a bare-space join ran three buffs together as
-  // `Bell-Taker (Momentum): +2 multiplier Key-Feeder (Momentum): +2 multiplier …` — unparseable
+  // `Bell High (Momentum): +2 multiplier Key Low (Momentum): +2 multiplier …` — unparseable
   // aloud, and unparseable is the failure this ticket exists to fix. The multi-buff case is also
   // the ONLY one that matters here: `overlapBonusFor` pays nothing below two fired buffs, so the
   // run-on was exactly the shape a player would actually meet.

@@ -30,7 +30,8 @@ function suitWord(suit: Card['suit']): string {
 }
 
 /** Named on the MECHANICAL axis (`BreakdownBranch.Took` / `.DidNotTake`), because that is the axis
- *  every buff condition reads — `CLAUDE.md` → "Win and lose mean two different things". Neither
+ *  every buff condition reads — `CLAUDE.md` → the four names a trick can have, and its rule that
+ *  High/Low name the act while Victory/Defeat name the outcome. Neither
  *  branch is emphasised (AC11): both headings are stated the same way, as a question the player is
  *  answering, not as a verdict. */
 export const BRANCH_HEADING: Readonly<Record<BreakdownBranch, string>> = {
@@ -64,7 +65,7 @@ export function removeBuffLabel(buff: Buff, reach: number): string {
   return `Take ${buffName(buff)} off the trick — ${tail}`
 }
 
-/** "Needs Bells — this card is Keys." A suitless buff (Sidestep) is never dead for a SUIT reason,
+/** "Needs Bells — this card is Keys." A suitless buff (Skull Low) is never dead for a SUIT reason,
  *  so it gets a suit-neutral reading instead of a fabricated suit clash. */
 export function deadRowReasonText(buff: Buff, card: Card): string {
   const suit = buffTargetSuitOf(buff)

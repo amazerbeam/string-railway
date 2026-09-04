@@ -66,7 +66,7 @@
   /* The GAIN green — "a good thing happened". Deliberately a sickly yellow-green rather than a
      felt green, so it does not read as "the table", and light enough to carry a dark glyph at
      full contrast. Not a suit colour: it names an OUTCOME, which is why it sits apart from the
-     three above. Read by the won-verdict headline, the feeder carry-out row and the buff card's
+     three above. Read by the victory-verdict headline, the low carry-out row and the buff card's
      payoff chip. DLR-166 renamed it when the card it used to be named for was deleted; the hex is
      unchanged. The name and the hex are both the developer's to retune. */
   --wc-gain: #8fb04e;

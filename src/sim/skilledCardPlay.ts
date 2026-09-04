@@ -5,7 +5,7 @@
  * the trick-by-trick card decision and knows nothing about buffs, the shop, or the pot.
  *
  * WHY THIS EXISTS. Every simulated player before it took its card from `chooseCpuMove`, which was
- * written for the QUARRY. That heuristic's dodge branch filters its own candidate cards for a skull
+ * written for the QUARRY. That heuristic's go-low branch filters its own candidate cards for a skull
  * — correct for the Quarry, which is the only side ever dealt one, and a permanent no-op for the
  * player, who holds none. Reused for the player it collapses to "always try to win, else play
  * lowest". Since a skull INVERTS a trick (`the-hunt.md` §7), winning a skull trick is a point of
@@ -143,10 +143,10 @@ function followWins(state: RoundState, card: Card): boolean {
  * The follow, with the lead face up — where the health is won or lost.
  *
  * The lead's skull mark is visible, so the target outcome is known rather than estimated: a skulled
- * lead is a trick to LOSE (a dodge banks it), a clean lead is one to WIN. Within the cards that
- * reach the target outcome, take the cheapest — the lowest loser for a dodge, so the high cards
- * stay available to win clean tricks later; the lowest winner for a clean win, for the same reason
- * in reverse.
+ * lead is a trick to go LOW on (a Low Victory banks it), a clean lead is one to go HIGH on. Within
+ * the cards that reach the target outcome, take the cheapest — the lowest card that stays under for
+ * a Low Victory, so the high cards stay available for clean tricks later; the lowest card that
+ * takes it for a High Victory, for the same reason in reverse.
  *
  * When no legal card reaches the target the trick is a hurt whatever is played (1 health,
  * `the-hunt.md` §7), so the choice collapses to what to throw away, and it throws the junkiest.
@@ -237,15 +237,15 @@ export function chooseSkilledCard(state: RoundState): Card {
  * things are already known and neither was being used:
  *
  * 1. WHO LEADS. `state.leader` says it outright. If it is the player, the suit is entirely the
- *    player's choice, so a Taker keyed to a suit the player is about to lead is not a bet at all.
+ *    player's choice, so a Suit High card keyed to a suit the player is about to lead is not a bet.
  * 2. WHAT THE QUARRY IS LIKELY TO LEAD. `suitShape` posts how many cards it holds per suit, so the
  *    suit it holds most of is the suit it most likely leads — inference from the screen's own
  *    readout, never from its ranks.
  *
- * `willTake` is the outcome being played for, not the mechanical act: on a suit the readout says is
- * skull-heavy the plan is to LOSE the trick, because a dodge banks. That single flag is what makes
- * Taker and Feeder mutually exclusive rather than both armed — exactly one of them can fire on any
- * trick, so arming both guarantees half the cards are wasted.
+ * `willTake` names the MECHANICAL act the plan aims at: on a suit the readout says is skull-heavy
+ * the plan is to go LOW, because that is a Low Victory and it banks. That single flag is what makes
+ * Suit High and Suit Low mutually exclusive rather than both armed — exactly one of them can fire on
+ * any trick, so arming both guarantees half the cards are wasted.
  */
 export interface TrickIntent {
   readonly suit: Suit

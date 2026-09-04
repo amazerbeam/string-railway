@@ -211,7 +211,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     // spares the player that event's damage. This is now driven as TWO tricks, the same split
     // `run.test.ts`'s `winEncounter` helper uses for the pure-function case: trick A is a clean
     // loss the player takes DAMAGE_PER_HIT for, non-lethal to the Quarry (total/roll are both
-    // zero, so it cashes nothing); trick B is the killing blow ALONE, a clean win for the player
+    // zero, so it cashes nothing); trick B is the killing blow ALONE, a High Victory for the player
     // (so `damageToPlayer` is zero) whose forced end-of-hand cash-out (AC8) still empties the
     // Quarry's bar. The Quarry's starting health is set low (1) for this fixture specifically so
     // trick B's modest, organically-built total (1 × 1) is enough to finish it without needing an
@@ -251,7 +251,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     )
 
     // Trick A — the player leads the 2, the Quarry follows the higher card of the lead suit and
-    // takes it: a clean loss, costing the player DAMAGE_PER_HIT and wiping the streak for
+    // takes it: a Low Defeat, costing the player DAMAGE_PER_HIT and wiping the streak for
     // nothing (AC7 — total and roll both start at zero anyway). The hurt branch offers no
     // choice; its single "Onward" IS `RollOver`, which `roundReducer.ts`'s Task 15 chaining runs
     // straight through `handleCarryOn` — clearing the reveal AND committing the Quarry's own lead

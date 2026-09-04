@@ -59,7 +59,7 @@ export function buffCombineKey(buff: Buff): string {
     buff.tier,
     buffTargetSuitOf(buff) ?? '',
     buffTargetRankOf(buff) ?? '',
-    // DLR-162 — no suitless Taker or Feeder exists today except a wild one, so nothing collides
+    // DLR-162 — no suitless Suit High or Suit Low card exists today except a wild one, so nothing collides
     // right now. Included anyway: a key that cannot tell a wild card from a suitless one is a key
     // that stacks them together the moment something else changes.
     buffIsWild(buff) ? 'wild' : '',

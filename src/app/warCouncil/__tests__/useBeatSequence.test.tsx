@@ -15,7 +15,7 @@ const BEATS: readonly ResolutionBeat[] = [
   { kind: BeatKind.Base, label: 'Base damage +1', amount: 1, damage: 1, mult: 1, running: 1 },
   {
     kind: BeatKind.Blade,
-    label: 'Bell-Taker (Blade) +1 DMG',
+    label: 'Bell High (Blade) +1 DMG',
     amount: 1,
     damage: 2,
     mult: 1,

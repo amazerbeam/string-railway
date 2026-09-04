@@ -32,7 +32,7 @@ export const BuffRunKind = {
   Moons: 'moons',
   /** DLR-162 — a card whose condition ignores the suit. Its OWN run rather than `Suitless`: these
    *  runs answer "which of my cards are live on this trick", and a card live on every trick is a
-   *  different answer from Sidestep, which never cared about suits in the first place. */
+   *  different answer from Skull Low, which never cared about suits in the first place. */
   Wild: 'wild',
   Suitless: 'suitless',
   Press: 'press',

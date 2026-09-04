@@ -6,7 +6,7 @@
  * Both surfaces anchor to the top edge of the same hovered card — `useBuffBreakdownAnchor` sets
  * the panel's `bottom` from the card's measured rect, `useCardTip` sets the bubble's `top` from the
  * same rect — so they land on the same line EVERY time, not occasionally. That collision is the
- * ticket's fourth screenshot: the Witch's rule bubble sitting on top of the Key-Feeder line that
+ * ticket's fourth screenshot: the Witch's rule bubble sitting on top of the Key Low line that
  * explained the number, which cost a trick and produced a false bug report.
  */
 import { createContext, useContext } from 'react'

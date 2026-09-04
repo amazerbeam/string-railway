@@ -15,7 +15,7 @@
  *
  * 1. BUFFS — picks the legal card the most affordable buffs are KEYED TO, arms that stack, and
  *    deliberately does NOT arm a targeted buff aimed at a different card. Untargeted buffs
- *    (`hoarder`, `unbloodied`, `debtCollector`, `sidestep`, …) fire off bank/streak/health rather
+ *    (`hoarder`, `unbloodied`, `debtCollector`, `skullLow`, …) fire off bank/streak/health rather
  *    than off the card, so they are armed afterwards on the baseline's cheapest-first rule.
  * 2. CARDS — plays the legal card matching the most buffs ALREADY ARMED this trick, falling back to
  *    `chooseCpuMove` when nothing matches. Reading what is armed, rather than re-deriving step 1's
@@ -23,7 +23,7 @@
  * 3. DISCARDS — when no card in hand matches any held buff, swaps out the cards that match nothing,
  *    which is the lever the baseline never pulls at all.
  *
- * WHAT IT STILL DOES NOT DO: `taker` needs the trick WON and `feeder` needs it LOST, and while
+ * WHAT IT STILL DOES NOT DO: `suitHigh` needs the player to go HIGH and `suitLow` to go LOW, and while
  * leading the Quarry's answer is unknowable, so a match is an aimed shot rather than a guaranteed
  * fire. It also never arms a Cheat — that stays `maximalistPolicy`'s territory.
  */
@@ -53,7 +53,7 @@ import { baselinePolicy } from './baselinePolicy'
 import type { CardChoice, SimPolicy } from './types'
 
 /** Whether a buff's condition is keyed to a specific card at all. The suit- and rank-parameterised
- *  families (`taker`, `feeder`, `markOfRank`, `keepsake`) are the ones a card choice can aim; every
+ *  families (`suitHigh`, `suitLow`, `markOfRank`, `keepsake`) are the ones a card choice can aim; every
  *  other family reads bank, streak, health, coins or a button press and is unaffected by which card
  *  is played. */
 function isCardTargeted(buff: Buff): boolean {
