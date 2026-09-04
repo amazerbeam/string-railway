@@ -114,6 +114,14 @@ export function suitShape(
  * skull into the Quarry's own hand. The trick-shaped test is RETAINED because it is TOTAL — it
  * needs no knowledge of which seat holds a skull, and DLR-167's curse, which marks a card in the
  * PLAYER's hand, is a live reason a player-held skull is expressible today.
+ *
+ * DLR-167 fix pass — an earlier version of this comment asserted that no skulled card can reach the
+ * shared draw pile. THE CODE DOES NOT BACK THAT. `abilities.ts`'s `applyQuarrySwap` puts the
+ * swapped-away Quarry card at the bottom of `drawPile` without lifting its `skulledCards` entry, so
+ * a skulled card in the shared pile is expressible. It is merely unreachable in PRACTICE: the card
+ * lands under roughly 19 others, the player refills at most 5 a hand, and `dealRound` re-assigns
+ * `skulledCards` from scratch. The comment is what was wrong, so the comment is what changed —
+ * lifting the mark on a swap would be a rule change, and rule changes are the developer's.
  */
 export function trickIsSkulled(
   skulledCards: readonly Card[],

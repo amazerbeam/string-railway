@@ -42,6 +42,16 @@ export interface ResolvedTrick {
   readonly winner: PlayerSide
   /** What the trick did to the bank, the streak and both bars. */
   readonly resolution: TrickResolution
+  /** DLR-160 AC2 / DLR-167 fix pass — the cards in THIS trick that carried a skull, captured from
+   *  the PRE-play state at the moment the trick resolved.
+   *
+   *  CAPTURED rather than recomputed, and that is load-bearing: `playCard` lifts a curse the
+   *  instant the trick resolves, so any reader that re-derives skull membership from the state
+   *  AFTER the play sees an empty list for a trick a Curse alone made skulled — and words a
+   *  banking Low Victory as a Low Defeat. This is the ONE reading, shared by the trick well
+   *  (`TrickWell.tsx`) and the resolution panel's `ResolutionView.skulledInTrick`, which is what
+   *  makes `resolutionOutcome.ts`'s "one trick can never be worded two ways" actually true. */
+  readonly skulledInTrick: readonly Card[]
 }
 
 export interface RoundUiState {
@@ -294,6 +304,9 @@ export function discardStock(state: RoundUiState): DiscardStock {
     selecting: discardSelecting(state),
     selectionSize: state.discardSelection?.length ?? 0,
     windowOpen: discardWindowOpen(state),
+    // DLR-167 fix pass — `curseArmed`, not `curseLive`: a card ALREADY marked has released the hand
+    // tap, so only the waiting arm is a competing claimant.
+    curseArmed: curseArmed(state),
   }
 }
 

@@ -168,7 +168,11 @@ describe('MotionAnchors — Task 8, the felt registers itself', () => {
 })
 
 // DLR-157 Task 9 — the prompt, the gallery and the riding strip.
-const woodcutterBuff = mintFromTemplate(templateById('suitHigh:bells:magnitude')!, BuffTier.Bronze, 1)
+const woodcutterBuff = mintFromTemplate(
+  templateById('suitHigh:bells:magnitude')!,
+  BuffTier.Bronze,
+  1,
+)
 const noRefusal = () => null
 
 function PromptGalleryStripPlaces() {

@@ -28,7 +28,11 @@ function firedBuff(
 describe('DLR-161 — a protective card pays into no per-hand pool', () => {
   it('resolveFiredBuffs leaves all four counters at zero and does not throw', () => {
     const goldHelmet = firedBuff(BuffRewardAxis.Protection, 1)
-    const accrual = resolveFiredBuffs(EMPTY_BUFF_ACCRUAL, [{ ...goldHelmet, kind: BuffKind.SkullHelmet }], false)
+    const accrual = resolveFiredBuffs(
+      EMPTY_BUFF_ACCRUAL,
+      [{ ...goldHelmet, kind: BuffKind.SkullHelmet }],
+      false,
+    )
     expect(accrual.multiplierBonus).toBe(0)
     expect(accrual.flatDamageBonus).toBe(0)
     expect(accrual.coinBonus).toBe(0)

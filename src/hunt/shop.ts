@@ -1,9 +1,4 @@
-import {
-  AP_CAPACITY_PRICE,
-  CHEAT_PRICE,
-  HEAL_PRICE,
-  WHETSTONE_PRICE,
-} from './config'
+import { AP_CAPACITY_PRICE, CHEAT_PRICE, HEAL_PRICE, WHETSTONE_PRICE } from './config'
 import { isAtMaxTier, RANK_TIER_STEP_PRICE, TieredRank, type RankTierTable } from './rankTiers'
 import { maxHealthPriceFor } from './maxHealth'
 import type { Coins, Health } from './types'

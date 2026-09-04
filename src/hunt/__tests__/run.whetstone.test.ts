@@ -47,12 +47,7 @@ describe('buyFromShop — Whetstone (DLR-92)', () => {
 
   it('DLR-92 AC3 — the count survives advanceRun, exactly as coins do', () => {
     const run = { ...startRun(), whetstones: 2 }
-    const won = recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      null,
-    )
+    const won = recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null)
     expect(advanceRun(won).whetstones).toBe(2)
   })
 })

@@ -9,9 +9,25 @@ import {
 import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
 import { mintFromTemplate } from '../buffTemplates'
 
-const HELMET_TEMPLATE = { form: 'condition', id: 'skullHelmet:protection', kind: BuffKind.SkullHelmet, axis: BuffRewardAxis.Protection } as const
-const TETHER_TEMPLATE = { form: 'condition', id: 'skullTether:protection', kind: BuffKind.SkullTether, axis: BuffRewardAxis.Protection } as const
-const SUIT_HIGH_TEMPLATE = { form: 'condition', id: 'suitHigh:bells:magnitude', kind: BuffKind.SuitHigh, axis: BuffRewardAxis.Magnitude, target: { suit: 'bells' as const } } as const
+const HELMET_TEMPLATE = {
+  form: 'condition',
+  id: 'skullHelmet:protection',
+  kind: BuffKind.SkullHelmet,
+  axis: BuffRewardAxis.Protection,
+} as const
+const TETHER_TEMPLATE = {
+  form: 'condition',
+  id: 'skullTether:protection',
+  kind: BuffKind.SkullTether,
+  axis: BuffRewardAxis.Protection,
+} as const
+const SUIT_HIGH_TEMPLATE = {
+  form: 'condition',
+  id: 'suitHigh:bells:magnitude',
+  kind: BuffKind.SuitHigh,
+  axis: BuffRewardAxis.Magnitude,
+  target: { suit: 'bells' as const },
+} as const
 
 function helmet(tier: BuffTier, id = 1): Buff {
   return mintFromTemplate(HELMET_TEMPLATE, tier, id)

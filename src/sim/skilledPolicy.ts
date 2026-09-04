@@ -33,7 +33,6 @@ import {
 } from '../warCouncil'
 import {
   BuffKind,
-  buffTargetSuitOf,
   DuelSide,
   MAX_CARDS_PER_DISCARD,
   ShopItem,
@@ -47,7 +46,6 @@ import {
   slotVisitStockFor,
   buffCombineKey,
   combineRefusalFor,
-  type Buff,
   type BuffId,
   type RunState,
 } from '../hunt'
@@ -57,6 +55,7 @@ import { baselinePolicy } from './baselinePolicy'
 import { sharpshooterPolicy } from './survivalistPolicy'
 import {
   bestLeadBankOdds,
+  canPayUnder,
   cheatEscape,
   chooseSkilledCard,
   deadness,
@@ -106,41 +105,10 @@ function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
   return cheat === undefined ? null : { cheatId: cheat.id, card }
 }
 
-/**
- * THE buff rule: decide what the trick is going to BE, then arm only cards that can pay on it.
- *
- * Three errors this replaces, all of them visible in one trick of the published trace — the player
- * held 21 cards, armed 4, and every one of the 4 was keyed to Keys on a trick played in Bells:
- *
- * 1. ARMING A SUIT THE TRICK WILL NOT TOUCH. The window opens before either card is laid, but
- *    `state.leader` already says who leads, and when it is the player the suit is entirely their
- *    own choice. `trickIntent` picks the lead FIRST and arms to match, so a suit-keyed card is
- *    aimed at the suit actually about to be played rather than at whatever the pile holds most of.
- * 2. ARMING SUIT HIGH AND SUIT LOW TOGETHER. Suit High needs the player to go HIGH, Suit Low needs
- *    them to go LOW — exactly one can fire, so arming both is a guaranteed 50% waste of the
- *    scarcest resource in the run. `intent.willTake` picks the side and arms only that one.
- * 3. ARMING SKULL LOW WHEN PLAYING TO GO HIGH. Skull Low pays only on a Low Victory, which is a
- *    trick the player did not take, so it cannot pay on a trick being played to take.
- *
- * When the QUARRY leads, the suit is a prediction from `suitShape`'s posted counts rather than a
- * choice, so `intent.certain` is false and the stack is capped — a blind trick should not eat the
- * pile. Cheat is never armed here at all; see `RESERVED_KINDS`.
- */
-function canPayUnder(buff: Buff, intent: TrickIntent): boolean {
-  const suit = buffTargetSuitOf(buff)
-  switch (buff.kind) {
-    case BuffKind.SuitHigh:
-      return intent.willTake && String(suit) === String(intent.suit)
-    case BuffKind.SuitLow:
-      return !intent.willTake && String(suit) === String(intent.suit)
-    case BuffKind.SkullLow:
-      // A Low Victory is a trick the player did not take, so Skull Low can only pay when the plan
-      // is to go low.
-      return !intent.willTake
-    default:
-      return false
-  }
-}
+// `canPayUnder` — THE buff rule — lives in `skilledCardPlay.ts` now, beside the `TrickIntent` it
+// reads. Moved on the DLR-162..167 fix pass, when the wild-card correction pushed this file past
+// its 400-line budget; the seam matches the split's own stated one, since the rule is a question
+// about the intended trick and nothing else.
 
 /** UNIT: cards. What may ride on a trick whose suit is a PREDICTION rather than a choice — the
  *  Quarry's lead. Not a tuning value so much as the shape of the bet: a blind trick should not be

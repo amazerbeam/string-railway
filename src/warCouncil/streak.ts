@@ -262,6 +262,12 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     // excluded from the fired set by design and its payoff is owed for the trick it was ACTIVATED
     // for. Only a BANKED trick reaches this branch at all, which is what makes AC6's reward
     // self-gating with no "only on a Low Victory" condition written anywhere.
+    //
+    // OPEN QUESTION for the developer (DLR-167 review, 2026-09-04) — the reward is owed on ANY
+    // banked trick, not only on one the cursed card was played into. So marking a card and then
+    // never playing it earns the bonus with none of the risk the card is priced for. Whether that
+    // is the intended reading is a RULE decision, not a defect anyone here may settle; the
+    // behaviour is deliberately left exactly as it stands until a ticket decides it.
     const curse = trick.buffs === null ? EMPTY_CURSE_BONUS : curseBonusOf(trick.buffs.active)
     const base = BASE_DAMAGE + safeBonus(trick.baseDamageBonus) + safeBonus(curse.damage)
     const buffMult = 1 + bonus.multiplierBonus + bonus.overlapBonus + safeBonus(curse.multiplier)
@@ -283,9 +289,11 @@ export function resolveTrickBank(before: StreakState, trick: TrickFacts): TrickR
     //
     // DLR-122 AC5 — gold spares the streak from this reset entirely. This is the
     // poisoned-Low-Defeat exception's own shape (`the-hunt.md` §7) reached by a different
-    // trigger, not a second implementation of it: `replaced` above already skips the hit for the
-    // same reason, and this skips the reset one branch below it. The DAMAGE is untouched either
-    // way — it was booked into `damageToPlayer` above and no Swan rung insures against it.
+    // trigger, not a second implementation of it. The DAMAGE is untouched — it was booked into
+    // `damageToPlayer` above and no Swan rung insures against it.
+    // DLR-166 fix pass — this used to cite a `replaced` local as the sibling case that skips the
+    // hit for the same reason. That variable went with the prime it named; nothing else here
+    // changed.
     // DLR-161 — the nested Swan guard becomes two INDEPENDENT guards. The old nesting encoded
     // "gold implies silver" as structure, and structure cannot express "the roll survives but the
     // total does not" — which is exactly Skull Tether. Behaviour-identical for all four Swan

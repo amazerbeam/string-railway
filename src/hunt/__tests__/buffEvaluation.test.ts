@@ -281,7 +281,9 @@ describe('firesOncePerHand', () => {
         directBuff(BuffKind.Keepsake, 21, BuffRewardAxis.Coins, { suit: BuffTargetSuit.Moons }),
       ),
     ).toBe(true)
-    expect(firesOncePerHand(fromTemplate('suitHigh:bells:magnitude', BuffTier.Bronze, 22))).toBe(false)
+    expect(firesOncePerHand(fromTemplate('suitHigh:bells:magnitude', BuffTier.Bronze, 22))).toBe(
+      false,
+    )
   })
 })
 

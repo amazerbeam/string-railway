@@ -230,7 +230,14 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
     // DLR-100 fix pass — a discard selection open during the Quarry-to-lead gap must be finished
     // or cancelled before the felt's ambient "tap to carry on" gesture is allowed to advance the
     // lead again. Mirrors `handleTapCard`'s discard-first ordering: discarding takes priority.
-    discardSelecting(cleared)
+    discardSelecting(cleared) ||
+    // DLR-167 fix pass — same prohibition, same shape. `roundUiState.ts`'s
+    // `buffActivationWindowOpen` states it outright: "a card that arms an effect BEFORE the player
+    // commits has no business being armable after the Quarry has led, because that would let the
+    // player see the lead first — a read the card was never meant to buy." Nothing else clears
+    // `curseArmedBuff`, so without this clause a Curse armed between tricks survived the Quarry's
+    // lead and the player chose which card to mark having already seen it.
+    curseArmed(cleared)
   ) {
     return cleared
   }

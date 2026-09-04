@@ -161,8 +161,7 @@ function rowFor(buff: Buff, mayFire: boolean): BreakdownConditionRow {
 }
 
 function payoffPhrase(buff: Buff): string {
-  const payoff = buffPayoff(buff)
-  return payoff.risk === null ? payoff.gain : `${payoff.gain}, ${payoff.risk}`
+  return buffPayoff(buff).gain
 }
 
 /** Picks `branchProjection.outcomes[0]` — the skull-FALSE reading when the skull is unknown,

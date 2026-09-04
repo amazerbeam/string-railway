@@ -1,0 +1,119 @@
+/* The Manage Buffs screen's ARMED state: the confirmation face that takes over a pile (or a wild
+   target tile) after its first tap, and the two-button commit/cancel pair inside it — plus the
+   target mode's own quiet way out, which reuses that pair's sizing.
+
+   Split out of `manageBuffs.css` on the DLR-162..167 fix pass, once that file passed its 400-line
+   budget. The seam is the gesture, not the line count: everything here belongs to the moment a
+   choice is poised, and nothing here styles the shell, a band, or a resting pile.
+
+   Import it AFTER `manageBuffs.css` — `.mb-go-quiet` deliberately overrides `.mb-go` at equal
+   specificity, so source order is what decides it. Tokens are `warCouncil.css`'s own `--wc-*`,
+   reaching this sheet transitively exactly as they reach its sibling. */
+
+div.mb-pile.is-armed {
+  position: relative;
+}
+.mb-confirm {
+  position: absolute;
+  inset: -6px;
+  z-index: 4;
+  background: linear-gradient(180deg, #23303a 0%, #131b21 100%);
+  border: 1px solid var(--wc-brass-dim, #7d6132);
+  border-radius: 12px;
+  box-shadow: 0 10px 26px #000c;
+  padding: 7px;
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr auto;
+  gap: 4px;
+  font-size: 0.64rem;
+}
+.mb-confirm-lab {
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a49c8b;
+}
+.mb-confirm-lose {
+  color: #edc7c0;
+  line-height: 1.25;
+  text-decoration: line-through;
+}
+.mb-confirm-gain {
+  color: #dcecd8;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.mb-confirm-cost {
+  align-self: end;
+  font-size: 0.62rem;
+  color: #cfc8b8;
+  border-top: 1px solid #ffffff1f;
+  padding-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.mb-confirm-acts {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
+}
+.mb-go,
+.mb-no {
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  min-height: 44px;
+  border-radius: 7px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.mb-go {
+  background: var(--wc-ready-deep, #3f6b3d);
+  color: #eaf6e7;
+  border: 1px solid var(--wc-ready, #7fb27a);
+}
+.mb-no {
+  background: #ffffff0f;
+  color: var(--wc-chalk);
+  border: 1px solid #ffffff2e;
+  padding: 0 8px;
+}
+@media (hover: hover) {
+  .mb-go:hover {
+    background: #4d8149;
+  }
+  .mb-no:hover {
+    background: #ffffff1c;
+  }
+}
+.mb-go:active,
+.mb-no:active {
+  background: #4d8149;
+}
+.mb-go:focus-visible,
+.mb-no:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+/* DLR-162 fix pass — the target mode's own way out, so the mode is not a dead end for a mouse-only
+   player (and is escapable at all when every card refuses the spend, since the ready grid that
+   carried the only `Escape` handler never renders then). Quiet rather than green: this is the way
+   BACK, not the commit. Inherits `.mb-go`'s 44px floor, `touch-action` and focus ring. */
+.mb-wild-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.mb-go-quiet {
+  background: #ffffff0f;
+  color: var(--wc-chalk);
+  border: 1px solid #ffffff2e;
+  padding: 0 14px;
+}
+@media (hover: hover) {
+  .mb-go-quiet:hover {
+    background: #ffffff1c;
+  }
+}
+.mb-go-quiet:active {
+  background: #ffffff1c;
+}

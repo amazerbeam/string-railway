@@ -59,7 +59,12 @@ describe('isRevocableBuff — DLR-153 AC10, the one statement of which cards may
 describe('deactivateFromPile — DLR-153 AC10, the mirror of activateFromPile', () => {
   it('returns activatedThisTrick and spentThisTrick to empty, restores the card, and refunds the pool', () => {
     const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
-    const { activation, buffs } = activateFromPile(startBuffActivation(), [suitHigh], suitHigh, true)
+    const { activation, buffs } = activateFromPile(
+      startBuffActivation(),
+      [suitHigh],
+      suitHigh,
+      true,
+    )
 
     const reverted = deactivateFromPile(activation, buffs, suitHigh)
 
@@ -113,7 +118,12 @@ describe('deactivateFromPile — DLR-153 AC10, the mirror of activateFromPile', 
     const pile: readonly Buff[] = [suitHigh, suitLow]
 
     const afterSuitHigh = activateFromPile(startBuffActivation(), pile, suitHigh, true)
-    const afterSuitLow = activateFromPile(afterSuitHigh.activation, afterSuitHigh.buffs, suitLow, true)
+    const afterSuitLow = activateFromPile(
+      afterSuitHigh.activation,
+      afterSuitHigh.buffs,
+      suitLow,
+      true,
+    )
 
     const reverted = deactivateFromPile(afterSuitLow.activation, afterSuitLow.buffs, suitHigh)
 

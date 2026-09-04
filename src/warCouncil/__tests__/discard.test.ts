@@ -48,6 +48,7 @@ const stock = (over: Partial<DiscardStock> = {}): DiscardStock => ({
   selecting: false,
   selectionSize: 0,
   windowOpen: true,
+  curseArmed: false,
   ...over,
 })
 

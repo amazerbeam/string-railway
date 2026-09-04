@@ -63,12 +63,7 @@ function LiveManageBuffs({ initial }: { readonly initial: readonly Buff[] }) {
     return producedKey
   }
   return (
-    <ManageBuffsPanel
-      view={view}
-      onCombine={combine}
-      onSpendWild={() => ''}
-      onLeave={() => {}}
-    />
+    <ManageBuffsPanel view={view} onCombine={combine} onSpendWild={() => ''} onLeave={() => {}} />
   )
 }
 

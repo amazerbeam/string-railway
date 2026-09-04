@@ -74,6 +74,7 @@ function withResolved(
     cards: [],
     winner: PlayerSide.Player,
     resolution: { ...RESOLUTION, ...over, firedBuffIds },
+    skulledInTrick: [],
   }
   return { ...ui, resolvedTrick }
 }
@@ -103,7 +104,12 @@ describe('buffHandInputFor', () => {
 
   it('a consumed card is no longer in the pile but is still active for THIS trick (DLR-145)', () => {
     const seeded = uiFrom({ buffs: [suitHigh] })
-    const { activation, buffs } = activateFromPile(seeded.buffActivation, seeded.buffs, suitHigh, true)
+    const { activation, buffs } = activateFromPile(
+      seeded.buffActivation,
+      seeded.buffs,
+      suitHigh,
+      true,
+    )
     const spentState = { ...seeded, buffs, buffActivation: activation }
 
     expect(offeredBuffs(spentState)).toHaveLength(0)
@@ -112,7 +118,12 @@ describe('buffHandInputFor', () => {
 
   it('drops it from the active set once the window reopens', () => {
     const seeded = uiFrom({ buffs: [suitHigh] })
-    const { activation, buffs } = activateFromPile(seeded.buffActivation, seeded.buffs, suitHigh, true)
+    const { activation, buffs } = activateFromPile(
+      seeded.buffActivation,
+      seeded.buffs,
+      suitHigh,
+      true,
+    )
     const nextTrick = { ...seeded, buffs, buffActivation: openBuffWindow(activation) }
     expect(buffHandInputFor(nextTrick).active).toEqual([])
   })

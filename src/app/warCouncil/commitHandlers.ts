@@ -14,12 +14,10 @@ import {
   CardRank,
   incomingFrom,
   incomingFromPot,
-  isSkulled,
   playCard,
   potValue,
   PlayerSide,
   sameCard,
-  skullsOn,
   type AbilityChoice,
   type Card,
   type PlayCardOptions,
@@ -152,12 +150,11 @@ function resolutionViewFor(
     // AC2 — the bare rule: the player may fire nothing next trick, so this is a FLOOR, not a
     // prediction of what the next trick will actually pay.
     nextPotFloor: potValue(resolution.total + BASE_DAMAGE, resolution.roll + 1),
-    // AC2 — the cards in THIS trick carrying a skull, filtered from the round's own list.
-    skulledInTrick: resolvedTrick.cards
-      .map((played) => played.card)
-      // DLR-167 — the UNION. `state.round` is the state BEFORE the completing play, so a curse
-      // made for this trick is still on it here; `playCard` lifts the mark on the state it returns.
-      .filter((card) => isSkulled(skullsOn(state.round), card)),
+    // AC2 — the cards in THIS trick carrying a skull. DLR-167 fix pass: READ off the resolved
+    // trick rather than re-derived here, so the felt's well and this panel share ONE value and
+    // cannot word the same trick two ways. `deriveResolvedTrick` captures it from the PRE-play
+    // state, which is the only state that still carries a curse.
+    skulledInTrick: resolvedTrick.skulledInTrick,
     // AC7 — the decree in force as the trick resolved.
     decree: state.round.decree,
     // AC3 — armed minus fired, against the SAME candidate union the beats resolve against.

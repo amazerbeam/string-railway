@@ -38,6 +38,7 @@ import {
   type RoundState,
   type Suit,
 } from '../warCouncil'
+import { BuffKind, buffIsWild, buffTargetSuitOf, type Buff } from '../hunt'
 
 /** The deck's rank extremes, used to turn a rank into a rough "will this win" probability. Named
  *  rather than written as literals at three call sites, and derived from the deck's own bounds. */
@@ -303,6 +304,50 @@ export function trickIntent(state: RoundState): TrickIntent | null {
     held: likeliest.held,
     skulled: likeliest.skulled,
     plannedCard: null,
+  }
+}
+
+/**
+ * THE buff rule: decide what the trick is going to BE, then arm only cards that can pay on it.
+ *
+ * MOVED here from `skilledPolicy.ts` on the DLR-162..167 fix pass, beside the `TrickIntent` it
+ * reads and nothing else. It knows about buff KINDS but nothing about the pile, the pool or the
+ * shop, so it sits inside this module's stated remit rather than widening it.
+ *
+ * Three errors this replaces, all of them visible in one trick of the published trace — the player
+ * held 21 cards, armed 4, and every one of the 4 was keyed to Keys on a trick played in Bells:
+ *
+ * 1. ARMING A SUIT THE TRICK WILL NOT TOUCH. The window opens before either card is laid, but
+ *    `state.leader` already says who leads, and when it is the player the suit is entirely their
+ *    own choice. `trickIntent` picks the lead FIRST and arms to match, so a suit-keyed card is
+ *    aimed at the suit actually about to be played rather than at whatever the pile holds most of.
+ * 2. ARMING SUIT HIGH AND SUIT LOW TOGETHER. Suit High needs the player to go HIGH, Suit Low needs
+ *    them to go LOW — exactly one can fire, so arming both is a guaranteed 50% waste of the
+ *    scarcest resource in the run. `intent.willTake` picks the side and arms only that one.
+ * 3. ARMING SKULL LOW WHEN PLAYING TO GO HIGH. Skull Low pays only on a Low Victory, which is a
+ *    trick the player did not take, so it cannot pay on a trick being played to take.
+ *
+ * When the QUARRY leads, the suit is a prediction from `suitShape`'s posted counts rather than a
+ * choice, so `intent.certain` is false and the caller caps the stack — a blind trick should not eat
+ * the pile. Cheat is never armed through this at all; see `skilledPolicy.ts`'s `RESERVED_KINDS`.
+ */
+export function canPayUnder(buff: Buff, intent: TrickIntent): boolean {
+  // DLR-162 fix pass — a WILD card has had its suit taken off and pays on ANY suit, so the suit
+  // term does not apply to it. `buffTargetSuitOf` returns `null` for one, which `String(null)`
+  // turned into the literal `'null'` — never equal to a real suit, so every wild Suit High and Suit
+  // Low was silently refused arming and every simulator figure involving one understated it.
+  const suitMatches = buffIsWild(buff) || String(buffTargetSuitOf(buff)) === String(intent.suit)
+  switch (buff.kind) {
+    case BuffKind.SuitHigh:
+      return intent.willTake && suitMatches
+    case BuffKind.SuitLow:
+      return !intent.willTake && suitMatches
+    case BuffKind.SkullLow:
+      // A Low Victory is a trick the player did not take, so Skull Low can only pay when the plan
+      // is to go low.
+      return !intent.willTake
+    default:
+      return false
   }
 }
 

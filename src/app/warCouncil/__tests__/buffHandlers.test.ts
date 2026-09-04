@@ -283,4 +283,3 @@ describe('handleTapBuff — spending a Shield row', () => {
     expect(after.buffs).toHaveLength(0)
   })
 })
-

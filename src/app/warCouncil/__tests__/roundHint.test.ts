@@ -44,6 +44,7 @@ const someResolvedTrick: ResolvedTrick = {
 
     treasureBonusEarned: false,
   },
+  skulledInTrick: [],
 }
 
 describe('deriveHint — the cascade’s own priority order', () => {

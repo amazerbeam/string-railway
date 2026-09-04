@@ -16,6 +16,10 @@ export const DiscardRefusal = {
   NoDiscardsRemaining: 'noDiscardsRemaining',
   /** AC9 — the selection mode is open but nothing has been toggled in yet. */
   EmptySelection: 'emptySelection',
+  /** DLR-167 fix pass — a paid-for Curse is armed and already owns the next hand tap. Two controls
+   *  that reinterpret that tap must not be open at once (`handleToggleLoadout`'s own rule); with
+   *  both live the discard took the tap and the Curse became silently unreachable. */
+  CurseArmed: 'curseArmed',
 } as const
 export type DiscardRefusal = (typeof DiscardRefusal)[keyof typeof DiscardRefusal]
 
@@ -35,15 +39,24 @@ export interface DiscardStock {
    *  still live. Independent of whose turn it is — `roundUiState.ts`'s `discardWindowOpen` is what
    *  reaches the Quarry-to-lead gap. */
   readonly windowOpen: boolean
+  /** DLR-167 fix pass — a Curse has been paid for and is waiting for a hand card, so the next hand
+   *  tap is already claimed. `roundUiState.ts`'s `curseArmed` is the fact; stating it here is what
+   *  makes the rule ONE rule, read by both the Swap control's disabled state and the reducer. */
+  readonly curseArmed: boolean
 }
 
 /**
  * THE single statement of whether the discard rail is available — read by the reducer before it
  * commits anything, and by the rail control to disable itself and print the reason. `windowOpen`
  * comes first, because it is true of the whole felt rather than of this control.
+ *
+ * DLR-167 fix pass — `curseArmed` is second, ahead of the budget, because it is a claim on the next
+ * hand TAP rather than a fact about this control's stock: a player holding an armed Curse should be
+ * told what actually blocks them, not that they are out of swaps.
  */
 export function discardRefusalFor(stock: DiscardStock): DiscardRefusal | null {
   if (!stock.windowOpen) return DiscardRefusal.NotAvailable
+  if (stock.curseArmed) return DiscardRefusal.CurseArmed
   if (stock.discardsRemaining <= 0) return DiscardRefusal.NoDiscardsRemaining
   if (stock.selecting && stock.selectionSize <= 0) return DiscardRefusal.EmptySelection
   return null

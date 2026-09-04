@@ -18,12 +18,7 @@ function winEncounter(encounter: EncounterState): EncounterState {
 
 /** Record an unresolved hand — the fight goes on, so the counter advances. */
 function playAnotherHand(run: ReturnType<typeof startRun>) {
-  return recordEncounter(
-    run,
-    applyDamage(run.encounter, damage(1, 1)),
-    run.discardsRemaining,
-    null,
-  )
+  return recordEncounter(run, applyDamage(run.encounter, damage(1, 1)), run.discardsRemaining, null)
 }
 
 describe('handOfFight — the hand-within-encounter counter (AC3)', () => {
@@ -39,23 +34,13 @@ describe('handOfFight — the hand-within-encounter counter (AC3)', () => {
 
   it('holds still on the hand that ended the fight, so the kill’s tier stays readable', () => {
     const second = playAnotherHand(startRun())
-    const won = recordEncounter(
-      second,
-      winEncounter(second.encounter),
-      second.discardsRemaining,
-      3,
-    )
+    const won = recordEncounter(second, winEncounter(second.encounter), second.discardsRemaining, 3)
     expect(won.handOfFight).toBe(2)
   })
 
   it('resets to 1 when the next fight opens (AC3)', () => {
     const third = playAnotherHand(playAnotherHand(startRun()))
-    const won = recordEncounter(
-      third,
-      winEncounter(third.encounter),
-      third.discardsRemaining,
-      0,
-    )
+    const won = recordEncounter(third, winEncounter(third.encounter), third.discardsRemaining, 0)
     expect(advanceRun(won).handOfFight).toBe(1)
   })
 })
@@ -64,12 +49,7 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
   function winOn(handOfFight: number, unplayedCards: number) {
     let run = startRun()
     for (let i = 1; i < handOfFight; i += 1) run = playAnotherHand(run)
-    return recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      unplayedCards,
-    )
+    return recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, unplayedCards)
   }
 
   // The design doc's worked example, credited: 5 × 2 = 10, PLUS the flat coin (AC1, resolved
@@ -94,12 +74,7 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
 
   it('pays nothing extra when the hand reported no figure', () => {
     const run = startRun()
-    const won = recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      null,
-    )
+    const won = recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null)
     expect(won.lastQuickKillPayout).toBe(0)
     expect(won.coins).toBe(COINS_PER_ENCOUNTER_WIN)
   })

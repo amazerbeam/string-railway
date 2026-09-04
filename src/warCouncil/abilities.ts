@@ -35,6 +35,21 @@ export function applyNameTrump(state: RoundState, suit: Suit): RoundState {
 }
 
 /**
+ * DLR-163 AC7 — which card the Quarry gives up: the lowest-ranked one it holds, which mirrors the
+ * retired `chooseCpuWoodcutterChoice`'s stated "keep your best cards" default exactly, so the
+ * Quarry's behaviour with the 5 does not change character. Returns `null` for a Quarry holding
+ * nothing after playing the 5, which makes the swap a no-op rather than a throw.
+ *
+ * Lives HERE rather than in `cpuPlayer.ts`, where the plan first placed it: `cpuPlayer.ts` imports
+ * `playCard`, so importing back from it would make `playCard` ↔ `cpuPlayer` a module cycle for one
+ * three-line helper. `abilities.ts` is already `playCard`'s dependency and already owns the swap.
+ */
+export function chooseQuarrySwapCard(hand: readonly Card[]): Card | null {
+  if (hand.length === 0) return null
+  return [...hand].sort((a, b) => a.rank - b.rank)[0]
+}
+
+/**
  * DLR-163 AC7 — the QUARRY'S Woodcutter, and only the Quarry's. The player's 5 has no engine
  * effect at all: it raises a run figure this tree has never been allowed to see, and
  * `commitHandlers.ts` applies that.
@@ -57,22 +72,14 @@ export function applyNameTrump(state: RoundState, suit: Suit): RoundState {
  * An exhausted deck follows `applyWoodcutterDraw`'s documented posture: `drawCards` returns fewer
  * cards than asked, the hand shrinks by one, and nothing throws. That state is unreachable in real
  * play with 6+6 committed to the two hands, so it is documented rather than guarded.
- */
-/**
- * DLR-163 AC7 — which card the Quarry gives up: the lowest-ranked one it holds, which mirrors the
- * retired `chooseCpuWoodcutterChoice`'s stated "keep your best cards" default exactly, so the
- * Quarry's behaviour with the 5 does not change character. Returns `null` for a Quarry holding
- * nothing after playing the 5, which makes the swap a no-op rather than a throw.
  *
- * Lives HERE rather than in `cpuPlayer.ts`, where the plan first placed it: `cpuPlayer.ts` imports
- * `playCard`, so importing back from it would make `playCard` ↔ `cpuPlayer` a module cycle for one
- * three-line helper. `abilities.ts` is already `playCard`'s dependency and already owns the swap.
+ * DLR-163 fix pass — this block sat above `chooseQuarrySwapCard`, a three-line `sort()[0]` helper it
+ * describes nothing about, while this function carried none.
+ *
+ * NOTE (DLR-167 fix pass) — `swapped` goes to the bottom of `drawPile` WITHOUT its `skulledCards`
+ * entry being lifted, so a skulled Quarry card is expressible in the shared draw pile. `skulls.ts`'s
+ * `trickIsSkulled` docblock records why that is not reachable in practice.
  */
-export function chooseQuarrySwapCard(hand: readonly Card[]): Card | null {
-  if (hand.length === 0) return null
-  return [...hand].sort((a, b) => a.rank - b.rank)[0]
-}
-
 export function applyQuarrySwap(state: RoundState, swapped: Card): RoundState {
   const rng = createSeededRng(mixSeed(state.drawSeed, state.tricksPlayed))
   const skullHit = rng() < QUARRY_SWAP_SKULL_CHANCE

@@ -54,128 +54,26 @@ function conditionBuff(kind: BuffKind, tier: BuffTier, id: number): Buff {
   }
 }
 
-describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
-  it('DLR-145 AC2 — InsufficientAp is now unreachable: canAffordAp re-derives the cost through the disabled AP_ENABLED flag, so even a pool below the raw apCost passes', () => {
-    // InsufficientAp stays in the BuffActivationRefusal union (BUFF_ACTIVATION_REFUSAL_MESSAGE
-    // stays a total Record over it) but nothing can reach it any more: canAffordAp calls
-    // apCostFor(cost) internally, which reads AP_ENABLED — not the apCost this stock carries.
-    expect(
-      buffActivationRefusalFor({
-        shopOnly: false,
-        effectLive: true,
-        curseLive: false,
-        windowOpen: true,
-        apPool: 1,
-        apCost: 2,
-        alreadyActive: false,
-      }),
-    ).toBeNull()
-  })
-
-  it('refuses WindowClosed when the window is not open', () => {
-    expect(
-      buffActivationRefusalFor({
-        shopOnly: false,
-        effectLive: true,
-        curseLive: false,
-        windowOpen: false,
-        apPool: 6,
-        apCost: 2,
-        alreadyActive: false,
-      }),
-    ).toBe(BuffActivationRefusal.WindowClosed)
-  })
-
-  it('refuses AlreadyActive when the buff is already active this trick', () => {
-    expect(
-      buffActivationRefusalFor({
-        shopOnly: false,
-        effectLive: true,
-        curseLive: false,
-        windowOpen: true,
-        apPool: 6,
-        apCost: 2,
-        alreadyActive: true,
-      }),
-    ).toBe(BuffActivationRefusal.AlreadyActive)
-  })
-
-  it('permits activation — null — when window is open, affordable, and not already active', () => {
-    expect(
-      buffActivationRefusalFor({
-        shopOnly: false,
-        effectLive: true,
-        curseLive: false,
-        windowOpen: true,
-        apPool: 6,
-        apCost: 2,
-        alreadyActive: false,
-      }),
-    ).toBeNull()
-  })
-
-  it('reports WindowClosed before InsufficientAp — a closed window is true of the whole felt', () => {
-    expect(
-      buffActivationRefusalFor({
-        shopOnly: false,
-        effectLive: true,
-        curseLive: false,
-        windowOpen: false,
-        apPool: 0,
-        apCost: 5,
-        alreadyActive: false,
-      }),
-    ).toBe(BuffActivationRefusal.WindowClosed)
-  })
-
-  it('DLR-126 — reports NoEffectYet before every other reason, because it is true of the CARD', () => {
-    expect(
-      buffActivationRefusalFor({
-        shopOnly: false,
-        effectLive: false,
-        curseLive: false,
-        windowOpen: false,
-        apPool: 0,
-        apCost: 5,
-        alreadyActive: true,
-      }),
-    ).toBe(BuffActivationRefusal.NoEffectYet)
-  })
-
-  it('DLR-126 — refuses NoEffectYet even on a wide-open felt with a full pool', () => {
-    expect(
-      buffActivationRefusalFor({
-        shopOnly: false,
-        effectLive: false,
-        curseLive: false,
-        windowOpen: true,
-        apPool: STARTING_AP,
-        apCost: 1,
-        alreadyActive: false,
-      }),
-    ).toBe(BuffActivationRefusal.NoEffectYet)
-  })
-})
+// `buffActivationRefusalFor`'s own tests live in `buffActivationRefusal.test.ts` now — split out on
+// the DLR-162..167 fix pass, when this file passed its 400-line budget. Those tests are pure
+// question-in, reason-out calls on one predicate and need none of the fixtures above; this file
+// keeps the TRANSITIONS: activate, spend, revoke, and the per-trick window.
 
 describe('buffActivationStockFor — DLR-126, effectLive comes off the card', () => {
   it('reports a Foresight as not live and a Ward as live', () => {
     const state = startBuffActivation()
-    expect(
-      buffActivationStockFor(state, foresightBuff(BuffTier.Bronze, 1), true).effectLive,
-    ).toBe(false)
-    expect(
-      buffActivationStockFor(state, wardBuff(BuffTier.Bronze, 2), true).effectLive,
-    ).toBe(true)
+    expect(buffActivationStockFor(state, foresightBuff(BuffTier.Bronze, 1), true).effectLive).toBe(
+      false,
+    )
+    expect(buffActivationStockFor(state, wardBuff(BuffTier.Bronze, 2), true).effectLive).toBe(true)
   })
 
   it('reports every NON-consumable as live — NoEffectYet is about unbuilt consumable surfaces', () => {
     const state = startBuffActivation()
-    expect(
-      buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 3), true).effectLive,
-    ).toBe(true)
-    expect(
-      buffActivationStockFor(state, shieldBuff(BuffTier.Bronze, 4), true).effectLive,
-    ).toBe(true)
+    expect(buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 3), true).effectLive).toBe(true)
+    expect(buffActivationStockFor(state, shieldBuff(BuffTier.Bronze, 4), true).effectLive).toBe(
+      true,
+    )
   })
 })
 
@@ -327,7 +225,12 @@ describe('AP_ENABLED is off (DLR-145) — the pool never actually drops, however
 describe('spentThisTrick (DLR-145)', () => {
   it('records a consumed condition card, and drops it from the returned pile', () => {
     const suitHigh = conditionBuff(BuffKind.SuitHigh, BuffTier.Bronze, 1)
-    const { activation, buffs } = activateFromPile(startBuffActivation(), [suitHigh], suitHigh, true)
+    const { activation, buffs } = activateFromPile(
+      startBuffActivation(),
+      [suitHigh],
+      suitHigh,
+      true,
+    )
     expect(buffs).toHaveLength(0)
     expect(activation.spentThisTrick.map((buff) => buff.id)).toEqual([1])
     expect(activation.activatedThisTrick).toEqual([1])
@@ -364,7 +267,6 @@ describe('isRevocableBuff — DLR-154 AC5/AC13', () => {
     expect(isRevocableBuff(cheatBuff(BuffTier.Bronze, 41))).toBe(false)
   })
 })
-
 
 describe('ShopOnly (DLR-162)', () => {
   const openStock = {
@@ -403,7 +305,9 @@ describe('ShopOnly (DLR-162)', () => {
 
   it('is carried onto the stock the felt reads', () => {
     const state = startBuffActivation()
-    expect(buffActivationStockFor(state, wildcardBuff(BuffTier.Bronze, 1), true).shopOnly).toBe(true)
+    expect(buffActivationStockFor(state, wildcardBuff(BuffTier.Bronze, 1), true).shopOnly).toBe(
+      true,
+    )
     expect(buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 2), true).shopOnly).toBe(false)
   })
 

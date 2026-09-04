@@ -41,12 +41,7 @@ describe('slotVisitStockFor / the per-visit reset', () => {
 
   it('advanceRun resets slotPullsThisVisit to 0 while leaving runSeed and apCapacityBonus unchanged', () => {
     const run = { ...startRun(undefined, undefined, 42), apCapacityBonus: 3, slotPullsThisVisit: 5 }
-    const recorded = recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      null,
-    )
+    const recorded = recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null)
     const advanced = advanceRun(recorded)
     expect(advanced.slotPullsThisVisit).toBe(0)
     expect(advanced.runSeed).toBe(42)

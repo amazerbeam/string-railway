@@ -1,0 +1,171 @@
+/* War Council — the ability prompt: the 3's suit picker, its decline control, and its cancel
+   escape hatch. `AbilityPrompt.tsx`'s stylesheet, and nothing else's.
+
+   Split out of `warCouncilCards.css` on the DLR-162..167 fix pass, once that file stood at 445 of
+   its 400-line budget — the same seam `warCouncilCardFace.css` (DLR-149) and `warCouncilBuffRide.css`
+   took out of it before. The seam is a real one rather than a line count: the prompt is a distinct
+   component that happens to be laid out beside cards, and nothing here styles `.wc-card` at all.
+   Note that `.wc-drawn-*` is the prompt's own drawn-card tag, not the card's.
+
+   Import from the mount component alongside `warCouncilCards.css`. Tokens are declared once in
+   `warCouncil.css`; nothing here redeclares `:root`. */
+
+.wc-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.35rem, 1.2vmin, 0.7rem);
+  animation: wc-prompt-enter var(--wc-prompt-enter-ms) ease-out both;
+}
+
+@keyframes wc-prompt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-prompt {
+    animation: none;
+  }
+}
+
+.wc-prompt-row {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(0.25rem, 0.9vmin, 0.5rem);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* DLR-163 AC1 — the 3's suit picker. Three of these plus `.wc-decline` are the whole prompt; the
+   hand is no longer offered, because naming a suit costs nothing. */
+.wc-suit-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  font: inherit;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.68rem, 1.45vmin, 0.8rem);
+  min-width: 44px;
+  min-height: 44px;
+  padding: clamp(0.3rem, 1.2vmin, 0.6rem) clamp(0.5rem, 1.8vmin, 1rem);
+  background: transparent;
+  color: var(--wc-chalk);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 2px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.wc-suit-choice-glyph {
+  width: clamp(1rem, 2.6vmin, 1.5rem);
+  height: clamp(1rem, 2.6vmin, 1.5rem);
+}
+
+.wc-suit-choice-bells .wc-suit-choice-glyph {
+  color: var(--wc-bells);
+}
+.wc-suit-choice-keys .wc-suit-choice-glyph {
+  color: var(--wc-keys);
+}
+.wc-suit-choice-moons .wc-suit-choice-glyph {
+  color: var(--wc-moons);
+}
+
+/* The suit already in force. FORM as well as colour — a dashed edge — and the button also prints
+   the words "already trump", so the state survives a greyscale screenshot and colour-vision
+   differences. It stays OFFERED rather than hidden: hiding it would change the control count
+   between hands, and `applyNameTrump` already makes naming it identical to declining. */
+.wc-suit-choice[data-inforce='true'] {
+  border-style: dashed;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-suit-choice-note {
+  font-size: clamp(0.5rem, 1.05vmin, 0.6rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+}
+
+@media (hover: hover) {
+  .wc-suit-choice:hover {
+    border-color: var(--wc-brass);
+  }
+}
+
+.wc-suit-choice:active {
+  border-color: var(--wc-brass);
+}
+
+.wc-suit-choice:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+  z-index: 30;
+}
+
+.wc-drawn-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-right: clamp(0.3rem, 1.2vmin, 0.7rem);
+}
+
+.wc-drawn-tag {
+  font-size: clamp(0.5rem, 1.05vmin, 0.6rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wc-brass);
+  font-weight: 700;
+}
+
+.wc-decline {
+  font: inherit;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.68rem, 1.45vmin, 0.8rem);
+  min-height: 44px;
+  padding: 0 clamp(0.6rem, 1.8vmin, 1.1rem);
+  background: transparent;
+  color: var(--wc-chalk);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 2px;
+  cursor: pointer;
+  touch-action: manipulation;
+  align-self: center;
+}
+
+/* AC12 — the visible "back out entirely" exit. Secondary to `.wc-decline`: no border, dimmer
+   text, so it reads as the lesser-used escape hatch rather than competing with the two real
+   choices for attention. Same 44px hit area and focus treatment as every other prompt control. */
+.wc-prompt-cancel {
+  font: inherit;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.62rem, 1.3vmin, 0.72rem);
+  min-height: 44px;
+  padding: 0 clamp(0.5rem, 1.6vmin, 0.9rem);
+  background: transparent;
+  color: var(--wc-chalk-dim);
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  align-self: center;
+}
+
+@media (hover: hover) {
+  .wc-prompt-cancel:hover {
+    color: var(--wc-chalk);
+  }
+}
+
+.wc-prompt-cancel:active {
+  color: var(--wc-chalk);
+}

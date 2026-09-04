@@ -2,12 +2,10 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { Buff, BuffId } from '../../hunt'
 import CombineGroupCard from './CombineGroupCard'
 import WildcardBand, { WILD_BAND_FOCUS_KEY } from './WildcardBand'
-import WildTargetCard from './WildTargetCard'
+import WildTargetBands from './WildTargetBands'
 import type { ManageBuffsView } from './manageBuffs'
 import {
   MANAGE_BUFFS_BACK_LABEL,
-  MANAGE_BUFFS_WILD_REFUSED_BAND,
-  MANAGE_BUFFS_WILD_TARGET_BAND,
   wildDoneText,
   MANAGE_BUFFS_EMPTY,
   MANAGE_BUFFS_HELD_LABEL,
@@ -21,6 +19,9 @@ import {
 } from './manageBuffsLabels'
 import { useRovingTabIndex } from '../warCouncil/useRovingTabIndex'
 import './manageBuffs.css'
+// AFTER its sibling: `.mb-go-quiet` overrides `.mb-go` at equal specificity, so source order is
+// what decides it. See `manageBuffsConfirm.css`'s own header.
+import './manageBuffsConfirm.css'
 
 export interface ManageBuffsPanelProps {
   readonly view: ManageBuffsView
@@ -39,6 +40,11 @@ interface JustMade {
   readonly key: string
   readonly text: string
 }
+
+/** DLR-162 fix pass — the focus-restore key for the target mode's own cancel control, in the same
+ *  `data-wild-key` namespace `WILD_BAND_FOCUS_KEY` uses. Not a pile key, for that constant's stated
+ *  reason: a pile key always carries `buffCombineKey`'s `|` separators. */
+const WILD_CANCEL_FOCUS_KEY = 'wildcancel'
 
 /**
  * DLR-159 — the Manage Buffs screen. A three-row full-viewport grid: a status strip on the top
@@ -104,6 +110,25 @@ export default function ManageBuffsPanel({
     setTargeting(false)
     setArmedWildKey(null)
     requestFocus([WILD_BAND_FOCUS_KEY])
+  }
+
+  /**
+   * DLR-162 fix pass — `Escape` for the WHOLE target mode, at the stage rather than on the
+   * ready-targets grid.
+   *
+   * That grid renders only when at least one target is spendable, so a player holding one wildcard
+   * and nothing but refused cards was in a mode carrying no `Escape` handler at all. Hoisting it
+   * here makes the key work from whichever band actually rendered — and from the wildcard band's own
+   * control, which is where focus still sits after arming.
+   *
+   * `defaultPrevented` is the handoff: the target grid's own handler `preventDefault()`s every
+   * `Escape` it consumes (both the armed-tile branch and the leave branch), so this never
+   * double-fires on a tile that has already answered the key.
+   */
+  function handleStageKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (!targeting || event.key !== 'Escape' || event.defaultPrevented) return
+    event.preventDefault()
+    cancelTargetingOrLeave()
   }
 
   // The roving collection is the READY piles only — a refused pile carries no button at all, so
@@ -234,7 +259,7 @@ export default function ManageBuffsPanel({
         </button>
       </header>
 
-      <main className="mb-stage">
+      <main className="mb-stage" onKeyDown={handleStageKeyDown}>
         {view.groups.length === 0 ? (
           // `game-ux` — a panel with nothing to say says nothing, plainly, and points at the
           // thing to do about it.
@@ -251,50 +276,66 @@ export default function ManageBuffsPanel({
               />
             )}
             {targeting ? (
+              <WildTargetBands
+                readyTargets={readyTargets}
+                refusedTargets={refusedTargets}
+                wildcardTier={wildcard?.tier ?? null}
+                held={view.held}
+                armedKey={armedWildKey}
+                tabStopIndex={targetTabStopIndex}
+                groupRef={targetGroupRef}
+                onGridKeyDown={handleTargetGridKeyDown}
+                onArm={setArmedWildKey}
+                onCommit={handleWildCommit}
+                onCancelArmed={handleWildCancel}
+                onLeave={leaveTargeting}
+                cancelFocusKey={WILD_CANCEL_FOCUS_KEY}
+              />
+            ) : (
               <>
-                {readyTargets.length > 0 && (
+                {readyGroups.length > 0 && (
                   <section className="mb-bandrow">
                     <h2 className="mb-bandhead">
                       <span className="mb-pip" aria-hidden="true" />
-                      {MANAGE_BUFFS_WILD_TARGET_BAND} · {readyTargets.length}
+                      {MANAGE_BUFFS_READY_BAND} · {readyGroups.length}
                     </h2>
                     <div
                       className="mb-grid"
                       role="group"
-                      aria-label={MANAGE_BUFFS_WILD_TARGET_BAND}
-                      ref={targetGroupRef}
+                      aria-label={MANAGE_BUFFS_READY_BAND}
+                      ref={groupRef}
                       tabIndex={-1}
-                      onKeyDown={handleTargetGridKeyDown}
+                      onKeyDown={handleGridKeyDown}
                     >
-                      {readyTargets.map((tile, index) => (
-                        <WildTargetCard
-                          key={tile.key}
-                          tile={tile}
-                          armed={armedWildKey === tile.key}
-                          wildcardTier={wildcard?.tier ?? tile.buff.tier}
+                      {readyGroups.map((group, index) => (
+                        <CombineGroupCard
+                          key={group.key}
+                          group={group}
+                          armed={armedKey === group.key}
+                          justMade={justMade !== null && justMade.key === group.key}
                           held={view.held}
-                          tabStop={index === targetTabStopIndex}
-                          onArm={() => setArmedWildKey(tile.key)}
-                          onCommit={() => handleWildCommit(tile.key)}
-                          onCancel={() => handleWildCancel(tile.key)}
+                          tabStop={index === tabStopIndex}
+                          onArm={() => setArmedKey(group.key)}
+                          onCommit={() => handleCommit(group.key)}
+                          onCancel={() => handleCancel(group.key)}
                         />
                       ))}
                     </div>
                   </section>
                 )}
-                {refusedTargets.length > 0 && (
+                {refusedGroups.length > 0 && (
                   <section className="mb-bandrow mb-bandrow-refused">
                     <h2 className="mb-bandhead is-refused">
                       <span className="mb-pip" aria-hidden="true" />
-                      {MANAGE_BUFFS_WILD_REFUSED_BAND} · {refusedTargets.length}
+                      {MANAGE_BUFFS_REFUSED_BAND} · {refusedGroups.length}
                     </h2>
-                    <ul className="mb-grid" role="group" aria-label={MANAGE_BUFFS_WILD_REFUSED_BAND}>
-                      {refusedTargets.map((tile) => (
-                        <WildTargetCard
-                          key={tile.key}
-                          tile={tile}
+                    <ul className="mb-grid" role="group" aria-label={MANAGE_BUFFS_REFUSED_BAND}>
+                      {refusedGroups.map((group) => (
+                        <CombineGroupCard
+                          key={group.key}
+                          group={group}
                           armed={false}
-                          wildcardTier={wildcard?.tier ?? tile.buff.tier}
+                          justMade={justMade !== null && justMade.key === group.key}
                           held={view.held}
                           tabStop={false}
                           onArm={() => {}}
@@ -305,62 +346,6 @@ export default function ManageBuffsPanel({
                     </ul>
                   </section>
                 )}
-              </>
-            ) : (
-              <>
-            {readyGroups.length > 0 && (
-              <section className="mb-bandrow">
-                <h2 className="mb-bandhead">
-                  <span className="mb-pip" aria-hidden="true" />
-                  {MANAGE_BUFFS_READY_BAND} · {readyGroups.length}
-                </h2>
-                <div
-                  className="mb-grid"
-                  role="group"
-                  aria-label={MANAGE_BUFFS_READY_BAND}
-                  ref={groupRef}
-                  tabIndex={-1}
-                  onKeyDown={handleGridKeyDown}
-                >
-                  {readyGroups.map((group, index) => (
-                    <CombineGroupCard
-                      key={group.key}
-                      group={group}
-                      armed={armedKey === group.key}
-                      justMade={justMade !== null && justMade.key === group.key}
-                      held={view.held}
-                      tabStop={index === tabStopIndex}
-                      onArm={() => setArmedKey(group.key)}
-                      onCommit={() => handleCommit(group.key)}
-                      onCancel={() => handleCancel(group.key)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-            {refusedGroups.length > 0 && (
-              <section className="mb-bandrow mb-bandrow-refused">
-                <h2 className="mb-bandhead is-refused">
-                  <span className="mb-pip" aria-hidden="true" />
-                  {MANAGE_BUFFS_REFUSED_BAND} · {refusedGroups.length}
-                </h2>
-                <ul className="mb-grid" role="group" aria-label={MANAGE_BUFFS_REFUSED_BAND}>
-                  {refusedGroups.map((group) => (
-                    <CombineGroupCard
-                      key={group.key}
-                      group={group}
-                      armed={false}
-                      justMade={justMade !== null && justMade.key === group.key}
-                      held={view.held}
-                      tabStop={false}
-                      onArm={() => {}}
-                      onCommit={() => {}}
-                      onCancel={() => {}}
-                    />
-                  ))}
-                </ul>
-              </section>
-            )}
               </>
             )}
           </>

@@ -70,10 +70,7 @@ describe('buffLabels — one glanceable line', () => {
   })
 
   it('names every activated card the catalog can mint, without throwing or mentioning AP', () => {
-    for (const buff of [
-      cheatBuff(BuffTier.Bronze, 1),
-      shieldBuff(BuffTier.Silver, 3),
-    ]) {
+    for (const buff of [cheatBuff(BuffTier.Bronze, 1), shieldBuff(BuffTier.Silver, 3)]) {
       const line = buffLine(buff)
       expect(line).not.toContain('AP')
       expect(line).not.toContain('action point')
@@ -216,7 +213,6 @@ describe('DLR-161 — Skull Helmet and Skull Tether copy', () => {
     )
   })
 })
-
 
 describe('buffCardAccessibleName — AC5, count, and the poise hint ladder', () => {
   const bellHigh: Buff = {

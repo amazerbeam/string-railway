@@ -71,10 +71,7 @@ describe('the combine rule', () => {
   })
 
   it('refuses a gold pile — there is no rung above it', () => {
-    const gold = [
-      card(MOON_LOW_BLADE, BuffTier.Gold, 1),
-      card(MOON_LOW_BLADE, BuffTier.Gold, 2),
-    ]
+    const gold = [card(MOON_LOW_BLADE, BuffTier.Gold, 1), card(MOON_LOW_BLADE, BuffTier.Gold, 2)]
     expect(combineRefusalFor(gold, buffCombineKey(gold[0]))).toBe(CombineRefusal.AtMaxTier)
     expect(() => combineBuffs(runHolding(gold), buffCombineKey(gold[0]))).toThrow(RangeError)
   })

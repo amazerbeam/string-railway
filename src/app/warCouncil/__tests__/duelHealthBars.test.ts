@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  DuelSide,
-  PLAYER_START_HEALTH,
-  quarryHealthForEncounter,
-  type Health,
-} from '../../../hunt'
+import { DuelSide, PLAYER_START_HEALTH, quarryHealthForEncounter, type Health } from '../../../hunt'
 import { duelHealthBars, HeartState, NO_BREAKING, projectedDepletion } from '../duelHealthBars'
 
 const MAX: Readonly<Record<DuelSide, Health>> = {
@@ -110,38 +105,25 @@ describe('duelHealthBars — one heart per health point, counted from max', () =
   })
 })
 
-
 describe('projectedDepletion — AC3’s preview', () => {
   const quarryMax = quarryHealthForEncounter(0)
   const full = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
 
   it('leaves the player untouched — the streak only ever threatens the Quarry', () => {
-    expect(
-      projectedDepletion(full, 3, 3)[DuelSide.Player],
-    ).toBe(PLAYER_START_HEALTH)
+    expect(projectedDepletion(full, 3, 3)[DuelSide.Player]).toBe(PLAYER_START_HEALTH)
   })
 
   it('takes bank × multiplier off the Quarry’s projection', () => {
-    expect(
-      projectedDepletion(full, 2, 2)[DuelSide.Quarry],
-    ).toBe(quarryMax - 4)
+    expect(projectedDepletion(full, 2, 2)[DuelSide.Quarry]).toBe(quarryMax - 4)
   })
 
   it('floors at zero so the module’s projected <= current precondition holds under overkill', () => {
-    expect(
-      projectedDepletion(full, 9, 9)[DuelSide.Quarry],
-    ).toBe(0)
+    expect(projectedDepletion(full, 9, 9)[DuelSide.Quarry]).toBe(0)
   })
 
   it('AC5 — a reset streak previews nothing at all', () => {
-    expect(
-      projectedDepletion(full, 0, 0)[DuelSide.Quarry],
-    ).toBe(quarryMax)
-    const [, quarry] = duelHealthBars(
-      full,
-      projectedDepletion(full, 0, 0),
-      MAX,
-    )
+    expect(projectedDepletion(full, 0, 0)[DuelSide.Quarry]).toBe(quarryMax)
+    const [, quarry] = duelHealthBars(full, projectedDepletion(full, 0, 0), MAX)
     expect(quarry.pending).toBe(0)
     expect(quarry.hearts.some((h) => h === HeartState.AtRisk)).toBe(false)
   })
@@ -172,7 +154,6 @@ describe('duelHealthBars — the shield cluster (DLR-115)', () => {
     expect(player.shieldPips).toEqual([HeartState.Whole, HeartState.Whole])
   })
 
-
   it.each([-1, Number.NaN, Number.POSITIVE_INFINITY])(
     'refuses a shield of %s rather than drawing a wrong-length cluster',
     (bad) => {
@@ -180,4 +161,3 @@ describe('duelHealthBars — the shield cluster (DLR-115)', () => {
     },
   )
 })
-

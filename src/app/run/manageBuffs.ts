@@ -105,8 +105,7 @@ export function manageBuffsView(buffs: readonly Buff[]): ManageBuffsView {
       produces: previewFor(pair),
       // The partner is stated only when it is a DIFFERENT card from the pile's own head — an
       // ordinary same-card combine eats two of the tile's own copies and says "2 ×".
-      partner:
-        pair !== null && buffCombineKey(pair[1]) !== key ? pair[1] : null,
+      partner: pair !== null && buffCombineKey(pair[1]) !== key ? pair[1] : null,
     }
   })
   const ready = groups.filter((group) => group.refusal === null)

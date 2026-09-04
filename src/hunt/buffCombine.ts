@@ -1,4 +1,11 @@
-import { BuffTier, buffIsWild, buffTargetRankOf, buffTargetSuitOf, type Buff, type BuffId } from './buffs'
+import {
+  BuffTier,
+  buffIsWild,
+  buffTargetRankOf,
+  buffTargetSuitOf,
+  type Buff,
+  type BuffId,
+} from './buffs'
 import { mintFromTemplate, templateForBuff } from './buffTemplates'
 import { isWildcardCard, mintWildAtTier } from './buffWild'
 import { nextTierAfter } from './rankTiers'
@@ -109,10 +116,7 @@ function copiesOf(buffs: readonly Buff[], key: string): readonly Buff[] {
  * combine, so one action is listed once on the screen rather than twice. Lowest ids throughout, so
  * repeated combines on one pile are deterministic.
  */
-export function combinePairFor(
-  buffs: readonly Buff[],
-  key: string,
-): readonly [Buff, Buff] | null {
+export function combinePairFor(buffs: readonly Buff[], key: string): readonly [Buff, Buff] | null {
   const copies = copiesOf(buffs, key)
   if (copies.length === 0) return null
   const head = copies[0]
@@ -129,12 +133,7 @@ export function combinePairFor(
 /** DLR-162 — the card a pair produces at `tier`, or `null` when neither input is wild and the
  *  pair's template is gone from this build. WILD IF EITHER INPUT IS WILD — this ONE conditional is
  *  AC7, and no other branch in this module can produce a suited card from a wild one. */
-export function combineProductFor(
-  a: Buff,
-  b: Buff,
-  tier: BuffTier,
-  id: BuffId,
-): Buff | null {
+export function combineProductFor(a: Buff, b: Buff, tier: BuffTier, id: BuffId): Buff | null {
   if (buffIsWild(a) || buffIsWild(b)) return mintWildAtTier(a.kind, a.reward.axis, tier, id)
   const template = templateForBuff(a)
   return template === undefined ? null : mintFromTemplate(template, tier, id)

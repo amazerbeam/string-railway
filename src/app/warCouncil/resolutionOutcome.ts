@@ -31,9 +31,12 @@ export function trickOutcomeKindFor(
 }
 
 /** DLR-165 AC3/AC4 — the four-way name is now the load-bearing headline, replacing DLR-160's
- *  Clean win / Dodge / Clean loss / Ate the skull. Those words survive as flavour in
- *  `TRICK_OUTCOME_WHY` below, which is where a colour word belongs and a load-bearing one does
- *  not. Layout reference: this contract's `mockup.html`, first panel. */
+ *  Clean win / Dodge / Clean loss / Ate the skull.
+ *
+ *  DLR-165 fix pass — an earlier version of this comment claimed those four words survived as
+ *  flavour in `TRICK_OUTCOME_WHY` below. They do not: AC4 kept those four sentences VERBATIM and
+ *  none of them contains a colour word. The code is right; the comment described an intention that
+ *  was never carried out. Layout reference: this contract's `mockup.html`, first panel. */
 export const TRICK_OUTCOME_WORD: Readonly<Record<TrickOutcomeKind, string>> = {
   [TrickOutcomeKind.HighVictory]: 'High Victory',
   [TrickOutcomeKind.LowVictory]: 'Low Victory',

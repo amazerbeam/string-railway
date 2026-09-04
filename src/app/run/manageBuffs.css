@@ -143,13 +143,9 @@
   flex: 1 1 16rem;
   min-width: 11rem;
 }
-.mb-wildband-head {
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--wc-brass);
-}
+/* DLR-162 fix pass — `.mb-wildband-head` is GONE: the band's heading is an `<h2 class="mb-bandhead">`
+   now, exactly as both sibling bands' are, so it sits in the heading outline and takes the shared
+   rule below rather than a near-duplicate of it. */
 .mb-wildband-rule {
   margin: 0.25rem 0 0;
   font-size: 0.8rem;
@@ -283,91 +279,9 @@ li.mb-pile.is-refused .wc-buffcard {
   box-shadow: 0 2px 6px #0009;
 }
 
-/* ---- the armed state: the confirmation lives ON the pile ---- */
-div.mb-pile.is-armed {
-  position: relative;
-}
-.mb-confirm {
-  position: absolute;
-  inset: -6px;
-  z-index: 4;
-  background: linear-gradient(180deg, #23303a 0%, #131b21 100%);
-  border: 1px solid var(--wc-brass-dim, #7d6132);
-  border-radius: 12px;
-  box-shadow: 0 10px 26px #000c;
-  padding: 7px;
-  display: grid;
-  grid-template-rows: auto auto auto auto 1fr auto;
-  gap: 4px;
-  font-size: 0.64rem;
-}
-.mb-confirm-lab {
-  font-size: 0.56rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #a49c8b;
-}
-.mb-confirm-lose {
-  color: #edc7c0;
-  line-height: 1.25;
-  text-decoration: line-through;
-}
-.mb-confirm-gain {
-  color: #dcecd8;
-  font-weight: 700;
-  line-height: 1.25;
-}
-.mb-confirm-cost {
-  align-self: end;
-  font-size: 0.62rem;
-  color: #cfc8b8;
-  border-top: 1px solid #ffffff1f;
-  padding-top: 4px;
-  font-variant-numeric: tabular-nums;
-}
-.mb-confirm-acts {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px;
-}
-.mb-go,
-.mb-no {
-  font: inherit;
-  font-size: 0.66rem;
-  font-weight: 700;
-  min-height: 44px;
-  border-radius: 7px;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.mb-go {
-  background: var(--wc-ready-deep, #3f6b3d);
-  color: #eaf6e7;
-  border: 1px solid var(--wc-ready, #7fb27a);
-}
-.mb-no {
-  background: #ffffff0f;
-  color: var(--wc-chalk);
-  border: 1px solid #ffffff2e;
-  padding: 0 8px;
-}
-@media (hover: hover) {
-  .mb-go:hover {
-    background: #4d8149;
-  }
-  .mb-no:hover {
-    background: #ffffff1c;
-  }
-}
-.mb-go:active,
-.mb-no:active {
-  background: #4d8149;
-}
-.mb-go:focus-visible,
-.mb-no:focus-visible {
-  outline: 2px solid var(--wc-brass);
-  outline-offset: 2px;
-}
+/* ---- the armed state: moved to `manageBuffsConfirm.css` (DLR-162..167 fix pass, at 417 of the
+   400-line budget). The confirmation face, its commit/cancel pair and the target mode's quiet exit
+   went together, as one gesture's styling. Import it AFTER this file. ---- */
 
 /* ---- zone 3: the ledger, pinned to the bottom edge ---- */
 .mb-foot {

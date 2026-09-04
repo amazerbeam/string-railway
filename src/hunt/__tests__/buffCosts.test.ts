@@ -187,7 +187,6 @@ describe('apCostOf reads through the real buffCatalog.ts minters', () => {
   it('a gold Cheat costs 7', () => {
     expect(apCostOf(cheatBuff(Gold, 1))).toBe(7)
   })
-
 })
 
 describe('apCostOf throws on placeholder content', () => {

@@ -108,7 +108,10 @@ describe('resolveTrickBank — DLR-156 AC1/AC7, the roll-over formula', () => {
   })
 
   it('AC8 — the sixth trick banks like any other; nothing cashes at hand end', () => {
-    const r = resolveTrickBank({ total: 1, roll: 1 }, facts({ playerWentHigh: true, finalTrick: true }))
+    const r = resolveTrickBank(
+      { total: 1, roll: 1 },
+      facts({ playerWentHigh: true, finalTrick: true }),
+    )
     expect(r.total).toBe(2)
     expect(r.roll).toBe(2)
     expect(r.cashOut).toBe(0)
@@ -137,7 +140,10 @@ describe('resolveTrickBank — DLR-156 AC1/AC7, the roll-over formula', () => {
     (bonus) => {
       let state = { total: 0, roll: 0 }
       for (let n = 1; n <= 6; n++) {
-        const taken = resolveTrickBank(state, facts({ playerWentHigh: true, baseDamageBonus: bonus }))
+        const taken = resolveTrickBank(
+          state,
+          facts({ playerWentHigh: true, baseDamageBonus: bonus }),
+        )
         state = { total: taken.total, roll: taken.roll }
       }
       const hit = resolveTrickBank(state, facts({ baseDamageBonus: bonus }))
@@ -149,10 +155,12 @@ describe('resolveTrickBank — DLR-156 AC1/AC7, the roll-over formula', () => {
 
   it('DLR-92 AC4 — one copy adds 1 to the base and two copies add 2', () => {
     expect(
-      resolveTrickBank(START, facts({ playerWentHigh: true, baseDamageBonus: 1 })).trickDamage?.dealt,
+      resolveTrickBank(START, facts({ playerWentHigh: true, baseDamageBonus: 1 })).trickDamage
+        ?.dealt,
     ).toBe(2)
     expect(
-      resolveTrickBank(START, facts({ playerWentHigh: true, baseDamageBonus: 2 })).trickDamage?.dealt,
+      resolveTrickBank(START, facts({ playerWentHigh: true, baseDamageBonus: 2 })).trickDamage
+        ?.dealt,
     ).toBe(3)
   })
 

@@ -1,11 +1,7 @@
 /** @vitest-environment jsdom */
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import {
-  DuelSide,
-  PLAYER_START_HEALTH,
-  quarryHealthForEncounter,
-} from '../../../hunt'
+import { DuelSide, PLAYER_START_HEALTH, quarryHealthForEncounter } from '../../../hunt'
 import {
   duelHealthBars,
   projectedDepletion,
@@ -112,17 +108,13 @@ describe('DuelHealthBars', () => {
   it('previews the streak on the Quarry’s hearts and says so to a screen reader (AC3, AC6)', () => {
     const quarryMax = quarryHealthForEncounter(0)
     const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
-    const { container } = renderPair(
-      current,
-      projectedDepletion(current, 2, 2),
-    )
+    const { container } = renderPair(current, projectedDepletion(current, 2, 2))
     const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
     expect(quarry?.querySelectorAll('[data-state="atRisk"]')).toHaveLength(4)
     expect(screen.getByRole('meter', { name: QUARRY_LABEL }).getAttribute('aria-valuetext')).toBe(
       `${quarryMax} of ${quarryMax}. 4 at risk.`,
     )
   })
-
 
   it('binds each heart to the symbol its state calls for — a broken state is a different shape, not a colour (AC6)', () => {
     const dented = {
@@ -159,7 +151,6 @@ describe('DuelHealthBars — the shield cluster (DLR-115)', () => {
         .getAttribute('aria-valuetext'),
     ).toBe(`${PLAYER_START_HEALTH} of ${PLAYER_START_HEALTH}. 2 shielded.`)
   })
-
 
   it('leaves an unshielded bar’s accessible value unchanged from today', () => {
     renderPair(FULL, FULL)

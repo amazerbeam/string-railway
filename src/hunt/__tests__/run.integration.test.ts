@@ -22,12 +22,7 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
       winner: DuelSide.Player,
     }
 
-    const recorded = recordEncounter(
-      populated,
-      wonEncounter,
-      populated.discardsRemaining,
-      null,
-    )
+    const recorded = recordEncounter(populated, wonEncounter, populated.discardsRemaining, null)
 
     // Run-scoped: carried by recordEncounter's spread, untouched by the transition itself.
     expect(recorded.buffs).toBe(populated.buffs)

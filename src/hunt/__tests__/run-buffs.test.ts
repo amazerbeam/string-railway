@@ -33,12 +33,7 @@ describe('Buff pile on RunState (DLR-105 AC2/AC3)', () => {
 
   it('carries the buff pile across a fight boundary untouched (AC2)', () => {
     const run = startRun()
-    const won = recordEncounter(
-      run,
-      winEncounter(run.encounter),
-      run.discardsRemaining,
-      null,
-    )
+    const won = recordEncounter(run, winEncounter(run.encounter), run.discardsRemaining, null)
     const next = advanceRun(won)
     expect(next.buffs).toEqual(run.buffs)
     expect(next.nextBuffId).toBe(run.nextBuffId)

@@ -70,9 +70,12 @@ export interface CardDamagePreview {
   readonly win: CardDamageBranch
   readonly lose: CardDamageBranch
   readonly winPot: CardDamageWinPot
-  /** `true` only when the Quarry's card is already on the table, so `trickIsSkulled` and
-   *  `trickIsPrimed` have every card of the trick to test. `false` while the player leads —
-   *  the Quarry's face-down card may carry a skull, which inverts the win branch. */
+  /** `true` only when the Quarry's card is already on the table, so `trickIsSkulled` has every
+   *  card of the trick to test. `false` while the player leads — the Quarry's face-down card may
+   *  carry a skull, which inverts the win branch.
+   *
+   *  DLR-166 fix pass — this named `trickIsPrimed` alongside it. That symbol was deleted with the
+   *  prime. */
   readonly exact: boolean
 }
 

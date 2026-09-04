@@ -14,6 +14,11 @@ import '../warCouncil/warCouncilBuffCard.css'
  * target grid (`WildTargetCard.tsx`) made the duplication real, the same reasoning
  * `buffCardVisuals.ts` records for its own extraction. The only change in the move is the wild
  * branch of the suit slot (AC9).
+ *
+ * DLR-162 fix pass — `HeldBuffCard.tsx` renders this too, inside its own `<li>`/`aria-label`
+ * wrapper. It had been carrying a line-for-line copy of everything below since before the
+ * extraction. `BuffCard.tsx` deliberately does NOT: it is a `<button>` with an extra cadence chip,
+ * a third variant rather than a fourth copy.
  */
 export default function ManageBuffsCardFace({
   buff,
@@ -50,14 +55,7 @@ export default function ManageBuffsCardFace({
         </span>
         <span className="wc-buffcard-name">{buffName(buff)}</span>
         <span className="wc-buffcard-cond">{buffConditionSentence(buff)}</span>
-        {payoff.risk === null ? (
-          <span className="wc-buffcard-payoff">{payoff.gain}</span>
-        ) : (
-          <span className="wc-buffcard-payoff wc-buffcard-payoff-split">
-            <span className="wc-buffcard-payoff-gain">{payoff.gain}</span>
-            <span className="wc-buffcard-payoff-risk">{payoff.risk}</span>
-          </span>
-        )}
+        <span className="wc-buffcard-payoff">{payoff.gain}</span>
       </span>
     </span>
   )

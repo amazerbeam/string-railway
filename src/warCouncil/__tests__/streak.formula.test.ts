@@ -130,7 +130,10 @@ describe('AC7 — the hurt branch pays nothing and wipes both', () => {
   })
 
   it('a High Defeat is identical to a Low Defeat', () => {
-    const r = resolveTrickBank({ total: 5, roll: 3 }, facts({ playerWentHigh: true, skullTrick: true }))
+    const r = resolveTrickBank(
+      { total: 5, roll: 3 },
+      facts({ playerWentHigh: true, skullTrick: true }),
+    )
     expect(r.outcome).toBe(TrickOutcome.HighDefeat)
     expect(r.total).toBe(0)
     expect(r.roll).toBe(0)
@@ -152,7 +155,10 @@ describe('The outcome axis, not the mechanical one', () => {
   })
 
   it('eating a skull HURTS, even though the player physically won it', () => {
-    const r = resolveTrickBank({ total: 5, roll: 3 }, facts({ playerWentHigh: true, skullTrick: true }))
+    const r = resolveTrickBank(
+      { total: 5, roll: 3 },
+      facts({ playerWentHigh: true, skullTrick: true }),
+    )
     expect(r.total).toBe(0)
     expect(r.roll).toBe(0)
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
@@ -161,7 +167,10 @@ describe('The outcome axis, not the mechanical one', () => {
 
 describe('AC8 — no hand-end cash', () => {
   it('finalTrick on a banked trick leaves total/roll standing and pays nothing', () => {
-    const r = resolveTrickBank({ total: 3, roll: 3 }, facts({ playerWentHigh: true, finalTrick: true }))
+    const r = resolveTrickBank(
+      { total: 3, roll: 3 },
+      facts({ playerWentHigh: true, finalTrick: true }),
+    )
     expect(r.total).toBe(4)
     expect(r.roll).toBe(4)
     expect(r.cashOut).toBe(0)

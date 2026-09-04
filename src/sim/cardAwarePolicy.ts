@@ -40,6 +40,7 @@ import {
 import {
   apCostFor,
   apCostOf,
+  buffIsWild,
   buffTargetRankOf,
   buffTargetSuitOf,
   MAX_CARDS_PER_DISCARD,
@@ -55,9 +56,14 @@ import type { CardChoice, SimPolicy } from './types'
 /** Whether a buff's condition is keyed to a specific card at all. The suit- and rank-parameterised
  *  families (`suitHigh`, `suitLow`, `markOfRank`, `keepsake`) are the ones a card choice can aim; every
  *  other family reads bank, streak, health, coins or a button press and is unaffected by which card
- *  is played. */
+ *  is played.
+ *
+ *  DLR-162 fix pass — a WILD card (its suit taken off) answers `false` here, and that is CORRECT:
+ *  no card choice can aim it, because it pays on whatever is played. What was wrong is where it then
+ *  landed — `chooseBuffs` lumped it in with the families a card choice cannot help, and so spent AP
+ *  on narrower suited cards first. `buffIsWild` is now asked separately there. */
 function isCardTargeted(buff: Buff): boolean {
-  return buffTargetSuitOf(buff) !== null || buffTargetRankOf(buff) !== null
+  return !buffIsWild(buff) && (buffTargetSuitOf(buff) !== null || buffTargetRankOf(buff) !== null)
 }
 
 /**
@@ -122,18 +128,30 @@ function bestAimedCard(ui: RoundUiState, candidates: readonly Buff[]): Card | nu
  *
  * A targeted buff aimed at a card this trick will NOT play is left unarmed — that omission is the
  * whole point of this policy, and it is why its AP spend runs lower than the baseline's.
+ *
+ * DLR-162 fix pass — WILD cards go FIRST, ahead of the aimed stack. A wild card has had its suit
+ * taken off, so it pays on whatever is played: it is the one group whose condition this policy
+ * cannot get wrong. It used to fall into `untargeted` (`buffTargetSuitOf` is `null` for it), which
+ * meant a narrower suited card could exhaust the pool before it, and every simulator figure
+ * involving a wild card understated it.
  */
 function chooseBuffs(ui: RoundUiState): readonly BuffId[] {
   const affordable = offeredBuffs(ui).filter((buff) => loadoutRefusalFor(ui, buff) === null)
   if (affordable.length === 0) return []
 
+  const wild = affordable.filter(buffIsWild)
   const targeted = affordable.filter(isCardTargeted)
   const aimedCard = bestAimedCard(ui, targeted)
   const aimed =
     aimedCard === null ? [] : targeted.filter((buff) => cardMatchesTarget(buff, aimedCard))
-  const untargeted = affordable.filter((buff) => !isCardTargeted(buff))
+  // Neither wild nor aimable: the families that read bank, streak, health, coins or a button press.
+  const untargeted = affordable.filter((buff) => !isCardTargeted(buff) && !buffIsWild(buff))
 
-  const ordered = [...aimed.sort(byApCostThenId), ...untargeted.sort(byApCostThenId)]
+  const ordered = [
+    ...wild.sort(byApCostThenId),
+    ...aimed.sort(byApCostThenId),
+    ...untargeted.sort(byApCostThenId),
+  ]
   const chosen: BuffId[] = []
   let pool = ui.buffActivation.apPool
   for (const buff of ordered) {

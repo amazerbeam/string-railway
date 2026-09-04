@@ -287,31 +287,10 @@
   overflow: hidden;
 }
 
-.wc-buffcard-payoff-split {
-  display: flex;
-  gap: 2px;
-  padding: 0;
-  background: none;
-  box-shadow: none;
-}
-.wc-buffcard-payoff-split span {
-  flex: 1;
-  padding: 0.28rem 0;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.wc-buffcard-payoff-gain {
-  background: var(--wc-gain);
-  color: #16210a;
-  border-radius: 6px 0 0 6px;
-  box-shadow: inset 0 0 0 1px #00000026;
-}
-.wc-buffcard-payoff-risk {
-  background: var(--wc-alarm);
-  color: #2b0d07;
-  border-radius: 0 6px 6px 0;
-  box-shadow: inset 0 0 0 1px #00000026;
-}
+/* DLR-167 fix pass — `.wc-buffcard-payoff-split`, `-gain` and `-risk` are GONE with the
+   `BuffPayoff.risk` half they rendered. No card in the pool has ever produced a `risk` figure, so
+   the split bar never drew; a card that costs the player a figure brings both the field and these
+   three rules back together. */
 
 .wc-buffcard-bells {
   --wc-buffcard-payoff-bg: var(--wc-bells);

@@ -41,11 +41,9 @@ export function combineCardText(buff: Buff): string {
   return `${TIER_WORD[buff.tier]} ${buffName(buff)}`
 }
 
-/** `+3 damage` / `+8 damage, −4 to you` — the full unabbreviated sentence, not the card face's
- *  clipped numeral. */
+/** `+3 damage` — the full unabbreviated sentence, not the card face's clipped numeral. */
 export function combinePayoffText(buff: Buff): string {
-  const payoff = buffPayoff(buff)
-  return payoff.risk === null ? payoff.gain : `${payoff.gain}, ${payoff.risk}`
+  return buffPayoff(buff).gain
 }
 
 /** AC7 — what a combine destroys and what it produces, in the cards' own terms. */
@@ -96,6 +94,14 @@ export const MANAGE_BUFFS_WILD_SPEND_LABEL = 'Spend a wildcard'
 export const MANAGE_BUFFS_WILD_TARGET_BAND = 'Pick a card to make wild'
 export const MANAGE_BUFFS_WILD_REFUSED_BAND = 'Cannot be made wild'
 export const MANAGE_BUFFS_WILD_COMMIT_LABEL = 'Make wild'
+/** DLR-162 fix pass — the way OUT of the target mode. Before this the only exit was `Escape` on the
+ *  ready-targets grid, so a mouse-only player was stranded, and a player whose every card refused
+ *  the spend had no exit at all: that grid never renders. */
+export const MANAGE_BUFFS_WILD_CANCEL_LABEL = 'Keep the wildcard'
+/** Shown in the target mode when nothing the player holds can take the spend — `game-ux`'s rule
+ *  that a screen with nothing to offer says so plainly and points at the way out. */
+export const MANAGE_BUFFS_WILD_NO_TARGETS =
+  'Nothing you are carrying can be made wild right now — every card is already wild, or has no suit to take off.'
 
 /** `1 × Bronze Wildcard` — what the spend destroys. */
 export function wildConfirmDestroyText(tier: BuffTier): string {

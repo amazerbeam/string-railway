@@ -212,7 +212,12 @@ describe('breakdownFor', () => {
     )
     const lowVictoryLegal = legalMoves(lowVictoryUi.round, PlayerSide.Player)
     const lowVictoryLights = lightsForHand(lowVictoryUi, lowVictoryLegal)
-    const lowVictoryBreakdown = breakdownFor(lowVictoryUi, lowVictoryLegal, lowVictoryLights, candidate)!
+    const lowVictoryBreakdown = breakdownFor(
+      lowVictoryUi,
+      lowVictoryLegal,
+      lowVictoryLights,
+      candidate,
+    )!
     expect(lowVictoryBreakdown.totals[1].carryText).toBeNull()
     expect(lowVictoryBreakdown.totals[1].multiplier).toBeGreaterThan(0)
   })

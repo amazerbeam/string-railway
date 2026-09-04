@@ -85,7 +85,10 @@ function input(overrides: Partial<BuffProjectionInput> = {}): BuffProjectionInpu
 
 describe('AC1 — both branches, for one candidate card', () => {
   it('fires the Suit High card only on the high branch and the Suit Low card only on the other', () => {
-    const projection = projectBuffBranches(input({ active: [bladeSuitHigh, bladeSuitLow] }), bellsCard)
+    const projection = projectBuffBranches(
+      input({ active: [bladeSuitHigh, bladeSuitLow] }),
+      bellsCard,
+    )
     expect(projection.won.playerWentHigh).toBe(true)
     expect(projection.lost.playerWentHigh).toBe(false)
     expect(projection.won.fired.map((b) => b.id)).toEqual([1])
@@ -93,7 +96,10 @@ describe('AC1 — both branches, for one candidate card', () => {
   })
 
   it('fires neither when the candidate card is off-suit', () => {
-    const projection = projectBuffBranches(input({ active: [bladeSuitHigh, bladeSuitLow] }), keysCard)
+    const projection = projectBuffBranches(
+      input({ active: [bladeSuitHigh, bladeSuitLow] }),
+      keysCard,
+    )
     expect(projection.won.fired).toEqual([])
     expect(projection.lost.fired).toEqual([])
   })
@@ -108,7 +114,10 @@ describe('AC1 — both branches, for one candidate card', () => {
 
 describe('AC3 — the Overlap Bonus is computed per branch, never across the union', () => {
   it('never counts a Suit High and a Suit Low card on the same suit toward one Overlap Bonus', () => {
-    const projection = projectBuffBranches(input({ active: [bladeSuitHigh, bladeSuitLow] }), bellsCard)
+    const projection = projectBuffBranches(
+      input({ active: [bladeSuitHigh, bladeSuitLow] }),
+      bellsCard,
+    )
     // One buff fires per branch, so `overlapBonusFor(1)` is 0 on BOTH. A union of the two
     // branches would be 2 fired and a spurious +1 roll — the mockup's exact defect.
     expect(projection.won.outcomes[0].accrual.multiplierBonus).toBe(0)
@@ -124,7 +133,10 @@ describe('AC4 — the projected roll respects the same per-hand cap the live acc
       ...bladeSuitHigh,
       reward: { axis: BuffRewardAxis.Multiplier, value: MAX_MULTIPLIER_BONUS_PER_HAND },
     }
-    const projection = projectBuffBranches(input({ active: [bigSuitHigh], accrual: maxed }), bellsCard)
+    const projection = projectBuffBranches(
+      input({ active: [bigSuitHigh], accrual: maxed }),
+      bellsCard,
+    )
     expect(projection.won.fired.map((b) => b.id)).toEqual([1])
     expect(projection.won.outcomes[0].accrual.multiplierBonus).toBe(MAX_MULTIPLIER_BONUS_PER_HAND)
   })
@@ -343,13 +355,17 @@ describe('AC7 — reach counts only the cards that are legal to play this trick'
   const fullHand = [bells2, bells9, moons5]
 
   it('counts every legal card that could fire the buff', () => {
-    expect(buffReach(input({ active: [bladeSuitHigh], hand: fullHand }), fullHand, bladeSuitHigh)).toBe(2)
+    expect(
+      buffReach(input({ active: [bladeSuitHigh], hand: fullHand }), fullHand, bladeSuitHigh),
+    ).toBe(2)
   })
 
   it('does not count a card that is in hand but not legal to play', () => {
     // `legalCards` is narrowed to the Moons follow — the two Bells are unplayable this trick, so
     // no buff can fire on them however well they match.
-    expect(buffReach(input({ active: [bladeSuitHigh], hand: fullHand }), [moons5], bladeSuitHigh)).toBe(0)
+    expect(
+      buffReach(input({ active: [bladeSuitHigh], hand: fullHand }), [moons5], bladeSuitHigh),
+    ).toBe(0)
   })
 
   it('counts a card whose branch is indeterminate, because "could" includes "might"', () => {

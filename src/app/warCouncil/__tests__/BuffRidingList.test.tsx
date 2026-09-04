@@ -45,27 +45,21 @@ describe('BuffRidingList', () => {
   })
 
   it('renders the explicit zero-reach sentence, not "0 cards" (AC9)', () => {
-    const rows: readonly RidingBuffRow[] = [
-      { buff: cheat, reach: 0, revocable: false },
-    ]
+    const rows: readonly RidingBuffRow[] = [{ buff: cheat, reach: 0, revocable: false }]
     renderList(rows, vi.fn())
     expect(screen.getByText(/no card in your hand can fire it/i)).toBeTruthy()
     expect(screen.queryByText(/0 cards/i)).toBeNull()
   })
 
   it('gives a revocable row a remove button naming the trick and the go-dark count (AC9/AC10)', () => {
-    const rows: readonly RidingBuffRow[] = [
-      { buff: suitHigh, reach: 3, revocable: true },
-    ]
+    const rows: readonly RidingBuffRow[] = [{ buff: suitHigh, reach: 3, revocable: true }]
     renderList(rows, vi.fn())
     const button = screen.getByRole('button', { name: /off the trick.*3 cards go dark/i })
     expect(button).toBeTruthy()
   })
 
   it('gives a non-revocable row no remove control, and states why instead', () => {
-    const rows: readonly RidingBuffRow[] = [
-      { buff: cheat, reach: 0, revocable: false },
-    ]
+    const rows: readonly RidingBuffRow[] = [{ buff: cheat, reach: 0, revocable: false }]
     renderList(rows, vi.fn())
     expect(screen.queryByRole('button')).toBeNull()
     expect(screen.getByText(/already spent|no condition/i)).toBeTruthy()
@@ -73,9 +67,7 @@ describe('BuffRidingList', () => {
 
   it('calls onRemove once with the row buff id when its remove control is clicked', () => {
     const onRemove = vi.fn()
-    const rows: readonly RidingBuffRow[] = [
-      { buff: suitHigh, reach: 3, revocable: true },
-    ]
+    const rows: readonly RidingBuffRow[] = [{ buff: suitHigh, reach: 3, revocable: true }]
     renderList(rows, onRemove)
     fireEvent.click(screen.getByRole('button'))
     expect(onRemove).toHaveBeenCalledTimes(1)
@@ -84,14 +76,11 @@ describe('BuffRidingList', () => {
 
   it('disables the remove button while a buff motion flight is airborne (QA fix — DLR-157 review)', () => {
     const onRemove = vi.fn()
-    const rows: readonly RidingBuffRow[] = [
-      { buff: suitHigh, reach: 3, revocable: true },
-    ]
+    const rows: readonly RidingBuffRow[] = [{ buff: suitHigh, reach: 3, revocable: true }]
     renderList(rows, onRemove, true)
     const button = screen.getByRole('button', {
       name: /off the trick.*3 cards go dark/i,
     }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
   })
-
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PlayerSide, RoundPhase, Suit, type Card, type WarCouncilState } from '../../../warCouncil'
-import { legalMoves } from '../../../warCouncil'
+import { DiscardRefusal, discardRefusalFor, legalMoves } from '../../../warCouncil'
 import {
   AP_ENABLED,
   apCostOf,
@@ -17,6 +17,7 @@ import {
   createRoundUiState,
   curseArmed,
   curseLive,
+  discardStock,
   RoundUiActionKind,
   type RoundUiSeed,
   type RoundUiState,
@@ -189,5 +190,91 @@ describe('AC8 — a Curse cannot be taken back off the trick', () => {
     const armed = spend(state, curse.id)
     expect(armed.buffActivation.activatedThisTrick).toContain(curse.id)
     expect(armed.buffActivation.spentThisTrick.map((b) => b.kind)).toContain(BuffKind.Curse)
+  })
+})
+
+/**
+ * DLR-167 fix pass — an armed Curse used to survive the Quarry's lead.
+ *
+ * `handleCarryOn` guarded on the fault, the prompt, the phase, a resolved encounter, the turn, a
+ * card already on the table and an open Swap selection — but not on the Curse. Nothing else clears
+ * `curseArmedBuff`, so the player could arm between tricks, press "Let them lead", SEE the lead, and
+ * only then choose which card to mark. `roundUiState.ts`'s `buffActivationWindowOpen` names that
+ * exact prohibition: "a read the card was never meant to buy."
+ */
+describe('an armed Curse must not survive the Quarry’s lead', () => {
+  /** The between-tricks state with the Quarry next to lead — the moment "Let them lead" exists. */
+  const quarryToLead = () => createRoundUiState(seedWith([curse], { leader: PlayerSide.Cpu }))
+
+  it('carry-on lays the lead when nothing claims the hand tap', () => {
+    const after = roundReducer(quarryToLead(), { kind: RoundUiActionKind.CarryOn })
+    expect(after.round.currentTrick).toHaveLength(1)
+    expect(after.round.currentTrick[0].side).toBe(PlayerSide.Cpu)
+  })
+
+  it('carry-on is REFUSED while a Curse is armed — the mark is made before the lead, or not at all', () => {
+    const armed = spend(quarryToLead(), curse.id)
+    expect(curseArmed(armed)).toBe(true)
+
+    const after = roundReducer(armed, { kind: RoundUiActionKind.CarryOn })
+
+    expect(after.round.currentTrick).toHaveLength(0)
+    // The paid-for arm is neither spent nor silently dropped by the refusal.
+    expect(curseArmed(after)).toBe(true)
+  })
+
+  it('carry-on lays the lead again once the mark has been made', () => {
+    const armed = spend(quarryToLead(), curse.id)
+    const marked = roundReducer(armed, {
+      kind: RoundUiActionKind.TapCard,
+      card: card(Suit.Moons, 5),
+    })
+
+    const after = roundReducer(marked, { kind: RoundUiActionKind.CarryOn })
+
+    expect(after.round.currentTrick).toHaveLength(1)
+  })
+})
+
+/**
+ * DLR-167 fix pass — the Swap and an armed Curse both reinterpret the next hand tap, and
+ * `handleToggleLoadout`'s docblock already states that two such controls must not be open at once.
+ * With both live `handleTapCard` gave the tap to the Swap, so a PAID-FOR Curse became silently
+ * unreachable until the selection committed or cancelled.
+ *
+ * The rule is stated once, in `discardRefusalFor`, which is the same call the Swap control's own
+ * disabled state and refusal line make — so the greyed control and the reducer cannot disagree.
+ */
+describe('the Swap and an armed Curse cannot both claim the hand tap', () => {
+  it('the Swap is available with no Curse armed', () => {
+    expect(discardRefusalFor(discardStock(createRoundUiState(seedWith([curse]))))).toBeNull()
+  })
+
+  it('the Swap reports CurseArmed while a Curse waits for its card', () => {
+    const armed = spend(createRoundUiState(seedWith([curse])), curse.id)
+    expect(discardRefusalFor(discardStock(armed))).toBe(DiscardRefusal.CurseArmed)
+  })
+
+  it('tapping the Swap opens nothing, and does NOT spend the Curse', () => {
+    const armed = spend(createRoundUiState(seedWith([curse])), curse.id)
+
+    const after = roundReducer(armed, { kind: RoundUiActionKind.TapDiscard })
+
+    expect(after.discardSelection).toBeNull()
+    // REFUSED, not cleared: a Curse has already been paid for, so dropping it would cost the
+    // player the card.
+    expect(curseArmed(after)).toBe(true)
+    expect(after.curseArmedBuff?.id).toBe(curse.id)
+  })
+
+  it('the Swap comes back once the mark has been made — a marked card claims no further tap', () => {
+    const armed = spend(createRoundUiState(seedWith([curse])), curse.id)
+    const marked = roundReducer(armed, {
+      kind: RoundUiActionKind.TapCard,
+      card: card(Suit.Moons, 5),
+    })
+
+    expect(curseLive(marked)).toBe(true)
+    expect(discardRefusalFor(discardStock(marked))).toBeNull()
   })
 })

@@ -1,19 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import {
-  BuffTier,
-  mintFromTemplate,
-  templateById,
-  type Buff,
-} from '../../../hunt'
+import { BuffTier, mintFromTemplate, templateById, type Buff } from '../../../hunt'
 import { legalMoves, PlayerSide, Suit } from '../../../warCouncil'
 import { buffHandInputFor } from '../buffRoundState'
 import { createRoundUiState, type RoundUiState } from '../roundUiState'
-import {
-  lightsForHand,
-  ridingRowsFor,
-  rideInputFor,
-  skullReadingFor,
-} from '../buffRideModel'
+import { lightsForHand, ridingRowsFor, rideInputFor, skullReadingFor } from '../buffRideModel'
 import { cardKey } from '../labels'
 import { card, discardsRemainingFixture, encounterFixture, makeRound } from './roundFixture'
 

@@ -91,14 +91,7 @@ export default function BuffCard({ stack, poised, tabIndex, onTap, ref }: BuffCa
         </span>
         <span className="wc-buffcard-name">{buffName(buff)}</span>
         <span className="wc-buffcard-cond">{buffConditionSentence(buff)}</span>
-        {payoff.risk === null ? (
-          <span className="wc-buffcard-payoff">{payoff.gain}</span>
-        ) : (
-          <span className="wc-buffcard-payoff wc-buffcard-payoff-split">
-            <span className="wc-buffcard-payoff-gain">{payoff.gain}</span>
-            <span className="wc-buffcard-payoff-risk">{payoff.risk}</span>
-          </span>
-        )}
+        <span className="wc-buffcard-payoff">{payoff.gain}</span>
         <span className="wc-buffcard-confirm">
           {isPress ? BUFF_POISED_HINT_PRESS : BUFF_POISED_HINT}
         </span>

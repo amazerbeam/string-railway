@@ -3,12 +3,7 @@ import { PlayerSide, Suit } from '../../../warCouncil'
 import { DuelSide, isEncounterResolved, PLAYER_HAND_FLOOR, startEncounter } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiSeed } from '../roundUiState'
-import {
-  baseDamageBonusFixture,
-  card,
-  discardsRemainingFixture,
-  makeRound,
-} from './roundFixture'
+import { baseDamageBonusFixture, card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 /**
  * A fight the player can end on demand through an ORDINARY win, banked, then cashed by the

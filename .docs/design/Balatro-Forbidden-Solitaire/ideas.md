@@ -151,8 +151,8 @@ Three consequences, and the first is the reason to prefer this shape:
   game, not a player advantage. This is the exact inverse of the Dead Cells bargain §7 rejects, and
   it answers that rejection more cleanly than any bound or cap could — there is nothing to bound.
 - **It reframes unlocking as a shrinking handicap rather than a growing bank**, which also gives
-  every unlock a legible meaning: you did not get stronger, you got *the thing the Quarry already
-  had*.
+  every unlock a legible meaning: you did not get stronger, you got _the thing the Quarry already
+  had_.
 - **A second deck restarts the ladder with real identity.** A deck is six abilities, not one
   modifier, so each new deck is a far bigger unlock than a Balatro deck and gives the run structure
   **acts** — which the flat fight sequence currently lacks.
@@ -1230,11 +1230,11 @@ it is noise. The item is legible today largely because the bar is small.
 Damage is quadratic in streak length, so merging two streaks pays the **cross term**: `a² + b²`
 becomes `(a+b)² = a² + b² + 2ab`. The gain is `2ab`, and it is bought by nothing in either term.
 
-| Hand's streaks | Pays | Merged  | Gain    |
-| -------------- | ---- | ------- | ------- |
-| {2, 2}         | 8    | {4} 16  | **+8**  |
-| {3, 2}         | 13   | {5} 25  | **+12** |
-| {3, 3}         | 18   | {6} 36  | **+18** |
+| Hand's streaks | Pays | Merged | Gain    |
+| -------------- | ---- | ------ | ------- |
+| {2, 2}         | 8    | {4} 16 | **+8**  |
+| {3, 2}         | 13   | {5} 25 | **+12** |
+| {3, 3}         | 18   | {6} 36 | **+18** |
 
 An item reading _"the first time you take damage each hand, the multiplier does not reset"_ is
 therefore worth up to **+100% on a specific hand**. On the population it is less, and it can be
@@ -1258,7 +1258,7 @@ the skill span is unreachable in principle**.
 **Those figures are in the retired rank-sum unit and must not be compared to `7.1` directly** — that
 comparison would overstate the case by an order of magnitude. Converted to a ratio, which does carry
 over: locked headroom is `97 / 125` = **~78% of a strong player's typical hand**. So full sight of the
-Quarry's hand is worth slightly **less** than one rate doubling (+100%), and an item revealing *one*
+Quarry's hand is worth slightly **less** than one rate doubling (+100%), and an item revealing _one_
 card is worth a fraction of that.
 
 The conclusion reverses the intuition and is the useful part: **information items are a cheap tier,
@@ -1278,8 +1278,8 @@ exactly this — `the-hunt.md` §3).
   removes decisions rather than adding power, and it is the exact analogue of selling "the Boss Blind
   does not apply."
 - **Player health, if health becomes the currency** (§5 below). It would be both the resource and the
-  thing bought with it. It is also the branch already rejected by name as *power* rather than
-  *options* (`hybrid-design.md` §7).
+  thing bought with it. It is also the branch already rejected by name as _power_ rather than
+  _options_ (`hybrid-design.md` §7).
 
 #### 5. The payment system — four bases, and two of them fail on incentive rather than on size
 
@@ -1287,33 +1287,32 @@ The size question is already answered in _Leftover damage as money_, above. What
 test is **whether the money-maximising line is the damage-maximising line** — `hybrid-design.md` §2's
 toll-booth test, which is decided by the basis and not by argument.
 
-| Basis                          | Scales?            | Fires                    | Money line = damage line?         |
-| ------------------------------ | ------------------ | ------------------------ | --------------------------------- |
-| **Overkill** (surplus damage)  | No — flat 4–6      | ~0.8× per encounter      | **No — it inverts it.** See below |
-| **Flat payout for winning**    | No (fine — see §5) | once per encounter       | No signal either way              |
-| **% of every cash-out**        | Yes — 2.7 → 14.8   | every cash-out           | **Yes**                           |
-| **Health remaining** _(new)_   | With the curve     | once per encounter       | **Yes**                           |
+| Basis                         | Scales?            | Fires               | Money line = damage line?         |
+| ----------------------------- | ------------------ | ------------------- | --------------------------------- |
+| **Overkill** (surplus damage) | No — flat 4–6      | ~0.8× per encounter | **No — it inverts it.** See below |
+| **Flat payout for winning**   | No (fine — see §5) | once per encounter  | No signal either way              |
+| **% of every cash-out**       | Yes — 2.7 → 14.8   | every cash-out      | **Yes**                           |
+| **Health remaining** _(new)_  | With the curve     | once per encounter  | **Yes**                           |
 
-**Overkill inverts the incentive, and this is new.** To maximise overkill you want the *killing*
-cash-out to overshoot as far as possible — so you want to arrive at 1 remaining HP and then land a
-36. Worked against the current Quarry's 10: chip it to 1 with streaks of {2, 2, 1} (4 + 4 + 1 = 9),
+**Overkill inverts the incentive, and this is new.** To maximise overkill you want the _killing_
+cash-out to overshoot as far as possible — so you want to arrive at 1 remaining HP and then land a 36. Worked against the current Quarry's 10: chip it to 1 with streaks of {2, 2, 1} (4 + 4 + 1 = 9),
 which costs **3 breaks = 3 of your 10 health**, then take a clean hand for 36 → **overkill 35.**
 Playing to kill fast instead — one streak of 4 for 16 into a 10-point bar — overkills by **6**. The
 perverse line pays **~6× more** and costs 3 health of 10. So overkill as income pays the player to
 **break their own streaks**, which is precisely the skill the developer named as the only one the game
 has (_"the only skill expression I have is keeping the streak alive"_). That is Soren Johnson's
-optimise-the-fun-out (`design-principles.md` §2) landing on the economy. It survives as a *flourish*
-— a number that appears when it appears — and fails as a *basis*.
+optimise-the-fun-out (`design-principles.md` §2) landing on the economy. It survives as a _flourish_
+— a number that appears when it appears — and fails as a _basis_.
 
 **Health remaining is the honest analogue of Balatro's `$1 per unused hand`, and it is not yet in this
 file.** The entry above already identifies that device as the better model than overkill, and names
 the analogue as "money for hands the encounter did not need". The tighter analogue is **health**: a
-break costs exactly 1 health, so health remaining *is* a count of streaks not broken. It pays for the
+break costs exactly 1 health, so health remaining _is_ a count of streaks not broken. It pays for the
 one skill the game has, it fires every encounter, it is a number already on screen throughout, and it
 needs no new quantity. Two things to watch: it is a **slippery slope** (play well → more money →
 stronger build → play better — `design-principles.md` §3, the same slope Balatro runs), and it turns
 `ENCOUNTER_PLAYER_RESTORE = 0` into a load-bearing decision rather than a placeholder, since health
-would then be survival *and* wages at once.
+would then be survival _and_ wages at once.
 
 **Interest is probably not worth its rules here, and that is cheap to establish.** The entry above
 calls Balatro's interest _"where the late economy comes from"_ and _"the only real decision in
@@ -1333,7 +1332,7 @@ Balatro's 15–20. Thin but workable; it tightens if the flat payout is smaller.
 a vending machine: nothing is being prepared for.
 
 **This is the same problem as §1's, and that is the connection worth acting on.** §1 says the design
-has no growth-class distinction; this says it has nothing to grow *against*. Balatro's shop is
+has no growth-class distinction; this says it has nothing to grow _against_. Balatro's shop is
 interesting because the requirement climbs `×2` per ante while the engine climbs multiplicatively —
 neither half is interesting alone. Here:
 
@@ -1348,22 +1347,22 @@ Both numbers are the developer's. The ordering is not: **run and health curve fi
 #### 7. Where this leaves Forage and Snare — one clean division, at no cost
 
 Three layers already exist on paper, and PT-002 accidentally sorted them. Since a card's rank now
-decides **only who wins a trick** (`the-hunt.md` §7), a Forage *value* edit is no longer a damage edit
+decides **only who wins a trick** (`the-hunt.md` §7), a Forage _value_ edit is no longer a damage edit
 at all — it is a trick-winning edit. So:
 
-| Layer      | When            | Intervenes on           | Answers                    |
-| ---------- | --------------- | ----------------------- | -------------------------- |
-| **Forage** | between fights  | **which tricks I take**  | what my deck is            |
-| **Shop**   | between fights  | **what a trick pays**    | what my engine is          |
-| **Snare**  | mid-hand, spent | which tricks I take, now | what I do right now        |
+| Layer      | When            | Intervenes on            | Answers             |
+| ---------- | --------------- | ------------------------ | ------------------- |
+| **Forage** | between fights  | **which tricks I take**  | what my deck is     |
+| **Shop**   | between fights  | **what a trick pays**    | what my engine is   |
+| **Snare**  | mid-hand, spent | which tricks I take, now | what I do right now |
 
 No overlap, both feeding one equation. This is `forbidden-solitaire.md` §6's Gems/Jokers split with a
 third row, and it is the division the two existing docs were reaching for separately.
 
 It also closes a stated blocker for free, which the _fight timer_ entry above already spotted: Snare
 is **[open], blocked** because "raise the value of the card I am about to win with" is dominant until
-it has a cost (`the-hunt.md` §10). **Money is that cost**, and it is a cost *earned by prior
-performance* rather than traded against a Forage edit.
+it has a cost (`the-hunt.md` §10). **Money is that cost**, and it is a cost _earned by prior
+performance_ rather than traded against a Forage edit.
 
 **Cost in new rules.** The vocabulary itself: **zero new terms** — `bank` and `multiplier` are already
 two fields, and rate/flat are readings of numbers `resolveTrickBank` already writes. Then one currency,
@@ -1376,7 +1375,7 @@ an intervention on an existing quantity rather than a new one.
    two classes are not separable at this scale (§1's one-order-of-magnitude problem) and the shop
    should sell one class plus structural items only.
 2. **Legibility.** PT-002's whole claim was that `n × n` became predictable. Log whether the next
-   cash-out can still be called *after* two or three items are stacked. If not, the shop bought damage
+   cash-out can still be called _after_ two or three items are stacked. If not, the shop bought damage
    by spending the thing PT-002 was for.
 3. **The reset item.** If _"first break each hand doesn't reset"_ makes losing a trick feel free, §7's
    tension was carried by the reset and not by the health point.
@@ -1516,8 +1515,8 @@ a skull trick. Two changes that turned out to be one problem: the game's outcome
 mechanical act, and the Feeder's reward is spent by the very loss it is meant to compensate.
 
 **The confusion that started it.** The Quarry plays a skulled 5 Bells, the player plays a 2 Bells,
-holding a bronze Bell-Feeder. What the game says today is *"you lost the trick, it was a dodge, your
-Feeder — lose a trick with Bells — fired."* Three of those words point the wrong way: the player
+holding a bronze Bell-Feeder. What the game says today is _"you lost the trick, it was a dodge, your
+Feeder — lose a trick with Bells — fired."_ Three of those words point the wrong way: the player
 lost, the card is a Feeder, it fired on a loss, and yet nothing bad happened and they gained a bank
 point and a multiplier point. At roughly 30% skull density that is about two of six tricks a hand —
 a third of the player's decisions sit in the quadrant where the words invert.
@@ -1539,7 +1538,7 @@ outcome words imported into a game that inverts the outcome.
 
 Revised in conversation 2026-09-03, after the developer hit the collision live. The version of this
 section written on 2026-08-26 kept Win and Loss as the outcome words and added High and Low
-alongside them. That reuses the two words that caused the problem: "win" reads as *taking the cards*
+alongside them. That reuses the two words that caused the problem: "win" reads as _taking the cards_
 whatever the ruleset declares it to mean, so a card printed "win a trick with Bells" still looks
 like it should fire on a dodge. The outcome words change too.
 
@@ -1552,10 +1551,10 @@ like it should fire on a dodge. The outcome words change too.
 words a buff card uses.** They do not replace the outcome word, they qualify it, so every trick has
 one unambiguous four-way name:
 
-| | Clean trick | Skull trick |
-|---|---|---|
-| You went **high** (took the cards) | **High Victory** — banks | **High Defeat** — ate the skull |
-| You went **low** | **Low Defeat** — the clean loss | **Low Victory** — the dodge |
+|                                    | Clean trick                     | Skull trick                     |
+| ---------------------------------- | ------------------------------- | ------------------------------- |
+| You went **high** (took the cards) | **High Victory** — banks        | **High Defeat** — ate the skull |
+| You went **low**                   | **Low Defeat** — the clean loss | **Low Victory** — the dodge     |
 
 A Victory adds the trick's damage to `total` and climbs `roll` by one. A Defeat costs 1 health and
 zeroes both, and the Quarry is paid nothing — per DLR-156, which removed the two-thirds consolation
@@ -1563,7 +1562,7 @@ that the 2026-08-26 version of this table quoted.
 
 **Why this fixes the card that started it.** The developer's live case: a skulled 5 taken by the
 Quarry against a played 1, with a Bell-Taker armed. The screen said **Dodge**, told them it banks and
-costs nothing, and then listed *"Bell-Taker — needed: win a trick with Bells"* as unmet. Both
+costs nothing, and then listed _"Bell-Taker — needed: win a trick with Bells"_ as unmet. Both
 statements are true and they contradict each other in plain English. Under this scheme the readout
 says **Low Victory** and the card says **"Go high on a Bells trick"** — the player went low, so the
 card plainly did not fire, and the trick was plainly still good for them. The two facts stop
@@ -1575,19 +1574,19 @@ being about the outcome, the collision is back.
 
 The family words fall out of the scheme, which also fixes "Feeder" meaning nothing: Bell-Taker
 becomes **Bell High**, Bell-Feeder becomes **Bell Low**, Sidestep becomes **Skull Low**. The whole
-live pool reads as three suits crossed with high/low, plus skull-low. Card text becomes *"go high on
-a Bells trick"*, *"go low on a Bells trick"*, *"go low on a skull"* — and Sidestep's text is true for
+live pool reads as three suits crossed with high/low, plus skull-low. Card text becomes _"go high on
+a Bells trick"_, _"go low on a Bells trick"_, _"go low on a skull"_ — and Sidestep's text is true for
 the first time, since it never looked at which card was played.
 
-**The resolution headline becomes the four-way name.** Where the screen says *Dodge* today it says
-*Low Victory*, because the headline is the one place the player reliably reads both axes at once.
-Dodge, ate the skull, and the clean pair survive as flavour in the sentence underneath — *"they took
-it, and it carried a skull — so it banks, and costs you nothing"* — which is where a colour word
+**The resolution headline becomes the four-way name.** Where the screen says _Dodge_ today it says
+_Low Victory_, because the headline is the one place the player reliably reads both axes at once.
+Dodge, ate the skull, and the clean pair survive as flavour in the sentence underneath — _"they took
+it, and it carried a skull — so it banks, and costs you nothing"_ — which is where a colour word
 belongs and a load-bearing one does not.
 
 **The one place it strains** is that "high" is not literally the higher rank — a trump 3 takes a
 trick over an 11 Bells, and an off-suit 11 takes nothing. Either define it as the contest rather
-than the number (*the card that takes the trick went high, trump included*), or let a pre-commit
+than the number (_the card that takes the trick went high, trump included_), or let a pre-commit
 hover string carry it: hovering an off-suit 11 reads `goes LOW`, and the player learns it in one
 trick without being taught. The hover is preferred — the word only has to be right on the readout,
 not in the player's head.
@@ -1596,7 +1595,7 @@ not in the player's head.
 
 **What is actually wrong today, and it is not the two-thirds reduction.** Flat damage is added
 outside the product, after the reduction, so a bronze Feeder pays its full +1 even on a catastrophic
-loss. The real defect is that the reward is *consumed* by the same losing cash-out that triggered
+loss. The real defect is that the reward is _consumed_ by the same losing cash-out that triggered
 it, paid into a pot that is near zero precisely because the player just lost. Three deliberate
 losses in a bad hand pay three separate points into three tiny cash-outs and accumulate into nothing.
 
@@ -1693,11 +1692,11 @@ What is new is the **reward axis**. Neither card pays damage or multiplier — t
 third thing a card can be worth, and it is the first card in the pool that touches the resource runs
 actually die to.
 
-| | **Skull Helmet** | **Skull Tether** |
-| --- | --- | --- |
-| **Bronze** | you eat the skull, take the 1 health, and your **total** survives | as bronze, but your **roll** survives |
-| **Silver** | as bronze, and it also covers a **clean loss**, not only a skull | as bronze, and also covers a clean loss |
-| **Gold** | as silver, and the surviving total **gains 1** | as silver, and the surviving roll **climbs by 1** |
+|            | **Skull Helmet**                                                  | **Skull Tether**                                  |
+| ---------- | ----------------------------------------------------------------- | ------------------------------------------------- |
+| **Bronze** | you eat the skull, take the 1 health, and your **total** survives | as bronze, but your **roll** survives             |
+| **Silver** | as bronze, and it also covers a **clean loss**, not only a skull  | as bronze, and also covers a clean loss           |
+| **Gold**   | as silver, and the surviving total **gains 1**                    | as silver, and the surviving roll **climbs by 1** |
 
 Two rules the pair inherits rather than invents:
 
@@ -1711,13 +1710,13 @@ Two rules the pair inherits rather than invents:
 
 Carrying a **total of 8 on a roll of 2** when the skull lands, then banking one trick worth 1:
 
-| Armed | After the skull | Next banked trick | Pot |
-| --- | --- | --- | --- |
-| nothing | 0, roll 0 | 1, roll 1 | **1** |
-| Tether (bronze) | 0, roll 2 | 1, roll 3 | **3** |
-| Helmet (bronze) | 8, roll 0 | 9, roll 1 | **9** |
-| both (bronze) | 8, roll 2 | 9, roll 3 | **27** |
-| both (gold) | 9, roll 3 | 10, roll 4 | **40** |
+| Armed           | After the skull | Next banked trick | Pot    |
+| --------------- | --------------- | ----------------- | ------ |
+| nothing         | 0, roll 0       | 1, roll 1         | **1**  |
+| Tether (bronze) | 0, roll 2       | 1, roll 3         | **3**  |
+| Helmet (bronze) | 8, roll 0       | 9, roll 1         | **9**  |
+| both (bronze)   | 8, roll 2       | 9, roll 3         | **27** |
+| both (gold)     | 9, roll 3       | 10, roll 4        | **40** |
 
 Three consequences fall out of that table and none of them had to be designed:
 
@@ -1783,10 +1782,10 @@ A trick pays `(BASE + flat damage) × (1 + multiplier + Overlap Bonus)`, and the
 point per _extra_ card that paid — so card count enters the payoff twice and halving the pile is
 normally a large loss. It is not a loss here, because usability climbs faster than count falls:
 
-| | cards that can pay on one trick | trick pays |
-| --- | --- | --- |
-| 21 suit-locked cards, one suit's worth live | 7 | `(1 + 7) × (1 + 6)` = **56** |
-| 10 wild cards, every one live | 10 | `(1 + 10) × (1 + 9)` = **110** |
+|                                             | cards that can pay on one trick | trick pays                     |
+| ------------------------------------------- | ------------------------------- | ------------------------------ |
+| 21 suit-locked cards, one suit's worth live | 7                               | `(1 + 7) × (1 + 6)` = **56**   |
+| 10 wild cards, every one live               | 10                              | `(1 + 10) × (1 + 9)` = **110** |
 
 Trading two cards for one that fires three times as often clears the Overlap Bonus comfortably.
 
@@ -1820,7 +1819,7 @@ it pays — which is exactly and only what the wildcard does.
 - **It applies only to a suit-specific card**, so Sidestep — which already asks for no suit — is
   outside it entirely and needs nothing in return.
 - **It comes from the slot machine**, like every other card.
-- **Its appearance is low for now.** A rarity *system* is wanted and does not exist; until it does,
+- **Its appearance is low for now.** A rarity _system_ is wanted and does not exist; until it does,
   the only dial is the machine's stocking weight, so set that low. See the note below on what that
   actually buys.
 
@@ -1850,7 +1849,7 @@ stocking weight.
 
 - **The rarity system.** The machine has no per-card rarity: eight symbols are stocked onto a strip
   from weights, and once a card is on the strip every reel is equally likely to land on it. So a low
-  stocking weight makes the wildcard rarely *appear*, but on a visit where it does appear it is as
+  stocking weight makes the wildcard rarely _appear_, but on a visit where it does appear it is as
   common as anything else on that strip. That is a coarse, near-binary rarity rather than a smooth
   one, and it is why a real system is wanted.
 - **How much of a pile should end up wild.** If every suited card is eventually raw material for a
@@ -1864,11 +1863,11 @@ were explicitly thrown away and the third has never done anything.
 
 #### What each one does today, and why it fails
 
-| Rank | Today | Why it is not played |
-| --- | --- | --- |
-| **3 Fox** | On playing it, you may exchange the decree for a card from your hand; the exchanged card becomes the decree and its suit becomes trump | The cost is always a card you wanted. _"I feel like I always have to give up a good card… I usually just keep the decree, because it doesn't seem all that beneficial."_ |
-| **5 Woodcutter** | On playing it, draw the top card, then bury any one card from hand at the bottom of the pile | Reads as a worse version of the Swap button. _"I can just swap cards out from the deck, so that power's pointless."_ |
-| **7 Treasure** | Nothing at all | It has never had a rule |
+| Rank             | Today                                                                                                                                  | Why it is not played                                                                                                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **3 Fox**        | On playing it, you may exchange the decree for a card from your hand; the exchanged card becomes the decree and its suit becomes trump | The cost is always a card you wanted. _"I feel like I always have to give up a good card… I usually just keep the decree, because it doesn't seem all that beneficial."_ |
+| **5 Woodcutter** | On playing it, draw the top card, then bury any one card from hand at the bottom of the pile                                           | Reads as a worse version of the Swap button. _"I can just swap cards out from the deck, so that power's pointless."_                                                     |
+| **7 Treasure**   | Nothing at all                                                                                                                         | It has never had a rule                                                                                                                                                  |
 
 Both the 3 and the 5 also open a choice prompt the headless simulator cannot answer, so it plays
 around them — which is why the two strongest levers in the deck have never been measured.
@@ -2183,22 +2182,22 @@ resolves this way, neither needs to exist as its own card — it becomes how the
 overlap, automatically.
 
 **The blocking risk, computed in-thread.** The multiplier is (sum of rewards fired) × (count of buffs
-fired), and both factors grow together as a run progresses — more buffs equipped *and* higher-tier
+fired), and both factors grow together as a run progresses — more buffs equipped _and_ higher-tier
 buffs (bigger individual rewards) both push the total up at once, which reads as quadratic rather than
 linear growth:
 
 | Buffs firing | Avg reward each | Sum | × count | Total |
-| --- | --- | --- | --- | --- |
-| 2 | 3 | 6 | ×2 | 12 |
-| 3 | 4 | 12 | ×3 | 36 |
-| 5 | 5 | 25 | ×5 | 125 |
+| ------------ | --------------- | --- | ------- | ----- |
+| 2            | 3               | 6   | ×2      | 12    |
+| 3            | 4               | 12  | ×3      | 36    |
+| 5            | 5               | 25  | ×5      | 125   |
 
 This is the same shape of risk DLR-111's AC4 already flags for AP-refund stacked with "every other
-buff active" — self-reinforcing — except this version would apply to *every* hand where buffs overlap,
+buff active" — self-reinforcing — except this version would apply to _every_ hand where buffs overlap,
 not one specifically-costed card combo, so it is a bigger lever to get tuned wrong.
 
 **Two open questions before this can be costed for real.** (1) Is the multiplier "number of buffs that
-fired" (as worked above) or "number of co-triggering *pairs*" — the two scale very differently, linear
+fired" (as worked above) or "number of co-triggering _pairs_" — the two scale very differently, linear
 versus combinatorial. (2) Is the escalation a rare jackpot moment (intended, wants no cap) or a
 steady-state expectation late-run (needs one)? Neither is answered yet.
 
@@ -2224,7 +2223,7 @@ the order Second Wind → Momentum → the cash-out product → Blade → Purse;
 buffs fire adds an **Overlap Bonus** of `k − 1` to the Momentum axis; and four named per-hand caps
 bound the four axes. Why addition rather than multiplication or take-the-highest, why the order is
 forced rather than chosen, where each cap value comes from, and the worked hand that checks all of
-it are in `hybrid-design.md` §5 → *Resolving several buffs on one trick — the stacking rule*, and
+it are in `hybrid-design.md` §5 → _Resolving several buffs on one trick — the stacking rule_, and
 are deliberately not repeated here.
 
 **Both open questions are answered, and the two templates this entry named are gone.** On (1) the
@@ -2233,7 +2232,7 @@ basis is the **count of buffs fired, linear** — pairs is `k(k−1)/2`, which a
 ceiling, and grows as the square of the very thing the shop sells. On (2) it is treated as a
 **steady-state expectation and capped**, four times over, one cap per axis. And this entry's own
 prediction that the rule would replace two synergy templates rather than sit beside them held:
-`v1-buff-card-list.md` → *#13–16 resolved against the stacking rule (DLR-124)* supersedes both
+`v1-buff-card-list.md` → _#13–16 resolved against the stacking rule (DLR-124)_ supersedes both
 permanently — the "for every other buff active this hand" template and the co-trigger combo
 template, numbered #13 and #16 there — while #14 and #15 stay excluded for independent reasons that
 have nothing to do with stacking.
@@ -2241,8 +2240,8 @@ have nothing to do with stacking.
 **What is still the developer's.** The four cap values, the Overlap Bonus magnitude, and the
 event / threshold / terminal firing cadence were all chosen by an agent under DLR-124's sprint-run
 override of `CLAUDE.md`'s tuning-value pause, not by the developer. Each is listed again with what
-it trades off in the register closing that subsection, *Every number here is the developer's to
-move*; none is a `config.ts` key yet and none has been played.
+it trades off in the register closing that subsection, _Every number here is the developer's to
+move_; none is a `config.ts` key yet and none has been played.
 
 <!-- ### <title> — became `hybrid-design.md` §N, <date>. One line on what changed in the trip. -->
 

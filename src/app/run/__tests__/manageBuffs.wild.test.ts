@@ -73,8 +73,10 @@ describe('a wild pile names the card it eats (DLR-162)', () => {
     const wildGroup = wildPile.find((g) => g.refusal === null)!
     expect(wildGroup.partner?.id).toBe(2)
 
-    const plain = manageBuffsView([bellHigh(BuffTier.Bronze, 1), bellHigh(BuffTier.Bronze, 2)])
-      .groups
+    const plain = manageBuffsView([
+      bellHigh(BuffTier.Bronze, 1),
+      bellHigh(BuffTier.Bronze, 2),
+    ]).groups
     expect(plain.find((g) => g.refusal === null)!.partner).toBeNull()
   })
 

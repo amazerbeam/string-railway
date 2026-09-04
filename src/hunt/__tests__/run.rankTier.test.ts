@@ -67,12 +67,7 @@ describe('a bought tier is run-permanent (AC2)', () => {
       [DuelSide.Player]: 0,
       [DuelSide.Quarry]: bought.encounter.health[DuelSide.Quarry],
     })
-    const recorded = recordEncounter(
-      bought,
-      won,
-      bought.discardsRemaining,
-      null,
-    )
+    const recorded = recordEncounter(bought, won, bought.discardsRemaining, null)
     expect(recorded.rankTiers[TieredRank.Swan]).toBe(AbilityTier.Silver)
     expect(advanceRun(recorded).rankTiers[TieredRank.Swan]).toBe(AbilityTier.Silver)
   })

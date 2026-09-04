@@ -32,17 +32,16 @@ export default function WildcardBand({ wildcard, count, onArm }: WildcardBandPro
     <div className="mb-wildband">
       <CardFace buff={wildcard} count={count} />
       <div className="mb-wildband-copy">
-        <div className="mb-wildband-head">
+        {/* DLR-162 fix pass — an `<h2 className="mb-bandhead">` exactly as both sibling bands on
+            this screen are. It was a `<div>`, which read as a heading and was absent from the
+            heading outline a screen-reader user navigates by. */}
+        <h2 className="mb-bandhead">
+          <span className="mb-pip" aria-hidden="true" />
           {MANAGE_BUFFS_WILD_BAND} · {count}
-        </div>
+        </h2>
         <p className="mb-wildband-rule">{MANAGE_BUFFS_WILD_RULE}</p>
       </div>
-      <button
-        type="button"
-        className="mb-go"
-        onClick={onArm}
-        data-wild-key={WILD_BAND_FOCUS_KEY}
-      >
+      <button type="button" className="mb-go" onClick={onArm} data-wild-key={WILD_BAND_FOCUS_KEY}>
         {MANAGE_BUFFS_WILD_SPEND_LABEL}
       </button>
     </div>

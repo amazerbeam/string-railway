@@ -294,30 +294,32 @@ export function buffCadenceWord(buff: Buff): string {
   return BUFF_EVENT_WORD[buff.kind] ?? BUFF_CADENCE_WORD[BUFF_CADENCE[buff.kind]]
 }
 
-/** AC5 — a card's payoff, split into what it pays and what it can cost. `risk` is `null` for every
- *  card in the pool today, which is what makes the split bar a SHAPE the component can render
- *  rather than a special case: a future card that costs the player something fills it in without
- *  the card's own branch reaching the renderer. */
+/** AC5 — a card's payoff: what it pays.
+ *
+ *  DLR-167 fix pass — the `risk` half is GONE. It was `null` at BOTH of `buffPayoff`'s return
+ *  sites, which are its only producers, so six consumer branches across five files were provably
+ *  unreachable and every one of them had to be read and dismissed by anyone auditing this code. A
+ *  card that costs the player a figure can add the field back with its own producer; carrying an
+ *  always-null field on the speculation is the cost this removes. Kept as an OBJECT rather than
+ *  collapsed to a bare `string` so that addition stays a widening rather than a signature change
+ *  at every call site. */
 export interface BuffPayoff {
   readonly gain: string
-  /** Present only where the same figure can land on the player. */
-  readonly risk: string | null
 }
 
 export function buffPayoff(buff: Buff): BuffPayoff {
   // DLR-167 — Curse pays TWO figures at gold, and `BuffReward` carries only the damage half
   // (`curseBuff`). Read through `CURSE_REWARD`, never as a literal, so a retuned ladder cannot
-  // leave the card advertising a figure the engine will not honour. `risk` stays `null`: the card's
-  // cost is a bad trick, not a figure landing on the player.
+  // leave the card advertising a figure the engine will not honour.
   if (buff.kind === BuffKind.Curse) {
     const reward = CURSE_REWARD[buff.tier]
     const gain =
       reward.multiplier > 0
         ? `+${reward.damage} damage, +${reward.multiplier} multiplier`
         : `+${reward.damage} damage`
-    return { gain, risk: null }
+    return { gain }
   }
-  return { gain: buffRewardPhrase(buff), risk: null }
+  return { gain: buffRewardPhrase(buff) }
 }
 
 /** AC10/DLR-148 fix-pass — the FACE-only rendering of `buffPayoff`. The face has a half-width box
@@ -340,8 +342,8 @@ function buffCountSuffix(stack: BuffStack): string {
 /** PRESS cards are SPENT by the second tap and `Escape` cannot bring them back. */
 export const BUFF_POISED_HINT_PRESS = 'Tap again to spend'
 
-/** AC5's second half — the accessible name carries the whole sentence, both figures included, and
- *  `buffName(buff)` verbatim so `getByRole('button', { name: /Cheat \(/ })`-style queries in
+/** AC5's second half — the accessible name carries the whole sentence, and `buffName(buff)`
+ *  verbatim so `getByRole('button', { name: /Cheat \(/ })`-style queries in
  *  `WarCouncilRound.actionBar.test.tsx` keeps matching across the rewrite. */
 export function buffCardAccessibleName(
   stack: BuffStack,
@@ -349,9 +351,7 @@ export function buffCardAccessibleName(
   refusal: BuffActivationRefusal | null,
 ): string {
   const { buff } = stack
-  const payoff = buffPayoff(buff)
-  const payoffSentence = payoff.risk === null ? payoff.gain : `${payoff.gain}, ${payoff.risk}`
-  const name = `${buffName(buff)} — ${buffConditionSentence(buff)}: ${payoffSentence}.${buffCountSuffix(stack)}`
+  const name = `${buffName(buff)} — ${buffConditionSentence(buff)}: ${buffPayoff(buff).gain}.${buffCountSuffix(stack)}`
   if (refusal !== null) return `${name} ${BUFF_ACTIVATION_REFUSAL_MESSAGE[refusal]}`
   if (!poised) return name
   const hint =

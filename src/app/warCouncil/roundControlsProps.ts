@@ -21,7 +21,6 @@
 import { createElement, type ReactNode } from 'react'
 import { swapCapFor, type Buff, type BuffActivationRefusal } from '../../hunt'
 import {
-  isSkulled,
   RoundPhase,
   skullsOn,
   type AbilityChoice,
@@ -181,17 +180,19 @@ export function feltStageProps({
     felt = createElement(TrickWell, {
       currentTrick: ui.round.currentTrick,
       resolvedTrick: ui.resolvedTrick,
-      skulledCards: skullsOn(ui.round),
+      // DLR-160 AC2 / DLR-167 fix pass — the ONE reading of skull membership for THIS trick, read
+      // off the resolved trick itself rather than recomputed from `ui.round`. `playCard` clears
+      // `cursedCards` as the trick resolves, so recomputing here yielded `[]` for a trick a Curse
+      // ALONE made skulled — the well printed "Low Defeat" over a banking Low Victory, and the
+      // cursed card rendered with no skull. `deriveResolvedTrick` captures it from the PRE-play
+      // state, and `ResolutionView.skulledInTrick` now reads the SAME value, which is what makes
+      // `resolutionOutcome.ts`'s "one trick can never be worded two ways" actually hold.
+      //
+      // Doubles as `skulledCards` for this branch: the only cards it renders ARE this trick's, so
+      // the per-card skull badge and the outcome word are decided by one list.
+      skulledCards: ui.resolvedTrick.skulledInTrick,
       offeredBuffs: offered,
-      // DLR-160 AC2 — the ONE reading of skull membership for THIS trick, filtered from the
-      // round's own list through the SAME `isSkulled` predicate every other reader here uses.
-      // DLR-167 — through `skullsOn`. Note the held reveal renders from the state AFTER the trick
-      // resolved, and `playCard` has already lifted the mark by then (AC7), so a curse shows here
-      // only while it is still live; the resolution screen's own `skulledInTrick`
-      // (`commitHandlers.ts`) is built from the PRE-play state and does carry it.
-      skulledInTrick: ui.resolvedTrick.cards
-        .map((played) => played.card)
-        .filter((card) => isSkulled(skullsOn(ui.round), card)),
+      skulledInTrick: ui.resolvedTrick.skulledInTrick,
       quarryToLead,
       onCarryOn,
     })

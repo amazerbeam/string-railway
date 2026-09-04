@@ -43,12 +43,17 @@ export function hurtBeatLabel(damageToPlayer: number, potLost: number): string {
   return `Hurt — −${damageToPlayer} health, ${potLost} pot lost`
 }
 
-/** DLR-156 B2 — a REPLACED Low Defeat (a primed card the Quarry takes cleanly, DLR-90 AC5):
- *  `resolveTrickBank` skips both the hit and the streak reset entirely, so nothing was actually
- *  lost. `hurtBeatLabel` said "Hurt" and named a pot that was never touched — this is the
- *  correct, separate wording for the branch that costs nobody anything. */
+/** DLR-156 B2 — the trick that neither banked nor hurt: `resolveTrickBank` wrote no `trickDamage`
+ *  AND no `damageToPlayer`, so nothing was actually lost. `hurtBeatLabel` said "Hurt" and named a
+ *  pot that was never touched — this is the correct, separate wording for the branch that costs
+ *  nobody anything.
+ *
+ *  DLR-166 fix pass — the prime is DELETED, so the original trigger (a primed card the Quarry took
+ *  cleanly, DLR-90 AC5) is gone with it. The branch is retained because it is stated over the
+ *  RESOLUTION's own two figures rather than over any one mechanic, which is what makes it total;
+ *  the copy no longer names a card that does not exist. PLACEHOLDER wording, the developer's. */
 export function absorbedBeatLabel(): string {
-  return 'Absorbed — a primed card lost cleanly costs nothing; the streak stands'
+  return 'Absorbed — this trick cost nothing; the streak stands'
 }
 
 /**

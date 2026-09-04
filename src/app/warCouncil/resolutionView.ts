@@ -19,8 +19,12 @@ export interface ResolutionView {
   /** AC2 — what the pot becomes if the next trick also banks, at the bare rule:
    *  `potValue(total + BASE_DAMAGE, roll + 1)`, because the player may fire nothing next trick. */
   readonly nextPotFloor: number
-  /** DLR-160 AC2 — the cards in THIS trick that carry a skull, filtered from
-   *  `RoundState.skulledCards` at the hand-off. Empty on a clean trick. */
+  /** DLR-160 AC2 — the cards in THIS trick that carry a skull. Empty on a clean trick.
+   *
+   *  DLR-167 — filtered from the `skullsOn` UNION (dealt skulls PLUS curses), not from
+   *  `RoundState.skulledCards`, which the comment here used to name. DLR-167 fix pass — and READ
+   *  off `ResolvedTrick.skulledInTrick` rather than filtered here at all, so the trick well and this
+   *  panel share one value; see that field for why it must be captured pre-play. */
   readonly skulledInTrick: readonly Card[]
   /** DLR-160 AC7 — the decree in force as the trick resolved. DLR-163 AC2 — `null` when a Fox
    *  had already replaced it with a bare suit, so the trick resolved under a suit marker. */

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  AP_CAPACITY_PRICE,
-  CHEAT_PRICE,
-  HEAL_PRICE,
-  WHETSTONE_PRICE,
-} from '../config'
+import { AP_CAPACITY_PRICE, CHEAT_PRICE, HEAL_PRICE, WHETSTONE_PRICE } from '../config'
 import {
   canBuyAnything,
   categoryOf,

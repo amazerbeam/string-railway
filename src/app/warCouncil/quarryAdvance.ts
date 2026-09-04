@@ -11,10 +11,12 @@
 import {
   chooseCpuMove,
   commitQuarryMove,
+  isSkulled,
   legalMoves,
   playCard,
   PlayerSide,
   QUARRY_SIDE,
+  skullsOn,
   TrickOutcome,
   type PlayCardOptions,
   type TrickCard,
@@ -33,7 +35,10 @@ export interface CpuAdvanceResult {
  *  the outcome itself — the two HIGH outcomes (`HighVictory`/`HighDefeat`) are the ones the player
  *  physically took, the two LOW ones the Quarry did — rather than by diffing `tricksWon`, which
  *  `resolveTrickBank` already consulted once. This reads the MECHANICAL axis, not the outcome axis:
- *  a Victory favours the player and a Defeat favours the Quarry, whichever way the player went. */
+ *  a Victory favours the player and a Defeat favours the Quarry, whichever way the player went.
+ *
+ *  DLR-167 fix pass — this is also where `skulledInTrick` is CAPTURED, off `before`. See
+ *  `ResolvedTrick.skulledInTrick` for why it cannot be recomputed later. */
 export function deriveResolvedTrick(
   before: WarCouncilState,
   after: WarCouncilState,
@@ -48,10 +53,16 @@ export function deriveResolvedTrick(
     resolution.outcome === TrickOutcome.HighDefeat
       ? PlayerSide.Player
       : PlayerSide.Cpu
+  const cards: readonly TrickCard[] = [before.currentTrick[0], playedCard]
+  // DLR-167 fix pass — captured off `before`, the LAST state that still carries a curse:
+  // `playCard` lifts the mark on the state it returns, so anything re-derived from `after` reads
+  // an unskulled trick for one a Curse alone made skulled. See `ResolvedTrick.skulledInTrick`.
+  const skulls = skullsOn(before)
   return {
-    cards: [before.currentTrick[0], playedCard],
+    cards,
     winner,
     resolution,
+    skulledInTrick: cards.map((played) => played.card).filter((card) => isSkulled(skulls, card)),
   }
 }
 

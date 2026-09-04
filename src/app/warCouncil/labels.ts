@@ -190,6 +190,8 @@ export const DISCARD_REFUSAL_MESSAGE: Readonly<Record<DiscardRefusal, string>> =
   [DiscardRefusal.NotAvailable]: 'Not available yet.',
   [DiscardRefusal.NoDiscardsRemaining]: 'No discards left this fight.',
   [DiscardRefusal.EmptySelection]: 'Select a card to discard.',
+  // PLACEHOLDER COPY — the developer's to retune.
+  [DiscardRefusal.CurseArmed]: 'Mark a card with the Curse first.',
 }
 
 /** DLR-163 AC5/AC6 — the Swap control's visible count. BOTH figures, because a cap that can grow

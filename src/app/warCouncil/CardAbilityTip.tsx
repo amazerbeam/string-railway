@@ -7,9 +7,6 @@ import { useCardTip } from './useCardTip'
 
 interface CardAbilityTipProps {
   readonly card: Card
-  /** R4 — a primed card's fuse line, shown beneath the rank rule. `null` on every other card.
-   *  Passed rather than derived: this component computes nothing about a card's state. */
-  readonly fuseNote?: string | null
   readonly children: ReactNode
 }
 
@@ -50,7 +47,10 @@ interface CardAbilityTipProps {
  * `anchor` is the CARD's rect, not this host's — see `useCardTip` for why the difference matters
  * once the card lifts.
  */
-export default function CardAbilityTip({ card, fuseNote = null, children }: CardAbilityTipProps) {
+// DLR-166 fix pass — `fuseNote` is GONE with the fuse it described. `PlayingCard.tsx`, its only
+// render site, has passed `card` alone since the fuse was deleted, so the prop, its default, its
+// guard and its `.wc-card-tip-fuse` span were the mechanic's last limb.
+export default function CardAbilityTip({ card, children }: CardAbilityTipProps) {
   const { open, anchor, hostRef, onClick, onPointerEnter, onPointerLeave, onFocus, onBlur } =
     useCardTip()
   const breakdownTop = useBreakdownTop()
@@ -95,9 +95,6 @@ export default function CardAbilityTip({ card, fuseNote = null, children }: Card
           >
             <b>{cardTipTitle(card.rank)}</b>
             {RANK_RULE_TEXT[card.rank]}
-            {fuseNote !== null && fuseNote !== undefined && (
-              <span className="wc-card-tip-fuse">{fuseNote}</span>
-            )}
           </div>,
           document.body,
         )}

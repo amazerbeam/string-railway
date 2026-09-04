@@ -124,34 +124,19 @@ describe('drinkFlask (AC2, AC3, AC4)', () => {
 describe("recordEncounter's flask refill (AC5)", () => {
   it('refills to the configured charges on a stage-boss kill from empty', () => {
     const at = runWonAt(firstBossIndex, 3, 0)
-    const recorded = recordEncounter(
-      at,
-      wonEncounter(at.encounter, 3),
-      at.discardsRemaining,
-      null,
-    )
+    const recorded = recordEncounter(at, wonEncounter(at.encounter, 3), at.discardsRemaining, null)
     expect(recorded.flaskCharges).toBe(FLASK_STARTING_CHARGES)
   })
 
   it('refills on a stage-boss kill even when a charge was already held', () => {
     const at = runWonAt(firstBossIndex, 3, 1)
-    const recorded = recordEncounter(
-      at,
-      wonEncounter(at.encounter, 3),
-      at.discardsRemaining,
-      null,
-    )
+    const recorded = recordEncounter(at, wonEncounter(at.encounter, 3), at.discardsRemaining, null)
     expect(recorded.flaskCharges).toBe(FLASK_STARTING_CHARGES)
   })
 
   it('does NOT refill on an ordinary kill', () => {
     const at = runWonAt(firstOrdinaryIndex, 3, 0)
-    const recorded = recordEncounter(
-      at,
-      wonEncounter(at.encounter, 3),
-      at.discardsRemaining,
-      null,
-    )
+    const recorded = recordEncounter(at, wonEncounter(at.encounter, 3), at.discardsRemaining, null)
     expect(recorded.flaskCharges).toBe(0)
   })
 

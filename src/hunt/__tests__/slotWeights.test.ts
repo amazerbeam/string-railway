@@ -195,9 +195,9 @@ describe('weightedDrawWithReplacement (DLR-145)', () => {
 
 describe('the wildcard on the strip (DLR-162 AC1/AC10)', () => {
   it('carries positive weight, so the machine can stock it', () => {
-    expect(
-      templateWeightFor(SlotMachineId.Skirmisher, templateById('wildcard')!),
-    ).toBeGreaterThan(0)
+    expect(templateWeightFor(SlotMachineId.Skirmisher, templateById('wildcard')!)).toBeGreaterThan(
+      0,
+    )
   })
 
   it('leaves every CONDITION template weight untouched - no condition template was added', () => {

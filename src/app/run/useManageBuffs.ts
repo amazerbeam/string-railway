@@ -1,11 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
-import {
-  buffCombineKey,
-  combineBuffs,
-  spendWildcard,
-  type BuffId,
-  type RunState,
-} from '../../hunt'
+import { buffCombineKey, combineBuffs, spendWildcard, type BuffId, type RunState } from '../../hunt'
 import { manageBuffsView, type ManageBuffsView } from './manageBuffs'
 
 export interface ManageBuffsHandle {

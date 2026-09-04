@@ -130,6 +130,7 @@ describe('CarryOn commits a pending Quarry lead', () => {
         firedBuffIds: [],
         treasureBonusEarned: false,
       },
+      skulledInTrick: [],
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }
     ui = roundReducer(ui, carryOn)

@@ -31,10 +31,7 @@ export { withRollTarget, rollTargetPolicies, ROLL_TARGET_SWEEP } from './rollOve
 export { mintableBuffKinds, unreachableBuffKinds, unshelvedShopItems } from './reachability'
 export { withOpeningPile, OPENING_PILE_VARIANTS } from './openingPileVariants'
 export { MAX_ACTIONS_PER_HAND, MAX_HANDS_PER_FIGHT, MAX_SHOP_ACTIONS_PER_VISIT } from './simConfig'
-export {
-  fixtureRunAfterFirstFight,
-  fixtureHandWithStackedBuffs,
-} from './fixtures'
+export { fixtureRunAfterFirstFight, fixtureHandWithStackedBuffs } from './fixtures'
 export { RunEnding } from './types'
 export type {
   BuffFireOutcome,

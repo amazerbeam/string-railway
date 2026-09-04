@@ -27,6 +27,13 @@ import { discardStock, type RoundUiState } from './roundUiState'
  * DLR-132 — opening no longer clears a live Cheat: it is not a transient
  * selection any more (a Cheat is a paid-for duration), so opening the
  * discard rail does not touch either.
+ *
+ * DLR-167 fix pass — an armed Curse IS such a claimant, and it is refused rather than cleared: a
+ * Curse has already been PAID FOR, so silently dropping it would cost the player the card. The rule
+ * lives in ONE place, `discardRefusalFor`'s `CurseArmed` branch, which is the same call the Swap
+ * control's disabled state and refusal line make (`WarCouncilTable.tsx`) — so the greyed control and
+ * this guard cannot disagree. `handleToggleLoadout`'s docblock states the underlying rule: two
+ * controls that reinterpret the next hand tap must not be open at once.
  */
 export function handleTapDiscard(state: RoundUiState): RoundUiState {
   if (discardRefusalFor(discardStock(state)) !== null) {

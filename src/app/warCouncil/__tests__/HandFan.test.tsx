@@ -112,7 +112,6 @@ describe('HandFan', () => {
     expect(document.querySelector('.wc-fan')?.getAttribute('aria-hidden')).toBe('true')
   })
 
-
   it('makes every card tappable while discardSelecting, including an illegal one (DLR-100)', () => {
     const { onTap } = renderFan({ discardSelecting: true })
     const illegal = screen.getByRole('button', { name: '7 of Bells' })

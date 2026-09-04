@@ -44,9 +44,7 @@ describe('wildRefusalFor (DLR-162 AC5)', () => {
     expect(wildRefusalFor(skullLow(BuffTier.Bronze, 2))).toBe(WildRefusal.NoSuit)
   })
   it('refuses an already-wild card — there is no second suit to take off', () => {
-    expect(wildRefusalFor(wildenedBuff(bellHigh(BuffTier.Bronze, 3)))).toBe(
-      WildRefusal.AlreadyWild,
-    )
+    expect(wildRefusalFor(wildenedBuff(bellHigh(BuffTier.Bronze, 3)))).toBe(WildRefusal.AlreadyWild)
   })
   it('refuses an activated card, which names no suit either', () => {
     expect(wildRefusalFor(cheatBuff(BuffTier.Bronze, 4))).toBe(WildRefusal.NoSuit)
@@ -133,8 +131,8 @@ describe('mintWildAtTier', () => {
   })
 
   it('THROWS on an axis with no ladder rather than minting a zero-value card', () => {
-    expect(() => mintWildAtTier(BuffKind.SuitHigh, BuffRewardAxis.None, BuffTier.Bronze, 1)).toThrow(
-      RangeError,
-    )
+    expect(() =>
+      mintWildAtTier(BuffKind.SuitHigh, BuffRewardAxis.None, BuffTier.Bronze, 1),
+    ).toThrow(RangeError)
   })
 })

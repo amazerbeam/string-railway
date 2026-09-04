@@ -34,6 +34,7 @@ const resolvedTrick: ResolvedTrick = {
 
     treasureBonusEarned: false,
   },
+  skulledInTrick: [],
 }
 
 // DLR-157 — `TrickWell` now registers the well's own anchor, which throws outside a
