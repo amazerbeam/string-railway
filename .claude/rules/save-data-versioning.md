@@ -2,7 +2,7 @@
 
 ## What
 
-Every value this game persists goes through `src/persistence/`. It is written as a `{ version, data }` envelope stamped with `SAVE_SCHEMA_VERSION`. Its key is composed only by `saveKeyFor(section)` — never by string concatenation at a call site. A reader that meets a version it does not recognise returns its default and reports `SaveReadOutcome.VersionMismatch` rather than deserialising the payload.
+Every value this game persists goes through `prototype/src/persistence/`. It is written as a `{ version, data }` envelope stamped with `SAVE_SCHEMA_VERSION`. Its key is composed only by `saveKeyFor(section)` — never by string concatenation at a call site. A reader that meets a version it does not recognise returns its default and reports `SaveReadOutcome.VersionMismatch` rather than deserialising the payload.
 
 ## Why
 
@@ -16,14 +16,14 @@ Any ticket that adds a field to a persisted shape, changes an existing field's t
 
 ## How to verify
 
-- **Lint-enforced, not just grep-checked.** `eslint.config.js` restricts the `localStorage` and `sessionStorage` globals across `src/**/*.{ts,tsx}`, with `src/persistence/browserStorage.ts` as the sole `ignores` entry — `npm run lint` fails on any other file that names either global directly.
-- A manual grep is still useful for a quick, no-lint check: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "globalThis\.(localStorage|sessionStorage)\b|\b(localStorage|sessionStorage)\.(getItem|setItem|removeItem|clear)\("`. Run against this codebase on 2026-08-23 it returned three hits, all in files the pattern is expected to touch: two in `src/persistence/browserStorage.ts` (the real, sanctioned access — one in a docblock describing it, one the actual `globalThis.localStorage` read) and one in `src/persistence/saveStore.ts` (docblock prose referencing `localStorage.clear()` while explaining why `clear()` never calls it) — not real storage access. The pattern still can't distinguish prose from code, so treat any hit outside `browserStorage.ts` as something to read, not something to auto-fail on; the ESLint rule above is the actual gate.
-- `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "'strings-and-stations'"` returns hits only in `src/persistence/config.ts`.
+- **Lint-enforced, not just grep-checked.** `prototype/eslint.config.js` restricts the `localStorage` and `sessionStorage` globals across `src/**/*.{ts,tsx}`, with `src/persistence/browserStorage.ts` as the sole `ignores` entry — `npm run lint` fails on any other file that names either global directly.
+- A manual grep is still useful for a quick, no-lint check: `Get-ChildItem prototype\src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "globalThis\.(localStorage|sessionStorage)\b|\b(localStorage|sessionStorage)\.(getItem|setItem|removeItem|clear)\("`. Run against this codebase on 2026-08-23 it returned three hits, all in files the pattern is expected to touch: two in `src/persistence/browserStorage.ts` (the real, sanctioned access — one in a docblock describing it, one the actual `globalThis.localStorage` read) and one in `src/persistence/saveStore.ts` (docblock prose referencing `localStorage.clear()` while explaining why `clear()` never calls it) — not real storage access. The pattern still can't distinguish prose from code, so treat any hit outside `browserStorage.ts` as something to read, not something to auto-fail on; the ESLint rule above is the actual gate.
+- `Get-ChildItem prototype\src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "'strings-and-stations'"` returns hits only in `prototype/src/persistence/config.ts`.
 - A breaking payload change is accompanied by a `SAVE_SCHEMA_VERSION` bump in the same task.
 
 ## Reject conditions
 
-1. Reject a change that calls `localStorage` or `sessionStorage` outside `src/persistence/browserStorage.ts` — lint-enforced via `eslint.config.js`'s `no-restricted-globals` override on `src/**/*.{ts,tsx}` (ignoring `browserStorage.ts`), so `npm run lint` catches this before review does.
+1. Reject a change that calls `localStorage` or `sessionStorage` outside `src/persistence/browserStorage.ts` — lint-enforced via `prototype/eslint.config.js`'s `no-restricted-globals` override on `src/**/*.{ts,tsx}` (ignoring `browserStorage.ts`), so `npm run lint` catches this before review does.
 2. Reject a change that composes a storage key by string concatenation rather than through `saveKeyFor`.
 3. Reject a change that writes a bare payload instead of a `{ version, data }` envelope.
 4. Reject a change that changes a persisted shape incompatibly without bumping `SAVE_SCHEMA_VERSION` in the same task.

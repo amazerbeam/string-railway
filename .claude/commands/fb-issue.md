@@ -34,7 +34,7 @@ Resolve to a real file path. The candidates, in the order to consider them:
 
 | Target | Path | When the fix belongs here |
 |---|---|---|
-| A skill | `.claude/skills/<name>/SKILL.md` (or a file under its `references/`) | Claude applied the wrong domain convention. For anything under `src/` that is `react-frontend` — the MUST/NEVER contract lives in its `SKILL.md`, the general standards in `references/engineering-standards.md` |
+| A skill | `.claude/skills/<name>/SKILL.md` (or a file under its `references/`) | Claude applied the wrong domain convention. For anything under `prototype/src/` that is `react-frontend` — the MUST/NEVER contract lives in its `SKILL.md`, the general standards in `references/engineering-standards.md` |
 | A pipeline agent | `.claude/agents/<implementer\|code-evaluator\|defender\|qa>.md` | An agent missed something it should have caught, or flagged a false positive |
 | A workflow command | `.claude/commands/fb-<name>.md` | The *process* was wrong — the wrong step order, a missing gate, a bad prompt |
 | The stack reference | `.claude/workflow/web-project.md` | A path, a runner command, a developer-owned decision, or a correctness trap stated there is wrong or missing |

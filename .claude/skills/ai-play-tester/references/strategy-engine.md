@@ -17,15 +17,15 @@ What makes that information genuinely decisive, not merely a look at the answer 
 Quarry has **no randomness in its card choice at all** — confirmed by reading the source rather than
 guessing:
 
-- **`src/warCouncil/cpuPlayer.ts` → `chooseCpuCard`.** Leading: always the lowest legal card
+- **`prototype/src/warCouncil/cpuPlayer.ts` → `chooseCpuCard`.** Leading: always the lowest legal card
   (`lowestCard`, sorted by rank then suit index `[bells, keys, moons]`). Following, in strict
   priority: (1) the lowest legal card that is *both* skulled and would go under — the Quarry
   actively tries to dump a skull into a trick it will not take, forcing a High Defeat on the player;
   (2) else the lowest legal card that would take the trick; (3) else the lowest legal card.
-- **`src/warCouncil/legalMoves.ts`** — the same follow-suit/Monarch-narrowing rule for both sides.
-- **`src/warCouncil/resolveTrick.ts` → `resolveTrickWinner`** — trump/Witch/rank comparison, called
+- **`prototype/src/warCouncil/legalMoves.ts`** — the same follow-suit/Monarch-narrowing rule for both sides.
+- **`prototype/src/warCouncil/resolveTrick.ts` → `resolveTrickWinner`** — trump/Witch/rank comparison, called
   with `(lead, follow)` order load-bearing.
-- **`src/warCouncil/skulls.ts` → `isSkulled`** — membership test against `skulledCards`.
+- **`prototype/src/warCouncil/skulls.ts` → `isSkulled`** — membership test against `skulledCards`.
 
 Because all four are pure and deterministic, and the debug mirror hands you every input they need,
 you can compute — before committing a card — *exactly* what the Quarry will play in response, for
@@ -124,7 +124,7 @@ led card is known (skull trick → go low if any legal card can; clean trick →
 Replace `round-driver.md`'s "if `r.interactive`" branch with a version that calls into
 `window.__strategy` instead of "first legal card", matching cards back to DOM buttons by their
 `aria-label` prefix (`` `${rank} of ${Suit}` ``, e.g. `"9 of Moons"` — `cardAccessibleName` in
-`src/app/warCouncil/labels.ts` owns the exact string, appending an ability name in parens like
+`prototype/src/app/warCouncil/labels.ts` owns the exact string, appending an ability name in parens like
 `"11 of Bells (Monarch)"` and a skull mark once a card is face up; matching by `startsWith` on the
 rank/suit prefix is stable against both):
 

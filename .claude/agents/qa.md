@@ -14,7 +14,7 @@ Tasks in the contract's `tasks.md` (`.claude/contract/<slug>/tasks.md`) are grou
 
 ## Project layout & commands
 
-**Read `.claude/workflow/web-project.md` before running anything.** It owns the layout, the exact runner commands, and the constraints below. Do not reconstruct commands from memory.
+**Read `.claude/workflow/web-project.md` before running anything.** It owns the layout, the exact runner commands, and the constraints below. Do not reconstruct commands from memory. Every npm command runs from `prototype/`, not the repository root — `web-project.md` states the exact form once; do not prefix an individual command with `cd`.
 
 Four runner facts gate everything you do:
 
@@ -96,7 +96,7 @@ This step is the **on-disk** half of verification — where this project's silen
 2. **Any architectural boundary the plan establishes holds.** Run the boundary grep from `web-project.md` if the plan defines one, over the tree it protects, including its tests. Any hit for a forbidden import or global is a FAIL, category `boundary-violation`. Record `N/A — no boundary established` when the plan defines none.
 3. **No tunable is hard-coded.** Grep the changed source *and any user-facing copy* for the numeric literals the plan says belong in configuration. A hit outside the configuration file and its type declaration is a FAIL, category `tunable-hardcoded`.
 4. **No `Math.random()`** anywhere in a process that must be reproducible — `determinism` if found.
-5. **Renamed config or persisted names are consistent across the chain.** For every configuration key, storage key, persisted state kind, or reason code the contract renamed: grep the *old* name across `src/**`, the configuration file, and copy. Remaining hits are a FAIL, category `stale-reference`. If a persisted shape changed and stored data exists, the missing migration is `persisted-shape-break`.
+5. **Renamed config or persisted names are consistent across the chain.** For every configuration key, storage key, persisted state kind, or reason code the contract renamed: grep the *old* name across `prototype/src/**`, the configuration file, and copy. Remaining hits are a FAIL, category `stale-reference`. If a persisted shape changed and stored data exists, the missing migration is `persisted-shape-break`.
 6. **Static review** of the changed code against the task's step bullets: dependencies wired as described, no leftover `console.log`, no unreachable or commented-out replacement code, effect cleanups present for every listener/observer/timer, no un-reset module-level mutable state, no unexplained `any` or `!`.
 7. **File sizes measured**, not estimated — `(Get-Content <file> | Measure-Object -Line).Lines` for every file created or grown. Over 400 lines is a FAIL (`file-size`); 200–400 is a note.
 8. **What is left for the developer's eyes.** Anything whose answer is a *judgement* rather than a value: whether an interaction feels right, whether the UI reads clearly, colour contrast by eye, pacing, whether copy lands at the right moment. Report each as `MANUAL VERIFICATION NEEDED` with the command that starts the app, what to do, and what to look for — specific enough to check in under a minute.
@@ -232,7 +232,7 @@ Non-code blockers — report, never attribute to a task: `deps-not-installed`, `
 ### Test Validation
 | Task | Test path | Runs | Passes | Meaningful | Verdict |
 |------|-----------|------|--------|-----------|---------|
-| Task N | src/utils/__tests__/debounce.test.ts | YES/NO | YES/NO | YES/NO — [why not] | ✓/✗ |
+| Task N | prototype/src/utils/__tests__/debounce.test.ts | YES/NO | YES/NO | YES/NO — [why not] | ✓/✗ |
 
 ### Boundary, Config & Static Integrity
 - Architectural boundary grep (if the plan defines one): [hit count → PASS/FAIL, or N/A — no boundary established]
@@ -259,7 +259,7 @@ Non-code blockers — report, never attribute to a task: `deps-not-installed`, `
 ### Acceptance Criteria Traceability
 | # | Criterion | Evidence (test `path :: name`, static/functional, or `browser :: interaction → outcome`) | Verdict |
 |---|-----------|--------------------------------------------------------------|---------|
-| AC1 | [criterion] | `src/utils/__tests__/calculation.test.ts :: worked example matches spec` | MET |
+| AC1 | [criterion] | `prototype/src/utils/__tests__/calculation.test.ts :: worked example matches spec` | MET |
 | AC4 | [criterion] | `browser :: dragged item A → target B → list reflected new order` | MET |
 | AC2 | [criterion] | Typechecks and lints; **no test asserts it** | MET, UNTESTED → ✗ `ac-test-gap` |
 | AC3 | [criterion] | [command to run, what to do, what to look for] | MANUAL VERIFICATION NEEDED |

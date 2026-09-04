@@ -24,7 +24,11 @@ intuition.
 
 ## Project state — read this first
 
-**This is a Vite + React 19 + TypeScript prototype with a working POC on disk.** `src/` holds 271 source files across eight modules (measured DLR-121) — `app/` (React screens and the app shell), `warCouncil/` (the card-layer engine), `hunt/` (the Hunt configuration module and domain types), `persistence/` (cross-run save storage), `vault/` (cross-run meta-progression), `sim/` (the headless run simulator, lint-enforced pure), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 139 of those files are tests.
+**The repository now holds two codebases.** `prototype/` is the retained Vite + React 19 + TypeScript prototype — still runnable, still green — and `unity/` is the Unity project, empty until its scaffolding ticket.
+
+`prototype/src/` holds 271 source files across eight modules (measured DLR-121) — `app/` (React screens and the app shell), `warCouncil/` (the card-layer engine), `hunt/` (the Hunt configuration module and domain types), `persistence/` (cross-run save storage), `vault/` (cross-run meta-progression), `sim/` (the headless run simulator, lint-enforced pure), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 139 of those files are tests.
+
+**The prototype is kept as an oracle, not as an archive.** It is a working, measured, deterministic implementation of the game's rules, and the Unity port's own simulator is checked against it seed-for-seed — see `.docs/implementation/unity-port-architecture.md` §20.1. Do not treat it as legacy code to eventually delete.
 
 **The POC implements the project's previous design direction.** The live design is `.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md`. The POC code and its per-module record in `.docs/implementation/` are retained as a working reference — not as a description of where the game is going. The superseded direction's design documents, its art tree, and its build contracts were retired on DLR-45.
 
@@ -36,7 +40,7 @@ $env:Path = "C:\Program Files\Git\cmd;$env:Path"; git show <commit>:<path>
 
 commit `2cf7ec7` on `origin/master` is the last commit before the 2026-08-01 removal of an earlier prototype.
 
-`.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`. `.docs/implementation/` holds one folder per `src/` module — living, cumulative documentation of how the shipped code actually works (responsibilities, key exports, the mechanics behind each rule, enforced invariants), maintained by the `implementation-doc-writer` skill and updated on every `/fb-apply` run, never by hand. It answers "how does X actually work" or "what's been built so far" without re-reading old contracts — see that skill's `SKILL.md` for the folder's internal shape.
+`.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`. `.docs/implementation/` holds one folder per `prototype/src/` module — living, cumulative documentation of how the shipped code actually works (responsibilities, key exports, the mechanics behind each rule, enforced invariants), maintained by the `implementation-doc-writer` skill and updated on every `/fb-apply` run, never by hand. It answers "how does X actually work" or "what's been built so far" without re-reading old contracts — see that skill's `SKILL.md` for the folder's internal shape.
 
 ## The single-source-of-truth rule
 
@@ -44,7 +48,8 @@ This project is deliberately organised so each fact is stated once. When somethi
 
 | Fact | Owner |
 |---|---|
-| Where code lives, runner commands, developer-owned work, correctness traps | `.claude/workflow/web-project.md` |
+| Where code lives, runner commands, developer-owned work, correctness traps — the prototype | `.claude/workflow/web-project.md` |
+| Where code lives, runner commands, developer-owned work, correctness traps — the Unity project | `.claude/workflow/unity-project.md` |
 | Where plans live, slug grammar, how a command picks *which* plan | `.claude/workflow/plan-resolution.md` |
 | Jira status vocabulary, what each board status means, which transitions the `/fb-*` commands automate | `.claude/skills/management-jira/SKILL.md` → its status-model section |
 | Jira label vocabulary — the closed layer set (`ui` / `engine` / `infra` / `design` / `spike`) and the `playable` marker | `.claude/skills/management-jira/SKILL.md` → its label-vocabulary section |
@@ -116,10 +121,10 @@ and checked when that trick resolves.
 ### Cut buffs are cut until a ticket brings them back
 
 DLR-145 pared the mintable buff pool to 13 templates. It now stands at **19 templates** (the figure
-`src/hunt/__tests__/buffTemplates.test.ts` asserts): 16 condition templates — Suit High (3 suits ×
+`prototype/src/hunt/__tests__/buffTemplates.test.ts` asserts): 16 condition templates — Suit High (3 suits ×
 Blade/Momentum), Suit Low (3 suits × Blade/Momentum), Skull Low (Blade/Momentum), Skull Helmet and
 Skull Tether (one each, Guard) — plus the three activated cards Cheat, the wildcard and Curse.
-`src/hunt/buffTemplates.ts` is the owner; `MintableConditionKind` and `MintableRewardAxis` narrow
+`prototype/src/hunt/buffTemplates.ts` is the owner; `MintableConditionKind` and `MintableRewardAxis` narrow
 the *types*, so everything outside that set is **unconstructible, not merely unweighted**. Momentum
 was unsafe on Suit Low while a multiplier raised on a Defeat trick was wiped by that trick's own
 reset; the low carry lets it escape the hand first, which is what made the row safe to restore
@@ -136,7 +141,7 @@ absent when planning, reviewing, writing docs, or answering a question about wha
   holds their timings and tier tables; no template and no slot weight exists for any of them.
 
 Retained code is a restoration path, not a live mechanic. Do not describe a cut card as something
-the player can get, do not treat its presence in `src/hunt/` or in an older design document as
+the player can get, do not treat its presence in `prototype/src/hunt/` or in an older design document as
 evidence it ships, and do not quietly re-add one while doing adjacent work — restoring a family is a
 row in `TEMPLATE_FAMILIES` plus a type widening, which is a ticket's decision, never a side effect.
 
@@ -152,6 +157,10 @@ Everything runs in **PowerShell on Windows**. Chain with `;`, never `&&`. Backsl
 
 Node and npm are on `PATH`. Nothing here needs a machine-specific `$env:` variable.
 
+### The prototype
+
+Every command below runs from `prototype/`, not the repository root — `.claude/workflow/web-project.md` owns the exact form (including the `Push-Location prototype; …; Pop-Location` pattern used to avoid masking a failed exit code) and any path or command drift; fix it there, not here.
+
 | To verify | Command |
 |---|---|
 | Types are sound (fast gate) | `npm run typecheck` |
@@ -161,6 +170,10 @@ Node and npm are on `PATH`. Nothing here needs a machine-specific `$env:` variab
 | One test file | `npx vitest run src/__tests__/smoke.test.ts` |
 | One test by name | `npx vitest run -t "<test name>"` |
 | Production build | `npm run build` |
+
+### The Unity project
+
+No gate is runnable yet — no Unity project exists on disk. `.claude/workflow/unity-project.md` owns the planned commands (`dotnet test` over the four engine-free assemblies as the fast gate, Unity batch-mode tests, a batch-mode build) and states plainly that none of them has been run.
 
 Four failure modes that are **not** code defects:
 
@@ -175,7 +188,7 @@ Static analysis is real here: `npm run lint` and `npm run typecheck` are require
 
 The pipeline is the substantive structure in this repo. It is not a suggestion — the five commands and four agents cross-reference each other, and a change to one usually implies a change to a referenced file rather than to the command itself.
 
-**Never write code outside `/fb-apply`.** Every change to `src/` — and to anything else the pipeline
+**Never write code outside `/fb-apply`.** Every change to `prototype/src/` — and to anything else the pipeline
 owns — goes `/fb-plan <brief>` → the approval gate → `/fb-apply <slug>`. This holds however the
 request is phrased: a bare "go", a "go" repeated several times, a task that looks small enough to
 just do, and an urgent-sounding ask are all still `/fb-plan` first. The only exception is the
@@ -230,14 +243,14 @@ Nobody in this pipeline decides a tuning value or a design reading on their own 
 
 ## Code conventions
 
-**`.claude/skills/react-frontend/SKILL.md` is the authority** — it holds the MUST/NEVER contract, the stack, the layout, and the success criteria, with general standards in `references/engineering-standards.md`. Read it before writing or editing anything under `src/`. Invoke it via the `Skill` tool; do not work from a remembered summary of it.
+**`.claude/skills/react-frontend/SKILL.md` is the authority** — it holds the MUST/NEVER contract, the stack, the layout, and the success criteria, with general standards in `references/engineering-standards.md`. Read it before writing or editing anything under `prototype/src/`. Invoke it via the `Skill` tool; do not work from a remembered summary of it.
 
 The toolchain-level rules that survive with no application code, restated here only because every reviewer enforces them:
 
 - Strict TypeScript. An `any` needs a stated reason in the summary.
 - Every listener, observer, timer, and `requestAnimationFrame` created in an effect is released in that effect's cleanup — an orphan leaks and double-fires after the next mount.
 - No module-level mutable state without an explicit reset; it survives HMR and leaks between tests in one file.
-- Files over 400 lines are blocking — measure with `(Get-Content <file> | Measure-Object -Line).Lines`, don't estimate.
+- Files over 400 lines are blocking — measure with `(Get-Content <path>).Count`, don't estimate. (`Measure-Object -Line` undercounts — it drops blank lines and hid a real breach on DLR-63; `.claude/workflow/web-project.md` is the authority on this.)
 - No `memo` / `useMemo` / `useCallback` without profiling evidence; no second state manager; no backend, API client, or remote call.
 - No `console.log` / `console.debug` in shipped code.
 - Tests: **Vitest**. Component tests query by accessible role and label.
@@ -249,11 +262,12 @@ Glob `.claude/skills/*/SKILL.md` to see what actually exists — never classify 
 
 | Skill | Owns |
 |---|---|
-| `react-frontend` | anything under `src/` |
+| `react-frontend` | anything under `prototype/src/` |
+| `unity-programmer` | anything under `unity/` |
 | `management-jira` | creating and transitioning Jira tickets |
 | `skill-creator` | writing a new skill |
 | `game-designer` | critiquing and developing game designs; anything under `.docs/design/` |
 | `game-ux` | the game-screen layer — full-viewport no-scroll layout, zoning, interaction cost, keyboard navigation of a hand or board; and turning play-session feedback about a screen into a redesign doc |
 | `implementation-doc-writer` | maintaining `.docs/implementation/` — per-module docs on how shipped code actually works — and `.docs/game_rules/the-hunt.md`, the game's current ruleset |
 
-**`react-frontend` applies to virtually every code task in this repo**, so `Skill: react-frontend` is the normal value in a task, not `none`. Reserve `Skill: none — <reason>` for genuinely non-code work: a spec document, a Jira-only task, a decision hand-off to the developer. Never name a skill that does not resolve to a real file on disk; a plan that tells the executor to invoke a missing skill wastes a turn.
+**Neither `react-frontend` nor `unity-programmer` is a default any more — each owns one codebase, and the repository holds two.** A task naming either should be able to say why that codebase is the right place for the work. Reserve `Skill: none — <reason>` for genuinely non-code work: a spec document, a Jira-only task, a decision hand-off to the developer. Never name a skill that does not resolve to a real file on disk; a plan that tells the executor to invoke a missing skill wastes a turn.

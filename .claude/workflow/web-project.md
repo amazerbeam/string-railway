@@ -6,35 +6,43 @@ Change a path or a command **here only**. A runner stated in five files gets upd
 
 **Conventions are not here.** How to write the code — component structure, hooks, state management, configuration-driven values, component budgets, testing posture — belongs to `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md`. This file owns paths, commands, and the traps that decide whether a *verification* is trustworthy.
 
-> **Status: the retained POC is on disk** — `src/` holds 271 source files across eight modules and 139 test files (measured DLR-121). The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
+> **Status: the retained POC is on disk** — `prototype/src/` holds 271 source files across eight modules and 139 test files (measured DLR-121). The layout and script names below are the ones actually on disk. **`prototype/package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
+
+**This file covers the prototype only.** `.claude/workflow/unity-project.md` is its sibling for the Unity project under `unity/`. A path written `src/…` in an older document under `.docs/` or `.claude/contract/` means `prototype/src/…` — the prototype moved into `prototype/` when the Unity port began and those documents were written before that.
 
 ## Layout
 
 ```
 <repo root>/
-  package.json            scripts + the two runtime deps (react, react-dom)
-  package-lock.json       committed, machine-written — regenerate, never hand-edit
-  tsconfig.json           strict mode on
-  vite.config.ts          Vite + Vitest config
-  eslint.config.js        project-wide lint rules
-  index.html              Vite entry
-  public/                 static assets served verbatim; the only tree copied into dist/
-    favicon.svg
+  CLAUDE.md               project-wide conventions, shared by both codebases
+  README.md
   .gitignore              node_modules, dist, local env files, build caches
   .gitattributes          text=auto eol=lf — Windows working tree, Ubuntu CI
-  .nvmrc                  the single source of the Node version
-  .github/workflows/      ci.yml — install, lint, typecheck, test, build
-  src/                    271 source files across eight modules, 139 test files
-    app/                  React screens and the app shell
-    warCouncil/           the card-layer engine
-    hunt/                 the Hunt configuration module and domain types
-    persistence/          cross-run save storage — the only tree that touches localStorage
-    vault/                cross-run meta-progression
-    sim/                  the headless run simulator, lint-enforced pure
-    styles/               plain CSS
-    __tests__/            Vitest specs
-    App.tsx  main.tsx     root component and Vite mount point
-  node_modules/  dist/  coverage/     GENERATED — never an edit target
+  .claude/                the /fb-* contract pipeline: agents, commands, skills, rules, workflow
+  .docs/                  design, implementation, and game-rules documentation
+  .github/workflows/      ci.yml — runs its npm steps from prototype/
+  prototype/              the Vite + React 19 + TypeScript prototype
+    package.json            scripts + the two runtime deps (react, react-dom)
+    package-lock.json       committed, machine-written — regenerate, never hand-edit
+    tsconfig.json           strict mode on
+    vite.config.ts          Vite + Vitest config
+    eslint.config.js        project-wide lint rules
+    index.html              Vite entry
+    public/                 static assets served verbatim; the only tree copied into dist/
+      favicon.svg
+    .nvmrc                  the single source of the Node version
+    src/                    271 source files across eight modules, 139 test files
+      app/                  React screens and the app shell
+      warCouncil/           the card-layer engine
+      hunt/                 the Hunt configuration module and domain types
+      persistence/          cross-run save storage — the only tree that touches localStorage
+      vault/                cross-run meta-progression
+      sim/                  the headless run simulator, lint-enforced pure
+      styles/               plain CSS
+      __tests__/            Vitest specs
+      App.tsx  main.tsx     root component and Vite mount point
+    node_modules/  dist/  coverage/     GENERATED — never an edit target
+  unity/                  the Unity project — see .claude/workflow/unity-project.md
 ```
 
 - `node_modules/`, `dist/`, `coverage/`, and any `*.tsbuildinfo` are generated. Never plan an edit to them and never treat one as evidence of source state. Vite's cache is `node_modules/.vite`, not a repo-root `.vite/` — the `node_modules` ignore already covers it.
@@ -42,11 +50,11 @@ Change a path or a command **here only**. A runner stated in five files gets upd
 
 ## Architectural boundaries
 
-This project enforces a pure-core boundary — no React import, no DOM access — on `src/warCouncil/**` and `src/hunt/**` via an ESLint override in `eslint.config.js` combining `no-restricted-imports` and `no-restricted-globals`. Extend that block's `files` array, don't paste a second copy, when a future pure-logic tree earns the same protection.
+This project enforces a pure-core boundary — no React import, no DOM access — on `prototype/src/warCouncil/**` and `prototype/src/hunt/**` via an ESLint override in `prototype/eslint.config.js` combining `no-restricted-imports` and `no-restricted-globals`. Extend that block's `files` array, don't paste a second copy, when a future pure-logic tree earns the same protection.
 
 `.claude/skills/react-frontend/SKILL.md` carries the paste-back version of that override, ready to adapt to whatever module name the next prototype chooses. Do not plan a verification grep against a directory that does not exist — add one only once a boundary is actually established, and name it after whatever the plan calls that tree.
 
-`src/persistence/**` is deliberately **not** added to the pure-core override above — it imports no React either, but the shape of its boundary is different: rather than banning the DOM entirely, it confines one specific global (`localStorage` / `sessionStorage`) to one specific file. That is a second, separate `no-restricted-globals` block in `eslint.config.js`, scoped to `src/**/*.{ts,tsx}` with `ignores: ['src/persistence/browserStorage.ts', 'src/warCouncil/**', 'src/hunt/**']`. `browserStorage.ts` is exempt because it must legitimately touch `localStorage`, the one thing the rule bans everywhere else. The other two entries are there for a different and non-obvious reason: **ESLint flat config replaces, never merges, same-key rule options when two config objects match the same file.** Because this block is listed after the pure-core block and `src/**` also matches those two trees, without these ignores its narrow storage-only option list would silently overwrite the pure-core override's full DOM ban — `window`, `document`, `fetch` and the rest would stop being restricted there, with `npm run lint` still exiting 0. That regression was shipped and caught on DLR-106. Do not remove those two ignores; the pure-core block already bans storage in those trees, so nothing is lost by them. `npm run lint` enforces this across the whole `src/` tree, not just within `persistence/**`, because the failure this guards against — some future screen calling `localStorage` directly instead of going through `createSaveStore` — can happen anywhere. `.claude/rules/save-data-versioning.md` remains the document that explains why this module's shape is what it is; the boundary itself is lint-enforced, not grep-enforced.
+`prototype/src/persistence/**` is deliberately **not** added to the pure-core override above — it imports no React either, but the shape of its boundary is different: rather than banning the DOM entirely, it confines one specific global (`localStorage` / `sessionStorage`) to one specific file. That is a second, separate `no-restricted-globals` block in `prototype/eslint.config.js`, scoped to `src/**/*.{ts,tsx}` with `ignores: ['src/persistence/browserStorage.ts', 'src/warCouncil/**', 'src/hunt/**']`. `browserStorage.ts` is exempt because it must legitimately touch `localStorage`, the one thing the rule bans everywhere else. The other two entries are there for a different and non-obvious reason: **ESLint flat config replaces, never merges, same-key rule options when two config objects match the same file.** Because this block is listed after the pure-core block and `src/**` also matches those two trees, without these ignores its narrow storage-only option list would silently overwrite the pure-core override's full DOM ban — `window`, `document`, `fetch` and the rest would stop being restricted there, with `npm run lint` still exiting 0. That regression was shipped and caught on DLR-106. Do not remove those two ignores; the pure-core block already bans storage in those trees, so nothing is lost by them. `npm run lint` enforces this across the whole `prototype/src/` tree, not just within `persistence/**`, because the failure this guards against — some future screen calling `localStorage` directly instead of going through `createSaveStore` — can happen anywhere. `.claude/rules/save-data-versioning.md` remains the document that explains why this module's shape is what it is; the boundary itself is lint-enforced, not grep-enforced.
 
 ## Verification commands
 
@@ -54,9 +62,11 @@ Commands run in **PowerShell on Windows**. Chain with `;`, never `&&`. Use backs
 
 Node and npm are on `PATH`. There is no machine-specific executable to configure — nothing here needs an `$env:` variable.
 
+**Every npm command below runs from `prototype/`, not the repository root.** Chaining with `;` reports the last command's exit code, so a step that must not mask a failure uses `Push-Location prototype; <command>; Write-Host "exit=$LASTEXITCODE"; Pop-Location`. This is stated here and nowhere else — do not prefix individual command lines with a `cd`.
+
 | To verify | Command |
 |---|---|
-| Dependencies are installed | `Get-ChildItem node_modules -ErrorAction SilentlyContinue \| Select-Object -First 1` |
+| Dependencies are installed | `Get-ChildItem prototype\node_modules -ErrorAction SilentlyContinue \| Select-Object -First 1` |
 | Install from the lockfile | `npm ci` |
 | Install after a `package.json` dependency change | `npm install` |
 | **Types are sound (the fast gate)** | `npm run typecheck` |
@@ -95,7 +105,7 @@ The five commands in the last row are exactly what `.github/workflows/ci.yml` ru
   - **QA may start it detached** — `Start-Process … -PassThru` per the table above, on `--port 5199 --strictPort` so the port is deterministic and a collision fails loudly instead of silently shifting — and drive the running app through the `chrome-devtools` MCP to verify that a change functionally works. `--strictPort` matters: without it Vite quietly picks 5174 and the browser navigates to whatever was already on 5199. QA prefers a server the developer already has up (check the table's listening probe first) and kills only a PID it started, with `/T` so npm's child `node` goes with it. Details in `.claude/agents/qa.md` → *Step 4.5*.
   - **Judgement is still the developer's.** Automation can confirm a component renders, a state update commits, and the console is clean; it cannot answer whether an interaction *feels* right. See Developer-owned work.
 - **Pass/fail is the exit code plus stdout.** There is no results file to parse. `0` means everything passed; Vitest prints a `Tests  N passed` summary line. Quote it.
-- **`Select-String -Path` does NOT recurse, and `**` in its glob matches exactly ONE directory level.** `Select-String -Path 'src\**\*.ts'` reaches `src\warCouncil\*.ts` and `src\hunt\*.ts` but never `src\warCouncil\__tests__\*.ts` — measured on this repo, that glob found 4 lines containing `declareHunt` where the recursive form found 27. The failure mode is silent and inverted: a "prove this name is gone" check reports **zero hits** for a name that is still present two levels down, which is a false green in exactly the phase that exists to catch it. Any verification grep spanning more than one directory must use `Get-ChildItem <dir> -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "…"`. Reserve the `-Path` form for a single named directory or an explicit file list.
+- **`Select-String -Path` does NOT recurse, and `**` in its glob matches exactly ONE directory level.** `Select-String -Path 'prototype\src\**\*.ts'` reaches `prototype\src\warCouncil\*.ts` and `prototype\src\hunt\*.ts` but never `prototype\src\warCouncil\__tests__\*.ts` — measured on this repo, that glob found 4 lines containing `declareHunt` where the recursive form found 27. The failure mode is silent and inverted: a "prove this name is gone" check reports **zero hits** for a name that is still present two levels down, which is a false green in exactly the phase that exists to catch it. Any verification grep spanning more than one directory must use `Get-ChildItem <dir> -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "…"`. Reserve the `-Path` form for a single named directory or an explicit file list.
 - **`Select-String` reports one match per physical line, and a bundled asset is one line.** Grepping `dist/assets/*.js` for `"A|B"` surfaces whichever alternative appears first and looks like proof that only A is present. Any check that must prove *two* strings shipped needs `-AllMatches`, two separate greps, or a raw `-match` against `Get-Content -Raw`.
 - **A cold-cache `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond` — that is not a failing test.** It is a worker-*start* timeout on the `dom` project: jsdom environment setup has been measured at ~66s against a cold Vite transform cache, which starves the pool while the `node` project is also running. The `node` project passes in the same run and the affected `.test.tsx` files never execute at all, so the summary reports fewer files than exist. Warm the cache by running the projects separately first (`npx vitest run --project node; npx vitest run --project dom`), then run `npm test` — a warm full run has been measured at 1.70s. Treat a **second consecutive** timeout as a real problem; a single cold one is infrastructure, not a defect, and must never be reported as a test failure.
 - **`npm run format:check` currently fails on pre-existing files** across `.docs/**` that no current contract has touched (this note previously also named the battle-loop and hex-board module trees; both were deleted on DLR-47). Run it and report the result, but gate a contract on `npx prettier --check` scoped to the files that contract actually changed. Do not "fix" the repo-wide failure as a side effect of unrelated work.

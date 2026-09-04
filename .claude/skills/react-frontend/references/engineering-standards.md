@@ -93,7 +93,7 @@ Adding a fourth `QuarryIntentStance` value without adding its case here now fail
 
 ## A known gap, not yet closed: `noUncheckedIndexedAccess`
 
-This project's `tsconfig.app.json` enables `strict: true`, but `noUncheckedIndexedAccess` is not among the flags `strict` bundles — it has to be turned on separately. With it off, `someArray[i]` and `someRecord[key]` type as `T`, not `T | undefined`, so an out-of-range index or a mistyped `Record` key type-checks cleanly and fails at runtime instead of at the type checker. This codebase leans on exactly the patterns that flag protects — `state.hands[side]`, table scans in `src/hunt/config.ts`, `Record<PlayerSide, ...>` lookups throughout `src/warCouncil/`.
+This project's `tsconfig.app.json` enables `strict: true`, but `noUncheckedIndexedAccess` is not among the flags `strict` bundles — it has to be turned on separately. With it off, `someArray[i]` and `someRecord[key]` type as `T`, not `T | undefined`, so an out-of-range index or a mistyped `Record` key type-checks cleanly and fails at runtime instead of at the type checker. This codebase leans on exactly the patterns that flag protects — `state.hands[side]`, table scans in `prototype/src/hunt/config.ts`, `Record<PlayerSide, ...>` lookups throughout `prototype/src/warCouncil/`.
 
 Recorded here as a stated gap rather than turned on inline: enabling it repo-wide is very likely to surface a batch of new type errors across existing files, which is its own scoped piece of work, not something to fold silently into an unrelated task. Reach for it as a deliberate follow-up, not a drive-by fix.
 

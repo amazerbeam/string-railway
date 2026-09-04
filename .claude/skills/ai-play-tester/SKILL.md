@@ -34,7 +34,7 @@ Check for it early with `javascript_tool` (`window.__DEBUG_STATE__ !== undefined
 
 ### 2. Launch the app
 
-Invoke the `run` skill to start the dev server the project's own way, rather than reaching for `npm run dev` directly — it knows the project's launch pattern and won't leave a server running in the foreground. Wait for it to report ready before navigating.
+Invoke the `run` skill to start the dev server the project's own way, rather than reaching for `npm run dev` directly — it knows the project's launch pattern and won't leave a server running in the foreground. Wait for it to report ready before navigating. The dev server (and every other npm command this skill might need) runs from `prototype/`, not the repository root — `.claude/workflow/web-project.md` states the exact form once.
 
 ### 3. Open a tab and get oriented
 
@@ -56,7 +56,7 @@ Beyond those three: never trigger a JS `alert`/`confirm`/`prompt` — check `rea
 
 #### Driving with actual judgement, not first-legal-card
 
-`round-driver.md`'s default step always plays `legalCards[0]` — it proves the screens hold together, but it is not trying to win and produces nothing worth reporting about the game itself. Whenever the developer wants a playthrough that reflects real decisions rather than the mechanical default — "learn to play", "play well", any question whose answer depends on cards actually being chosen well — swap in the lookahead engine from `references/strategy-engine.md` instead. It exploits something worth knowing up front: the Quarry's card choice (`src/warCouncil/cpuPlayer.ts` → `chooseCpuCard`) is **fully deterministic, no randomness at all** — so with the debug mirror's full state (it exposes the Quarry's hand and the skull assignments, same as everything else this skill already reads), you can compute exactly what the Quarry will play in response to each candidate card before committing one, and pick the best available outcome rather than the first legal one. That reference also covers the extra screens (`verdict`/`map`/`shop`, the low-health "Continue anyway" confirmation) a multi-fight run passes through that the base driver skeleton doesn't handle.
+`round-driver.md`'s default step always plays `legalCards[0]` — it proves the screens hold together, but it is not trying to win and produces nothing worth reporting about the game itself. Whenever the developer wants a playthrough that reflects real decisions rather than the mechanical default — "learn to play", "play well", any question whose answer depends on cards actually being chosen well — swap in the lookahead engine from `references/strategy-engine.md` instead. It exploits something worth knowing up front: the Quarry's card choice (`prototype/src/warCouncil/cpuPlayer.ts` → `chooseCpuCard`) is **fully deterministic, no randomness at all** — so with the debug mirror's full state (it exposes the Quarry's hand and the skull assignments, same as everything else this skill already reads), you can compute exactly what the Quarry will play in response to each candidate card before committing one, and pick the best available outcome rather than the first legal one. That reference also covers the extra screens (`verdict`/`map`/`shop`, the low-health "Continue anyway" confirmation) a multi-fight run passes through that the base driver skeleton doesn't handle.
 
 ### 5. Recognize the stopping point
 

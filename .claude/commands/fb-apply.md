@@ -17,7 +17,7 @@ Read `.claude/workflow/plan-resolution.md` and follow **Resolving the target pla
 With the board updated, read:
 - `<plan>/plan.md` — Part 1 is scope and acceptance criteria, Part 2 is the technical approach and data shapes
 - `<plan>/tasks.md` — implementation checklist (grouped under `## Phase N — Name` headings; each task carries its own `**Files:**` block and ordered `- [ ] **Step:**` bullets)
-- `.claude/workflow/web-project.md` — the canonical paths, the architectural boundaries named in the plan (if any), runner commands, developer-owned decisions, and the correctness traps. You need it to judge a pause condition correctly and to paste the right paths into agent prompts.
+- `.claude/workflow/web-project.md` — the canonical paths, the architectural boundaries named in the plan (if any), runner commands, developer-owned decisions, and the correctness traps. You need it to judge a pause condition correctly and to paste the right paths into agent prompts. Every npm command runs from `prototype/`, not the repository root — it states the exact form once; never prefix an individual command with `cd`.
 
 If either contract file is missing, **stop** and tell the user to run `/fb-plan <task>` first. The ticket already sitting in `Coding` is correct — the contract is what is missing, not the intent to work on it.
 
@@ -27,8 +27,8 @@ Update the `Status:` line in `<plan>/tasks.md` to `IN PROGRESS`.
 
 Check these once, here, not at phase 4:
 
-1. **Is the app scaffolded?** `package.json` exists, and every `npm run <script>` the contract's `Run:` steps name is present in it. If a script is missing and no task in this contract creates it, stop and say which — a `Missing script` failure mid-run reads like a defect and is not one. A contract whose *first phase* scaffolds the project legitimately has none of this yet; say so and proceed.
-2. **Are dependencies installed?** If `node_modules` is absent and the contract does not install them, run `npm ci` yourself before the first dispatch (or `npm install` if there is no lockfile yet) and say that you did. `'vite' is not recognized` / `Cannot find module` at phase 3 is this check, skipped.
+1. **Is the app scaffolded?** `prototype\package.json` exists, and every `npm run <script>` the contract's `Run:` steps name is present in it. If a script is missing and no task in this contract creates it, stop and say which — a `Missing script` failure mid-run reads like a defect and is not one. A contract whose *first phase* scaffolds the project legitimately has none of this yet; say so and proceed.
+2. **Are dependencies installed?** If `prototype\node_modules` is absent and the contract does not install them, run `npm ci` (from `prototype/`) yourself before the first dispatch (or `npm install` if there is no lockfile yet) and say that you did. `'vite' is not recognized` / `Cannot find module` at phase 3 is this check, skipped.
 3. **Are there unchosen tuning values?** Read `plan.md` Part 2 → Risks and judgement calls and the `tasks.md` File map → "Developer decides or observes". If a task needs a configuration value nobody has chosen, ask the developer now rather than letting the Implementer invent one. This is the cheapest possible moment.
 
 There is **no lock to clear and no editor to close** — nothing in this stack holds the project exclusively, and the developer having the app open in a browser breaks nothing.
@@ -55,13 +55,13 @@ Each prompt below is the agent's **assignment** only. Read an agent file yoursel
 
 [Framing paragraph explaining what this phase covers and why it is a safe boundary.]
 
-### Task 5: Add debounce to src/utils/debounce.ts
+### Task 5: Add debounce to prototype/src/utils/debounce.ts
 
 - Skill: react-frontend
 
 **Files:**
-- Modify: `src/utils/debounce.ts`
-- Test: `src/utils/__tests__/debounce.test.ts`
+- Modify: `prototype/src/utils/debounce.ts`
+- Test: `prototype/src/utils/__tests__/debounce.test.ts`
 
 - [ ] **Step 1: Write the failing test for a call made after the wait window**
 
@@ -69,7 +69,7 @@ Each prompt below is the agent's **assignment** only. Read an agent file yoursel
 
 - [ ] **Step 2: Run the spec, confirm it fails**
 
-Run: `npx vitest run src/utils/__tests__/debounce.test.ts`
+Run: `npx vitest run src/utils/__tests__/debounce.test.ts` (from `prototype/` — see `web-project.md`)
 Expected: FAIL — the call is not yet delayed
 
 - [ ] **Step 3: Implement debounce with the named wait**
@@ -78,7 +78,7 @@ Expected: FAIL — the call is not yet delayed
 
 - [ ] **Step 4: Re-run the spec**
 
-Run: `npx vitest run src/utils/__tests__/debounce.test.ts`
+Run: `npx vitest run src/utils/__tests__/debounce.test.ts` (from `prototype/` — see `web-project.md`)
 Expected: PASS
 ```
 
@@ -191,10 +191,10 @@ For **each phase** that has unchecked tasks in `tasks.md`, spawn an **Agent** (`
 ### Project Paths
 - Repo root: `E:\Game Dev\StringsAndStations`
 - Pure logic (if the plan establishes a boundary): named in the plan (no React, no DOM — a lint rule enforces it once added)
-- Components: `src\`, plus `App.tsx`
+- Components: `prototype\src\`, plus `App.tsx`
 - Tests: co-located `__tests__/` folders, per the plan
 - Tunables: the configuration file the plan names (read them; never choose their values)
-- Never edit: `node_modules\`, `dist\`, `coverage\`, `.vite\`, `*.tsbuildinfo` (generated), or `package-lock.json` by hand (change `package.json` and run `npm install`)
+- Never edit: `prototype\node_modules\`, `prototype\dist\`, `coverage\`, `.vite\`, `*.tsbuildinfo` (generated), or `prototype\package-lock.json` by hand (change `prototype\package.json` and run `npm install` from `prototype/`)
 
 ### Important Constraints
 - **Walk every `- [ ] **Step:**` bullet of every task in the listed order.** The planner picked the step shape per task; your job is to execute exactly what's there. Do NOT collapse, reorder, or skip steps. For tasks whose `**Files:**` block lists a `Test:` path, the test file is required output of this phase — write the test, run it, and confirm the expected outcome before moving on. Tests are part of the contract, not a future PR.
@@ -220,10 +220,10 @@ Once every phase is implemented, spawn the reviewers **in a single message with 
 
 | Diff contains | Dispatch |
 |---|---|
-| Any change to production logic under `src/` — a component, a reducer, a hook, engine code, a type that shapes behaviour | **All three.** The full trio, as ever. |
+| Any change to production logic under `prototype/src/` — a component, a reducer, a hook, engine code, a type that shapes behaviour | **All three.** The full trio, as ever. |
 | Test files only | **Code-Evaluator alone.** |
-| Docs only, no `src/` path in the file map | **None.** The standing docs-only precedent; run the four gates and proceed. |
-| Config or tooling only (`eslint.config.js`, `tsconfig`, `vite.config`, CI) | **Defender alone** — the risk here is a silently disabled boundary, not code quality. |
+| Docs only, no `prototype/src/` path in the file map | **None.** The standing docs-only precedent; run the four gates and proceed. |
+| Config or tooling only (`prototype/eslint.config.js`, `prototype/tsconfig*`, `prototype/vite.config.ts`, CI) | **Defender alone** — the risk here is a silently disabled boundary, not code quality. |
 | A pure rename with no behaviour change, verified by an unchanged test count | **Code-Evaluator alone.** |
 
 Two rules that keep this honest:
@@ -297,13 +297,13 @@ Apply your full defensive checklist — including §11 Shared-Surface Contract /
 ### Project Paths
 - Repo root: `E:\Game Dev\StringsAndStations`
 - Pure logic (if the plan establishes a boundary): named in the plan
-- Components: `src\`, plus `App.tsx`
+- Components: `prototype\src\`, plus `App.tsx`
 - Tests: co-located `__tests__/` folders, per the plan
 - Tunables: the configuration file the plan names
 
 ### Environment
-- `package.json` present, with the scripts this contract uses: [YES / NO — name any missing]
-- `node_modules` installed: [YES / NO]
+- `prototype/package.json` present, with the scripts this contract uses: [YES / NO — name any missing]
+- `prototype/node_modules` installed: [YES / NO]
 
 ### Runtime surface (for Step 4.5 — live browser verification)
 [State whether this contract changed anything observable in the running app: a component, the reducer, a hook, a configuration file or its loader, meaningful styling, or pure logic that feeds what renders. If it did, say what the developer should be able to *see* working, and name the seed the contract specifies if there is one. If it changed nothing observable — a test-only task, a script or CI edit, a type-only refactor — say so, so QA can record the skip in one line rather than starting a server for nothing.]
@@ -367,7 +367,7 @@ Fix ALL issues listed below in a single pass.
 ### Project Paths
 - Repo root: `E:\Game Dev\StringsAndStations`
 - Pure logic (if the plan establishes a boundary): named in the plan
-- Components: `src\`, plus `App.tsx`
+- Components: `prototype\src\`, plus `App.tsx`
 - Tests: co-located `__tests__/` folders, per the plan
 - Tunables: the configuration file the plan names
 
@@ -396,7 +396,7 @@ Collect the result. Extract the updated list of changed files (union with the pr
 
 ## Step 6.5: Update implementation docs and the ruleset
 
-**ALWAYS invoke the `implementation-doc-writer` skill (via the Skill tool) here — every run, no exception.** This is not a judgement call the orchestrator makes from the changed-files log. Even a contract that looks test-only, tooling-only, or docs-only still gets the invocation — the skill itself decides whether there is anything to update and says so if not; the orchestrator does not pre-judge that by skipping the call. Skipping this step because "there's nothing to document" is a defect in this command's execution, not a shortcut — the skill's own Step 1 checks for stale cross-references in *other* modules' docs too (a contract can go undocumented-relevant even when it never touches `src/`, e.g. a contract that deletes a doc-cited file elsewhere).
+**ALWAYS invoke the `implementation-doc-writer` skill (via the Skill tool) here — every run, no exception.** This is not a judgement call the orchestrator makes from the changed-files log. Even a contract that looks test-only, tooling-only, or docs-only still gets the invocation — the skill itself decides whether there is anything to update and says so if not; the orchestrator does not pre-judge that by skipping the call. Skipping this step because "there's nothing to document" is a defect in this command's execution, not a shortcut — the skill's own Step 1 checks for stale cross-references in *other* modules' docs too (a contract can go undocumented-relevant even when it never touches `prototype/src/`, e.g. a contract that deletes a doc-cited file elsewhere).
 
 Invoke it once review has concluded — after Step 6, before finalizing `tasks.md` and the Jira transition in Step 7. It creates or updates `.docs/implementation/` for every module the contract touched, so a later question like "how are the cards shuffled" or "what's been implemented so far" has a standing answer that doesn't require re-reading old contracts.
 

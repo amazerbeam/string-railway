@@ -40,9 +40,9 @@ Run this **after** Step 0's refusal gate, not before it. Step 0 only refuses whe
 
 ## Step 1: Defer to the workflow reference, the skills, and the shared rules
 
-- **Read `.claude/workflow/web-project.md` first, every time.** It is the canonical statement of where code lives, the architectural boundaries named in past plans (if any), which commands verify what, what only the developer can decide, and the correctness traps (config-key renames, hard-coded tunables, effect cleanup, epsilon choices, high-frequency interaction hot paths). Every `Run:` step you write and every path you name must come from it. If a path or script name there turns out to be wrong, fix *that* file rather than working around it in the plan.
-- **`package.json` is the authority on script names.** Read it before writing a `Run:` step that invokes one. If the app is not scaffolded yet, say so in the plan rather than planning a command that cannot resolve.
-- **Never pattern-match against generated output.** `node_modules/`, `dist/`, `coverage/`, `.vite/`, and `*.tsbuildinfo` are regenerated from the real source. They are not evidence of anything and must never be planned as edit targets. `package-lock.json` is different: it is committed and it matters, but it is machine-written — plan a `package.json` change plus `npm install`, never a hand-edit of the lockfile.
+- **Read `.claude/workflow/web-project.md` first, every time.** It is the canonical statement of where code lives, the architectural boundaries named in past plans (if any), which commands verify what, what only the developer can decide, and the correctness traps (config-key renames, hard-coded tunables, effect cleanup, epsilon choices, high-frequency interaction hot paths). Every `Run:` step you write and every path you name must come from it. If a path or script name there turns out to be wrong, fix *that* file rather than working around it in the plan. Every npm command runs from `prototype/`, not the repository root — `web-project.md` states the exact form once; a planned `Run:` step never prefixes an individual command with `cd`.
+- **`prototype/package.json` is the authority on script names.** Read it before writing a `Run:` step that invokes one. If the app is not scaffolded yet, say so in the plan rather than planning a command that cannot resolve.
+- **Never pattern-match against generated output.** `prototype/node_modules/`, `prototype/dist/`, `coverage/`, `.vite/`, and `*.tsbuildinfo` are regenerated from the real source. They are not evidence of anything and must never be planned as edit targets. `prototype/package-lock.json` is different: it is committed and it matters, but it is machine-written — plan a `prototype/package.json` change plus `npm install`, never a hand-edit of the lockfile.
 - **Read the shared rules that apply.** Scan `.claude/rules/README.md` and Read every rule file whose topic the plan touches. Their **reject conditions** are planning constraints: a plan that would trip one is a broken plan. That folder may be empty — an empty scan is a valid outcome, not a reason to stop.
 - **Quality standards live in the skills** — chiefly `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md` — and in `CLAUDE.md` at the repo root. Do not restate their contents in the plan; name the skill and let the executor load it.
 - **Cite the specification the brief names, where one exists.** Do not re-derive a rule or behaviour that is already defined in a linked document, ticket, or section the brief points at — cite it instead. Where that source was silent and a decision was made anyway, flag it plainly as an assumption in the plan (Part 1 → Assumptions made) rather than treating it as settled fact.
@@ -57,7 +57,7 @@ The planner is only as good as the conventions it has loaded. Without the right 
 
 **Do not classify against a remembered roster.** Glob `.claude/skills/*/SKILL.md` and read the `description:` line of each hit. That listing is the real menu.
 
-`react-frontend` covers everything under `src/`, so on this project it is the **normal** value for a code task, not an exception. `Skill: none` is legitimate only for genuinely non-code work — a spec document, a Jira-only task, a decision hand-off to the developer. If your classification produces `none` for a task that writes TypeScript, that is a classification error, not a finding about the project.
+`react-frontend` covers everything under `prototype/src/`, so on this project it is the **normal** value for a code task, not an exception. `Skill: none` is legitimate only for genuinely non-code work — a spec document, a Jira-only task, a decision hand-off to the developer. If your classification produces `none` for a task that writes TypeScript, that is a classification error, not a finding about the project.
 
 - If a skill covers the area the brief touches, propose it.
 - If none does, say so plainly in `plan.md` Part 2 under "Skills to invoke during execution" — write `none — <one-line reason>` rather than naming a skill that does not exist. A plan that tells the executor to invoke a missing skill wastes a turn and erodes trust in the whole list.
@@ -76,7 +76,7 @@ Pick every category that applies; a task can be in more than one.
 
 **Hooks** — logic extracted from a component body into a reusable `use*` function; its own category when a task's whole purpose is the extraction rather than the component around it.
 
-**Config and tunables** — a configuration file, `src/constants/` (if the project has one), `package.json`, `tsconfig.json`, `vite.config.ts`, `eslint.config.js`. Adding a *key* is a code task; choosing its *value* is a developer decision.
+**Config and tunables** — a configuration file, `prototype/src/constants/` (if the project has one), `prototype/package.json`, `prototype/tsconfig.json`, `prototype/vite.config.ts`, `prototype/eslint.config.js`. Adding a *key* is a code task; choosing its *value* is a developer decision.
 
 **Toolchain and scaffolding** — creating the project, wiring a script, adding a lint rule. Ordinary agent work.
 
@@ -105,18 +105,18 @@ Run this step whenever the task touches a configuration key, a persisted or stor
 
 Use `Grep`, `Glob`, and `Read` against the real files. Confirm:
 
-1. **Every configuration key being renamed, retyped, or removed is found by name** across `src/**`, the configuration file, and any user-facing copy. Quote the actual hit count. Every hit is a site the plan must change in the same task; a key with zero hits is new or dead, and knowing which is the point of the audit.
+1. **Every configuration key being renamed, retyped, or removed is found by name** across `prototype/src/**`, the configuration file, and any user-facing copy. Quote the actual hit count. Every hit is a site the plan must change in the same task; a key with zero hits is new or dead, and knowing which is the point of the audit.
 2. **Every persisted shape affected is enumerated.** Wherever state is persisted (a save file, a stored log, `localStorage`), undo or replay may derive from it, so a changed kind or field invalidates stored records. State whether anything is persisted yet: if nothing is, say so explicitly — that is a cheap window, and recording that it was open here is what lets a later change know it has closed.
 3. **Type changes are checked for loss.** `number` → `string` changes every read; array → object breaks index access; required → optional makes every consumer's assumption wrong; a widened union forces every `switch` to grow a case. State which case applies and what the plan does about it.
 4. **Every consumer of a changed exported constant or predicate is enumerated.** A predicate that feeds both validation *and* a derived calculation — "some callers may be affected" is not an audit; a count is.
-5. **Names align across the chain**: configuration key ↔ its TypeScript type ↔ any `src/constants/` entry ↔ the reader ↔ copy that quotes the number ↔ test fixtures. Several of these bind by string, so the compiler will not catch a mismatch. Any mismatch found is an in-scope defect.
+5. **Names align across the chain**: configuration key ↔ its TypeScript type ↔ any `prototype/src/constants/` entry ↔ the reader ↔ copy that quotes the number ↔ test fixtures. Several of these bind by string, so the compiler will not catch a mismatch. Any mismatch found is an in-scope defect.
 6. **Any architectural boundary the plan establishes is not crossed.** Run the boundary grep from `web-project.md`, if one applies, and confirm the design does not require a DOM global or a React import inside a tree meant to stay pure. A design that does is a design to change, not a lint rule to disable.
 7. **Every CONSTRUCTION SITE of a changed shape is counted — and counted by field, not by type name.** When a task adds a required field to a type, or widens one, every place that *builds* an object of that shape must change. **Grepping the type's name does not find them.** Most construction sites are object literals with no type annotation at all: test fixtures, inline `return { … }` expressions, default-state constants, factory helpers. They are invisible to a search for `RoundUiSeed` and they break only at `tsc`, one file at a time, long after the plan claimed there were two of them.
 
    Do this instead, and quote both numbers:
 
    - Grep for the **type name** — this finds annotations and imports.
-   - Grep for a **distinctive required field name** of the shape (or two, if one is generic) — this finds the literals. `Grep` with `output_mode: "count"` over `src/**` including `__tests__`.
+   - Grep for a **distinctive required field name** of the shape (or two, if one is generic) — this finds the literals. `Grep` with `output_mode: "count"` over `prototype/src/**` including `__tests__`.
 
    Report as `<type>: N annotated sites, M construction sites (K of them in specs)`. When the two counts differ, **the larger one is the real number** and every one of those sites belongs in a task's `**Files:**` block.
 
@@ -202,7 +202,7 @@ Execution status: see `tasks.md` in this folder.
 [A Mermaid diagram of whatever matters most: sequence for a pointer interaction, component diagram for structural change, state diagram for a multi-step flow, flowchart for a documented validation or reject order. For a genuine single-file edit with no flow, write one line — "Diagram skipped — single-file change, no flow." Never leave an empty fence.]
 
 ### Data shapes
-[The new or modified concrete shapes, as TypeScript: types and interfaces added, new action/state variants, function signatures with their parameter and return types, configuration keys with their types and units, `src/constants/` entries, component props, reducer action shapes, and any `package.json` script or dependency change. Not prose. If nothing changes shape, write "No type, config, or contract changes." Flag every name or type that changes against the Step 1.6 audit, and state which persisted or stored data it affects. For a new configuration key, give the key, its type, its unit, and its rationale — and mark the value itself as a developer decision if it has not been chosen.]
+[The new or modified concrete shapes, as TypeScript: types and interfaces added, new action/state variants, function signatures with their parameter and return types, configuration keys with their types and units, `prototype/src/constants/` entries, component props, reducer action shapes, and any `prototype/package.json` script or dependency change. Not prose. If nothing changes shape, write "No type, config, or contract changes." Flag every name or type that changes against the Step 1.6 audit, and state which persisted or stored data it affects. For a new configuration key, give the key, its type, its unit, and its rationale — and mark the value itself as a developer decision if it has not been chosen.]
 
 ### Runtime quality notes
 [Address each dimension below. "Trivial — no concerns" is acceptable per dimension, but only when honestly true.]
@@ -351,14 +351,14 @@ Started: [today's date]
 ## File map
 
 **Created:** *(or "(none — no new files)")*
-- `src/utils/debounce.ts` — [one-line purpose]
+- `prototype/src/utils/debounce.ts` — [one-line purpose]
 
 **Modified:**
-- `src/hooks/useSomething.ts` — [one-line summary of change]
-- `src/components/Panel.tsx:120-145` — [one-line summary]
+- `prototype/src/hooks/useSomething.ts` — [one-line summary of change]
+- `prototype/src/components/Panel.tsx:120-145` — [one-line summary]
 
 **Deleted:** *(or "(none)")*
-- `src/utils/obsolete.ts`
+- `prototype/src/utils/obsolete.ts`
 
 **Developer decides or observes:** *(or "(none)")*
 - config → `retryDelayMs` — [the value to choose, and what it trades off]
@@ -370,18 +370,18 @@ Started: [today's date]
 
 [1-3 sentence framing paragraph: what this phase covers and why the boundary is a safe stopping point — does it type-check? does it widen before it cuts? are the side effects read-only? The framing tells the executor when to stop and re-evaluate if a step misbehaves. Do not include commit instructions.]
 
-### Task 1: [Module / verb-shaped name — e.g. "Add debounce to src/utils/debounce.ts"]
+### Task 1: [Module / verb-shaped name — e.g. "Add debounce to prototype/src/utils/debounce.ts"]
 
 - Skill: [skill-name from `plan.md` Part 2 "Skills to invoke during execution", normally `react-frontend`, or `none — <one-line reason>` for non-code work]
 
 **Files:**
-- Create: `src/utils/debounce.ts`
-- Modify: `src/hooks/useSomething.ts:40-72`
-- Delete: `src/utils/obsolete.ts`
-- Test: `src/utils/__tests__/debounce.test.ts`
-- Config: config file — add `retryDelayMs` (value is a developer decision) / `package.json` — add the `typecheck` script
+- Create: `prototype/src/utils/debounce.ts`
+- Modify: `prototype/src/hooks/useSomething.ts:40-72`
+- Delete: `prototype/src/utils/obsolete.ts`
+- Test: `prototype/src/utils/__tests__/debounce.test.ts`
+- Config: config file — add `retryDelayMs` (value is a developer decision) / `prototype/package.json` — add the `typecheck` script
 
-(Omit any sub-bullet that genuinely doesn't apply. Use `path:line-range` on `Modify:` whenever the change is localised. Include the `Config:` sub-bullet whenever the task needs a configuration-file, `package.json`, `tsconfig.json`, `vite.config.ts`, or ESLint change — without it the executor has no mandate to touch those files.)
+(Omit any sub-bullet that genuinely doesn't apply. Use `path:line-range` on `Modify:` whenever the change is localised. Include the `Config:` sub-bullet whenever the task needs a configuration-file, `prototype/package.json`, `prototype/tsconfig.json`, `prototype/vite.config.ts`, or ESLint change — without it the executor has no mandate to touch those files.)
 
 - [ ] **Step 1: [Imperative verb describing the action — e.g. "Write the failing test for a call made after the wait window"]**
 
@@ -494,7 +494,7 @@ Hard constraints worth restating because they change plan shape:
 - **`npm run typecheck` is the fast gate**, not `npm run build`. Reserve the build for Final verification.
 - **`npm run lint` is a real, required gate** — plan it in the Final verification phase and, for any phase that touches a tree with an established purity boundary, alongside the boundary grep. Never plan an `eslint-disable` as a solution.
 - **Dependencies must be installed for any npm step to work.** If the contract is the one that scaffolds the project, make its first task the scaffold and its second `npm install`; otherwise assume `node_modules` exists and let `/fb-apply` preflight it.
-- **Read `package.json` before naming a script.** A `Run: npm run <script>` for a script that does not exist fails as `Missing script`, which reads like a defect and is not one.
+- **Read `prototype/package.json` before naming a script.** A `Run: npm run <script>` for a script that does not exist fails as `Missing script`, which reads like a defect and is not one.
 - **Pass/fail is the exit code and the summary line**, not a results file. Write `Expected:` in those terms.
 - **Default every test for pure logic to sit beside that logic, in its own `__tests__/` folder.** Planning a component test for logic that could be pure is a design smell — push the logic into a pure module instead, and say so in the plan.
 - Unfiltered suite runs and the production build belong **only** to the Final verification phase; `/fb-apply` delegates them to QA.
@@ -505,7 +505,7 @@ Hard constraints worth restating because they change plan shape:
 2. Where stored data exists, a following task handles migration or explicit rejection of the old shape — never a silent deserialisation into a half-valid object.
 3. A task that adds a configuration key whose **value** has not been chosen names the key, gives it a documented placeholder, and lists the value under "Developer decides or observes". The executor must not invent a tuning number.
 
-**Never plan a step that hand-edits `package-lock.json`.** Change `package.json` and run `npm install` so the lockfile is regenerated consistently.
+**Never plan a step that hand-edits `prototype/package-lock.json`.** Change `prototype/package.json` and run `npm install` so the lockfile is regenerated consistently.
 
 **Other rules:**
 
@@ -558,7 +558,7 @@ Look at `tasks.md` with fresh eyes against the already-approved `plan.md`. Run t
 
 1. **Brief coverage:** Skim each requirement and acceptance criterion in the brief, plus every "In scope" bullet in `plan.md` Part 1. Can you point to a task that implements it? List gaps and add tasks.
 2. **Phase shape:** Grouped under `## Phase N — Name` headings. Every phase has a framing paragraph and at least one `### Task N:` block. Every code-touching task has a heading, a `- Skill:` line, a `**Files:**` block, and at least one `- [ ] **Step:**` bullet that is either a concrete code change or a runnable command with `Run:` / `Expected:`. The closing phase is `## Phase N — Final verification`.
-3. **Runner sanity:** Every `Run:` command appears in `.claude/workflow/web-project.md` (or is `Get-ChildItem` / `Select-String` / a line count). Every `npm run <script>` names a script that exists in `package.json` — or is created by an earlier task in this contract. No bare `vitest`, no `npm run dev`, no invented flag. Unfiltered suite runs and the build appear only in Final verification.
+3. **Runner sanity:** Every `Run:` command appears in `.claude/workflow/web-project.md` (or is `Get-ChildItem` / `Select-String` / a line count). Every `npm run <script>` names a script that exists in `prototype/package.json` — or is created by an earlier task in this contract. No bare `vitest`, no `npm run dev`, no invented flag. Unfiltered suite runs and the build appear only in Final verification.
 4. **Test placement:** Every `Test:` path for pure-logic work sits beside the logic it tests, needs no DOM, and tests behaviour rather than implementation. A component test exists only where the behaviour is genuinely presentational.
 5. **Config-change ordering (when a config key or persisted shape changes):** the shape, its type, every reader, the fixtures, and the copy change in ONE task; migration follows; unchosen values are routed to the developer, not invented.
 6. **Cross-file consistency:** Apply the bullets above. A function called `debounce()` in Task 3 but `createDebouncer()` in Task 7 is a bug — find and fix it. Every `- Skill:` resolves to a skill listed in `plan.md` Part 2 *and* existing on disk. Do **not** silently change anything in the approved `plan.md` — if a gap forces a design change, surface it back to the developer for re-approval.

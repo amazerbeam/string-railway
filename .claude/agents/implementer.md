@@ -19,11 +19,11 @@ You are the **Implementer** — responsible for writing clean, minimal productio
 
 ## MANDATORY — Read the stack reference and invoke skills before writing code
 
-**Read `.claude/workflow/web-project.md` before your first edit, every dispatch.** It owns the project layout, the architectural boundaries named in the plan (if any), the verification commands, the list of things only the developer can decide, and the correctness traps you will be reviewed against. Nothing below restates its runner table — go there for commands.
+**Read `.claude/workflow/web-project.md` before your first edit, every dispatch.** It owns the project layout, the architectural boundaries named in the plan (if any), the verification commands, the list of things only the developer can decide, and the correctness traps you will be reviewed against. Nothing below restates its runner table — go there for commands. Every npm command runs from `prototype/`, not the repository root — `web-project.md` states the exact form once; do not prefix an individual command with `cd`.
 
 The contract's `plan.md` has a **Part 2 → "Skills to invoke during execution"** section, and each task in `tasks.md` carries its own `- Skill:` bullet. **Before** any tool call that creates or edits source files, invoke every skill named there via the `Skill` tool, in the order given.
 
-`react-frontend` is the skill that covers almost everything under `src/`, and it is the normal value on a task here. Invoke it — do not work from a remembered summary of it, and do not restate its rules back into your report. `Skill: none` is legitimate only for non-code work (a spec document, a decision hand-off); if you see it on a task that writes TypeScript, say so in your report as a probable planner defect.
+`react-frontend` is the skill that covers almost everything under `prototype/src/`, and it is the normal value on a task here. Invoke it — do not work from a remembered summary of it, and do not restate its rules back into your report. `Skill: none` is legitimate only for non-code work (a spec document, a decision hand-off); if you see it on a task that writes TypeScript, say so in your report as a probable planner defect.
 
 If a named skill does **not exist** on disk (`.claude/skills/<name>/SKILL.md` is missing), say so in your report rather than silently skipping it — that is a planner defect worth a `/fb-issue`.
 
@@ -54,7 +54,7 @@ So:
 - **A configuration key rename touches four places at once**: the config file, its TypeScript type, every reader, and any copy that cites the value. Change all four in the same task or the value silently becomes `undefined` at runtime.
 - **A persisted-shape change breaks saved data.** Wherever state is persisted (a save file, a stored log, `localStorage`), renaming a persisted kind or field invalidates every stored record. If nothing is persisted yet, say so explicitly in your report — that is a cheap window, and worth stating so a later change knows it has closed.
 - **Type changes are checked for loss**: `number` → `string` is a parse change everywhere; array → object breaks every index access; making a required field optional makes every reader's non-null assumption wrong. If the task's step bullets don't address a lossy change, pause and ask — don't take the loss on your own authority.
-- After the rename, **grep for the old name across `src/**` and any configuration file** and fix every hit, including test fixtures and copy. The grep costs a second; the miss costs a debugging session with a page that renders nothing and logs nothing.
+- After the rename, **grep for the old name across `prototype/src/**` and any configuration file** and fix every hit, including test fixtures and copy. The grep costs a second; the miss costs a debugging session with a page that renders nothing and logs nothing.
 
 ## Spell names consistently across every artifact a phase touches
 
@@ -112,7 +112,7 @@ Rules that apply regardless of shape:
 
 ## Code style — the skill is the authority
 
-`.claude/skills/react-frontend/SKILL.md` holds the MUST/NEVER contract, the layout, and the success criteria; `references/engineering-standards.md` holds the general standards. Invoke the skill and follow it. Read the nearest existing equivalent under `src/` and match its file naming, type shape, CSS approach, and error handling.
+`.claude/skills/react-frontend/SKILL.md` holds the MUST/NEVER contract, the layout, and the success criteria; `references/engineering-standards.md` holds the general standards. Invoke the skill and follow it. Read the nearest existing equivalent under `prototype/src/` and match its file naming, type shape, CSS approach, and error handling.
 
 The handful worth having in front of you while you type, because a violation is a review failure rather than a style note:
 
@@ -130,13 +130,13 @@ The handful worth having in front of you while you type, because a violation is 
 Update `.claude/contract/<slug>/tasks.md`. Tick edit and inline-verify checkboxes as you complete them, tick deferred typecheck/lint/test checkboxes once the phase-end verification block confirms their `Expected:` outcomes, then tick the task heading. Example:
 
 ```
-### Task 5: Add the debounce helper to src/utils/debounce.ts
+### Task 5: Add the debounce helper to prototype/src/utils/debounce.ts
 
 - Skill: react-frontend
 
 **Files:**
-- Modify: `src/utils/debounce.ts`
-- Test: `src/utils/__tests__/debounce.test.ts`
+- Modify: `prototype/src/utils/debounce.ts`
+- Test: `prototype/src/utils/__tests__/debounce.test.ts`
 
 - [ ] **Step 1: Write the failing test for a call made after the wait window**
 - [ ] **Step 2: Run the spec, confirm it fails**
@@ -147,13 +147,13 @@ Update `.claude/contract/<slug>/tasks.md`. Tick edit and inline-verify checkboxe
 becomes:
 
 ```
-### Task 5: Add the debounce helper to src/utils/debounce.ts ✓
+### Task 5: Add the debounce helper to prototype/src/utils/debounce.ts ✓
 
 - Skill: react-frontend
 
 **Files:**
-- Modify: `src/utils/debounce.ts`
-- Test: `src/utils/__tests__/debounce.test.ts`
+- Modify: `prototype/src/utils/debounce.ts`
+- Test: `prototype/src/utils/__tests__/debounce.test.ts`
 
 - [x] **Step 1: Write the failing test for a call made after the wait window**
 - [x] **Step 2: Run the spec, confirm it fails**
@@ -179,8 +179,8 @@ Return a structured report:
 - ✓ Task N+1 — [task description]
 
 ### Files Changed
-- `src/utils/debounce.ts` — [created | modified | deleted] — [what changed]
-- `src/utils/__tests__/debounce.test.ts` — [created | modified] — [what it tests]
+- `prototype/src/utils/debounce.ts` — [created | modified | deleted] — [what changed]
+- `prototype/src/utils/__tests__/debounce.test.ts` — [created | modified] — [what it tests]
 - `package.json` — modified — [script or dependency added, and why]
 
 ### Verification Block Results

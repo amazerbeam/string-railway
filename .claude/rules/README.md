@@ -33,4 +33,4 @@ When adding a new skill, audit this folder first and wire any matching rules int
 
 This folder was created because all five `/fb-*` commands and the `implementer`, `code-evaluator`, `defender`, and `qa` agents instruct a scan of this README before touching related work.
 
-DLR-106 wrote the first rule when `src/persistence/` introduced the project's first persisted shape — a change touching storage keys and persisted field names that more than one queued ticket (DLR-113, DLR-118, DLR-123) will depend on. The five-section shape above, with its reject conditions, is the pattern for the next one.
+DLR-106 wrote the first rule when `prototype/src/persistence/` introduced the project's first persisted shape — a change touching storage keys and persisted field names that more than one queued ticket (DLR-113, DLR-118, DLR-123) will depend on. The five-section shape above, with its reject conditions, is the pattern for the next one.

@@ -1,6 +1,6 @@
 ---
 name: react-frontend
-description: Apply this project's React 19 + Vite + TypeScript conventions — component structure, hooks, state management, configuration-driven values, and Vitest coverage. Use when building or editing anything under src/, wiring state, rendering UI, or reviewing a frontend change.
+description: Apply this project's React 19 + Vite + TypeScript conventions — component structure, hooks, state management, configuration-driven values, and Vitest coverage. Use when building or editing anything under prototype/src/, wiring state, rendering UI, or reviewing a frontend change.
 allowed-tools: Read, Grep, Glob, Write, Edit, PowerShell
 metadata:
   type: reference
@@ -8,7 +8,7 @@ metadata:
 
 # React Frontend
 
-Conventions for this project's React 19 + Vite + TypeScript prototype. Read this before writing or editing anything under `src/`.
+Conventions for this project's React 19 + Vite + TypeScript prototype. **This skill governs `prototype/src/**` only.** The prototype is retained as a runnable reference and an oracle the Unity port's own simulator is checked against — not as the shipping codebase — so a change here is now unusual rather than routine: a task naming this skill should be able to say why the prototype, rather than the Unity port under `unity/`, is the right place for the work. `unity-programmer` is the skill for anything under `unity/`.
 
 **Scope:** this file holds the hard MUST/NEVER contract plus the project-specific stack facts and traps. General engineering standards — principles in practice, component size budget, constants taxonomy, the four async states, performance order, testing posture, Definition of Done — live in `references/engineering-standards.md`. Read that file when scaffolding something new, reviewing a large change, or when a rule below points at it.
 
@@ -27,7 +27,7 @@ Everything below this section is rationale, detail, or template. These are the r
 - **Measure every file you create or grow** (`(Get-Content <file> | Measure-Object -Line).Lines`) before declaring the work done. <200 lines fine, 200–400 needs a second look, **>400 is blocking** — split it in the same change (logic → `use*` hook, render concerns → sibling components).
 - **Follow one file order:** imports → constants → component → helper functions → export.
 - **Extract significant logic into a `use*` hook** — components render UI, hooks hold logic.
-- **Declare any repeated meaningful value once and import it** — action kinds, storage keys, status codes, route names. `UPPER_SNAKE_CASE` keys in `src/constants/` when that folder exists — it does not exist yet on a fresh prototype; create it the first time a value needs this treatment rather than assuming it is already there.
+- **Declare any repeated meaningful value once and import it** — action kinds, storage keys, status codes, route names. `UPPER_SNAKE_CASE` keys in `prototype/src/constants/` when that folder exists — it does not exist yet on a fresh prototype; create it the first time a value needs this treatment rather than assuming it is already there.
 - **Run TypeScript strict.** An `any` needs a stated reason in the summary.
 - **Justify any new dependency out loud** in the change summary: what platform API or existing code could do it, bundle cost, maintenance activity.
 - **State what you verified and what you did not.** There *is* a test runner — see NEVER below.
@@ -47,7 +47,7 @@ Everything below this section is rationale, detail, or template. These are the r
 
 ## Use when
 
-- Adding or editing anything under `src/`.
+- Adding or editing anything under `prototype/src/`.
 - Wiring or extending application state, a reducer, or a context.
 - Rendering or changing UI.
 - Reviewing a frontend change for correctness, performance, or accessibility.
@@ -56,6 +56,7 @@ Everything below this section is rationale, detail, or template. These are the r
 
 - Jira ticket work — use the `management-jira` skill.
 - Anything under `.claude/` that is not source code (prose, prompts, skill files).
+- Anything under `unity/` — use `unity-programmer`.
 
 ## Stack (authoritative — match what's in the repo)
 
@@ -63,8 +64,8 @@ Everything below this section is rationale, detail, or template. These are the r
 
 - **React 19 + Vite 8 + TypeScript (strict).** `.ts`/`.tsx` throughout.
 - **Two runtime dependencies: `react` and `react-dom`.** A third dependency needs a stated justification and developer approval.
-- **Vitest** for unit tests, run with `npm test`. `vite.config.ts` currently sets `environment: 'node'` and `test.include` to `src/**/__tests__/**/*.test.ts` — verify both against the live file before writing a test, they are load-bearing for where a spec must live and what DOM access it can assume.
-- **Styling: plain CSS** in `src/styles/` and per-component files. No CSS Modules, no CSS-in-JS, no utility framework, unless a task explicitly introduces one.
+- **Vitest** for unit tests, run with `npm test`. `vite.config.ts` currently sets `environment: 'node'` and `test.include` to `src/**/__tests__/**/*.test.ts` (relative to `prototype/`, where `vite.config.ts` now lives) — verify both against the live file before writing a test, they are load-bearing for where a spec must live and what DOM access it can assume.
+- **Styling: plain CSS** in `prototype/src/styles/` and per-component files. No CSS Modules, no CSS-in-JS, no utility framework, unless a task explicitly introduces one.
 - **`erasableSyntaxOnly` is on** in `tsconfig.app.json` — no `enum`, no `namespace`. Use the `as const` object-map form for a fixed set of named values instead.
 - **No backend.** Static build unless a task explicitly adds one.
 
@@ -72,12 +73,13 @@ Everything below this section is rationale, detail, or template. These are the r
 
 This project has no enforced import boundary today. But a pure, DOM-free logic tree — no `react`, no `react-dom`, no `window`/`document`/`fetch` — is worth establishing the moment there is meaningful non-UI logic (validation, calculation, parsing, anything with invariants worth unit-testing). It is cheap to establish before the first component imports a helper and mutates a DOM node in place, and expensive to retrofit after that happens even once.
 
-A previous prototype in this repository enforced exactly this with an ESLint override combining `no-restricted-imports` and `no-restricted-globals`, scoped to its pure-logic folder. That override is gone along with the folder it protected, but the mechanism is worth pasting back the moment a new prototype has a tree worth protecting. Below is that override, adapted to a generic example glob — **`src/core/**` is a placeholder for whatever the next prototype names its pure-logic tree, not a folder that exists yet.** Do not create `src/core/` speculatively; add this block only once a real pure-logic folder exists, and change the glob to match its actual name.
+A previous prototype in this repository enforced exactly this with an ESLint override combining `no-restricted-imports` and `no-restricted-globals`, scoped to its pure-logic folder. That override is gone along with the folder it protected, but the mechanism is worth pasting back the moment a new prototype has a tree worth protecting. Below is that override, adapted to a generic example glob — **`src/core/**` is a placeholder for whatever the next prototype names its pure-logic tree, not a folder that exists yet.** Do not create `prototype/src/core/` speculatively; add this block only once a real pure-logic folder exists, and change the glob to match its actual name.
 
 ```js
-// Paste into eslint.config.js's defineConfig([...]) array, as an additional
-// entry alongside the existing files: ['**/*.{ts,tsx}'] block. Replace
-// 'src/core/**' with the actual name of the pure-logic tree.
+// Paste into prototype/eslint.config.js's defineConfig([...]) array, as an
+// additional entry alongside the existing files: ['**/*.{ts,tsx}'] block.
+// Replace 'src/core/**' with the actual name of the pure-logic tree
+// (relative to prototype/, where eslint.config.js now lives).
 {
   files: ['src/core/**/*.{ts,tsx}'],
   rules: {
@@ -152,10 +154,10 @@ The rules above are the floor for any surface. A **playable game surface** — a
 
 ## Testing
 
-- **Vitest.** Specs live under `src/**/__tests__/`.
+- **Vitest.** Specs live under `prototype/src/**/__tests__/`.
 - **Pure logic is tested without a renderer** — plain function-in, value-out assertions, no DOM required.
 - **Component tests query by accessible role and label** (`getByRole`, `getByLabelText`) — those queries double as an accessibility check, since a component that's hard to query by role is usually hard to use with a screen reader.
-- **Live constraint to check before writing the first component test:** `vite.config.ts` currently sets `environment: 'node'` for the whole suite and `test.include` matches `*.test.ts` only. Neither is wrong today — `src/**/__tests__/` specs need no DOM, so `node` is the right, cheap environment, and enforcing it is itself a boundary check. The **first test that needs a DOM (a `.test.tsx` component test) must add an environment split** — `environmentMatchGlobs` in `vite.config.ts`, or a second Vitest project scoped to `.tsx` specs — and widen `test.include` to also collect `.test.tsx`. **Do not fix this by flipping the global `environment` to `jsdom`** — that silently removes the "no DOM in this spec" guarantee for every existing pure-logic test at once.
+- **Live constraint to check before writing the first component test:** `vite.config.ts` currently sets `environment: 'node'` for the whole suite and `test.include` matches `*.test.ts` only. Neither is wrong today — `prototype/src/**/__tests__/` specs need no DOM, so `node` is the right, cheap environment, and enforcing it is itself a boundary check. The **first test that needs a DOM (a `.test.tsx` component test) must add an environment split** — `environmentMatchGlobs` in `vite.config.ts`, or a second Vitest project scoped to `.tsx` specs — and widen `test.include` to also collect `.test.tsx`. **Do not fix this by flipping the global `environment` to `jsdom`** — that silently removes the "no DOM in this spec" guarantee for every existing pure-logic test at once.
 
 ## Shared rules (read on demand)
 

@@ -1,25 +1,26 @@
-# `src/sim/` architecture map
+# `prototype/src/sim/` architecture map
 
 **Scope header:** everything below is structural — file responsibilities and current extension
-points in this codebase's own `src/sim/` tree. It is not a versioned third-party API; there is no
-live source to resolve. It will drift only if `src/sim/` itself is refactored, in which case re-read
-the files directly rather than trusting this map.
+points in this codebase's own `prototype/src/sim/` tree. It is not a versioned third-party API; there is no
+live source to resolve. It will drift only if `prototype/src/sim/` itself is refactored, in which case re-read
+the files directly rather than trusting this map. Every `npm run …` command below runs from `prototype/`
+— `.claude/workflow/web-project.md` states the exact form once.
 
 ## The three loops
 
 | File | Loop | Drives |
 |---|---|---|
-| `src/sim/playHand.ts` | inner | one hand, by dispatching `RoundUiAction`s at `roundReducer` — the same reducer the UI calls |
-| `src/sim/playRun.ts` | middle | one whole run: repeats `playHand` until an encounter resolves, then the shop, then `advanceRun` |
-| `src/sim/simulate.ts` | outer | N seeded runs into one `SimSummary`, via `mixSeed(baseSeed, runIndex)` |
+| `prototype/src/sim/playHand.ts` | inner | one hand, by dispatching `RoundUiAction`s at `roundReducer` — the same reducer the UI calls |
+| `prototype/src/sim/playRun.ts` | middle | one whole run: repeats `playHand` until an encounter resolves, then the shop, then `advanceRun` |
+| `prototype/src/sim/simulate.ts` | outer | N seeded runs into one `SimSummary`, via `mixSeed(baseSeed, runIndex)` |
 
-`scripts/sim.ts` is the CLI on top of `simulate` — `npm run sim -- --runs <N> --seed <S> --policy <name>`.
-It lives outside `src/` because it needs Node globals `src/` is deliberately typed without.
+`prototype/scripts/sim.ts` is the CLI on top of `simulate` — `npm run sim -- --runs <N> --seed <S> --policy <name>`.
+It lives outside `prototype/src/` because it needs Node globals `prototype/src/` is deliberately typed without.
 
 ## The policy seam
 
-`src/sim/types.ts`'s `SimPolicy` interface is the only thing that varies between `baselinePolicy`
-and `maximalistPolicy` (`src/sim/baselinePolicy.ts`), and where a new strategy question becomes a
+`prototype/src/sim/types.ts`'s `SimPolicy` interface is the only thing that varies between `baselinePolicy`
+and `maximalistPolicy` (`prototype/src/sim/baselinePolicy.ts`), and where a new strategy question becomes a
 new policy:
 
 ```
@@ -36,12 +37,12 @@ Every method is advisory — `playHand.ts`'s driver re-asks the engine's own ref
 policy asks for, and skips rather than throws on a refusal. This is why a new policy can be sloppy
 about edge cases: the driver is the actual safety net.
 
-Register a new policy in `POLICIES` (`src/sim/baselinePolicy.ts`, exported through `src/sim/index.ts`)
+Register a new policy in `POLICIES` (`prototype/src/sim/baselinePolicy.ts`, exported through `prototype/src/sim/index.ts`)
 to make it selectable via `--policy <name>`.
 
 ## The report shape
 
-`src/sim/types.ts`:
+`prototype/src/sim/types.ts`:
 
 - `HandReport` — one hand's facts (damage each way, the four trick outcomes counted, buffs activated, AP spent, Apply
   Damage presses, coins from buffs, `activatableBuffsHeld` at hand start, discards/cheats used,
@@ -50,7 +51,7 @@ to make it selectable via `--policy <name>`.
   `HandReport[]`, economy totals, `deadCardRefusals`).
 - `SimSummary` — a policy name, base seed, and every `RunReport` from one batch.
 
-`src/sim/report.ts`'s `formatSummary` is the ONLY thing that turns a `SimSummary` into the printed
+`prototype/src/sim/report.ts`'s `formatSummary` is the ONLY thing that turns a `SimSummary` into the printed
 text `npm run sim` shows — it prints a fixed set of aggregates (win rate, damage percentiles, mean
 buff activations, etc.) and nothing per-buff-kind or per-hand-number today. Extending a field on
 `HandReport`/`RunReport` does **not** require touching `formatSummary` — a query script can read the
@@ -59,7 +60,7 @@ headline report every run prints, not for a one-off question.
 
 **Where to populate a new field:**
 - Hand-level (e.g. "which buff kind was refused"): inside `runBuffWindow` or `playHand` itself
-  (`src/sim/playHand.ts`), summed the same way `deadCardRefusals`/`apSpentTotal` already are — note
+  (`prototype/src/sim/playHand.ts`), summed the same way `deadCardRefusals`/`apSpentTotal` already are — note
   the existing docblock warning that a start/end diff undercounts anything that crosses a per-trick
   AP refill, so sum at the spend site, not by subtracting before/after.
 - Run-level (e.g. a new economy total): inside `playRun.ts`'s main loop, alongside `coinsEarned`/
@@ -67,7 +68,7 @@ headline report every run prints, not for a one-off question.
 
 ## Reachability vs. simulated play
 
-`src/sim/reachability.ts` answers a *different* question than the simulator: not "how often does a
+`prototype/src/sim/reachability.ts` answers a *different* question than the simulator: not "how often does a
 buff get used," but "does any production path mint this buff/shop item at all." It's pure, data-only,
 and reads `BUFF_TEMPLATES`/`SHOP_ITEMS`/`startRun()` directly — no reducer, no `rng`. Check here first
 if a question is really about a card's existence rather than its performance (e.g. "is this buff kind
@@ -75,8 +76,8 @@ even obtainable" vs. "how often does the player get value from it").
 
 ## Interactive replay (for a single-seed "why" question)
 
-There is no standing script for this today — `scripts/verify-ap-and-payout.ts` is the closest existing
-example of the pattern (drives `startRun`/`dealHand`/`roundReducer` directly, outside `src/`, to prove
+There is no standing script for this today — `prototype/scripts/verify-ap-and-payout.ts` is the closest existing
+example of the pattern (drives `startRun`/`dealHand`/`roundReducer` directly, outside `prototype/src/`, to prove
 a specific scenario without a browser). A replay script for play-testing follows the same shape but
 generalizes it:
 

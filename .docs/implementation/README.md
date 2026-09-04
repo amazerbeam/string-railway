@@ -1,5 +1,12 @@
 # Implementation docs
 
+> **Paths in these documents are written `src/…` and now live at `prototype/src/…`.** The web
+> prototype moved into `prototype/` when the Unity port began; these documents were written before
+> that and describe the prototype accurately in every other respect, so they were deliberately not
+> rewritten — 876 path references across 88 files is a rewrite of the design corpus, not a rename.
+> Read `src/hunt/buffs.ts` as `prototype/src/hunt/buffs.ts` throughout. The Unity project's own
+> architecture is in [`unity-port-architecture.md`](unity-port-architecture.md).
+
 One living folder per `src/` module, describing how the code in that folder actually works —
 maintained by the `implementation-doc-writer` skill (`.claude/skills/implementation-doc-writer/SKILL.md`),
 invoked automatically by `/fb-apply` every run, once review concludes.

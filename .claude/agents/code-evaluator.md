@@ -100,7 +100,7 @@ Violations here are as blocking as the principles above — they are what keeps 
 2. **`file:line`** — **[PRINCIPLE or CONVENTION]** — [description and suggested fix]
 
 ### Measured File Sizes
-- `src/App.tsx` — N lines — [fine | second look | BLOCKING]
+- `prototype/src/App.tsx` — N lines — [fine | second look | BLOCKING]
 
 ### Positive Notes
 - [highlight clean patterns or good decisions worth preserving]
