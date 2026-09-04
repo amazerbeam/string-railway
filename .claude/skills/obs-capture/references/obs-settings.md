@@ -59,6 +59,21 @@ cannot be recovered, because clipped samples are gone.
 **Do not "fix" a quiet-sounding take by raising Windows.** Measure it first; the fix is almost
 always the gain filter.
 
+## The webcam bubble — keep it off the game
+
+The camera is composited into the recording by OBS, so wherever it sits is **baked in** and cannot
+be undone downstream. On the 2026-09-04 take it sat bottom-right, on top of the game's resolved-trick
+row — which meant every vertical crop either sliced the developer's face or had to paint the bubble
+out and re-place it, leaving a visible patch.
+
+**Put the bubble somewhere it overlaps no game content.** The felt has a large empty area; anywhere
+there costs nothing. If a shot genuinely needs the full board, turn the camera off for that take and
+record the talking-head separately — two clean sources always beat one baked composite.
+
+Its position is a source coordinate `video-editor` needs (`--facecam X,Y,S`). **When the scene
+changes, the number changes**, so say so rather than letting the editor discover it by rendering a
+face cut in half. Measured 2026-09-04: a 285 px circle at x 1598, y 790.
+
 ## Aspect ratio — 16:9, with one measured exception
 
 Record 16:9. Vertical shorts are made in post by `video-editor`, which scales the full 1920-wide

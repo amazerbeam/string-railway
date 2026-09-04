@@ -98,9 +98,9 @@ creature either way.
 **Why this card.** The 3 lets you name any suit as trump, changing what the whole hand is about
 mid-trick. Nothing else in Irish myth is *defined* by changing what it is.
 
-### The Smith Goibniu — the 5
+### Blacksmith Goibniu — the 5
 
-**On the card:** Smith. **In full:** The Smith Goibniu.
+**On the card:** Blacksmith. **In full:** Blacksmith Goibniu.
 
 Goibniu is the smith of the Tuatha Dé Danann, one of the three craft-gods, and he forges the weapons
 they win with — reputedly in three strokes, and his blades never miss. He also brews the ale at the
@@ -109,8 +109,10 @@ Otherworld feast that keeps the gods from ageing.
 **Why this card.** The 5 takes a card away and hands back a fresh one, and raises how often you can
 do that. Taking a thing and returning a better one is a smith's whole function.
 
-**Why this one keeps its article.** "Smith Goibniu" reads as a surname, the way "Sergeant Smith"
-does. "The Smith Goibniu" reads as a title. It is the only name in the cast with that problem.
+**Why "blacksmith" and not "smith".** Bare "Smith" reads as a surname, the way "Sergeant Smith" does,
+and needed a definite article to fix it — "The Smith Goibniu" — which made it the only name in the
+cast carrying one. "Blacksmith" is unmistakably a trade, so the article goes and the name matches the
+shape of the other five.
 
 ### Graverobber Bres — the 7
 
@@ -125,8 +127,8 @@ to get the throne back.
 on tricks you lose. It is a bargain that looks generous and turns on you, which is Bres's entire
 story.
 
-**Why "graverobber" and not "king".** The epithet has to teach the mechanic, and "king" would collide
-with Nuada besides. Taking from the dead and paying for it later is the reading the player needs, and
+**Why "graverobber" and not "king".** The epithet has to teach the mechanic, and "king" teaches
+nothing. Taking from the dead and paying for it later is the reading the player needs, and
 in the house of the dead it lands harder.
 
 ### War Goddess Morrígan — the 9
@@ -141,17 +143,30 @@ She is frequently a *triad*, three figures who are also one.
 other out. The cancellation is the hard part to justify in the abstract and needs no justification
 here: her aspects are separate figures, and two of her in one place is her at odds with herself.
 
-### First King Nuada — the 11
+### Champion Bricriu — the 11
 
-**On the card:** First King. **In full:** First King Nuada.
+**On the card:** Champion. **In full:** Champion Bricriu.
 
-Nuada is the first king of the Tuatha Dé. He loses his hand at the first battle of Mag Tuired, and
-because the law holds that no blemished man may be king, he loses the throne too — to Bres, as it
-happens. He gets it back only when Dian Cécht makes him a working silver arm.
+Bricriu of the Poison Tongue throws a feast and promises the champion's portion — the best cut of
+the meat, which by right goes to the greatest warrior present — to three heroes at once. Cú Chulainn,
+Conall and Lóegaire all take him at his word, and the rest of the story is them being made to prove
+which of them it belongs to. Bricriu wins nothing and fights nobody. His whole art is making other
+people show what they are worth.
 
-**Why this card.** The 11, when led, restricts what the follower may play — and it binds both sides
-equally, which usually needs explaining. Here it does not. Nuada is the king the rules apply to just
-as hard as they apply to everyone else; that is the only story anyone tells about him.
+**Why this card.** The 11, when led, forces the other side to put forward their best card of that
+suit. That is the champion's portion exactly: a demand, not a display of strength. And it binds both
+sides equally, which usually needs explaining — here it does not, because everyone seated at
+Bricriu's feast is under the same obligation, including whoever called for it.
+
+**Why "champion" and not his name on the face.** The leading word has to teach the mechanic, and what
+the card demands is a champion — the follower's best. "Poison Tongue" was the other candidate and it
+reads as damage, which the card does not do.
+
+**Why not Nuada.** The 11 was First King Nuada until 2026-09-04. It was dropped because "First King"
+teaches the player nothing about what the card does, and because Nuada's story is a king *losing* his
+throne — the opposite note for a card that compels. Two others were weighed and rejected: the Hag of
+Sovereignty, whose story is about accepting a hard thing rather than forcing someone else's hand, and
+Balor, whose eye nothing can hide from but who is wanted intact as a late opponent.
 
 ---
 
@@ -240,8 +255,8 @@ is the payoff.
 Stated plainly so nobody later mistakes an invention for a source, or "corrects" a deliberate choice.
 
 **Inherited, and standard.** Donn and Tech Duinn as the gathering place of the dead. The wake and its
-games. The Morrígan as war goddess, as triad, and as the crow on Cú Chulainn's shoulder. Nuada's hand
-and the blemished-king law. Goibniu as smith of the Tuatha Dé. Bres as the ungenerous king who was
+games. The Morrígan as war goddess, as triad, and as the crow on Cú Chulainn's shoulder. Bricriu's
+feast and the champion's portion. Goibniu as smith of the Tuatha Dé. Bres as the ungenerous king who was
 deposed. The Salmon of Knowledge and the Well of Segais. Cú Chulainn's name and the story behind it.
 The banshee as a keener who attends death rather than causing it. The púca as shapeshifter. The
 Dagda's cauldron as one of the Four Treasures.

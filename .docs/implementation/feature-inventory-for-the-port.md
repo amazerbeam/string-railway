@@ -108,10 +108,10 @@ names, because nobody has to say "Goibniu" to know he is a smith.
 | --- | --- | --- | --- |
 | 1 | **Banshee Clíodhna** | If it is in a trick and belongs to the side that lost, that side leads next. | Banshee is the one word of Irish myth every player already knows without teaching. The banshee attends the side about to lose, so a card handing the lead to the loser is her doing what she is for. Clíodhna is named in Munster tradition as a queen of the banshees. |
 | 3 | **Shapeshifter Púca** | Name any suit; it becomes trump immediately. | The Púca changes what it is, mischievously and at your expense. A card whose function is changing what trump *is* has no better match. |
-| 5 | **The Smith Goibniu** | Swaps a card for a fresh draw; raises the swap budget. | Goibniu forges the weapons of the Tuatha Dé. Taking a thing and handing back another is what a smith does and what this card does. |
+| 5 | **Blacksmith Goibniu** | Swaps a card for a fresh draw; raises the swap budget. | Goibniu forges the weapons of the Tuatha Dé. Taking a thing and handing back another is what a smith does and what this card does. |
 | 7 | **Graverobber Bres** | A victorious trick carrying it pays +1 base damage for the fight; a losing one costs 2 health instead of 1. | Bres was the king who bled his own people for tribute and was thrown out for it — a bargain that turns bad. Graverobbing is also pointed in the house of the dead. |
 | 9 | **War Goddess Morrígan** | A lone one counts as trump; two cancel. | She decides battles by showing up, which is what counting as trump means. She is a triple goddess whose aspects are separate figures, so two of her cancelling reads as who she is rather than an arbitrary rule. |
-| 11 | **First King Nuada** | When led, the follower may play only their lowest of that suit or their highest. | Nuada's whole story is that a king with a blemish cannot rule — the rule binds him as much as anyone. This card binds both sides equally, and the myth supplies the symmetry rather than the designer having to justify it. |
+| 11 | **Champion Bricriu** | When led, the follower may play only their lowest of that suit or their highest. | Bricriu throws a feast, promises the champion's portion to three heroes at once, and makes them prove which of them deserves it — he wins nothing himself. The card is a demand for the other side's best, and everyone at his feast is under it equally, including whoever called for it. |
 
 Three things that follow:
 

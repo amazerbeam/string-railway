@@ -20,6 +20,7 @@ pack and the recordings, and renders. The seam between them is a folder, describ
 - "Here are the recordings for devlog 1, edit it"
 - "Make three shorts out of this footage"
 - "Add captions to that", "make it vertical", "the middle drags, cut it tighter"
+- Judging whether a topic is salvageable from the footage or needs saying again
 - Checking a recording is usable — levels, sync, dropped frames — before spending an hour on it
 - Re-rendering after a note, without redoing the work
 
@@ -126,9 +127,46 @@ EDL before rendering anything.
 The EDL is the reviewable artifact. A note like "cut the middle tighter" is a change to two rows and
 a re-render, not a fresh edit — that is the whole point of writing it down.
 
-### 4. Cut
+### 4. Cut — tighten, don't just trim
 
-Working order, because each step is cheaper when the ones before it have run:
+**`scripts/tighten.py` does this pass.** It is the difference between a clip that is the right
+length and a clip that is watchable, and the developer asked for it explicitly after seeing a
+merely-trimmed cut: *"there is a lot of pausing and me saying the same thing over and over."*
+
+What it does, all from the Whisper word timings:
+
+- **Closes every gap** longer than about a sixth of a second. Speech that ran with pauses between
+  every few words comes out continuous.
+- **Removes restarts.** When a phrase is repeated within a few seconds, the earlier attempt and
+  everything between the two is dropped, keeping the later take. On a real clip this removed 22 of
+  66 words and turned two aborted attempts into one clean sentence.
+- **Drops filler** — um, uh, erm.
+- **Cuts real silence, not just gaps between words.** Whisper sometimes stretches a word's end time
+  across a pause, so the word timings alone leave audible dead air in the middle of a clip. The
+  audio is checked with `silencedetect` and anything genuinely silent is carved out.
+- **Leaves the tail of a phrase alone.** Cutting on the closing consonant sounds clipped — "one
+  heart of damage" ending the instant the word does is a defect, so kept runs get a longer tail
+  than head.
+- **Keeps the rhythm of a list.** "Moons, keys, and bells" needs its beats; closing those gaps as
+  hard as ordinary pauses makes the speech sound wrong even though every word is present.
+- **Re-times the subtitles onto the new timeline**, so captions stay in sync through every cut.
+
+Measured on the first real take: 36 s → 15 s, 38 s → 19 s. Roughly half, with nothing of substance
+lost.
+
+**Its limit, and it needs a human:** it matches repeated *words*. A restart where the wording
+changed — "the skull cards **invert** that logic… the skull card **reverts** that logic" — is
+invisible to it. Read the generated SRT before rendering; where it still reads badly, pass the
+offending span to `--drop`. Reading the SRT is the review step, not watching the video.
+
+Usage:
+
+```powershell
+$env:FFMPEG_EXE = "<path to ffmpeg.exe>"
+python scripts\tighten.py <slug> <start> <end> <outdir> --src <master> --crop 0:150 --drop 133.2-146.05
+```
+
+Then the ordinary working order for what remains:
 
 1. **Drop the dead** — long pauses, false starts, the audible restart after a fluffed line. When a
    line was said twice, keep the later take; that is almost always the better one.
@@ -142,6 +180,27 @@ Working order, because each step is cheaper when the ones before it have run:
 Recipes for each of these — tested, with the arguments that actually work on this ffmpeg build — are
 in `references/ffmpeg-recipes.md`. Read it before writing a filter chain; several of these fail in
 non-obvious ways when improvised.
+
+### 4.2 Framing a vertical clip — compose it, never just crop
+
+Two rules, both learned by rendering a frame and looking at it.
+
+**Never let a crop slice the webcam.** OBS composites the camera bubble into the recording, so a
+naive crop cuts the developer's face in half — and it is baked in, so it cannot be recovered
+later. `tighten.py` handles this by cutting the bubble out of the source, painting over where it
+was, and re-placing it whole as its own overlay. Its position is a `--facecam X,Y,S` source
+coordinate, not a constant: **re-measure it whenever the OBS scene changes** by extracting a frame
+and looking.
+
+**The crop follows the subject, and the subject moves.** This game's UI puts the pot on the left,
+the verdict centre-right and the hand along the bottom, so no single fixed crop serves every clip
+— one framing cut the pot panel out of the clip that was *about* the pot. Pass `--crop X` per
+clip, chosen from what that clip is about, or `--crop X0:X1` to pan across it as the developer's
+attention moves.
+
+**What the tool cannot do is track the cursor per frame.** Panning is a straight line between two
+positions; if a clip needs the frame to chase the mouse around, that is a sign the shot wants
+re-capturing tighter rather than rescuing in post.
 
 ### 4.5 Subtitles — every video, both formats
 
@@ -179,6 +238,68 @@ Two craft rules worth holding to:
 
 The SRT-building and burn-in commands are in `references/ffmpeg-recipes.md`, including the font-size
 caveat, which is that subtitle sizing is not in pixels and has to be checked on a real frame.
+
+### 4.6 Read the clip back as a stranger — this is the review, and it is not optional
+
+Before rendering, read the clip's own subtitle file end to end and ask: **would someone who has
+never seen this game understand it, and does it finish?** Not "did the cutting work" — that is a
+different and much easier question, and passing it is what makes a bad clip feel finished.
+
+A clip fails this test, and must not ship, when:
+
+- **It ends on a setup with no payoff.** A clip that says "this time the key will be a skull card"
+  and stops has raised a question and answered nothing. The viewer's last feeling should be *I get
+  it*, never *and then what?*
+- **It covers two topics badly instead of one properly.** A clip about reading the opponent's
+  intent that slides into explaining skulls does neither. One idea, demonstrated, finished.
+- **It states a rule but never shows it used.** "The panel tells you what suit they'll play" is a
+  fact; "they've got bells, so I should play…" is a clip. The demonstration is the content.
+- **It assumes something the clip never established.** Every term a viewer needs has to be
+  introduced inside that clip or be obvious on screen.
+
+When a clip fails, say which of these it failed and either widen the window until it stands alone,
+or report it as a retake. **Do not ship it and let the developer discover it.** They should never be
+the first person to read the clip as a viewer would.
+
+### 4.7 Cut the production talk
+
+The developer is talking to the editor as well as to the audience — "I'm going to explain that
+again", "let me go", "I forgot to explain the trump card", "okay, let's just scrap all that". None
+of it ships, and none of it is the audience's business.
+
+`scripts/tighten.py` removes the common phrasings automatically, and treats **"again", "scrap
+that", "start over" as retake markers**: the marker and the whole abandoned sentence before it are
+dropped, because the developer saying "again" means precisely that the attempt just made is dead.
+That was their own instruction and it binds. Anything the pattern misses is a manual `--drop`.
+
+### 4.8 Ask for a retake rather than forcing a bad edit
+
+**A clip that cannot be made good from the footage is a retake, not an editing problem.** The
+developer is happy to say a topic again — it costs them under a minute — and that is far cheaper
+than a published clip that explains the game badly.
+
+Ask when the material is genuinely unusable:
+
+- The explanation is wrong, or contradicts the rules, and cannot be fixed by cutting. **Never edit
+  speech into meaning it did not have.**
+- Every attempt at a point is abandoned partway, so there is no complete take to keep.
+- The sentence only parses with the ums and restarts left in, and tightening it makes it worse.
+- The thing being described is not on screen when it is described, and no reframe fixes it.
+- The point is scattered across the whole session in fragments that cannot be joined without
+  sounding spliced.
+
+**How to ask.** Name the topic in the developer's own words, say in one line what is wrong with the
+take, and say what a usable version needs. *"Please explain the pot again — you started it three
+times and the numbers changed each time. One pass: what the two numbers are, then the cash-out
+choice."* Nothing more; they know the game better than this skill does.
+
+Deliver everything that did work first, and list the retakes at the end as a short shooting list.
+A session that produces three good clips and two retake requests is a good session — say so, rather
+than padding it to five.
+
+**This does not conflict with the rule below about not handing decisions back.** Asking the
+developer to *make different material* is not the same as asking them to make an *editing decision*.
+Framing, pacing, cut points and caption wording stay this skill's job, always.
 
 ### 5. Look at the result
 
@@ -224,6 +345,11 @@ Burned captions are shipped text. Two rules from `CLAUDE.md` apply to every word
 - `edl.md` exists and was written before rendering, with real timecodes.
 - The render was inspected as extracted frames, not just declared finished.
 - Output is one file in `out/`, and its path was handed to the developer.
+- Any topic that could not be made good was reported as a retake request naming the topic and what
+  a usable version needs — not shipped in a forced edit, and not silently dropped.
+- Every shipped clip's subtitles were read end to end as a stranger would read them, and each clip
+  covers one idea, demonstrates it, and finishes.
+- No clip contains talk addressed to the editor.
 - No file in `raw/` changed. Verify with a timestamp check if unsure.
 - No caption names a card or charm without saying what it does, and no caption describes a trick
   outcome in any words other than the four.
@@ -244,4 +370,11 @@ Burned captions are shipped text. Two rules from `CLAUDE.md` apply to every word
 - Editing, moving or overwriting anything in `raw/`
 - Transcribing with segment-level timings when word-level was available
 - Silently proceeding past clipped or near-silent voice audio
+- Shipping a clip that explains the game wrongly because the footage did not support a better cut —
+  ask for the retake instead
+- Cutting words together into a sentence the developer did not say, to rescue a bad take
+- Quietly dropping a topic that failed, so the developer never learns it needs re-recording
+- Shipping a clip that ends on a setup with no payoff, or that half-covers two topics
+- Judging a clip by whether the cutting worked rather than by whether it makes sense to a stranger
+- Leaving "again", "scrap that" or any other production aside in a shipped clip
 - Hardcoding an ffmpeg filter chain from memory instead of the tested recipes
