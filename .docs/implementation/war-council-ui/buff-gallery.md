@@ -8,6 +8,17 @@ is still `role="dialog"` named "Your buffs", still opened by the bar's Apply Buf
 gated by `loadoutDoorOpen` — so every spec that reached the old panel through
 `getByRole('dialog', { name: 'Your buffs' })` reaches this one unedited.
 
+> **Since DLR-174 the gallery is the secondary route, not the only one.** Tapping a hand card opens
+> a per-card [arming surface](arming-a-buff-from-the-card.md) in the same felt-stage region, showing
+> only the buffs that could pay on that card; the gallery is now what **Apply Buff** means — "show me
+> everything I hold", with the tier and suit filters, which is the cross-trick planning tool the
+> filtered surface cannot be. It was deliberately **retained rather than retired**; retiring it is the
+> parent epic's call. Two consequences: the arming surface takes its **own** accessible name and never
+> `LOADOUT_PANEL_LABEL`, so the seven specs above stay unambiguous; and pressing Apply Buff while a
+> card is raised lowers the card and opens this gallery, rather than producing a both-open state. The
+> new surface reuses `buildBuffGallery` and `BuffCard` unchanged, so a buff card looks and behaves
+> identically in both.
+
 ## The rules live in a `.ts` module, the components render what it decided
 
 `buffGalleryModel.ts` is the whole of the grouping logic and imports no React and touches no DOM.

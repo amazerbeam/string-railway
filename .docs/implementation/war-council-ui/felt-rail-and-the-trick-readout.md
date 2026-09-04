@@ -38,6 +38,16 @@ a trick resolving under it, so the drawer **remembers it was open** and pops bac
 reopens between tricks, without a second tap. Only `CancelLoadout` closes it outright.
 `__tests__/WarCouncilRound.loadoutReopen.test.tsx` pins that sequence.
 
+> **DLR-174 put that two-term expression behind one name, and added a third contender to the stage.**
+> The stage is now a three-way choice made in `FeltRegion.tsx` — the per-card arming surface, the
+> gallery, or the felt stage — and `galleryOpen(state)` (declared in `armingWindows.ts`, re-exported
+> from `roundUiState.ts`) is the single statement of the condition above, with
+> `!armingSurfaceOpen(state)` added so the arming surface wins when both could show. The rail's own
+> option was renamed `galleryOpen` → **`stageReplaced`** for the matching reason: the condensed trick
+> strip belongs in the rail while **either** surface holds the stage, which is what puts the Quarry's
+> lead in view while the player arms against it. Everything above about the door still holds exactly
+> as written. See [the arming surface](arming-a-buff-from-the-card.md).
+
 **The trick's cards render in exactly one place at a time.** Gallery closed, the stage's `TrickWell`
 shows them as it always did; gallery open, a condensed strip renders in the rail
 (`FeltRailProps.trick` is `null` in the first case). **The readout is in the rail in both states** —

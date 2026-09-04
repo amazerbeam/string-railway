@@ -226,7 +226,9 @@ describe('WarCouncilRound', () => {
     expect(screen.getByRole('group', { name: /tricks won/i }).textContent).toMatch(/You1/)
   })
 
-  it('disables a card the engine says is illegal', () => {
+  // DLR-174 AC9 — a card the engine says is illegal is no longer `disabled`: it stays clickable
+  // and focusable so it can refuse and shake. The grey (`wc-is-illegal`) is what marks it now.
+  it('marks a card the engine says is illegal, but keeps it enabled', () => {
     // Built already mid-trick.
     const round = makeRound({
       leader: PlayerSide.Cpu,
@@ -235,11 +237,12 @@ describe('WarCouncilRound', () => {
     })
     renderRound({ initialState: round })
     // The player holds Moons, so following suit is forced and Bells is out.
-    expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', true)
-    expect(screen.getByRole('button', { name: '11 of Moons (Monarch)' })).toHaveProperty(
-      'disabled',
-      false,
-    )
+    const illegal = screen.getByRole('button', { name: '7 of Bells' })
+    expect(illegal).toHaveProperty('disabled', false)
+    expect(illegal.className).toContain('wc-is-illegal')
+    const legal = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+    expect(legal).toHaveProperty('disabled', false)
+    expect(legal.className).not.toContain('wc-is-illegal')
   })
 
   it('DLR-163 AC1/AC2 — shows the trump suit, and naming a new one changes it and empties the plate', () => {

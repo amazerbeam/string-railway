@@ -51,7 +51,7 @@ because **a card's lift is a transform, which does not affect layout size** — 
 the hand's visual pixels spill outside its box and the shell's `overflow: hidden` crops them. The
 fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **thirteen** stylesheets, not one, all imported by `WarCouncilRound.tsx` in cascade
+The styling ships as **twenty-one** stylesheets (counted on disk, 2026-09-04), not one, all imported by `WarCouncilRound.tsx` in cascade
 order. Two of them are imported a second time, by the component that owns them —
 `warCouncilBuffGallery.css` and `warCouncilBuffCard.css` from `BuffGallery.tsx` — which is the same
 pattern `warCouncilActionBar.css` used to follow when `BuffLoadoutPanel.tsx` was the only other
@@ -72,6 +72,17 @@ consumer of its `.wc-loadout-*` block. **That block, and that panel, were delete
 | `warCouncilBankMeter.css` (149) | **DLR-150, new.** Everything `BankMeter` renders — the eyebrow, the three figures and the `×` glyph, the two cash-out lines, the pending-bonus badge and line, and DLR-150's own two carry lines (`.wc-bank-carried-in`, `.wc-bank-carry-out`). Split out because `warCouncilHunt.css` was at its 400-line budget and this ticket adds to the block; **no selector was renamed and no rule changed in the move**. Its colours, weights and glyphs are placeholders, the developer's to choose |
 | `warCouncilHealthBars.css` (256) | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and DLR-115's `[data-type]` product. **DLR-153 re-homed the whole `--wc-hp-*` token block here from `warCouncil.css`'s `:root`**, byte-identical, when that file crossed 400 lines: these tokens' only consumers are the rules in this file |
 | `warCouncilHand.css` | DLR-82: the hand container and the hand row (the fan, until the DLR-149 follow-up retired it) |
+| `warCouncilArming.css` (286) | **DLR-174, new.** The per-card arming surface: the head (raised card, win/lose slip, window statement), the filtered buff grid — **the only scrollable region on the surface** — and the riding strip at the foot. Sits in `.wc-table`'s second grid column exactly as `.wc-gallery` does, by grid auto-placement rather than an explicit `grid-column`, and declares **no `100vh`/`100vw`** so it introduces no second viewport unit inside the shell's `100dvh` grid. Carries the two developer-owned properties `--wc-arming-card-w` and `--wc-arming-reject-ms`, and distinguishes its window states by **border style** (solid / dashed / dotted) as well as tone. The rejection shake is a keyframe, suppressed under `prefers-reduced-motion` |
+
+> **This table is eight sheets short of the count above, and has been since DLR-153.** Seven sheets
+> later tickets added are documented on their own pages rather than here — `warCouncilBuffRide.css`
+> and `warCouncilBuffRidePanel.css` (DLR-153,
+> [the buff ride](buff-ride-and-the-card-breakdown.md)), `warCouncilResolve.css` and
+> `warCouncilResolvePanel.css` (DLR-156/DLR-160,
+> [the resolution screen](the-resolution-screen.md)), `warCouncilMotion.css` (DLR-157,
+> [card motion](card-motion.md)), and `warCouncilAbilityPrompt.css` and `warCouncilStatusBand.css`
+> (the DLR-162/163 fix pass's CSS splits). Only `warCouncilArming.css`, added by DLR-174, is
+> described in the row above. Take the count as measured and the table as partial.
 
 > **Two sheets this table used to list no longer exist.** `warCouncilCheats.css` and
 > `warCouncilTimebomb.css` went with `CheatSlots.tsx` and `TimebombCharge.tsx` on **DLR-132**, when

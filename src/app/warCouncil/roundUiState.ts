@@ -268,6 +268,18 @@ export function loadoutOpen(state: RoundUiState): boolean {
   return state.loadout !== null
 }
 
+// `cardRaiseWindowOpen`, `unlockingCheat`, `armingSurfaceOpen` and `galleryOpen` live in
+// `armingWindows.ts` now (DLR-174 — this file was at its 400-line budget) and are re-exported
+// here so no importer has to know the seam moved, exactly as `RoundUiSeed`/`createRoundUiState`
+// and `ResolutionView` already are above.
+export {
+  armingSurfaceOpen,
+  cardRaiseWindowOpen,
+  galleryOpen,
+  legalMovesFor,
+  unlockingCheat,
+} from './armingWindows'
+
 /** The buffs this hand may actually be offered: the owned pile with `BuffKind.Unassigned`
  *  placeholder content filtered out by `activatableBuffs`, so `apCostOf`'s `RangeError` can never
  *  reach a render. Stated ONCE here so the panel's rows and `handleTapBuff`'s guard cannot

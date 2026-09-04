@@ -5,19 +5,16 @@ import {
   PlayerSide,
   RoundPhase,
   currentTurn,
-  legalMoves,
   sameCard,
   suitShape,
   type Card,
 } from '../../warCouncil'
 import type { WarCouncilRoundResult } from '../warCouncilMount'
 import ActionBar from './ActionBar'
-import { loadoutBarRefusalFor, loadoutDoorOpen } from './buffHandlers'
-import BuffGallery from './BuffGallery'
+import { loadoutBarRefusalFor } from './buffHandlers'
 import { useBuffRide } from './buffRideProps'
 import BuffRideZone from './BuffRideZone'
-import FeltRail from './FeltRail'
-import FeltStage from './FeltStage'
+import FeltRegion from './FeltRegion'
 import { sortHandForDisplay } from './handOrder'
 import { telegraphedLeadSuit } from './quarryTelegraph'
 import QuarryShape from './QuarryShape'
@@ -26,19 +23,14 @@ import { handSummaryFor } from './roundHandSummary'
 import { deriveHint } from './roundHint'
 import PotCard from './PotCard'
 import { roundResultFor } from './roundResult'
-import {
-  actionBarProps,
-  buffGalleryProps,
-  feltRailProps,
-  feltStageProps,
-} from './roundControlsProps'
+import { actionBarProps } from './roundControlsProps'
 import {
   canAct,
-  cheatArmed,
+  cardRaiseWindowOpen,
   curseArmed,
   discardSelecting,
   discardStock,
-  loadoutOpen,
+  legalMovesFor,
   offeredBuffs,
   RoundUiActionKind,
   type ResolutionView,
@@ -59,8 +51,6 @@ import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
 import './warCouncilActionBar.css'
-import './warCouncilFeltRail.css'
-import './warCouncilBuffGallery.css'
 
 export interface WarCouncilTableProps {
   readonly ui: RoundUiState
@@ -116,13 +106,10 @@ export default function WarCouncilTable({
   // here (DLR-156 review fix) so every consumer — fan, action bar, hint — agrees flight blocks acting.
   const interactive = canAct(ui) && !inFlight
 
-  // The SAME predicate the reducer commits with (`cheatArmed`), not a second reading of the
-  // selection — two readings is how the fan's greying and a rejection reason drift apart.
-  const legal = legalMoves(
-    ui.round,
-    PlayerSide.Player,
-    cheatArmed(ui) ? { ignoreFollowSuit: true } : undefined,
-  )
+  // DLR-174 review fix (Code-Evaluator Issue 2) — `legalMovesFor` (`armingWindows.ts`) is the
+  // ONE shared reading the reducer's own refusal decision (`handleTapCard`) also calls, replacing
+  // this component's own hand-typed copy of the identical expression.
+  const legal = legalMovesFor(ui)
 
   // DLR-100 — `handInteractive` keeps the fan tappable during the
   // Quarry-to-lead gap, where `interactive` is false but a selection may still be open or opening.
@@ -130,7 +117,13 @@ export default function WarCouncilTable({
   // DLR-167 — `curseArmed` joins it for the identical reason: a Curse is armed in the
   // between-tricks window, which reaches the Quarry-to-lead gap where `interactive` is false, and
   // the tap that marks a card has to land there.
-  const handInteractive = interactive || discardSelecting(ui) || curseArmed(ui)
+  // DLR-174 review fix (Defender Critical 1) — `cardRaiseWindowOpen` joins the set too: the
+  // reducer's own `handleTapCard` already accepts a RAISE in that same gap (AC5's whole promise),
+  // but the fan itself was still built from `interactive` alone, so every hand-card button
+  // rendered `disabled` there and the raise the reducer allowed was unreachable through the DOM.
+  // `!inFlight` guards it exactly as `interactive` does, so a card mid-flight is never reopened.
+  const handInteractive =
+    interactive || discardSelecting(ui) || curseArmed(ui) || (cardRaiseWindowOpen(ui) && !inFlight)
 
   useDebugRoundState({
     ui,
@@ -287,41 +280,17 @@ export default function WarCouncilTable({
           quarryHealth={ui.encounter.health[DuelSide.Quarry]}
         />
       </aside>
-      {/* DLR-160 AC1 — the region click is GONE (it fired `handleCarryOn` for any click in the
-          play area while a trick was held or the Quarry pending, costing the buff-arming window).
-          `TrickWell.tsx` has a real button for both states. `wc-is-waiting` went with it. */}
-      <section className="wc-table" aria-live="polite">
-        {/* `loadoutOpen(ui)` alone is not enough: the panel's OWN toggle state survives a trick
-            resolving under it (nothing clears `ui.loadout`), but `loadoutDoorOpen` — the same
-            gate `handleToggleLoadout` reads — goes false on exactly the four states the gallery
-            must never contend with (a held reveal, an open prompt, an engine fault, a complete
-            round). Reading both is what makes "the gallery can only coexist with an empty or an
-            in-progress trick" true, rather than merely asserted.
-
-            DELIBERATE, not a leak: the drawer remembers it was open. Dismissing a held reveal
-            (`handleCarryOn`) does not clear `ui.loadout`, so once the door reopens between tricks
-            the gallery pops back without a new tap — that is the between-tricks window the
-            gallery is meant to be available in. `CancelLoadout` is the only action that closes it
-            outright; see `WarCouncilRound.loadoutReopen.test.tsx` for the pinned sequence. */}
-        <FeltRail {...feltRailProps({ ui, galleryOpen: loadoutOpen(ui) && loadoutDoorOpen(ui) })} />
-        {loadoutOpen(ui) && loadoutDoorOpen(ui) ? (
-          <BuffGallery
-            {...buffGalleryProps({ ui, dispatch: dispatchClearingAnnouncement, offered })}
-          />
-        ) : (
-          <FeltStage
-            {...feltStageProps({
-              ui,
-              dispatch: dispatchClearingAnnouncement,
-              offered,
-              quarryToLead,
-              handSummary,
-              onCarryOn: handleCarryOn,
-              onCancel: handleCancel,
-            })}
-          />
-        )}
-      </section>
+      <FeltRegion
+        ui={ui}
+        dispatch={dispatchClearingAnnouncement}
+        offered={offered}
+        legal={legal}
+        quarryToLead={quarryToLead}
+        handSummary={handSummary}
+        buffRide={buffRide}
+        onCarryOn={handleCarryOn}
+        onCancel={handleCancel}
+      />
       {/* DLR-160 Task 14 — the hand/riding/breakdown zone, split into `BuffRideZone.tsx` to keep
           this file under its 400-line budget; see that file's own docblock for why it sits
           outside `.wc-table` and for its `BreakdownTopContext` provider. */}

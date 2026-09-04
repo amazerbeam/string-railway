@@ -76,8 +76,9 @@ interface HandFanProps {
  * only matters while that card is scaled past its resting box.
  *
  * The roving tabindex itself — exactly one card a tab stop, arrow keys among
- * the legal cards only (a `disabled` button cannot take focus, so an
- * illegal card is skipped rather than becoming a dead stop) — is
+ * EVERY card in an interactive fan (DLR-174 AC9 — legal or not: an illegal
+ * card is clickable and focusable so it can refuse and shake, and only a
+ * `disabled` card — the fan itself non-interactive — is skipped) — is
  * `useRovingTabIndex`, shared with `AbilityPrompt`'s choice row. Focus moves
  * imperatively inside that hook's keydown handler rather than from an
  * effect reacting to a focus-index state change — this component uses no
@@ -109,19 +110,11 @@ export default function HandFan({
   onTap,
   onCancel,
 }: HandFanProps) {
-  // Guards against `containsCard(legal, undefined)` — safe today only because `interactive`
-  // is always false once `hand.length === 0`, and cheap enough not to rely on that staying true.
-  // While discardSelecting, every held card is a valid target — including one
-  // illegal to play — so the `containsCard` term drops out rather than gating focusability a
-  // second way.
-  // DLR-167 — `curseArmed` joins `discardSelecting` here for the identical reason: while a Curse is
-  // armed every held card is a valid target, so the legality term drops out. A `disabled` button
-  // cannot take focus, so failing to widen this would make an illegal-but-markable card
-  // unreachable by keyboard.
-  const isFocusable = (index: number) =>
-    hand[index] !== undefined &&
-    interactive &&
-    (discardSelecting || curseArmed || containsCard(legal, hand[index]))
+  // DLR-174 AC9 — every card in an interactive fan is focusable now, legal or not. A
+  // `disabled` button cannot take focus, so an illegal card was unreachable by keyboard and
+  // could not shake. Legality no longer gates focus at all; `discardSelecting` and `curseArmed`
+  // fall out of this predicate as redundant terms.
+  const isFocusable = (index: number) => hand[index] !== undefined && interactive
 
   const { groupRef, tabStopIndex, handleKeyDown } = useRovingTabIndex(
     hand.length,
@@ -179,11 +172,13 @@ export default function HandFan({
           // light, the buff count/estimate, and the hover/focus breakdown target all gate on now;
           // `illegal` still folds in `interactive` for `PlayingCard`'s own tappability, unchanged.
           const playable = discardSelecting || containsCard(legal, card)
-          // DLR-167 AC3 — while a Curse is armed EVERY held card is a valid TAP TARGET, including
-          // one illegal to play, because marking is not a move. Deliberately a separate term from
-          // `playable` above: the buff light and the breakdown still ask "may this be PLAYED",
-          // which an armed Curse does not change.
-          const illegal = !interactive || !(playable || curseArmed)
+          // DLR-174 AC9 — `illegal` is now PURELY presentational (the grey), independent of
+          // `interactive`: an illegal card must stay clickable and focusable so it can refuse and
+          // shake. DLR-167 AC3 — while a Curse is armed EVERY held card is a valid TAP TARGET,
+          // including one illegal to play, because marking is not a move — the buff light and the
+          // breakdown still ask "may this be PLAYED", which an armed Curse does not change, so
+          // `curseArmed` still drops the grey here exactly as it did before.
+          const illegal = !playable && !curseArmed
           const light = buffLightForCard(card)
 
           return (
@@ -217,6 +212,7 @@ export default function HandFan({
                 variant="hand"
                 armed={isArmed}
                 illegal={illegal}
+                disabled={!interactive}
                 // DLR-167 AC4 — the full skull card face on a card in your own hand, identical to a
                 // skulled Quarry card: `PlayingCard`'s existing `skulled` branch and its
                 // `wc-is-skulled` class hide the art window and keep the corner index, because the

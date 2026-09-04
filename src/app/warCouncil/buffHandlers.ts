@@ -85,9 +85,17 @@ export function loadoutBarRefusalFor(state: RoundUiState): BuffActivationRefusal
  * opening the panel again does not touch it. Closing
  * drops any poise unspent. Refused (no-op) unless `loadoutDoorOpen` holds — the same widened gate
  * `loadoutBarRefusalFor` reads for the button, so the two cannot disagree.
+ *
+ * DLR-174 (plan.md Part 1 → Assumption 6) — the button consistently means "show me everything",
+ * so a RAISED card (`state.armed !== null`) never reads as "already open, close it": `ui.loadout`
+ * is the shared poise holder for BOTH surfaces now, and a raise sets it too, so `state.loadout
+ * !== null` alone can no longer stand for "the gallery is showing". Only "closed, no card raised,
+ * loadout non-null" — the plain gallery-open case — takes the close branch; a raised card falls
+ * through to the SAME open branch that already clears `armed`, swapping the filtered arming
+ * surface for the full gallery.
  */
 export function handleToggleLoadout(state: RoundUiState): RoundUiState {
-  if (state.loadout !== null) return handleCancelLoadout(state)
+  if (state.armed === null && state.loadout !== null) return handleCancelLoadout(state)
   if (!loadoutDoorOpen(state)) return state
   return {
     ...state,

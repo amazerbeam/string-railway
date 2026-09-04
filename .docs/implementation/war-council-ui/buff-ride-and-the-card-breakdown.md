@@ -275,6 +275,14 @@ correction, so the `--wc-hp-*` health-bar token block moved **byte-identical** i
 consumers rather than in the shared root, and nothing else about them changed. `warCouncil.css` is
 393 after the move.
 
+> **DLR-174 gave `BuffRidingList` a second possible mount point — and exactly one live one.** It
+> renders in the arming surface's foot while that surface is open, and in `BuffRideZone` while it is
+> not: one component, one `RidingBuffRow[]`, one mount chosen by a ternary. Deleting it from the ride
+> zone would hide what is riding whenever no card happens to be raised, and rendering it in both
+> places is the duplication every model in this module exists to prevent. **The breakdown did not
+> move** — everything below about the hand zone still describes it. See
+> [the arming surface](arming-a-buff-from-the-card.md#the-riding-strip-has-exactly-one-mount-point).
+
 Both the riding list and the breakdown live in the **hand zone**, `.wc-buff-ride-zone`, not inside
 the gallery. `BuffGallery` replaces `FeltStage` inside `.wc-table` and unmounts the moment the door
 closes; anchoring to the hand — which renders unconditionally — is what keeps the panel visible after

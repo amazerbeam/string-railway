@@ -18,9 +18,9 @@ export interface FeltRailProps {
   readonly drawPileCount: number
   readonly spentCount: number
   readonly reshuffled: boolean
-  /** The condensed trick strip — rendered only while the gallery holds the stage. `null` while the
-   *  stage's own `TrickWell` is showing the cards instead, so the trick's cards render in exactly
-   *  one place at a time. */
+  /** DLR-174 — the condensed trick strip, rendered only while EITHER surface (the gallery or the
+   *  arming surface) holds the stage. `null` while the stage's own `TrickWell` is showing the
+   *  cards instead, so the trick's cards render in exactly one place at a time. */
   readonly trick: readonly TrickCard[] | null
   readonly skulledCards: readonly Card[]
   /** Renders in BOTH felt states — under the trick well it would vanish at the exact moment the

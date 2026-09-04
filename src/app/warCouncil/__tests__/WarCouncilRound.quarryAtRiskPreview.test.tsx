@@ -110,10 +110,15 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         fireEvent.click(letThemLead)
         continue
       }
+      // DLR-174 AC9 — an illegal card is no longer `disabled`, it is merely `wc-is-illegal`
+      // (grey) and would REFUSE if tapped; `!disabled` alone would now pick one of those.
       const hand = screen.getByRole('group', { name: /hand/i })
       const legalCard = within(hand)
         .getAllByRole('button')
-        .find((button) => !(button as HTMLButtonElement).disabled)
+        .find(
+          (button) =>
+            !(button as HTMLButtonElement).disabled && !button.className.includes('wc-is-illegal'),
+        )
       if (!legalCard) {
         throw new Error('no legal card found in hand, and no other branch applied')
       }

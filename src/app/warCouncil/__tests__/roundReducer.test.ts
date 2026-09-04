@@ -373,11 +373,21 @@ describe('Cheat poise, spend and consume (DLR-83, DLR-132)', () => {
     expect(ui.buffs).toHaveLength(1) // DLR-142 — cheatA left the pile at the spend; cheatB remains
   })
 
-  it('rejects that same card with no Cheat live, and touches nothing in the pile (AC9)', () => {
+  // Review fix (Defender Critical) — this scenario is AC7's LOCK, not a refusal: cheatA/cheatB
+  // are both held but neither is ARMED (`cheatArmed` reads `cheatTricksRemaining`, still 0
+  // here), so `unlockingCheat` finds a held Cheat and the second tap must re-raise the card as
+  // a lock, exactly like the first. The previous assertion here (`rejection` set to
+  // `MustFollowLeadSuit`) encoded the same bug the Defender found: the second tap used to fall
+  // straight into `commit`, which cleared `armed` to `null` on its way to computing that
+  // "real" refusal reason — unmounting the whole arming surface instead of leaving the card
+  // raised and locked. `roundReducer.arming.test.ts`'s own "held but not yet ARMED" case covers
+  // this same shape directly.
+  it('stays raised as a LOCK on a second tap while the held Cheat is not yet armed, and touches nothing in the pile (AC7/AC9)', () => {
     let ui = seeded()
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuitCard })
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuitCard })
-    expect(ui.rejection).toBe(IllegalMoveReason.MustFollowLeadSuit)
+    expect(ui.armed).toEqual(offSuitCard)
+    expect(ui.rejection).toBeNull()
     expect(ui.buffs).toHaveLength(2)
   })
 })

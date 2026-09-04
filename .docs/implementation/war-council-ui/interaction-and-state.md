@@ -13,6 +13,16 @@ card itself, per `game-ux`'s tap-cost rule.
 `TapCard` is ignored outright when it is not the player's turn, or when `resolvedTrick`, `prompt`,
 or `cpuFault` is set, or the round is complete.
 
+> **DLR-174 split that single gate in two, and the split is the point.** **Raising** a card is free
+> and commits nothing, so it takes the wider `cardRaiseWindowOpen` (`= loadoutDoorOpen`), which
+> reaches the Quarry-to-lead gap where arming has always been legal; **playing** still requires
+> `canAct`, so a card raised in that gap simply waits for the turn. `handleTapCard` also now decides
+> **legality before** treating a same-card tap as a play attempt, so an illegal card re-refuses
+> instead of falling into `commit` — whose rejection branch clears `armed` and would unmount the
+> arming surface mid-shake. And a raise sets `loadout: { poised: null }` alongside `armed`, because
+> `ui.loadout` is now the shared poise holder for both arming surfaces rather than a gallery flag.
+> All of it is in [the arming surface](arming-a-buff-from-the-card.md).
+
 **DLR-114 gave the second tap a second home rather than a second action.** The action bar's **Cards**
 button is greyed while nothing is armed and highlighted once something is, and pressing it calls the
 same `handleTap(ui.armed)` the hand's own second tap calls — so committing a card is reachable from two

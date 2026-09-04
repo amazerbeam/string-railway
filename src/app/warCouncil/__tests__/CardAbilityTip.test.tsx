@@ -158,8 +158,11 @@ describe('CardAbilityTip', () => {
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
-  it('opens on hover for a disabled (illegal) hand card, where the button itself has pointer-events: none', () => {
-    render(<PlayingCard card={CARD} variant="hand" illegal />)
+  // DLR-174 AC9 — `illegal` alone no longer disables a card; `disabled` is the separate fact
+  // that means "cannot be tapped at all", which is the case this test is actually about (a
+  // disabled button has `pointer-events: none`, so the host span is what catches the hover).
+  it('opens on hover for a disabled hand card, where the button itself has pointer-events: none', () => {
+    render(<PlayingCard card={CARD} variant="hand" illegal disabled />)
     const button = screen.getByRole('button', { name: /5 of Bells/i })
     expect(button.hasAttribute('disabled')).toBe(true)
 

@@ -13,7 +13,14 @@ interface PlayingCardProps {
   readonly card: Card
   readonly variant: 'hand' | 'table' | 'pile'
   readonly armed?: boolean
+  /** DLR-174 AC9 — PRESENTATIONAL ONLY. It no longer feeds `disabled`: an illegal hand card
+   *  must be clickable (so it can refuse and shake) and focusable (so the keyboard can reach
+   *  it). "Cannot be tapped at all" is `disabled` below, a separate fact. */
   readonly illegal?: boolean
+  /** DLR-174 AC9 — the card cannot be tapped at all: the Quarry's turn, a held reveal, a card
+   *  in flight. Optional and defaulting to `false`, so all 46 construction sites keep
+   *  compiling and only `HandFan` passes it. */
+  readonly disabled?: boolean
   readonly winner?: boolean
   /** AC3's second half — a card carrying a skull, once it is face up. Defaults to `false` so
    *  every existing call site keeps compiling; a caller that knows the card's skull state (the
@@ -59,6 +66,7 @@ export default function PlayingCard({
   variant,
   armed = false,
   illegal = false,
+  disabled = false,
   winner = false,
   skulled = false,
   discardSelected = false,
@@ -112,7 +120,7 @@ export default function PlayingCard({
         type="button"
         className={className}
         style={cardStyle}
-        disabled={condensed || illegal}
+        disabled={condensed || disabled}
         tabIndex={condensed ? -1 : tabIndex}
         aria-label={cardAccessibleName(card, { skulled })}
         aria-describedby={describedByIds}

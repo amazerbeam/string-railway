@@ -69,8 +69,15 @@ the field was **deleted** and replaced:
 ```ts
 readonly buffActivation: BuffActivationState  // REPLACES apPool: ActionPoints
 readonly buffs: readonly Buff[]               // mirrored from the mount prop
-readonly loadout: LoadoutSelection | null     // null = panel closed
+readonly loadout: LoadoutSelection | null     // null = nothing poised (was: panel closed)
 ```
+
+> **`loadout` stopped meaning "the panel is open" on DLR-174.** It is now the **shared poise holder**
+> for whichever arming surface is showing — the gallery or the new per-card arming surface — and
+> raising a hand card sets it too, so both surfaces dispatch the same `TapBuff` into the same
+> `handleTapBuff` with one commit path, one misclick guard and one `Escape` ladder. "The gallery holds
+> the stage" is now `galleryOpen(state)` and nothing else. Read `loadout` as "something is poised".
+> See [the arming surface](arming-a-buff-from-the-card.md#uiloadout-changed-meaning-and-three-consumers-were-reading-it-the-old-way).
 
 Divergence is now unexpressible. `applyDamageStock` reads `state.buffActivation.apPool`,
 `handleTapApplyDamage` (deleted by DLR-156) wrote `spendAp`'s result back into `state.buffActivation.apPool`, and

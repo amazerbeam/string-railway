@@ -4,9 +4,21 @@ _Part of [War Council UI](README.md)._
 
 `useRovingTabIndex(count, isFocusable, onCancel)` is the mechanism both components use: one tab stop
 over a flat list of `count` sibling controls, arrow keys among the focusable ones, `Home`/`End` to
-the ends, `Escape` to cancel. `HandFan` calls it with the engine's own legal moves as the focusable
-set, so illegal cards are skipped rather than becoming dead stops — a `disabled` button cannot take
-focus. `AbilityPrompt` calls it with every offered choice always focusable (a Fox may exchange any
+the ends, `Escape` to cancel. `HandFan` used to call it with the engine's own legal moves as the
+focusable set, so illegal cards were skipped rather than becoming dead stops — a `disabled` button
+cannot take focus.
+
+> **DLR-174 widened that to every card in an interactive fan, legal or not**, and the reason is the
+> same fact read the other way: a `disabled` button cannot be clicked, cannot take focus and cannot
+> shake, so an illegal card could not **refuse** either. An illegal card is now an enabled, focusable
+> button that refuses out loud — `PlayingCard`'s `illegal` prop became presentational only and a new
+> optional `disabled` carries actual tappability. So an illegal card is a real tab stop that states
+> its reason, not a skipped one. See
+> [the arming surface](arming-a-buff-from-the-card.md#an-illegal-card-is-enabled-but-refusing-not-disabled).
+> The arming surface itself adds a **third** roving group, over its filtered buff list, on the same
+> hook and under the same positional-indexing constraint as the gallery's.
+
+`AbilityPrompt` calls it with every offered choice always focusable (a Fox may exchange any
 held card, a Woodcutter may discard any held card or the one just drawn), over the flattened list of
 hand cards plus — per rank — the decline button or the drawn card.
 

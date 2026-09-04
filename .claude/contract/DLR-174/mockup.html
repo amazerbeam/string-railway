@@ -1,0 +1,830 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Card-First Arming</title>
+<style>
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-ink-soft: #5c5443;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+    --wc-gain: #8fb04e;
+    --wc-guard: #7fae8c;
+
+    --wc-fig-bells-dark: #3a2109; --wc-fig-bells-mid: #7a4d1c;
+    --wc-fig-bells-light: #c99a55; --wc-fig-bells-white: #fff4dd;
+    --wc-fig-keys-dark: #0f2735; --wc-fig-keys-mid: #2b556e;
+    --wc-fig-keys-light: #7fb0cd; --wc-fig-keys-white: #f2fbff;
+    --wc-fig-moons-dark: #1e1236; --wc-fig-moons-mid: #43306e;
+    --wc-fig-moons-light: #8f74bd; --wc-fig-moons-white: #f6f0ff;
+
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
+    --wc-ui-transition-ms: 140ms;
+    --wc-lift-armed: -20%;
+
+    --wc-m-bronze: linear-gradient(142deg,#f3c894 0%,#b0702e 22%,#65401c 47%,#e0a561 64%,#7d4d20 100%);
+    --wc-m-silver: linear-gradient(142deg,#ffffff 0%,#ccd6da 20%,#76858c 47%,#f2f7f9 64%,#8e9ba1 100%);
+    --wc-m-gold:   linear-gradient(142deg,#fff6cf 0%,#e6c159 21%,#8f6d1c 47%,#f8e296 64%,#a8842a 100%);
+    --wc-m-bronze-edge: #4a2d13; --wc-m-silver-edge: #59656b; --wc-m-gold-edge: #6b520f;
+    --wc-face-bronze: #f8efdf; --wc-face-bronze-edge: #e7d6b6;
+    --wc-face-silver: #f3f7f9; --wc-face-silver-edge: #dae4e9;
+    --wc-face-gold:   #fcf6e0; --wc-face-gold-edge:   #efe1b3;
+    --wc-buff-ink: #1b1710; --wc-buff-ink-soft: #5f5647; --wc-buff-frame: 5px;
+    --wc-payoff-ink-bells: #1d1004; --wc-payoff-ink-keys: #06212e; --wc-payoff-ink-moons: #1c1030;
+    --wc-readout-ground: #f6f2e8; --wc-readout-ink: #1b1710;
+    --wc-readout-label: #5f5647; --wc-readout-costly: #96301f; --wc-readout-worthwhile: #6f5412;
+
+    --wc-buffcard-w: clamp(5.4rem, 15vh, 11.5rem);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; height: 100svh; overflow: hidden;
+    background: var(--wc-chamber); color: var(--wc-chalk);
+    font-family: var(--wc-sans); font-size: 15px;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  button { font: inherit; }
+
+  /* ============ shell ============ */
+  .shell {
+    height: 100svh;
+    display: grid;
+    grid-template-columns: clamp(9rem, 15vw, 15rem) 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'band band' 'dossier table' 'dossier hand' 'dossier bar';
+    gap: 0.5rem; padding: 0.5rem 0.6rem;
+  }
+
+  /* ---- status band ---- */
+  .band {
+    grid-area: band; display: flex; align-items: stretch; gap: 0.55rem;
+    font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+  .plate {
+    border: 1px solid #24313a; border-radius: 0.3rem; padding: 0.3rem 0.6rem;
+    display: flex; flex-direction: column; justify-content: center; gap: 0.12rem;
+    background: var(--wc-chamber-lift);
+  }
+  .plate .v { font-family: var(--wc-serif); font-size: 0.95rem; color: var(--wc-parchment); text-transform: none; letter-spacing: 0; }
+  .plate.accent { border-color: var(--wc-brass-dim); }
+  .plate.accent .v { color: var(--wc-brass); }
+  .band-flex { flex: 1; display: flex; align-items: center; gap: 0.4rem; }
+  .hearts { display: flex; gap: 0.12rem; }
+  .heart { width: 0.72rem; height: 0.72rem; background: var(--wc-alarm); clip-path: polygon(50% 100%,0 38%,0 18%,18% 0,50% 16%,82% 0,100% 18%,100% 38%); }
+  .heart.spent { background: #3a4148; }
+  .trio { display: flex; gap: 0.35rem; margin-left: auto; }
+  .trio .plate { min-width: 3.6rem; align-items: center; }
+
+  /* ---- dossier ---- */
+  .dossier { grid-area: dossier; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0; }
+  .panel {
+    background: var(--wc-chamber-lift); border: 1px solid #22303a; border-radius: 0.35rem;
+    padding: 0.55rem 0.6rem; font-size: 0.72rem; color: var(--wc-chalk-dim);
+  }
+  .panel h3 { margin: 0 0 0.45rem; font-size: 0.58rem; letter-spacing: 0.13em; text-transform: uppercase; font-weight: 600; }
+  .holds-row { display: flex; align-items: center; gap: 0.4rem; padding: 0.22rem 0; border-bottom: 1px solid #1e2a32; }
+  .holds-row:last-child { border-bottom: 0; }
+  .holds-row .nm { flex: 1; color: var(--wc-chalk); }
+  .mini-back { width: 0.85rem; height: 1.15rem; border-radius: 2px; background: repeating-linear-gradient(45deg,#243740 0 3px,#1a2830 3px 6px); border: 1px solid #33454f; }
+  .pot-figure { font-family: var(--wc-serif); font-size: 2.4rem; color: var(--wc-brass); line-height: 1; }
+  .pot-sub { font-size: 0.68rem; margin-top: 0.1rem; }
+  .pot-sub b { color: var(--wc-parchment); font-weight: 600; }
+  .pot-line { display: flex; justify-content: space-between; font-size: 0.68rem; padding: 0.18rem 0; border-top: 1px solid #1e2a32; margin-top: 0.4rem; }
+  .pot-line .amt { color: var(--wc-gain); }
+  .pot-btn {
+    width: 100%; margin-top: 0.45rem; min-height: 44px;
+    background: transparent; border: 1px solid var(--wc-brass-dim); border-radius: 0.3rem;
+    color: var(--wc-brass); font-family: var(--wc-serif); font-size: 0.9rem; cursor: pointer;
+    padding: 0.4rem; line-height: 1.15;
+  }
+  .pot-btn small { display: block; font-family: var(--wc-sans); font-size: 0.58rem; color: var(--wc-chalk-dim); margin-top: 0.15rem; }
+
+  /* ============ the felt — the region the sketch circled ============ */
+  .table {
+    grid-area: table; min-height: 0;
+    background: radial-gradient(130% 130% at 50% -10%, #1e3129 0%, var(--wc-felt) 58%, var(--wc-felt-lip) 100%);
+    border: 1px solid var(--wc-felt-line); border-radius: 0.5rem;
+    display: grid; grid-template-columns: auto minmax(0, 1fr); overflow: hidden;
+  }
+  .rail {
+    border-right: 1px solid var(--wc-felt-line); padding: 0.6rem 0.7rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+    font-size: 0.55rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--wc-chalk-dim);
+    width: clamp(6.5rem, 10vw, 9rem); flex: none;
+  }
+  .trump-chip { border: 1px solid var(--wc-brass-dim); border-radius: 0.25rem; padding: 0.2rem 0.4rem; color: var(--wc-brass); display: flex; align-items: center; gap: 0.25rem; }
+  .rail-spacer { flex: 1; }
+  .spent-back { width: calc(var(--wc-card-w) * 0.82); aspect-ratio: 5/7; border-radius: 0.2rem; background: repeating-linear-gradient(45deg,#243740 0 4px,#1a2830 4px 8px); border: 1px solid #33454f; }
+
+  .stage { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ============ the arming surface ============ */
+  .arming { display: grid; grid-template-rows: auto minmax(0,1fr) auto; min-height: 0; height: 100%; }
+
+  .arming-head {
+    display: flex; align-items: center; gap: 0.85rem;
+    padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--wc-felt-line);
+    background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.05));
+  }
+  .head-slot { flex: none; position: relative; }
+  .head-text { min-width: 0; flex: 1; }
+  .head-title { font-family: var(--wc-serif); font-size: 1.15rem; color: var(--wc-parchment); margin: 0 0 0.12rem; line-height: 1.1; }
+  .head-sub { margin: 0; font-size: 0.75rem; color: var(--wc-chalk-dim); line-height: 1.35; }
+  .head-sub b { color: var(--wc-parchment); font-weight: 600; }
+
+  /* the win/lose slip, in the readout's own light palette */
+  .wl-slip {
+    flex: none; display: flex; gap: 0; border-radius: 0.3rem; overflow: hidden;
+    background: var(--wc-readout-ground); color: var(--wc-readout-ink);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .wl-cell { padding: 0.3rem 0.7rem; text-align: center; min-width: 4.6rem; }
+  .wl-cell + .wl-cell { border-left: 1px solid #ded6c6; }
+  .wl-k { display: block; font-size: 0.52rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--wc-readout-label); }
+  .wl-v { display: block; font-family: var(--wc-serif); font-size: 1.15rem; line-height: 1.1; }
+  .wl-v.up { color: var(--wc-readout-worthwhile); }
+  .wl-v.down { color: var(--wc-readout-costly); }
+  .wl-cell.changed { animation: pop 320ms ease; }
+  @keyframes pop { 0%{background:#fbe9b8} 100%{background:transparent} }
+
+  /* the window statement — border STYLE differs, so it survives greyscale */
+  .window-tag {
+    flex: none; align-self: stretch; display: flex; flex-direction: column; justify-content: center;
+    gap: 0.1rem; font-size: 0.55rem; letter-spacing: 0.11em; text-transform: uppercase;
+    padding: 0.3rem 0.65rem; border-radius: 0.25rem;
+    border: 2px solid var(--wc-brass-dim); color: var(--wc-brass); text-align: right;
+  }
+  .window-tag b { font-size: 0.62rem; letter-spacing: 0.09em; }
+  .window-tag.is-narrow { border-style: dashed; border-color: var(--wc-chalk-dim); color: var(--wc-chalk-dim); }
+  .window-tag.is-shut { border-style: dotted; border-color: var(--wc-alarm); color: var(--wc-alarm); }
+
+  .arming-body { min-height: 0; overflow-y: auto; padding: 0.9rem 1.1rem 1rem; display: flex; flex-direction: column; justify-content: center; }
+  .row-label {
+    font-size: 0.56rem; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--wc-chalk-dim); margin: 0 0 0.45rem;
+  }
+  .row-label b { color: var(--wc-parchment); }
+  .buff-grid { display: flex; flex-wrap: wrap; gap: clamp(0.5rem, 1.4vh, 1.1rem); align-items: center; justify-content: flex-start; padding-top: 12px; }
+
+  /* ---- the riding strip, pinned to the foot ---- */
+  .riding {
+    border-top: 1px solid var(--wc-felt-line); padding: 0.4rem 0.9rem;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    background: rgba(0,0,0,0.22); font-size: 0.68rem;
+  }
+  .riding-k { font-size: 0.55rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--wc-chalk-dim); }
+  .riding-chip {
+    display: flex; align-items: center; gap: 0.35rem;
+    border: 1px solid var(--wc-guard); border-radius: 1rem; padding: 0.16rem 0.32rem 0.16rem 0.6rem;
+    color: var(--wc-parchment);
+  }
+  .riding-chip .x {
+    width: 1.15rem; height: 1.15rem; border-radius: 50%; border: 1px solid var(--wc-chalk-dim);
+    background: transparent; color: var(--wc-chalk-dim); line-height: 1; cursor: pointer; font-size: 0.72rem;
+  }
+  .riding-chip .x:hover { border-color: var(--wc-alarm); color: var(--wc-alarm); }
+
+  /* ============ buff card — the real face ============ */
+  .buffcard {
+    position: relative; display: block; width: var(--wc-buffcard-w); aspect-ratio: 31/41;
+    border-radius: 12px; border: none; padding: var(--wc-buff-frame); cursor: pointer;
+    background: var(--wc-buffcard-metal); color: var(--wc-buff-ink);
+    font-family: var(--wc-sans); text-align: left;
+    box-shadow: 0 0 0 1px var(--wc-buffcard-metal-edge), 0 4px 10px #00000073;
+    transition: transform var(--wc-ui-transition-ms) ease-out, box-shadow var(--wc-ui-transition-ms) ease-out;
+    isolation: isolate; overflow: hidden; touch-action: manipulation;
+  }
+  .buffcard.bronze { --wc-buffcard-metal: var(--wc-m-bronze); --wc-buffcard-metal-edge: var(--wc-m-bronze-edge); --wc-buffcard-face: var(--wc-face-bronze); --wc-buffcard-face-edge: var(--wc-face-bronze-edge); }
+  .buffcard.silver { --wc-buffcard-metal: var(--wc-m-silver); --wc-buffcard-metal-edge: var(--wc-m-silver-edge); --wc-buffcard-face: var(--wc-face-silver); --wc-buffcard-face-edge: var(--wc-face-silver-edge); }
+  .buffcard.gold   { --wc-buffcard-metal: var(--wc-m-gold);   --wc-buffcard-metal-edge: var(--wc-m-gold-edge);   --wc-buffcard-face: var(--wc-face-gold);   --wc-buffcard-face-edge: var(--wc-face-gold-edge); }
+  .buffcard.bells { --wc-buffcard-payoff-bg: var(--wc-bells); --wc-buffcard-payoff-fg: var(--wc-payoff-ink-bells); --wc-buffcard-suit-color: var(--wc-bells); }
+  .buffcard.keys  { --wc-buffcard-payoff-bg: var(--wc-keys);  --wc-buffcard-payoff-fg: var(--wc-payoff-ink-keys);  --wc-buffcard-suit-color: var(--wc-keys); }
+  .buffcard.moons { --wc-buffcard-payoff-bg: var(--wc-moons); --wc-buffcard-payoff-fg: var(--wc-payoff-ink-moons); --wc-buffcard-suit-color: var(--wc-moons); }
+  .buffcard.wild  { --wc-buffcard-payoff-bg: var(--wc-brass); --wc-buffcard-payoff-fg: #221a08; --wc-buffcard-suit-color: var(--wc-brass-dim); }
+  .buffcard.none  { --wc-buffcard-payoff-bg: var(--wc-buff-ink); --wc-buffcard-payoff-fg: var(--wc-buffcard-face); --wc-buffcard-suit-color: var(--wc-buff-ink-soft); }
+
+  .buffcard::before { content:''; position:absolute; inset:0; border-radius:12px; pointer-events:none; opacity:0.55; background: linear-gradient(118deg,#ffffff00 34%,#ffffffbf 45%,#ffffff00 56%); }
+  .buffcard::after  { content:''; position:absolute; inset:0; border-radius:12px; pointer-events:none; background: linear-gradient(318deg,#00000073 0%,#00000000 26%); }
+  .bc-sheen {
+    position:absolute; top:-30%; bottom:-30%; left:-45%; width:36%; z-index:0; pointer-events:none;
+    opacity:0; background: linear-gradient(90deg,#ffffff00 0%,#ffffffe6 48%,#ffffff00 100%);
+    transform: skewX(-18deg) translateX(-160%);
+  }
+  @media (hover: hover) {
+    .buffcard:not(:disabled):hover .bc-sheen { animation: sheen 760ms cubic-bezier(.32,.06,.2,1) 1; }
+    .buffcard:not(:disabled):hover { transform: translateY(-5px); box-shadow: 0 0 0 1px var(--wc-buffcard-metal-edge), 0 12px 20px #000000a6; }
+  }
+  @keyframes sheen {
+    0% { transform: skewX(-18deg) translateX(-160%); opacity: 0; }
+    14%, 86% { opacity: 0.95; }
+    100% { transform: skewX(-18deg) translateX(460%); opacity: 0; }
+  }
+  .buffcard:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+
+  .bc-face {
+    display:block; position:relative; z-index:1; width:100%; height:100%; border-radius:8px; overflow:hidden;
+    background: radial-gradient(120% 92% at 50% 0%, #fffdf7 0%, var(--wc-buffcard-face) 52%, var(--wc-buffcard-face-edge) 100%);
+    box-shadow: inset 0 0 0 1px #ffffffd9, inset 0 1px 4px #00000021;
+  }
+  .bc-top { position:absolute; top:6%; left:7%; right:7%; display:flex; align-items:center; gap:0.14rem; flex-wrap:nowrap; overflow:hidden; }
+  .bc-suit { flex:0 0 auto; width: clamp(0.68rem,1.5vmin,1.1rem); aspect-ratio:1; display:grid; place-items:center; color: var(--wc-buffcard-suit-color); }
+  .bc-suit svg { width:100%; height:100%; }
+  .bc-tier { flex:0 0 auto; font-family: var(--wc-serif); line-height:1; letter-spacing:0.07em; opacity:0.8; font-size: clamp(0.45rem,1vmin,0.66rem); }
+  .bc-cadence { padding:0.06rem 0.22rem; border-radius:4px; background:#1b171014; opacity:0.8; font-size:clamp(0.3rem,0.7vmin,0.42rem); font-weight:700; letter-spacing:0.04em; white-space:nowrap; }
+  .bc-cadence.press { background: var(--wc-buff-ink); color: var(--wc-buffcard-face); opacity:1; box-shadow: 0 1px 0 #ffffff59 inset, 0 1px 2px #00000040; }
+  .bc-count { margin-left:auto; flex:0 0 auto; padding:0.06rem 0.24rem; border-radius:4px; background: var(--wc-buff-ink); color: var(--wc-buffcard-face); font-size:clamp(0.32rem,0.76vmin,0.44rem); font-weight:700; }
+  .bc-name { position:absolute; top:22%; left:8%; right:8%; font-family: var(--wc-serif); font-size: clamp(0.5rem,1.15vmin,0.74rem); line-height:1.16; }
+  .bc-cond { position:absolute; top:50%; left:8%; right:8%; bottom:30%; overflow:hidden; color: var(--wc-buff-ink-soft); font-size: clamp(0.36rem,0.84vmin,0.5rem); line-height:1.28; }
+  .bc-payoff {
+    position:absolute; left:6%; right:6%; bottom:6%; padding:0.28rem 0; border-radius:6px; text-align:center;
+    font-weight:700; background: var(--wc-buffcard-payoff-bg); color: var(--wc-buffcard-payoff-fg);
+    font-size: clamp(0.42rem,0.98vmin,0.6rem); box-shadow: inset 0 0 0 1px #00000026; white-space:nowrap; overflow:hidden;
+  }
+  .bc-confirm { display:none; }
+
+  /* poised — first tap: lift AND ring, plus the confirm bar replacing the payoff position */
+  .buffcard[aria-pressed='poised'] { transform: translateY(-9px); box-shadow: 0 0 0 1px var(--wc-buffcard-metal-edge), 0 0 0 3px var(--wc-brass), 0 14px 24px #000000b3; }
+  .buffcard[aria-pressed='poised'] .bc-payoff { bottom: calc(6% + 1.5rem); }
+  .buffcard[aria-pressed='poised'] .bc-confirm {
+    display:block; position:absolute; left:6%; right:6%; bottom:6%; padding:0.28rem 0; border-radius:6px;
+    background: var(--wc-brass); color:#1a1206; text-align:center; font-weight:700; letter-spacing:0.06em;
+    font-size: clamp(0.34rem,0.8vmin,0.46rem);
+  }
+  /* armed — a DOUBLE frame and a notch, not a colour swap */
+  .buffcard[aria-pressed='true'] { transform: translateY(-9px); box-shadow: 0 0 0 2px var(--wc-guard), 0 0 0 5px #1b3a28, 0 14px 24px #000000b3; }
+  .buffcard[aria-pressed='true'] .bc-face { box-shadow: inset 0 0 0 2px var(--wc-guard), inset 0 1px 4px #00000021; }
+  .buffcard[aria-pressed='true']::after { background: linear-gradient(318deg,#00000073 0%,#00000000 26%), repeating-linear-gradient(45deg, #7fae8c22 0 6px, transparent 6px 12px); }
+  .bc-riding { display:none; }
+  .buffcard[aria-pressed='true'] .bc-riding {
+    display:block; position:absolute; top:6%; right:7%; z-index:2;
+    background: var(--wc-guard); color:#0d2318; border-radius:50%; width:0.95rem; height:0.95rem;
+    display:grid; place-items:center; font-size:0.6rem; font-weight:700;
+  }
+
+  /* tarnished — unusable but still plainly a card, still plainly yours */
+  .buffcard:disabled { filter: saturate(0.25) brightness(0.72); cursor: default; box-shadow: 0 0 0 1px var(--wc-buffcard-metal-edge); }
+  .buffcard:disabled .bc-face { opacity: 0.62; }
+  .buffcard:disabled::before { opacity: 0.15; }
+  .buffcard:disabled .bc-cond, .buffcard:disabled .bc-payoff, .buffcard:disabled .bc-cadence { display: none; }
+  .buffcard:disabled .bc-name { top: 30%; font-size: clamp(0.34rem,0.8vmin,0.46rem); }
+
+  /* ============ playing card ============ */
+  .card {
+    position: relative; width: var(--wc-card-w); aspect-ratio: 5/7; border-radius: 0.3rem;
+    background: linear-gradient(168deg, #f4eedd 0%, var(--wc-parchment) 55%, var(--wc-parchment-shade) 100%);
+    color: var(--wc-ink); border: 1px solid #bfb193; padding: 0;
+    font-family: var(--wc-serif); cursor: pointer; overflow: hidden;
+    box-shadow: 0 3px 7px rgba(0,0,0,0.45);
+    transition: transform var(--wc-ui-transition-ms) ease, box-shadow var(--wc-ui-transition-ms) ease;
+    display: block;
+  }
+  .card.big { width: clamp(3.6rem, 8.5vh, 6.4rem); }
+  .card .idx { position: absolute; top: 3%; left: 7%; font-size: 0.66em; line-height: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .card .idx.br { top: auto; left: auto; bottom: 3%; right: 7%; transform: rotate(180deg); }
+  .card .idx .r { font-size: 1.05em; font-weight: 600; }
+  .card .idx svg { width: 0.62em; height: 0.62em; }
+  .card .art {
+    position: absolute; inset: 20% 16% 20% 16%; border-radius: 0.15rem; overflow: hidden;
+    background: linear-gradient(180deg, var(--fig-light) 0%, var(--fig-mid) 55%, var(--fig-dark) 100%);
+    display: grid; place-items: center;
+  }
+  .card .art svg { width: 58%; height: 58%; color: var(--fig-white); opacity: 0.92; }
+  .card.s-bells { --fig-dark: var(--wc-fig-bells-dark); --fig-mid: var(--wc-fig-bells-mid); --fig-light: var(--wc-fig-bells-light); --fig-white: var(--wc-fig-bells-white); --suit: var(--wc-bells); }
+  .card.s-keys  { --fig-dark: var(--wc-fig-keys-dark);  --fig-mid: var(--wc-fig-keys-mid);  --fig-light: var(--wc-fig-keys-light);  --fig-white: var(--wc-fig-keys-white);  --suit: var(--wc-keys); }
+  .card.s-moons { --fig-dark: var(--wc-fig-moons-dark); --fig-mid: var(--wc-fig-moons-mid); --fig-light: var(--wc-fig-moons-light); --fig-white: var(--wc-fig-moons-white); --suit: var(--wc-moons); }
+  .card .idx { color: color-mix(in srgb, var(--suit) 72%, var(--wc-ink)); }
+
+  .card.is-armed { transform: translateY(var(--wc-lift-armed)); border: 2px solid var(--wc-brass); box-shadow: 0 12px 22px rgba(0,0,0,0.55), 0 0 0 3px #c99a4e33; z-index: 3; }
+  .card.is-illegal { filter: grayscale(0.72) brightness(0.68); }
+  .card.is-illegal .art { opacity: 0.55; }
+  .card.is-illegal::after { content:''; position:absolute; inset:0; border-radius:inherit; border:1px dashed #6f7d78; }
+  .card:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 3px; }
+  .card.is-skulled .art { background: repeating-linear-gradient(45deg,#2a2420 0 5px,#1d1916 5px 10px); }
+
+  @keyframes shake { 0%,100%{transform:translateX(0)} 18%{transform:translateX(-6px)} 36%{transform:translateX(6px)} 55%{transform:translateX(-4px)} 74%{transform:translateX(4px)} }
+  .card.is-refused { animation: shake 280ms ease; border-color: var(--wc-alarm); box-shadow: 0 0 0 2px #d1705f66; }
+  @media (prefers-reduced-motion: reduce) { .card.is-refused { animation: none; border: 2px dashed var(--wc-alarm); } }
+
+  /* ---- hand ---- */
+  .hand-zone { grid-area: hand; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding-top: 0.15rem; }
+  .hint { margin: 0; font-size: 0.64rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--wc-chalk-dim); min-height: 1.2em; text-align: center; }
+  .hint.is-reject { color: var(--wc-alarm); }
+  .hint.is-live { color: var(--wc-brass); }
+  .fan { display: flex; gap: 0.5rem; align-items: flex-end; padding-top: 0.6rem; }
+  .slot { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  .wl { font-size: 0.52rem; letter-spacing: 0.06em; color: var(--wc-chalk-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .wl .up { color: var(--wc-gain); }
+  .wl .down { color: var(--wc-alarm); }
+  .wl.boosted { color: var(--wc-brass); }
+
+  /* ---- action bar ---- */
+  .bar { grid-area: bar; display: flex; justify-content: center; gap: 0.55rem; padding: 0.2rem 0 0.1rem; }
+  .bar-btn {
+    min-width: 9rem; min-height: 44px; background: transparent;
+    border: 1px solid var(--wc-brass-dim); border-radius: 0.3rem; color: var(--wc-brass);
+    font-family: var(--wc-serif); font-size: 0.95rem; padding: 0.35rem 0.9rem; cursor: pointer; line-height: 1.1;
+  }
+  .bar-btn small { display:block; font-family: var(--wc-sans); font-size: 0.58rem; color: var(--wc-chalk-dim); letter-spacing: 0.04em; margin-top: 0.1rem; }
+  .bar-btn.is-open { border-style: dashed; }
+  .bar-btn[disabled] { opacity: 0.38; cursor: not-allowed; }
+
+  /* ---- mockup scaffolding, not part of the design ---- */
+  .switcher {
+    position: fixed; bottom: 0.4rem; left: 0.4rem; z-index: 20; display: flex; gap: 0.25rem; flex-wrap: wrap; max-width: 15rem;
+    background: rgba(0,0,0,0.8); padding: 0.3rem; border-radius: 0.3rem; border: 1px dashed var(--wc-brass-dim);
+  }
+  .switcher span { font-size: 0.52rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--wc-chalk-dim); align-self: center; padding: 0 0.3rem; }
+  .switcher button {
+    font-size: 0.58rem; letter-spacing: 0.05em; text-transform: uppercase; background: transparent;
+    border: 1px solid var(--wc-chalk-dim); color: var(--wc-chalk-dim); border-radius: 0.2rem;
+    padding: 0.25rem 0.45rem; cursor: pointer;
+  }
+  .switcher button[aria-pressed='true'] { border-color: var(--wc-brass); color: var(--wc-brass); }
+
+  @media (max-width: 950px) {
+    .shell { grid-template-columns: 1fr; grid-template-areas: 'band' 'table' 'hand' 'bar'; }
+    .dossier { display: none; }
+    .arming-head { flex-wrap: wrap; gap: 0.5rem; }
+    .window-tag { order: 3; width: 100%; text-align: left; }
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="s-bells" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a1.6 1.6 0 0 1 1.6 1.6v.6A6.4 6.4 0 0 1 18 10.3v4l1.6 2.5a.8.8 0 0 1-.7 1.2H5.1a.8.8 0 0 1-.7-1.2L6 14.3v-4a6.4 6.4 0 0 1 4.4-6.1v-.6A1.6 1.6 0 0 1 12 2Zm0 18.8a2.4 2.4 0 0 0 2.3-1.8H9.7a2.4 2.4 0 0 0 2.3 1.8Z"/></symbol>
+    <symbol id="s-keys" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 2a6.5 6.5 0 0 0-6.2 8.5L2.6 17.2a1.2 1.2 0 0 0-.3.8v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1.6h1.6a1 1 0 0 0 1-1V16.6h1.6a1 1 0 0 0 .7-.3l1.3-1.3A6.5 6.5 0 1 0 15.5 2Zm1.8 5.6a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4Z"/></symbol>
+    <symbol id="s-moons" viewBox="0 0 24 24"><path fill="currentColor" d="M20.5 15.3A8.6 8.6 0 0 1 9.2 4a8.8 8.8 0 1 0 11.3 11.3Z"/></symbol>
+    <symbol id="s-skull" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C7 2 3.5 5.4 3.5 10c0 2.7 1.3 4.6 3 5.8v2.4c0 .9.7 1.6 1.6 1.6h7.8c.9 0 1.6-.7 1.6-1.6v-2.4c1.7-1.2 3-3.1 3-5.8C20.5 5.4 17 2 12 2ZM8.6 12.2a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm6.8 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/></symbol>
+  </defs>
+</svg>
+
+<div class="shell">
+  <!-- ============ status band ============ -->
+  <header class="band">
+    <div class="plate"><span>Opponent</span><span class="v">3 held</span></div>
+    <div class="plate accent"><span>Run</span><span class="v">Fight 1 of 25 — Aoife</span></div>
+    <div class="plate"><span>Coins</span><span class="v">0</span></div>
+    <div class="band-flex">
+      <span>Your health</span>
+      <span style="font-family:var(--wc-serif);font-size:0.95rem;color:var(--wc-parchment)">10 / 10</span>
+      <span class="hearts" id="my-hearts"></span>
+    </div>
+    <div class="trio">
+      <div class="plate"><span>You</span><span class="v">1</span></div>
+      <div class="plate"><span>Trick</span><span class="v">3</span></div>
+      <div class="plate"><span>Them</span><span class="v">1</span></div>
+    </div>
+    <div class="band-flex" style="flex:none;gap:0.5rem">
+      <span style="font-family:var(--wc-serif);font-size:0.95rem;color:var(--wc-parchment)">10 / 10</span>
+      <span>Aoife's health</span>
+      <span class="hearts" id="her-hearts"></span>
+    </div>
+  </header>
+
+  <!-- ============ dossier ============ -->
+  <aside class="dossier">
+    <div class="panel">
+      <h3>What the Quarry holds</h3>
+      <div class="holds-row"><svg class="bc-suit" style="width:.85rem;color:var(--wc-bells)"><use href="#s-bells"/></svg><span class="nm">Bells</span><span>—</span></div>
+      <div class="holds-row"><svg class="bc-suit" style="width:.85rem;color:var(--wc-keys)"><use href="#s-keys"/></svg><span class="nm">Keys</span><span class="mini-back"></span><span class="mini-back"></span></div>
+      <div class="holds-row"><svg class="bc-suit" style="width:.85rem;color:var(--wc-moons)"><use href="#s-moons"/></svg><span class="nm">Moons</span><span class="mini-back"></span></div>
+    </div>
+    <div class="panel">
+      <h3>The pot</h3>
+      <div class="pot-figure" id="pot-figure">4</div>
+      <div class="pot-sub"><b>2</b> banked × <b>2</b> streak</div>
+      <div class="pot-line"><span>This trick adds</span><span class="amt" id="pot-add">+1</span></div>
+      <button type="button" class="pot-btn">Apply damage <span id="pot-apply">4</span><small>Quarry holds 10 — total and streak reset</small></button>
+      <button type="button" class="pot-btn">Roll over<small>Leave the streak standing</small></button>
+    </div>
+  </aside>
+
+  <!-- ============ the felt ============ -->
+  <section class="table" aria-live="polite">
+    <div class="rail">
+      <div>Decree</div>
+      <div class="card s-moons" style="cursor:default">
+        <span class="idx"><span class="r">5</span><svg><use href="#s-moons"/></svg></span>
+        <span class="art"><svg><use href="#s-moons"/></svg></span>
+        <span class="idx br"><span class="r">5</span><svg><use href="#s-moons"/></svg></span>
+      </div>
+      <div class="trump-chip"><svg style="width:.7rem;height:.7rem"><use href="#s-moons"/></svg> Moons is trump</div>
+      <div>20 in the pile</div>
+      <div class="rail-spacer"></div>
+      <div id="rail-led" hidden>
+        <div style="text-align:center;margin-bottom:.3rem;color:var(--wc-alarm)">They led</div>
+        <div class="card s-keys" style="cursor:default;margin:0 auto">
+          <span class="idx"><span class="r">6</span><svg><use href="#s-keys"/></svg></span>
+          <span class="art"><svg><use href="#s-skull"/></svg></span>
+          <span class="idx br"><span class="r">6</span><svg><use href="#s-keys"/></svg></span>
+        </div>
+        <div style="text-align:center;margin-top:.25rem">carries a skull</div>
+      </div>
+      <div class="rail-spacer"></div>
+      <div>Spent</div>
+      <div class="spent-back"></div>
+      <div>4 spent</div>
+    </div>
+
+    <div class="stage">
+      <div class="arming">
+        <div class="arming-head">
+          <div class="head-slot" id="head-slot"></div>
+          <div class="head-text">
+            <p class="head-title" id="head-title">3 of Keys</p>
+            <p class="head-sub" id="head-sub"></p>
+          </div>
+          <div class="wl-slip" id="wl-slip"></div>
+          <div class="window-tag" id="window-tag"></div>
+        </div>
+        <div class="arming-body" id="arming-body"></div>
+        <div class="riding" id="riding" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ hand ============ -->
+  <div class="hand-zone">
+    <p class="hint" id="hint"></p>
+    <div class="fan" id="fan" role="group" aria-label="Your hand"></div>
+  </div>
+
+  <!-- ============ action bar ============ -->
+  <nav class="bar">
+    <button type="button" class="bar-btn is-open" id="ab-buff">Apply Buff<small>21 held</small></button>
+    <button type="button" class="bar-btn" id="ab-play">Cards<small id="play-sub">3 of Keys</small></button>
+    <button type="button" class="bar-btn" disabled>Swap<small>3 of 3</small></button>
+  </nav>
+</div>
+
+<div class="switcher" role="group" aria-label="Mockup state">
+  <span>State</span>
+  <button type="button" data-state="between" aria-pressed="true">Between tricks</button>
+  <button type="button" data-state="led-cheat" aria-pressed="false">They led · hold Cheat</button>
+  <button type="button" data-state="led-none" aria-pressed="false">They led · no Cheat</button>
+  <button type="button" data-state="curse" aria-pressed="false">Curse armed</button>
+</div>
+
+<script>
+  var SUIT_MARK = { bells: '#s-bells', keys: '#s-keys', moons: '#s-moons' };
+  var TIER_NUMERAL = { bronze: 'I', silver: 'II', gold: 'III' };
+
+  var HAND = [
+    { key: '3k', rank: '3', suit: 'keys',  label: '3 of Keys',  base: 1 },
+    { key: '5b', rank: '5', suit: 'bells', label: '5 of Bells', base: 1 },
+    { key: '7m', rank: '7', suit: 'moons', label: '7 of Moons', base: 2, trump: true },
+    { key: '8b', rank: '8', suit: 'bells', label: '8 of Bells', base: 1, skulled: true }
+  ];
+
+  // The pool. In the real build, which of these appears is NOT a table lookup —
+  // projectBuffBranches() is asked "if I play this card, does this buff fire".
+  var POOL = [
+    { id:'kh', name:'Keys High',  cond:'If you go high on Keys',  pay:'Blade +2',    tier:'silver', suit:'keys',  cad:'Event', on:['keys'],  branch:'high', add:2 },
+    { id:'kl', name:'Keys Low',   cond:'If you go low on Keys',   pay:'Momentum ×2', tier:'bronze', suit:'keys',  cad:'Event', on:['keys'],  branch:'low',  mult:2 },
+    { id:'bh', name:'Bells High', cond:'If you go high on Bells', pay:'Blade +3',    tier:'gold',   suit:'bells', cad:'Event', on:['bells'], branch:'high', add:3 },
+    { id:'bl', name:'Bells Low',  cond:'If you go low on Bells',  pay:'Momentum ×2', tier:'bronze', suit:'bells', cad:'Event', on:['bells'], branch:'low',  mult:2 },
+    { id:'mh', name:'Moons High', cond:'If you go high on Moons', pay:'Blade +2',    tier:'silver', suit:'moons', cad:'Event', on:['moons'], branch:'high', add:2 },
+    { id:'sl', name:'Skull Low',  cond:'If you go low on a skull',pay:'Blade +4',    tier:'gold',   suit:null,    cad:'Event', on:['keys','bells','moons'], branch:'low', add:4, maybe:true },
+    { id:'wc', name:'Wild Blade', cond:'If you go high on any suit', pay:'Blade +1', tier:'bronze', suit:'wild',  cad:'Event', on:['keys','bells','moons'], branch:'high', add:1 },
+    { id:'st', name:'Skull Tether',cond:'If you go high on a skull',pay:'Guard +1',  tier:'silver', suit:null,    cad:'Event', on:['keys','bells','moons'], branch:'high', maybe:true, guard:1 }
+  ];
+  var CHEAT = { id:'ch', name:'Cheat', cond:'Play any card, ignoring follow-suit', pay:'This trick', tier:'silver', suit:null, cad:'Press' };
+
+  var state = 'between', selected = '3k', poised = null, armed = {};
+
+  function card(k) { return HAND.filter(function (c) { return c.key === k; })[0]; }
+  function ledSuit() { return state === 'between' ? null : 'keys'; }
+  function isLegal(c) {
+    var led = ledSuit();
+    if (led === null) return true;
+    if (c.suit === led) return true;
+    if (armed[CHEAT.id]) return true;            // an armed Cheat breaks follow-suit
+    return HAND.every(function (x) { return x.suit !== led; });
+  }
+  /** The card is off-suit, but a HELD Cheat would make it playable — not a refusal, a lock. */
+  function cheatWouldUnlock(c) {
+    return state === 'led-cheat' && !armed[CHEAT.id] && c.suit !== ledSuit();
+  }
+  // "Could this buff still pay if I play this card?" — includes "might", because reporting
+  // nothing for a buff that may well pay reads as "this buff is dead".
+  function buffsFor(c) {
+    if (state === 'led-cheat') return [CHEAT];
+    if (state === 'led-none' || state === 'curse') return [];
+    return POOL.filter(function (b) { return b.on.indexOf(c.suit) !== -1; });
+  }
+  function armedList() { return POOL.concat([CHEAT]).filter(function (b) { return armed[b.id]; }); }
+
+  // Win / lose damage for a card, with whatever is currently riding folded in.
+  function preview(c) {
+    var live = armedList();
+    var high = c.base, low = 0, mult = 1, maybe = false;
+    live.forEach(function (b) {
+      if (!b.on || b.on.indexOf(c.suit) === -1) return;
+      if (b.maybe) maybe = true;
+      if (b.branch === 'high') { if (b.add) high += b.add; }
+      else { if (b.add) low += b.add; if (b.mult) mult *= b.mult; }
+    });
+    return { high: high * (mult > 1 ? 1 : 1), low: low, mult: mult, maybe: maybe };
+  }
+
+  function svgMark(href, cls, style) {
+    return '<svg class="' + (cls || '') + '" style="' + (style || '') + '"><use href="' + href + '"/></svg>';
+  }
+
+  function cardMarkup(c) {
+    var m = SUIT_MARK[c.suit];
+    return '<span class="idx"><span class="r">' + c.rank + '</span>' + svgMark(m) + '</span>' +
+           '<span class="art">' + svgMark(c.skulled ? '#s-skull' : m) + '</span>' +
+           '<span class="idx br"><span class="r">' + c.rank + '</span>' + svgMark(m) + '</span>';
+  }
+
+  function buffMarkup(b) {
+    var suitCls = b.suit === null ? 'none' : b.suit;
+    var mark = b.suit && b.suit !== 'wild' ? svgMark(SUIT_MARK[b.suit]) :
+               (b.suit === 'wild' ? '<span style="font-size:.62em;font-weight:700">✦</span>' : '<span style="opacity:.5;font-size:.5em">—</span>');
+    return '<span class="bc-sheen"></span>' +
+      '<span class="bc-face">' +
+        '<span class="bc-top">' +
+          '<span class="bc-suit">' + mark + '</span>' +
+          '<span class="bc-tier">' + TIER_NUMERAL[b.tier] + '</span>' +
+          '<span class="bc-cadence' + (b.cad === 'Press' ? ' press' : '') + '">' + b.cad.toUpperCase() + '</span>' +
+        '</span>' +
+        '<span class="bc-name">' + b.name + '</span>' +
+        '<span class="bc-cond">' + b.cond + (b.maybe ? ' <em>— may fire</em>' : '') + '</span>' +
+        '<span class="bc-payoff">' + b.pay + '</span>' +
+        '<span class="bc-confirm">Tap again to arm</span>' +
+        '<span class="bc-riding">✓</span>' +
+      '</span>';
+  }
+
+  function tapCard(c) {
+    if (state === 'curse') {
+      c.skulled = true;
+      state = 'between'; selected = c.key; poised = null;
+      render();
+      document.getElementById('hint').textContent = c.label + ' now carries a skull';
+      return;
+    }
+    if (!isLegal(c)) {
+      selected = c.key; poised = null; render();
+      var el = document.querySelectorAll('.fan .card')[HAND.indexOf(c)];
+      el.classList.add('is-refused');
+      setTimeout(function () { el.classList.remove('is-refused'); }, 320);
+      return;
+    }
+    if (selected === c.key) {
+      document.getElementById('hint').className = 'hint is-live';
+      document.getElementById('hint').textContent = 'Played ' + c.label + ' with ' + armedList().length + ' riding';
+      return;
+    }
+    selected = c.key; poised = null; render();
+  }
+
+  function tapBuff(b) {
+    if (armed[b.id]) { delete armed[b.id]; poised = null; }
+    else if (poised === b.id) { armed[b.id] = true; poised = null; }
+    else { poised = b.id; }
+    render(true);
+  }
+
+  function renderHand() {
+    var fan = document.getElementById('fan');
+    fan.innerHTML = '';
+    HAND.forEach(function (c, i) {
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      var legal = isLegal(c);
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'card s-' + c.suit +
+        (selected === c.key && legal && state !== 'curse' ? ' is-armed' : '') +
+        (!legal && state !== 'curse' ? ' is-illegal' : '') +
+        (c.skulled ? ' is-skulled' : '');
+      b.innerHTML = cardMarkup(c);
+      b.setAttribute('aria-label', c.label + (legal ? '' : ' — cannot be played'));
+      // Roving tabindex: ONE tab stop for the whole hand, arrows move within it.
+      b.tabIndex = i === 0 ? 0 : -1;
+      b.addEventListener('click', function () { tapCard(c); });
+      b.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        var n = (i + (e.key === 'ArrowRight' ? 1 : HAND.length - 1)) % HAND.length;
+        fan.querySelectorAll('.card')[n].focus();
+      });
+      var p = preview(c);
+      var wl = document.createElement('span');
+      wl.className = 'wl' + (armedList().length ? ' boosted' : '');
+      wl.innerHTML = 'W<span class="up">' + p.high + '</span> L<span class="' + (p.low ? 'up' : 'down') + '">' +
+        (p.low ? p.low : 0) + '</span>' + (p.mult > 1 ? ' ×' + p.mult : '') + (p.maybe ? '?' : '');
+      slot.appendChild(b); slot.appendChild(wl);
+      fan.appendChild(slot);
+    });
+  }
+
+  function renderRiding() {
+    var wrap = document.getElementById('riding');
+    var live = armedList();
+    // No panel that says nothing: with nothing riding, the strip is not rendered at all.
+    if (live.length === 0) { wrap.hidden = true; wrap.innerHTML = ''; return; }
+    wrap.hidden = false;
+    wrap.innerHTML = '<span class="riding-k">Riding this trick</span>';
+    live.forEach(function (b) {
+      var chip = document.createElement('span');
+      chip.className = 'riding-chip';
+      chip.innerHTML = '<span>' + b.name + ' — ' + b.pay + '</span>';
+      var x = document.createElement('button');
+      x.type = 'button'; x.className = 'x'; x.textContent = '×';
+      x.setAttribute('aria-label', 'Take ' + b.name + ' back off this trick');
+      x.addEventListener('click', function () { delete armed[b.id]; render(true); });
+      chip.appendChild(x);
+      wrap.appendChild(chip);
+    });
+  }
+
+  function render(flash) {
+    var c = card(selected), legal = isLegal(c);
+    // While the surface holds the stage, the Quarry's led card moves to the rail — the same
+    // move the shipped gallery already makes. You must be able to see what you are answering.
+    document.getElementById('rail-led').hidden = (state === 'between' || state === 'curse');
+    var head = document.getElementById('head-slot');
+    var title = document.getElementById('head-title');
+    var sub = document.getElementById('head-sub');
+    var tag = document.getElementById('window-tag');
+    var slip = document.getElementById('wl-slip');
+    var body = document.getElementById('arming-body');
+    var hint = document.getElementById('hint');
+
+    // ---- the pinned thumbnail ----
+    head.innerHTML = '<span class="card big s-' + c.suit + (legal ? '' : ' is-illegal') +
+      (c.skulled ? ' is-skulled' : '') + '">' + cardMarkup(c) + '</span>';
+    title.textContent = c.label + (c.trump ? ' — trump' : '') + (c.skulled ? ' — skulled' : '');
+
+    body.innerHTML = ''; tag.className = 'window-tag'; slip.style.display = '';
+
+    // ---- Curse armed: the hand tap is already bought and paid for ----
+    if (state === 'curse') {
+      tag.classList.add('is-narrow');
+      tag.innerHTML = '<span>Hand tap claimed</span><b>Curse armed</b>';
+      sub.innerHTML = 'Your next tap on a hand card <b>marks</b> it — arming is closed until it lands.';
+      slip.style.display = 'none';
+      body.innerHTML = '<p class="row-label">One tap ends this</p>' +
+        '<p style="margin:0;max-width:44rem;line-height:1.5;color:var(--wc-chalk-dim);font-size:.8rem">' +
+        'A Curse claims the next tap on your hand, so it cannot also open this surface — two controls ' +
+        'cannot own one gesture. Tap <b style="color:var(--wc-parchment)">any</b> card to put a skull on it, ' +
+        'including one you could not legally play. The mode is stated here rather than signalled by the ' +
+        'surface merely being empty.</p>';
+      hint.className = 'hint is-live'; hint.textContent = 'Tap a card to curse it';
+      renderHand(); renderRiding();
+      return;
+    }
+
+    // ---- off-suit, but you hold the one card that breaks follow-suit ----
+    if (cheatWouldUnlock(c)) {
+      tag.classList.add('is-narrow');
+      tag.innerHTML = '<span>They have led</span><b>Cheat only</b>';
+      sub.innerHTML = 'Off-suit — but a <b>Cheat</b> breaks follow-suit, and it is the one card still armable mid-trick.';
+      slip.style.display = 'none';
+      var lbl2 = document.createElement('p');
+      lbl2.className = 'row-label';
+      lbl2.innerHTML = 'Arm this and <b>' + c.label + '</b> becomes playable';
+      var grid2 = document.createElement('div');
+      grid2.className = 'buff-grid';
+      var ce = document.createElement('button');
+      ce.type = 'button';
+      ce.className = 'buffcard ' + CHEAT.tier + ' none';
+      ce.setAttribute('aria-pressed', poised === CHEAT.id ? 'poised' : 'false');
+      ce.setAttribute('aria-label', CHEAT.name + ' — ' + CHEAT.cond);
+      ce.innerHTML = buffMarkup(CHEAT);
+      ce.addEventListener('click', function () { tapBuff(CHEAT); });
+      grid2.appendChild(ce);
+      body.appendChild(lbl2); body.appendChild(grid2);
+      hint.className = 'hint is-reject';
+      hint.textContent = 'Off-suit — arm the Cheat to play it';
+      renderHand(); renderRiding();
+      return;
+    }
+
+    // ---- illegal card: refuse, and say what would fix it ----
+    if (!legal) {
+      tag.classList.add('is-shut');
+      tag.innerHTML = '<span>Follow-suit binds</span><b>Cannot be played</b>';
+      sub.innerHTML = 'They led <b>Keys</b>, and you are holding Keys.';
+      slip.style.display = 'none';
+      body.innerHTML =
+        '<p class="row-label">No valid cards to play</p>' +
+        '<p style="margin:0 0 .5rem;font-family:var(--wc-serif);font-size:1.05rem;color:var(--wc-alarm)">' +
+        'You must follow the led suit.</p>' +
+        '<p style="margin:0;max-width:44rem;line-height:1.5;color:var(--wc-chalk-dim);font-size:.8rem">' +
+        'A <b style="color:var(--wc-parchment)">Cheat</b> is the one card that breaks follow-suit, and it stays ' +
+        'armable right through the trick — you are not holding one. Play a Keys card, or take the trick you have.</p>';
+      hint.className = 'hint is-reject'; hint.textContent = 'You must follow the led suit';
+      renderHand(); renderRiding();
+      return;
+    }
+
+    // ---- the win/lose slip ----
+    var p = preview(c);
+    slip.innerHTML =
+      '<span class="wl-cell"><span class="wl-k">If you go high</span><span class="wl-v up">+' + p.high + '</span></span>' +
+      '<span class="wl-cell"><span class="wl-k">If you go low</span><span class="wl-v ' + (p.low ? 'up' : 'down') + '">' +
+        (p.low ? '+' + p.low : '0') + (p.mult > 1 ? ' ×' + p.mult : '') + '</span></span>';
+    if (flash) {
+      slip.querySelectorAll('.wl-cell').forEach(function (el) {
+        el.classList.add('changed'); setTimeout(function () { el.classList.remove('changed'); }, 330);
+      });
+    }
+
+    var list = buffsFor(c);
+
+    if (state === 'led-cheat') {
+      tag.classList.add('is-narrow');
+      tag.innerHTML = '<span>They have led</span><b>Cheat only</b>';
+      sub.innerHTML = 'Arming closed when the lead landed. A held <b>Cheat</b> is the one card that still works.';
+    } else {
+      tag.innerHTML = '<span>Arming open</span><b>Between tricks</b>';
+      sub.innerHTML = 'Arm anything that pays on this card, then tap it again to play it.';
+    }
+
+    if (list.length === 0) {
+      body.innerHTML = '<p class="row-label">Nothing pays on this card</p>' +
+        '<p style="margin:0;max-width:44rem;line-height:1.5;color:var(--wc-chalk-dim);font-size:.8rem">' +
+        'None of your 21 cards can fire on ' + c.label + '. Tap it again to play it as it stands, ' +
+        'or pick a different card.</p>';
+    } else {
+      var lbl = document.createElement('p');
+      lbl.className = 'row-label';
+      lbl.innerHTML = '<b>' + list.length + '</b> of your 21 could pay on <b>' + c.label + '</b>' +
+        (state === 'led-cheat' ? '' : ' — the rest cannot fire on it and are not shown');
+      var grid = document.createElement('div');
+      grid.className = 'buff-grid';
+      list.forEach(function (b) {
+        var el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'buffcard ' + b.tier + ' ' + (b.suit === null ? 'none' : b.suit);
+        el.setAttribute('aria-pressed', armed[b.id] ? 'true' : (poised === b.id ? 'poised' : 'false'));
+        el.setAttribute('aria-label', b.name + ' — ' + b.cond + ' — pays ' + b.pay);
+        el.innerHTML = buffMarkup(b);
+        el.addEventListener('click', function () { tapBuff(b); });
+        grid.appendChild(el);
+      });
+      body.appendChild(lbl); body.appendChild(grid);
+    }
+
+    var n = armedList().length;
+    hint.className = 'hint is-live';
+    hint.textContent = n > 0
+      ? n + (n === 1 ? ' buff riding — tap ' : ' buffs riding — tap ') + c.label + ' again to play it'
+      : 'Tap ' + c.label + ' again to play it';
+
+    document.getElementById('play-sub').textContent = c.label;
+    document.getElementById('pot-add').textContent = '+' + p.high;
+    document.getElementById('pot-apply').textContent = (2 + p.high) * 2;
+    renderHand(); renderRiding();
+  }
+
+  // Escape unwinds ONE level: drop a poise first, then clear the selection.
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (poised !== null) { poised = null; render(); return; }
+    document.getElementById('hint').textContent = 'Selection cleared';
+  });
+
+  document.querySelectorAll('.switcher button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      state = btn.dataset.state; poised = null; armed = {};
+      HAND.forEach(function (c) { c.skulled = c.key === '8b'; });
+      selected = (state === 'led-none' || state === 'led-cheat') ? '5b' : '3k';
+      document.querySelectorAll('.switcher button').forEach(function (b) {
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+      render();
+    });
+  });
+
+  (function hearts() {
+    var mine = document.getElementById('my-hearts'), hers = document.getElementById('her-hearts');
+    for (var i = 0; i < 10; i++) { mine.innerHTML += '<span class="heart"></span>'; }
+    for (var j = 0; j < 10; j++) { hers.innerHTML += '<span class="heart' + (j < 4 ? ' spent' : '') + '"></span>'; }
+  })();
+
+  render();
+</script>

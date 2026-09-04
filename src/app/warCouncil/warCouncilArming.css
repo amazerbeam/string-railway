@@ -1,0 +1,286 @@
+/* DLR-174 — the arming surface: the raised card pinned at its head with its live win/lose
+   figures, the window statement, the filtered buff list, and the riding strip at the foot.
+   Re-authored from `<plan>/mockup.html`'s `.arming` block under `react-frontend`, matching
+   `warCouncilBuffGallery.css`'s own discipline: every colour and size bound is one of
+   `warCouncil.css`'s `:root` tokens or a `clamp()` bound by one, except the two developer-owned
+   properties below. Shares `warCouncil.css`'s `:root` tokens; import alongside the other felt
+   sheets and `warCouncilBuffCard.css` (`BuffCard` is reused unchanged).
+
+   Sits in `.wc-table`'s second grid column exactly as `.wc-gallery` does — no `grid-column` is
+   set here either, so the browser's own grid auto-placement lands it there, the same seam
+   `warCouncilBuffGallery.css`'s own docblock relies on. No `100vh`/`100vw` anywhere in this file:
+   the surface lives inside `.wc-shell`'s existing `100dvh` grid and must not introduce a second
+   viewport unit. The only scrollable region is `.wc-arming-grid` itself (the buff list) — never
+   the surface or the page. */
+
+.wc-arming {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #111a1c;
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px #0000008c;
+
+  /* DEVELOPER DECISION — the buff-card size bound on this surface. Keyed off the felt's own
+     height rather than the viewport's width, since the felt is the container that actually
+     constrains it — the same reasoning `--wc-buffcard-w` in `warCouncil.css` already states for
+     the gallery's own bound, just against the other axis. Carried across from the mockup's own
+     `--wc-buffcard-w` value verbatim (`.claude/contract/DLR-174/mockup.html:53`) as a documented
+     placeholder; retune against a measurement. */
+  --wc-arming-card-w: clamp(5.4rem, 15vh, 11.5rem);
+
+  /* DEVELOPER DECISION — the rejection animation's duration. Too short and the shake is not
+     read; too long and it delays the retry. Carried across from the mockup's own
+     `.card.is-refused` rule (`mockup.html:324`) verbatim. */
+  --wc-arming-reject-ms: 280ms;
+}
+
+/* ---------- the head: the raised card, its win/lose slip, the window statement ---------- */
+
+.wc-arming-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: clamp(0.4rem, 1.1vh, 0.75rem) clamp(0.6rem, 1.4vw, 1.1rem);
+  border-bottom: 1px solid var(--wc-felt-line);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.05));
+}
+
+.wc-arming-head-slot {
+  flex: none;
+  position: relative;
+}
+
+/* A BIG thumbnail — bigger than a hand card — so the card this surface is filtered against is
+   unambiguous at a glance. Overrides the shared `--wc-card-w` token LOCALLY, scoped to this one
+   card, rather than inventing a second card-sizing custom property; the value is the mockup's
+   own `.card.big` bound (`mockup.html:300`), transcribed verbatim. Decorative only: `cursor:
+   default` matches the mockup's own inline style on every non-interactive card thumbnail on this
+   screen (the rail's decree and led-card plates). */
+.wc-arming-head-slot .wc-card {
+  --wc-card-w: clamp(3.6rem, 8.5vh, 6.4rem);
+  cursor: default;
+}
+
+.wc-arming-head-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.wc-arming-head-title {
+  margin: 0 0 0.12rem;
+  font-family: var(--wc-serif);
+  font-size: clamp(0.85rem, 2vmin, 1.15rem);
+  color: var(--wc-parchment);
+  line-height: 1.1;
+}
+
+.wc-arming-head-sub {
+  margin: 0;
+  font-size: clamp(0.6rem, 1.35vmin, 0.75rem);
+  color: var(--wc-chalk-dim);
+  line-height: 1.35;
+}
+
+.wc-arming-head-sub b {
+  color: var(--wc-parchment);
+  font-weight: 600;
+}
+
+/* the win/lose slip — the readout's own light palette, matching `.wc-readout`'s tokens */
+.wc-arming-slip {
+  flex: none;
+  display: flex;
+  border-radius: 0.3rem;
+  overflow: hidden;
+  background: var(--wc-readout-ground);
+  color: var(--wc-readout-ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.wc-arming-slip-cell {
+  padding: 0.3rem 0.7rem;
+  text-align: center;
+  min-width: 4.6rem;
+}
+
+.wc-arming-slip-cell + .wc-arming-slip-cell {
+  border-left: 1px solid #ded6c6;
+}
+
+.wc-arming-slip-k {
+  display: block;
+  font-size: clamp(0.44rem, 1vmin, 0.52rem);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--wc-readout-label);
+}
+
+.wc-arming-slip-v {
+  display: block;
+  font-family: var(--wc-serif);
+  font-size: clamp(0.95rem, 2vmin, 1.15rem);
+  line-height: 1.1;
+}
+
+.wc-arming-slip-v.wc-is-up {
+  color: var(--wc-readout-worthwhile);
+}
+
+.wc-arming-slip-v.wc-is-down {
+  color: var(--wc-readout-costly);
+}
+
+/* the window statement — AC14: BORDER STYLE differs by state, not colour alone, so it survives
+   a greyscale screenshot. Solid brass names the open, full window; dashed names the narrowed
+   Cheat-only window (and the Curse's own claimed mode); dotted alarm names the shut window (no
+   valid card to play). */
+.wc-arming-window {
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1rem;
+  font-size: clamp(0.48rem, 1.05vmin, 0.55rem);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.25rem;
+  border: 2px solid var(--wc-brass-dim);
+  color: var(--wc-brass);
+  text-align: right;
+}
+
+.wc-arming-window b {
+  font-size: clamp(0.55rem, 1.15vmin, 0.62rem);
+  letter-spacing: 0.09em;
+}
+
+.wc-arming-window.wc-is-narrow {
+  border-style: dashed;
+  border-color: var(--wc-chalk-dim);
+  color: var(--wc-chalk-dim);
+}
+
+.wc-arming-window.wc-is-shut {
+  border-style: dotted;
+  border-color: var(--wc-alarm);
+  color: var(--wc-alarm);
+}
+
+/* ---------- the body: the filtered buff list, or the mode's own statement ---------- */
+
+.wc-arming-body {
+  min-height: 0;
+  /* The ONE scrollable region in this file — a buff list can outgrow the felt's own height, and
+     it must scroll INSIDE itself rather than growing the surface (or the page) past the shell's
+     `100dvh` grid. */
+  overflow-y: auto;
+  padding: clamp(0.6rem, 1.6vh, 0.9rem) clamp(0.7rem, 1.6vw, 1.1rem) clamp(0.7rem, 1.6vh, 1rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.wc-arming-row-label {
+  font-size: clamp(0.5rem, 1.1vmin, 0.56rem);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  margin: 0 0 0.45rem;
+}
+
+.wc-arming-row-label b {
+  color: var(--wc-parchment);
+}
+
+.wc-arming-copy {
+  margin: 0 0 0.35rem;
+  max-width: 44rem;
+  line-height: 1.5;
+  color: var(--wc-chalk);
+  font-size: clamp(0.68rem, 1.5vmin, 0.8rem);
+}
+
+.wc-arming-copy.wc-is-dim {
+  color: var(--wc-chalk-dim);
+  font-size: clamp(0.6rem, 1.3vmin, 0.72rem);
+}
+
+.wc-arming-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.5rem, 1.4vh, 1.1rem);
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 12px;
+}
+
+.wc-arming-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.wc-arming-row .wc-buffcard,
+.wc-arming-row .wc-stack {
+  width: var(--wc-arming-card-w);
+}
+
+/* AC3 — "may fire", never a figure: the projection's indeterminate set, stated beside the card
+   rather than folded into `BuffCard`'s own face (`BuffCard` is reused UNCHANGED, so a card looks
+   identical in both surfaces). */
+.wc-arming-mayfire {
+  font-size: clamp(0.5rem, 1.1vmin, 0.58rem);
+  font-style: italic;
+  color: var(--wc-chalk-dim);
+}
+
+/* ---------- the rejection shake — a CSS keyframe, no JS timer, keyed off the illegal class
+   already carried by the head thumbnail in `NoValidCards` mode. Suppressed under
+   `prefers-reduced-motion`, matching the mockup's own `.card.is-refused` rule. ---------- */
+
+@keyframes wc-arming-reject {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  18% {
+    transform: translateX(-6px);
+  }
+  36% {
+    transform: translateX(6px);
+  }
+  55% {
+    transform: translateX(-4px);
+  }
+  74% {
+    transform: translateX(4px);
+  }
+}
+
+.wc-arming-head-slot .wc-card.wc-is-illegal {
+  animation: wc-arming-reject var(--wc-arming-reject-ms) ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-arming-head-slot .wc-card.wc-is-illegal {
+    animation: none;
+  }
+}
+
+/* ---------- the riding strip, pinned to the foot — `BuffRidingList` reused unchanged, mounted
+   here while the surface is open (`BuffRideZone.tsx` mounts it instead while the surface is
+   closed) — see `warCouncilBuffRidePanel.css` for its own rules, which this file does not
+   restate. ---------- */
+.wc-arming > .wc-buff-riding-list {
+  flex: none;
+  border-top: 1px solid var(--wc-felt-line);
+  background: rgba(0, 0, 0, 0.22);
+}

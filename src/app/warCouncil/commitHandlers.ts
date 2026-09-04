@@ -196,7 +196,9 @@ export function commit(
   if (!result.ok) {
     // A rejection is NOT a commit (AC7), so the Cheat survives and stays armed — the player can
     // try another card without paying twice.
-    return { ...state, armed: null, prompt: null, rejection: result.reason }
+    // DLR-174 — `loadout: null` too: a rejected commit must not leave the shared poise holder
+    // set behind it, or the gallery pops open uninvited on the next render.
+    return { ...state, armed: null, prompt: null, rejection: result.reason, loadout: null }
   }
 
   // AC7's rule, unchanged: consumed on ANY successful commit while live, even if the card was
@@ -242,6 +244,11 @@ export function commit(
     armed: null,
     prompt: null,
     rejection: null,
+    // DLR-174 — a played card must not leave the gallery popping open behind it: without this,
+    // `loadoutOpen` stayed true after a commit (the raise that armed this very card had already
+    // set it), and the panel would render onto the stage the instant the next trick's window
+    // opened.
+    loadout: null,
     resolvedTrick,
     resolution,
     encounter: folded ? folded.encounter : state.encounter,

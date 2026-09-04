@@ -204,9 +204,12 @@ describe('WarCouncilRound', () => {
     const cheat = cheatBuff(BuffTier.Bronze, 1)
     renderRound({ initialState: round, buffs: [cheat] })
 
+    // DLR-174 AC9 — the card is illegal (grey), but no longer `disabled`: it stays clickable and
+    // focusable so it can refuse and shake.
     const offSuitName = cardAccessibleName(card(Suit.Bells, 7))
     const offSuit = screen.getByRole('button', { name: offSuitName })
-    expect(offSuit).toHaveProperty('disabled', true)
+    expect(offSuit).toHaveProperty('disabled', false)
+    expect(offSuit.className).toContain('wc-is-illegal')
 
     openLoadout()
     const dialog = screen.getByRole('dialog', { name: 'Your buffs' })
@@ -215,7 +218,11 @@ describe('WarCouncilRound', () => {
     fireEvent.click(row) // poise
     fireEvent.click(row) // spend
 
-    expect(screen.getByRole('button', { name: offSuitName })).toHaveProperty('disabled', false)
+    // The unlock now reads on the `wc-is-illegal` grey, not on `disabled` — both before and
+    // after are enabled by construction (AC9).
+    expect(screen.getByRole('button', { name: offSuitName }).className).not.toContain(
+      'wc-is-illegal',
+    )
   })
 
   // DLR-149 joins its own rule-text id into `aria-describedby` alongside the damage-strip id

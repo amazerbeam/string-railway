@@ -20,7 +20,7 @@ import { cardDamagePreview } from './cardDamage'
 import CardBuffBreakdown from './CardBuffBreakdown'
 import HandFan from './HandFan'
 import { cardKey } from './labels'
-import { curseArmed, discardSelecting, type RoundUiState } from './roundUiState'
+import { armingSurfaceOpen, curseArmed, discardSelecting, type RoundUiState } from './roundUiState'
 
 export interface BuffRideZoneProps {
   readonly ui: RoundUiState
@@ -72,11 +72,16 @@ export default function BuffRideZone({
           onTap={onTap}
           onCancel={onCancel}
         />
-        <BuffRidingList
-          rows={buffRide.riding}
-          onRemove={buffRide.handleRemoveBuff}
-          disabled={buffRide.buffMotionInFlight}
-        />
+        {/* DLR-174 — mounted here only while the arming surface is CLOSED. `ArmingSurface.tsx`
+            mounts the SAME component at its own foot while it is open — one component, one
+            `RidingBuffRow[]`, one mount point, chosen by this ternary, never both at once. */}
+        {!armingSurfaceOpen(ui) && (
+          <BuffRidingList
+            rows={buffRide.riding}
+            onRemove={buffRide.handleRemoveBuff}
+            disabled={buffRide.buffMotionInFlight}
+          />
+        )}
         <CardBuffBreakdown
           breakdown={buffRide.breakdown}
           riding={buffRide.riding}

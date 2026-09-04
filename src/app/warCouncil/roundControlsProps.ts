@@ -19,7 +19,7 @@
  * compile error.
  */
 import { createElement, type ReactNode } from 'react'
-import { swapCapFor, type Buff, type BuffActivationRefusal } from '../../hunt'
+import { swapCapFor, type Buff, type BuffActivationRefusal, type BuffId } from '../../hunt'
 import {
   RoundPhase,
   skullsOn,
@@ -29,9 +29,12 @@ import {
 } from '../../warCouncil'
 import AbilityPrompt from './AbilityPrompt'
 import type { ActionBarProps } from './ActionBar'
+import type { ArmingSurfaceProps } from './ArmingSurface'
+import { buildArmingSurface } from './armingSurfaceModel'
 import type { BuffGalleryProps } from './BuffGallery'
 import { loadoutRefusalFor } from './buffHandlers'
 import { buildBuffGallery } from './buffGalleryModel'
+import type { RidingBuffRow } from './buffRideModel'
 import type { FeltRailProps } from './FeltRail'
 import type { FeltStageProps } from './FeltStage'
 import type { HandSummary } from './RoundOverPanel'
@@ -63,6 +66,41 @@ export function buffGalleryProps({ ui, dispatch, offered }: BuffGalleryOptions):
     onTapBuff: (id) => dispatch({ kind: RoundUiActionKind.TapBuff, id }),
     onCancelPoise: () => dispatch({ kind: RoundUiActionKind.CancelBuffPoise }),
     onClose: () => dispatch({ kind: RoundUiActionKind.CancelLoadout }),
+  }
+}
+
+export interface ArmingSurfaceOptions {
+  readonly ui: RoundUiState
+  readonly dispatch: (action: RoundUiAction) => void
+  readonly offered: readonly Buff[]
+  readonly legal: readonly Card[]
+  /** Threaded from the caller's existing `useBuffRide` bundle rather than recomputed, so
+   *  `lightsForHand` runs once per render — the same call-count discipline `buffRideProps.ts`
+   *  documents for `BuffRideZone`. */
+  readonly riding: readonly RidingBuffRow[]
+  readonly removeDisabled: boolean
+  readonly onRemoveBuff: (id: BuffId) => void
+}
+
+/** DLR-174 — beside `buffGalleryProps`, same shape and same discipline: this decides nothing —
+ *  `buildArmingSurface` owns the view, `dispatch` carries the four actions the surface can raise. */
+export function armingSurfaceProps({
+  ui,
+  dispatch,
+  offered,
+  legal,
+  riding,
+  removeDisabled,
+  onRemoveBuff,
+}: ArmingSurfaceOptions): ArmingSurfaceProps {
+  return {
+    view: buildArmingSurface({ ui, legal, offered, riding }),
+    poised: ui.loadout?.poised ?? null,
+    removeDisabled,
+    onTapBuff: (id) => dispatch({ kind: RoundUiActionKind.TapBuff, id }),
+    onCancelPoise: () => dispatch({ kind: RoundUiActionKind.CancelBuffPoise }),
+    onCancelSelection: () => dispatch({ kind: RoundUiActionKind.CancelSelection }),
+    onRemoveBuff,
   }
 }
 
@@ -110,19 +148,21 @@ export function actionBarProps({
 
 export interface FeltRailOptions {
   readonly ui: RoundUiState
-  /** `true` while the gallery holds the stage — the rail's trick strip renders only then, since
-   *  the stage's own `TrickWell` shows the cards otherwise. */
-  readonly galleryOpen: boolean
+  /** DLR-174 — `true` while EITHER surface (the gallery or the arming surface) holds the stage
+   *  — the rail's trick strip renders only then, since the stage's own `TrickWell` shows the
+   *  cards otherwise. Renamed from `galleryOpen`: it is now true for either surface, not only
+   *  the gallery. */
+  readonly stageReplaced: boolean
 }
 
-export function feltRailProps({ ui, galleryOpen }: FeltRailOptions): FeltRailProps {
+export function feltRailProps({ ui, stageReplaced }: FeltRailOptions): FeltRailProps {
   return {
     decree: ui.round.decree,
     trumpSuit: ui.round.trumpSuit,
     drawPileCount: ui.round.drawPile.length,
     spentCount: ui.round.spentPile.length,
     reshuffled: ui.round.reshuffled,
-    trick: galleryOpen ? ui.round.currentTrick : null,
+    trick: stageReplaced ? ui.round.currentTrick : null,
     // DLR-167 — the UNION, so a card the player has cursed reads as skulled on the rail too.
     skulledCards: skullsOn(ui.round),
     // The ONE reading of the readout's facts — built here so the rail and any future consumer

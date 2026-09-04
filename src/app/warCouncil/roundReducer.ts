@@ -1,5 +1,6 @@
 import {
   CardRank,
+  IllegalMoveReason,
   PlayerSide,
   QUARRY_SIDE,
   RoundPhase,
@@ -13,8 +14,11 @@ import {
 import { isEncounterResolved, openBuffWindow } from '../../hunt'
 import {
   canAct,
+  cardRaiseWindowOpen,
   curseArmed,
   discardSelecting,
+  legalMovesFor,
+  unlockingCheat,
   RoundUiActionKind,
   type RoundUiAction,
   type RoundUiState,
@@ -88,8 +92,14 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return handleTapCard(state, action.card)
     case RoundUiActionKind.ChooseAbility:
       return state.prompt ? commit(state, state.prompt, action.choice) : state
+    // DLR-174 review fix (Defender Critical 2) — `loadout` clears here too: raising a card now
+    // also sets the shared poise holder (`loadout: { poised: null }`), and `CancelSelection` is
+    // exactly the transition `ArmingSurface`'s own second `Escape` press dispatches (`plan.md`'s
+    // state diagram: Arming -> Felt). Leaving `loadout` set left `galleryOpen` true once `armed`
+    // went `null`, so the felt rendered the FULL, unfiltered gallery instead of returning to the
+    // plain felt — the exact "raise then cancel" path this ticket exists to make cheap.
     case RoundUiActionKind.CancelSelection:
-      return { ...state, armed: null, prompt: null }
+      return { ...state, armed: null, prompt: null, loadout: null }
     case RoundUiActionKind.CarryOn:
       return handleCarryOn(state)
     case RoundUiActionKind.TapDiscard:
@@ -161,11 +171,38 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   if (curseArmed(state)) {
     return curseTapped(state, tapped)
   }
-  if (!canAct(state)) {
+
+  // DLR-174 — RAISING is free and commits nothing, so it takes the wider
+  // `cardRaiseWindowOpen` (= `loadoutDoorOpen`) window, which reaches the Quarry-to-lead gap
+  // where arming is already legal today. PLAYING still requires `canAct`. Two acts, two gates
+  // — the same distinction `loadoutDoorOpen`'s own docblock draws for opening the drawer.
+  if (!cardRaiseWindowOpen(state)) {
     return state
   }
 
   if (state.armed && sameCard(state.armed, tapped)) {
+    if (!canAct(state)) return state // raised in the gap; the play waits for the turn
+
+    // DLR-174 review fix (Defender Critical) — legality is decided BEFORE a same-card tap is
+    // treated as a play attempt, mirroring `mockup.html`'s own `tapCard()` order (it checks
+    // `!isLegal(c)` first, unconditionally). A second tap on a still-illegal card — no Cheat
+    // held, or a Cheat held but not yet ARMED (`unlockingCheat`, a lock, not a widened legal
+    // set) — must re-raise and re-shake here rather than fall into `commit`: `commit`'s
+    // rejection branch clears `armed` to `null`, and `armingSurfaceOpen` reads
+    // `armed !== null`, so that would unmount the whole arming surface instead of re-shaking
+    // it. `legalMovesFor` already folds `cheatArmed` in, so a card whose Cheat HAS been armed
+    // reads legal here and still falls through to `commit` below, unchanged.
+    const legal = containsCard(legalMovesFor(state), tapped)
+    if (!legal) {
+      const cheat = unlockingCheat(state)
+      return {
+        ...state,
+        armed: tapped,
+        loadout: { poised: null },
+        rejection: cheat !== null ? null : refusalReasonFor(state),
+      }
+    }
+
     // DLR-163 AC5 — only the 3 arms a prompt now. The 5 commits on its second tap like any plain
     // card, because it takes no choice at all.
     if (tapped.rank === CardRank.Fox) {
@@ -174,7 +211,42 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
     return commit(state, tapped)
   }
 
-  return { ...state, armed: tapped, rejection: null }
+  // DLR-174 AC7/AC8, review fix (QA Finding 1) — the legality question is `legalMovesFor`'s
+  // (`armingWindows.ts`) — the ONE shared reading `WarCouncilTable.tsx`'s own `legal` fan reading
+  // also calls (CE review fix: two independently re-typed copies is exactly how the fan's greying
+  // and this rejection would drift), never a local suit comparison.
+  //
+  // EVERY tap now raises the card, legal or not — AC8's own text ("gives a rejection animation on
+  // the card AND puts 'No valid cards to play' in the surface's head") and the developer's own
+  // browser-checked `mockup.html` (`tapCard()` sets `selected` on every tap before adding the
+  // shake class) both say the surface opens on an illegal tap, not only a legal or Cheat-unlocked
+  // one. `tasks.md`'s own state diagram had this narrower — the plan was wrong here, not the
+  // implementation that first followed it (see `pr-description.md`).
+  //
+  // A legal card, or an illegal one a held Cheat could unlock, raises with no rejection — AC7's
+  // existing LOCK behaviour, unchanged. An illegal card with no Cheat ALSO raises (so
+  // `armingSurfaceModel.ts`'s `NoValidCards` mode can state the reason and the remedy), but ALSO
+  // sets `rejection`, so the tapped hand card itself still shakes (AC8's other half).
+  const legal = containsCard(legalMovesFor(state), tapped)
+  const cheat = legal ? null : unlockingCheat(state)
+  return {
+    ...state,
+    armed: tapped,
+    loadout: { poised: null },
+    rejection: legal || cheat !== null ? null : refusalReasonFor(state),
+  }
+}
+
+/** DLR-174 — mirrors `playCard`'s own reason derivation (`playCard.ts`): the Monarch constraint
+ *  has exactly one source, the led card being a Monarch, so the legal set and the reason code
+ *  cannot disagree. */
+function refusalReasonFor(state: RoundUiState): IllegalMoveReason {
+  const monarchConstrained =
+    state.round.currentTrick.length === 1 &&
+    state.round.currentTrick[0].card.rank === CardRank.Monarch
+  return monarchConstrained
+    ? IllegalMoveReason.MustFollowMonarch
+    : IllegalMoveReason.MustFollowLeadSuit
 }
 
 /**

@@ -61,12 +61,24 @@ describe('HandFan', () => {
     expect(screen.getByRole('button', { name: '11 of Moons (Monarch)' })).toBeDefined()
   })
 
-  it('disables the cards the engine excluded', () => {
+  // DLR-174 AC9 — an illegal card is no longer `disabled`: it stays clickable and focusable so
+  // it can refuse and shake. `illegal` is now purely presentational (the grey class).
+  it('marks the cards the engine excluded as illegal, but keeps them enabled', () => {
     renderFan()
+    const illegal = screen.getByRole('button', { name: '7 of Bells' })
+    expect(illegal).toHaveProperty('disabled', false)
+    expect(illegal.className).toContain('wc-is-illegal')
+    const legal = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+    expect(legal).toHaveProperty('disabled', false)
+    expect(legal.className).not.toContain('wc-is-illegal')
+  })
+
+  it('disables every card once the fan itself is non-interactive (DLR-174 AC9)', () => {
+    renderFan({ interactive: false })
     expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: '11 of Moons (Monarch)' })).toHaveProperty(
       'disabled',
-      false,
+      true,
     )
   })
 

@@ -52,7 +52,13 @@ function gallery() {
 }
 
 describe('WarCouncilRound — the loadout drawer deliberately remembers it was open (Defender, DLR-148 fix pass)', () => {
-  it('reopens on its own once a held reveal is dismissed, with no new tap on the bar', () => {
+  // DLR-174 Task 6 Step 2 — SUPERSEDES this test's original expectation. `commit` now clears
+  // `ui.loadout` on every successful play, precisely so the gallery cannot pop back onto the
+  // stage behind the next trick — a card raised while the gallery is open now also claims the
+  // shared poise holder (`ui.loadout`), which is what the arming surface reads, so DLR-148's
+  // "remembers it was open" behaviour is deliberately narrowed to hold only up to the moment a
+  // card is actually played.
+  it('does not pop back open behind the next trick once a card has been played', () => {
     // The fixture hand's one Bells card completes a trick. The panel is opened BEFORE the trick
     // resolves.
     renderRound()
@@ -60,8 +66,8 @@ describe('WarCouncilRound — the loadout drawer deliberately remembers it was o
     expect(gallery()).toBeTruthy()
 
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
-    fireEvent.click(bells7)
-    fireEvent.click(bells7)
+    fireEvent.click(bells7) // raises the card — the arming surface takes the stage, gallery closes
+    fireEvent.click(bells7) // commits it
     advanceTrickDwell()
     // DLR-160 AC11 — the table (and the gallery it can open) stays MOUNTED behind the resolution
     // panel now, so the gallery being gone is `loadoutDoorOpen`'s own `canAct` gate going false
@@ -72,12 +78,11 @@ describe('WarCouncilRound — the loadout drawer deliberately remembers it was o
     expect(screen.getAllByText(/took it|streak is broken/i).length).toBeGreaterThan(0)
     expect(gallery()).toBeNull()
 
-    // Dismiss the resolution screen. Neither `applyPotAction`/`rollOverAction` nor the
-    // `handleCarryOn` they chain through (`roundReducer.ts`) ever touches `ui.loadout` — the
-    // panel's own toggle state — so the gallery is expected to render again with no further tap
-    // on the "Apply buff" bar.
+    // Dismiss the resolution screen. `commit` already cleared `ui.loadout` on the play above
+    // (DLR-174 Task 6 Step 2), so the gallery stays shut with no further tap on the bar —
+    // deliberately, so a played card cannot leave the gallery popping open behind the next trick.
     carryOnFromResolution()
 
-    expect(gallery()).toBeTruthy()
+    expect(gallery()).toBeNull()
   })
 })
