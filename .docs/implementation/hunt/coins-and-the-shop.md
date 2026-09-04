@@ -10,11 +10,14 @@ allowed to know what a run is.
 
 > **DLR-132 deleted `cheats.ts`, `CHEAT_SLOT_COUNT` and `RunState.timebombCharges`, 2026-08-24.**
 > Every reference to them below (`cheats.length`, `addCheat`, `nextCheatId`, `stock.cheatCount`) is
-> this file's original historical record and describes machinery that no longer exists — a Cheat and
-> a Timebomb are ordinary `Buff` objects in `RunState.buffs` now, with no capacity cap. Both purchases
-> remain off the shelf (`SHOP_ITEMS` still does not list either `ShopItem`, unchanged since DLR-116);
-> what changed is only what the branch does on the rare direct call. See
-> [Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md).
+> this file's original historical record and describes machinery that no longer exists — a Cheat is
+> an ordinary `Buff` object in `RunState.buffs` now, with no capacity cap. It remains off the shelf.
+> See [Activated cards](activated-cards.md).
+>
+> **DLR-166 removed the Timebomb and the Blast Guard entirely, 2026-09-03.** Both had a `ShopItem`
+> member, a price and — for the Guard — a `PurchaseRefusal` code; all of it is gone, along with the
+> `RunState` fields the two wrote. Where either is named below, read it as a record of what the
+> module once held.
 
 Before DLR-84 there was no currency anywhere — [PT-002 had left overkill damage explicitly
 unconverted](hand-and-skull-tunables.md) and DLR-83 had laid `addCheat` and `nextCheatId` down
@@ -68,23 +71,29 @@ because `advanceRun` does not run after it.
 ```ts
 export const ShopItem = {
   Cheat: 'cheat',
-  Timebomb: 'timebomb', // DLR-90
-  BlastGuard: 'blastGuard', // DLR-91
   Whetstone: 'whetstone', // DLR-92
   Heal: 'heal',
   ApCapacity: 'apCapacity', // DLR-116
+  SwanTier: 'swanTier', // DLR-122
+  WitchTier: 'witchTier', // DLR-122
+  MaxHealth: 'maxHealth', // DLR-158
 } as const
 
-// DLR-116 pared this to the two fixed items. The UNION above still holds all six.
-export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.ApCapacity, ShopItem.Heal]
+// What the shop OFFERS. The UNION above holds everything the game prices.
+export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.Heal, ShopItem.MaxHealth]
 
 export const PurchaseRefusal = {
-  SlotsFull: 'slotsFull',
+  SlotsFull: 'slotsFull', // unreachable since DLR-132; kept so the copy map stays total
   AlreadyFullHealth: 'alreadyFullHealth',
-  GuardAlreadyActive: 'guardAlreadyActive', // DLR-91
+  RankAtMaxTier: 'rankAtMaxTier', // DLR-122
   NotEnoughCoins: 'notEnoughCoins',
 } as const
 ```
+
+> `ShopItem.Timebomb` and `ShopItem.BlastGuard` sat in that union, and
+> `PurchaseRefusal.GuardAlreadyActive` beside those codes, until DLR-166 removed both mechanics.
+> Unlike every earlier cut on this page, **that one really did delete them** — a mechanic that no
+> longer exists cannot be re-offered by adding a row to `SHOP_ITEMS`.
 
 `SHOP_ITEMS` is the single statement of the catalogue — the screen **maps** it and never lists the
 items itself, so a new item appears on screen without the component being edited. That prediction was
@@ -115,8 +124,9 @@ tested **three times**, by DLR-90, DLR-91 and DLR-92, and held every time.
 > both tier items. `shop.test.ts` asserts that split directly, so "categorised" and "offered" cannot
 > silently collapse into each other. And `UNCATEGORISED_SHOP_ITEMS` is now the whole shelf.
 
-Cheat, Timebomb, Blast Guard and Whetstone left the list; **none of their mechanics left the
-codebase.** `priceOf`, `categoryOf`, `refusalFor` and `buyFromShop` all stay **total over the union**,
+Cheat, Timebomb, Blast Guard and Whetstone left the list, and at the time **none of their mechanics
+left the codebase** (DLR-166 has since deleted two of the four outright).
+`priceOf`, `categoryOf`, `refusalFor` and `buyFromShop` all stay **total over the union**,
 so each is still priced, still buyable by a caller, and still covered by `shop.test.ts` — which now
 also iterates `Object.values(ShopItem)` to assert exactly that. The consequence, stated plainly: until
 a later ticket re-offers them, **no screen sells those four.** That is what "pared down, tested before
@@ -198,10 +208,7 @@ An `as const` map rather than an `enum`, because `erasableSyntaxOnly` is on. `SH
 export function categoryOf(item: ShopItem): ShopCategory | null {
   switch (item) {
     case ShopItem.Cheat:
-    case ShopItem.Timebomb: // DLR-90
       return ShopCategory.OneTimeUse
-    case ShopItem.BlastGuard: // DLR-91 — the fight-long shelf's first item
-      return ShopCategory.FightLong
     case ShopItem.Whetstone: // DLR-92 — the run-permanent shelf's first item
     case ShopItem.ApCapacity: // DLR-116 — truthfully run-permanent, though no shelf renders it
       return ShopCategory.RunPermanent
@@ -283,19 +290,20 @@ export interface ShopStock {
   readonly cheatCount: number
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
-  readonly blastGuardHeld: boolean // DLR-91
+  readonly blastGuardHeld: boolean // DLR-91 — deleted with the mechanic, DLR-166
 }
 ```
 
-Five fields, and nothing else. The fifth is **required**, not optional, so every construction site was
+Five fields, and nothing else. The fifth was **required**, not optional, so every construction site was
 a compile error until it was supplied — `shopStockFor` and every literal in `shop.test.ts`. This module states the shop's rules and **must not learn the run's
 shape** — which is what keeps its whole specification function-in, value-out with no renderer and no
 `RunState` in sight. `run.ts`'s `shopStockFor(run)` performs the projection, so no
 screen assembles a `ShopStock` by hand and gets one field wrong.
 
 > **The shape above is DLR-84/DLR-91's. It is now `{ coins, playerHealth, maxPlayerHealth,
-> blastGuardHeld, rankTiers, maxHealthPurchases }`** — `cheatCount` went with DLR-132's slot cap,
-> `rankTiers` arrived with DLR-122, and **DLR-158 added `maxHealthPurchases`** so this module can
+> rankTiers, maxHealthPurchases }`** — `cheatCount` went with DLR-132's slot cap, `blastGuardHeld`
+> with DLR-166's removal of the Guard, `rankTiers` arrived with DLR-122, and **DLR-158 added
+> `maxHealthPurchases`** so this module can
 > price the next max-health copy without learning the run's shape. DLR-158 also **deleted
 > `shopStockFor`'s `maxPlayerHealth` parameter**: the ceiling is run state now, so a caller passing
 > its own figure could disagree with the run it is shopping against.
@@ -314,7 +322,7 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
   if (item === ShopItem.Heal && stock.playerHealth >= stock.maxPlayerHealth)
     return PurchaseRefusal.AlreadyFullHealth
   if (item === ShopItem.BlastGuard && stock.blastGuardHeld)
-    return PurchaseRefusal.GuardAlreadyActive // DLR-91
+    return PurchaseRefusal.GuardAlreadyActive // DLR-91 — deleted with the mechanic, DLR-166
   if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item))
     return PurchaseRefusal.NotEnoughCoins
   return null
@@ -373,8 +381,9 @@ something to buy while every purchase card on the shop screen is greyed out.
 apply.
 
 > **DLR-132 rewrote the Cheat and Timebomb arms below, 2026-08-24.** `addCheat`/`nextCheatId` and
-> `timebombCharges` are deleted; both arms now mint a bronze `Buff` into `RunState.buffs` through a
-> shared `withMintedBuff(run, buff)` helper instead. The snippet below is DLR-84/DLR-90's original.
+> `timebombCharges` were deleted; both arms minted a bronze `Buff` into `RunState.buffs` through a
+> shared `withMintedBuff(run, buff)` helper instead. **DLR-166 then deleted the Timebomb and Blast
+> Guard arms outright.** The snippet below is DLR-84/DLR-90's original.
 
 ```ts
 const paid = { ...run, coins: run.coins - priceOf(item) }
@@ -419,24 +428,24 @@ happened to do. QA confirmed the fix in a real browser as well as in the type sy
 raises health and leaves the Timebomb count untouched. **DLR-91 was the first item to arrive after that
 fix, and it landed as one added `case` and nothing else.**
 
-**Timebomb needed no `refusalFor` clause**, and that is the correct rule rather than an omission — it
-falls through both item-specific guards to the coin check, because there is no cap on charges held.
-The Cheat's `SlotsFull` refusal exists because `CHEAT_SLOT_COUNT` is a designed cap. See
-[Timebomb — the held charge, the delayed-hit queue, and where it is paid](timebomb-and-the-delayed-hit.md).
+**Timebomb needed no `refusalFor` clause**, and that was the correct rule rather than an omission —
+it fell through both item-specific guards to the coin check, because there was no cap on charges
+held. The Cheat's `SlotsFull` refusal existed because `CHEAT_SLOT_COUNT` was a designed cap.
 
 **The Whetstone is the same case, and DLR-92 added nothing to `refusalFor` either.** Stacking is uncapped
 by design — the design doc prices it as the limiter — so `NotEnoughCoins` is the only refusal it can raise,
 `ShopStock` gained no field, and `PurchaseRefusal` gained no code. It is the second item to arrive as
 **exactly one `ShopItem` member, one `priceOf` case, one `categoryOf` case and one `buyFromShop` case**, with
 the screen following for free. A cap, if one is ever wanted, is a config key, one `refusalFor` clause and one
-reason code — the same shape the Timebomb entry above already costs out.
+reason code.
 
-**Blast Guard is the opposite case, and it does need one.** Only one may be held at a time, so a
-second purchase while one is unspent is refused with `GuardAlreadyActive` rather than silently
-overwriting or stacking — DLR-91 AC3 states that outright. The flag's lifetime is the part worth
-reading before touching it: it lives on `RunState` so it survives the `advanceRun` that opens the fight
-it was bought for, and a private `guardAfter` clears it when that fight resolves. See
-[Blast Guard](blast-guard.md).
+**Blast Guard was the opposite case, and it did need one.** Only one could be held at a time, so a
+second purchase while one was unspent was refused with `GuardAlreadyActive` rather than silently
+overwriting or stacking. The flag lived on `RunState` so it survived the `advanceRun` that opened the
+fight it was bought for, and a private `guardAfter` cleared it when that fight resolved. **All of it
+went with DLR-166** — the item, the flag, the refusal code and the Timebomb it insured against.
+`guardAfter` itself is still exported from `runCarry.ts` with no caller; it is the shape any future
+fight-long flag would take.
 
 Four things about it are decisions rather than mechanics:
 
@@ -471,9 +480,9 @@ export function baseDamageBonusFor(run: RunState): number {
 ```
 
 The field is a **count, not a flag**, because the item stacks — modelling it as a boolean was named in the
-ticket as the specific thing not to do. It follows `timebombCharges`' precedent for an uncapped run-level
-figure, and like `coins` it is carried across a fight boundary by `advanceRun`'s and `recordEncounter`'s
-existing spread, so **the carry needed no code**. Unlike `cheats`, `timebombCharges` and `blastGuardHeld` it
+ticket as the specific thing not to do. Like `coins` it is carried across a fight boundary by
+`advanceRun`'s and `recordEncounter`'s
+existing spread, so **the carry needed no code**. Unlike `discardsRemaining` or `lowCarry` it
 is **never handed back by a hand** — a hand cannot spend a Whetstone — so `recordEncounter`'s signature did
 not grow a sixth parameter and nothing in the round layer can write it.
 
@@ -496,18 +505,15 @@ See [the max-health purchase](the-max-health-purchase.md).
 
 ## The tunables
 
-Almost all of them are **transcribed**, not chosen here — the five below from DLR-84's ticket and the
-design doc, plus `TIMEBOMB_PRICE` (2 coins) and `TIMEBOMB_QUARRY_DAMAGE` (4 health) from
-`version-4-scope.md` at DLR-90. **One exception: `TIMEBOMB_PLAYER_DAMAGE` (2 health) is the developer's
-own choice**, added by DLR-91 on 2026-08-19 when the single `TIMEBOMB_DAMAGE` key was split — the
-player-side hit is deliberately smaller, because it _also_ forces the streak's cash-out.
+Almost all of them are **transcribed**, not chosen here — from DLR-84's ticket and the design doc.
+(`TIMEBOMB_PRICE`, `TIMEBOMB_QUARRY_DAMAGE`, `TIMEBOMB_PLAYER_DAMAGE` and `BLAST_GUARD_PRICE` sat in
+this table until DLR-166 deleted the two mechanics they priced.)
 
 | Key                       | Value | Unit                                                                                                          |
 | ------------------------- | ----- | ------------------------------------------------------------------------------------------------------------- |
 | `COINS_PER_ENCOUNTER_WIN` | `10`  | coins, credited once per encounter won — the **flat** term; since DLR-95 the quick-kill payout is added to it. **Was `1` until DLR-145 raised it tenfold**, transcribed from that ticket, not chosen here |
 | `CHEAT_PRICE`             | `1`   | coins per purchase                                                                                            |
 | `HEAL_PRICE`              | `1`   | coins per purchase                                                                                            |
-| `BLAST_GUARD_PRICE`       | `1`   | coins per purchase (DLR-91)                                                                                   |
 | `WHETSTONE_PRICE`         | `4`   | coins per purchase (DLR-92)                                                                                   |
 | `HEAL_HEALTH_RESTORED`    | `4`   | health points, added once, before the clamp                                                                   |
 
@@ -524,11 +530,6 @@ full runs and never got past 2 coins.
 bonus per copy is the item's _definition_ rather than a tunable — the same reasoning `streak.ts` already uses
 to keep its own base figure out of configuration. An item granting +2 a copy would be a different item. The
 rule is stated once, in `baseDamageBonusFor` below.
-
-**`BLAST_GUARD_PRICE` is its own key rather than a reuse of `HEAL_PRICE`**, for the reason those two
-are already separate: re-pricing one item must not move another. It is priced level with the heal
-because both are a 1-coin-for-4-health trade run in opposite directions — that is the design doc's
-reasoning, transcribed, not arithmetic done here.
 
 The Cheat's and the heal's prices are **deliberately separate keys** rather than one shared price. The ticket predicts
 the player buying Heal on every visit and names re-pricing the Cheat as the answer — which is only a
@@ -556,8 +557,6 @@ and `./cheats`, both already inside the lint-enforced `src/hunt/**` tree, so the
 
 Nothing here is persisted. Coins die on reload with the rest of `RunState`, which the ticket puts
 out of scope — but it means the first ticket to add a save file inherits a `coins` field with no
-migration story, and since DLR-90/DLR-91/DLR-92 an `timebombCharges` count, a `blastGuardHeld` flag and a
-`whetstones` count beside it. Every shape change made here is free **today** and becomes a migration the
-first time a run is saved. **Four free `RunState` widenings have now been taken**, which is worth noting
-because the window is still open only by accident of nothing being saved yet — DLR-92's audit checked for a
-store and found none.
+migration story, and a `whetstones` count beside it. Every shape change made here is free **today**
+and becomes a migration the first time a run is saved. That window is still open: `RunState` is not
+persisted, and the Vault (which is) holds nothing from it.

@@ -113,8 +113,9 @@ that either.
 
   > **Strongbox is cut (developer decision, 2026-09-01) — the open question below was measured and
   > answered.** The note beneath this one asks *"whether the two machines still feel different"*.
-  > Measured on the surviving tables, they do not: normalised, Skirmisher pays Taker 29.4% / Feeder
-  > 23.5% / Sidestep 11.8% / Cheat 17.6% / Timebomb 17.6%, and Strongbox pays 28.6% / 28.6% / 14.3%
+  > Measured on the tables as they then stood, they do not: normalised, Skirmisher paid Suit High
+  > 29.4% / Suit Low 23.5% / Skull Low 11.8% / Cheat 17.6% / Timebomb 17.6%, and Strongbox paid
+  > 28.6% / 28.6% / 14.3%
   > / 14.3% / 14.3%, on an **identical 50/50 Blade–Momentum split**. Within a point on every family.
   > Choosing between them was a decision with no consequence, and the developer's call was to remove
   > it rather than invent a lean.
@@ -133,7 +134,7 @@ that either.
   > lean is the real work, since the axes its identity rode on are still gone.
 
   > **DLR-145 pruned both tables and left the two machines harder to tell apart, 2026-08-25.**
-  > `SLOT_FAMILY_WEIGHTS` is now five rows per machine (Taker / Feeder / Sidestep / Cheat /
+  > `SLOT_FAMILY_WEIGHTS` then held five rows per machine (Suit High / Suit Low / Skull Low / Cheat /
   > Timebomb) and `SLOT_AXIS_WEIGHTS` two (Magnitude / Multiplier). **Every surviving number is
   > unchanged** — the eight cut families and the two cut axes simply have no row, because
   > `SlotTemplateKind` and `SlotAxisWeights` are now typed by `MintableConditionKind` and
@@ -141,7 +142,7 @@ that either.
   > **Strongbox's whole lean rode on the axes that went.** It was Coins 4 / ApRefund 3 against
   > Magnitude 1 / Multiplier 1 — the "run-permanent reward" machine. Its axis table is now 1 / 1
   > and Skirmisher's is 3 / 3, which is the same ratio, so the two machines differ **only by family
-  > weight** (Taker/Feeder/Sidestep 5/4/2 against 2/2/1). Nobody has chosen a replacement lean, and
+  > weight** (Suit High / Suit Low / Skull Low 5/4/2 against 2/2/1). Nobody has chosen a replacement lean, and
   > inventing one would be inventing tuning values. ~~**Whether the two machines still feel different
   > is an open developer question, unmeasured and unobserved.**~~ **Measured and answered on
   > 2026-09-01: they did not, and Strongbox was cut — see the note above.**
@@ -159,6 +160,16 @@ that either.
   > `familyAxisTotal` equals that family's axis weight and it cancels out of `templateWeightFor`. The
   > row exists to keep `SlotAxisWeights` total over `MintableRewardAxis`; a second protective axis is
   > what would make it bite. See [Skull Helmet and Skull Tether](protective-buffs.md).
+  >
+  > **Where the tables stand now.** `SLOT_FAMILY_WEIGHTS` has **eight** rows per machine: the
+  > Timebomb row went with the card (DLR-166), and the **Wildcard** (DLR-162) and **Curse**
+  > (DLR-167) rows arrived — Skirmisher weights them 1 and 3, Strongbox 1 and 1. **Nobody chose
+  > either number.** Two things about the Wildcard's weight are worth reading before it is set:
+  > because wildness is absorbing, one wildcard seeds an entire wild line, so what this rations is
+  > how many *independent wild lines* a player can start rather than how many wild cards they end up
+  > holding; and the machine has no per-card rarity, so a low weight makes the card rarely *appear*,
+  > but on a visit where it does appear it is as likely as anything else on that strip.
+  > `BUFF_TEMPLATE_COUNT` is **19**.
 - **The 7 consumable/activated templates are still absent from `BUFF_TEMPLATES`, and this is now a
   known gap rather than a deferral** (DLR-120). DLR-126 landed and answered AC6 **affirmatively** —
   a consumable is an ordinary `Buff` and the draw mechanism needs no change at all — but no template
@@ -168,9 +179,10 @@ that either.
   `MintableRewardAxis` (both narrowed by DLR-145, from `BuffConditionKind` / `BuffCostAxis`), and a
   consumable has neither — it is priced through `CONSUMABLE_AP_COST` and pays in its effect. It also
   needs 14 slot weights (7 kinds × 2 machines) nobody has chosen. Whether consumables ship in v1's
-  reel is the developer's call. (DLR-126 separately **disproved** the old claim that Ward's silver
-  and gold tiers are indistinguishable: `streak.ts` adds `trick.timebombToPlayer`, whose column is
-  2/4/6, so a hit is 1 **or** 3/5/7 — all three Ward rows ship.)
+  reel is the developer's call. (**Ward's silver and gold tiers are indistinguishable again.** DLR-126
+  had disproved that, on the grounds that a Timebomb detonation made a player hit 3/5/7 rather than
+  1 — that mechanic is gone, and since DLR-163 the only hit above 1 is a Treasure trick's 2. Two
+  distinct hit sizes still do not separate three Ward rungs.)
 - ~~**`Keepsake` is unfireable in live play** and ships at floor weight, so a player can win a
   `Keepsake` card from a reel that never fires.~~ **Moot since DLR-145** — Keepsake has no template
   any more, so no reel and no opening pile can produce one. The family is still declared and

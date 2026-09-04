@@ -20,8 +20,13 @@ planned. `buffCombine.ts` is inside the same lint-enforced pure tree — no Reac
 
 ## `buffCombineKey` is now THE answer to "are these the same card"
 
-`buffCombineKey(buff)` joins **kind, tier, target suit, target rank, reward axis and reward value**
-into one string. Two cards share it exactly when a player could not tell them apart.
+`buffCombineKey(buff)` joins **kind, tier, target suit, target rank, the wild flag, reward axis and
+reward value** into one string. Two cards share it exactly when a player could not tell them apart.
+
+DLR-162 added the wild flag. No suitless Suit High or Suit Low card exists today except a wild one,
+so nothing collides right now — but a key that cannot tell a wild card from a suitless one is a key
+that stacks them together the moment something else changes. `buffCombineFamilyKey` is its looser
+sibling, with the suit and the wild flag dropped, and only a wild pile is allowed to pair on it.
 
 **That composition used to live in the app layer.** `buffStackKey` in
 `src/app/warCouncil/buffGalleryModel.ts` — the rule that collapses duplicates into a counted `×N` on
@@ -84,22 +89,26 @@ wrong card.
 **`COPIES_PER_COMBINE = 2` is not a tunable.** The rule is about a _pair_; the constant exists only
 so the refusal and the transition cannot disagree about the number.
 
-## The produced card goes through the minting path, which is the whole of the Cheat/Timebomb rule
+## The produced card goes through the minting path, which is the whole of the activated-card rule
 
 The new card is minted by `mintFromTemplate(template, tier, run.nextBuffId)`, from the template
 derived off the destroyed card. It is therefore **indistinguishable from one the slot machine could
 have dealt** — same kind, same condition, same `reward.value` off `REWARD_TIER_VALUE` — which is what
 makes a combined silver stack with a slot-dealt silver on the felt.
 
-It is also the entire reason Cheat and Timebomb combine correctly with no branch that knows they are
-special. An activated template already routes through `mintFromTemplate`'s `cheatBuff` /
-`timebombBuff` arms, so a combined Cheat lifts follow-suit for more tricks and a combined Timebomb
-carries the next damage pair, by their own tier ladders rather than by `REWARD_TIER_VALUE`.
+It is also the entire reason an activated card combines correctly with no branch that knows it is
+special. An activated template already routes through `mintFromTemplate`'s `cheatBuff` / `curseBuff`
+/ `wildcardBuff` arms, so a combined Cheat lifts follow-suit for more tricks and a combined Curse
+pays its next tier's figures, by their own tier ladders rather than by `REWARD_TIER_VALUE`.
 
 **Hand-building the produced card would have been the bug.** Spreading the destroyed card and
-overwriting its tier and reward value reads simpler and produces a Cheat whose duration never changed
-and a Timebomb whose damage pair never changed, because those cards' tier meaning does not live in
-`REWARD_TIER_VALUE` at all.
+overwriting its tier and reward value reads simpler and produces a Cheat whose duration never
+changed and a Curse whose multiplier half never appeared, because those cards' tier meaning does not
+live in `REWARD_TIER_VALUE` at all.
+
+> **A wildcard is refused rather than combined** — `CombineRefusal.Untiered`. Every tier converts
+> exactly one card, so merging two would halve the player's supply for nothing. A card *made* wild by
+> one combines normally, on the looser family key. See [Wild cards](wild-cards.md).
 
 ## Deriving a card's template — the id grammar is written once
 

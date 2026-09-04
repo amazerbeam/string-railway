@@ -63,7 +63,7 @@ cannot inflate a reach figure by construction rather than by a filter someone ha
 > its two-trick fuse was still running. The row carries a `timebomb: TimebombRide | null` field
 > holding the **derived** target (`primedCards.at(-1) ?? null`, never stored) and the fuse count,
 > and it is revocable — Timebomb is the first Activated card that is. See
-> [Priming a Timebomb](timebomb-priming-and-the-fuse.md).
+> **All of that went with DLR-166.** No riding row is built from a card-specific field any more.
 
 `activatedBuffs(state)` resolves the ids in `activatedThisTrick` back to cards through the
 **`offeredBuffs(state)` ∪ `spentThisTrick`** union `buffHandInputFor` already uses — a card consumed
@@ -89,7 +89,7 @@ The value it builds is ordered as the panel reads it, furthest from the card fir
   clauses: `deadRowReasonText` ("Needs Bells — this card is Keys.") and `deadRowElsewhereText` (" It
   is lighting 2 of your Bells cards instead."). When the buff reaches nothing at all the second
   clause becomes the explicit zero-reach sentence, so a dead row never reads as merely "wasted here".
-  A suitless buff — Sidestep — is never dead for a _suit_ reason and gets a suit-neutral sentence
+  A suitless buff — Skull Low, or a **wild** card — is never dead for a _suit_ reason and gets a suit-neutral sentence
   rather than a fabricated suit clash.
 - **Two branch groups**, `Took` and `DidNotTake`. The members are named on the **mechanical** axis,
   because that is the axis every buff condition reads. Each group lists that branch's `fired` rows
@@ -101,7 +101,7 @@ The value it builds is ordered as the panel reads it, furthest from the card fir
 - **Two totals rows**, nearest the card, **neither emphasised**. The type carries no "preferred" flag
   for exactly that reason: the ruleset withholds the Quarry's card, so a leaning readout would leak
   it. Damage and multiplier are `outcome.accrual` minus `state.buffHand.accrual`. `carryText` is
-  non-null only when this branch diverts a Feeder's reward into the next hand's carry (DLR-150), read
+  non-null only when this branch diverts a Suit Low card's reward into the next hand's carry (DLR-150), read
   as a delta off the accrual and never recomputed.
 
 **`BreakdownTotals.estimate` is what stops the totals row lying on a lead.** A branch's `outcomes`
@@ -110,7 +110,7 @@ skull-false reading, matching the projection's own ordering) for the figures, an
 whenever `outcomes.length === 2`. The row then carries the note _"assumes the trick is not skulled —
 not yet known"_. It reuses the qualified-figure signal `CardBuffLight.estimate` and
 `BreakdownConditionRow.mayFire` already carry rather than inventing a second one. The two outcomes
-can only disagree in their figures when a riding Feeder's carry depends on Dodge versus Clean Loss;
+can only disagree in their figures when a riding Suit Low card's carry depends on a Low Victory versus a Low Defeat;
 the condition rows above are unaffected either way, since `fired`/`mayFire` are already the union
 across readings.
 
@@ -129,16 +129,15 @@ un-activate". That is no longer true, and the change is implemented where the ru
 - `RoundUiActionKind.RemoveBuff` — a thirteenth action, distinct from `CancelBuffPoise`, which drops
   an _unspent_ poise where this reverses a _committed_ activation.
 - `handleRemoveBuff(state, id)` in `buffHandlers.ts` — asks membership of `activatedThisTrick` and
-  then `isRevocableBuff` **first**, and returns `state` itself on a no. (**DLR-154 put one branch
-  ahead of both**: an id matching `state.timebombBuff` is handled by `removeRidingTimebomb`, which
-  returns the card to the pile directly and clears the fuse, the armed and primed damage and the
-  mark — `deactivateFromPile` would throw, because a riding Timebomb has usually outlived
-  `activatedThisTrick`.) `deactivateFromPile` throws
+  then `isRevocableBuff` **first**, and returns `state` itself on a no. (**DLR-154 put a Timebomb
+  branch ahead of both, and DLR-166 removed it with the card.** No special-cased branch remains, and
+  **Curse is deliberately not revocable** — putting a skull on a card has already changed the felt,
+  so it simply fails `isRevocableBuff` like every other Activated card.) `deactivateFromPile` throws
   by design, and a throw inside a reducer during an event handler unmounts the tree; returning the
   same object rather than a copy also means an idle removal causes no re-render, mirroring
   `handleCancelBuffPoise`.
 - `BuffRidingList.tsx` — one row per activated buff: its name, `buffReachText(reach)`, and either a
-  remove button labelled _"Take Taker off the trick — 3 cards go dark"_ or, for a non-revocable card,
+  remove button labelled _"Take Bell High off the trick — 3 cards go dark"_ or, for a non-revocable card,
   a status line saying it has no condition to reach and is already spent. A greyed control with no
   reason is what this epic's own design record rejects, so the control is **absent** with the reason
   stated rather than present and dead.

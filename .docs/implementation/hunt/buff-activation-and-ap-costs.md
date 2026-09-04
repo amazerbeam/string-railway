@@ -5,7 +5,7 @@ DLR-108 is the buff system's first code ticket. It closes the four shape gaps
 as executable arithmetic, adds the per-hand accrual `hybrid-design.md` §5's stacking rule asks for,
 and builds the activation flow itself. It shipped with **nothing in `src/` calling any of it** — no
 reducer action, no component, no reader of `RunState.buffs` — the same deliberate intermediate state
-[Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md) already documents.
+[Activated cards](activated-cards.md) already documents.
 
 > **DLR-114 gave all of it a caller.** The felt's action bar's **Apply Buff** button opens a loadout
 > panel that reads `RunState.buffs` (threaded through as a required mount prop), prices every row with
@@ -24,11 +24,18 @@ reducer action, no component, no reader of `RunState.buffs` — the same deliber
 
 ## The four shape gaps, and how each was closed
 
-**`BuffKind` went from 3 members to 19.** The 16 additions are the 11 shipping condition families
-(`taker`, `feeder`, `markOfRank`, `sidestep`, `glutton`, `hoarder`, `unbloodied`, `debtCollector`,
-`keepsake`, `miser`, `cornered`) and the 5 consumables (`ward`, `puppeteer`, `secondThoughts`,
-`foresight`, `spyglass`). `unassigned`, `cheat` and `timebomb` are untouched and mean exactly what
-they meant. `markOfRank`, not `markOfThe` — the rank lives in the condition's payload, not in the
+**`BuffKind` went from 3 members to 19.** The 16 additions were the 11 shipping condition families
+(`suitHigh`, `suitLow`, `markOfRank`, `skullLow`, `glutton`, `hoarder`, `unbloodied`,
+`debtCollector`, `keepsake`, `miser`, `cornered`) and the 5 consumables (`ward`, `puppeteer`,
+`secondThoughts`, `foresight`, `spyglass`). `unassigned` and `cheat` were untouched and mean exactly
+what they meant.
+
+> The first three of those values were spelled `taker`, `feeder` and `sidestep` until DLR-165
+> renamed them onto the High/Low axis. **That rename broke every persisted template id**, since
+> `templateIdFor` composes one from the kind, so `SAVE_SCHEMA_VERSION` was bumped in the same change
+> rather than a migration map shipped — see [../persistence/README.md](../persistence/README.md).
+
+`markOfRank`, not `markOfThe` — the rank lives in the condition's payload, not in the
 member name, which is the whole point of the payload below. Long Fall is reserved and deliberately
 absent until its template ships.
 
@@ -42,13 +49,18 @@ Both widenings are additive and broke no reader: there is no `switch` over eithe
 `src/`, and every existing read is an equality or inequality check.
 
 **`BuffCondition` gained an optional `target`.** It was `{ kind: string }` with nowhere to put a
-suit or a rank, and 49 of the 71 condition templates were parameterised by one — Taker, Feeder and
-Keepsake by suit, Mark of the _R_ by rank. (DLR-145 pared the mintable pool to 11 condition
-templates, of which the 9 Taker and Feeder ones carry a suit and none carries a rank; `target` and
-its `rank` field both stay, since `buffFires` still evaluates the unminted families.) `target` is `{ suit?: BuffTargetSuit; rank?: number }`,
-optional so `UNASSIGNED_BUFF_CONDITION` and `ACTIVATED_BUFF_CONDITION` stay valid unchanged. The
-alternative — baking the parameter into `BuffKind` as `takerBells`/`markOfThe9`/… — needs 33
-members where 4 do, and turns "is this a Taker?" from an equality check into a string-prefix test.
+suit or a rank, and 49 of the 71 condition templates were parameterised by one — Suit High, Suit Low
+and Keepsake by suit, Mark of the _R_ by rank. (DLR-145 pared the mintable pool; of the 16 condition
+templates today the 12 Suit High and Suit Low ones carry a suit and none carries a rank. `target`
+and its `rank` field both stay, since `buffFires` still evaluates the unminted families.) `target` is
+`{ suit?: BuffTargetSuit; rank?: number }`, optional so `UNASSIGNED_BUFF_CONDITION` and
+`ACTIVATED_BUFF_CONDITION` stay valid unchanged. The alternative — baking the parameter into
+`BuffKind` as `suitHighBells`/`markOfThe9`/… — needs 33 members where 4 do, and turns "is this a Suit
+High card?" from an equality check into a string-prefix test.
+
+**DLR-162 added a third optional field, `wild?: boolean`**, on the same argument and for the same
+reason it is optional: every existing `BuffCondition` value stays valid with no edit. It is set only
+by `buffWild.ts`, never by a template — see [Wild cards](wild-cards.md).
 
 `BuffTargetSuit` is **a hunt-local union carrying the same three values as `src/warCouncil/`'s
 `Suit`**, and that duplication is forced rather than chosen: `src/hunt/` cannot import
@@ -79,15 +91,14 @@ refund 1/1/1, multiplier 2/3/5, and — since DLR-161 — protection 2/3/4, a ro
 (no source document prices a protective axis; the ladder shape is copied from the coin row). Multiplier costs most because `the-hunt.md` §7 cashes the bank as a
 _product_, so a bought multiplier point is multiplied by the bank and a bought damage point is not;
 coin carries a smaller surcharge because coins are run-permanent. `CONDITION_MODIFIER` prices **how
-often a family actually fires**, and runs the opposite way to intuition — Feeder is `+1` because
+often a family actually fires**, and runs the opposite way to intuition — Suit Low is `+1` because
 you can always throw a trick away in a suit you hold, Mark-of-rank is `−1` because it needs a
 specific one of eleven ranks in a six-card hand _and_ the win. `AP_COST_MIN` and `AP_COST_MAX` are
 1 and 6; every operand is an integer, so no cost is fractional and none can be `NaN`.
 
-`CONSUMABLE_AP_COST` prices the seven consumable and activated cards off the formula entirely,
-because DLR-111 sets three of them off-curve for stated reasons: **Ward is flat at 2** because
-`DAMAGE_PER_HIT = 1` makes absorbing 1, 3 and 5 the same outcome, **Timebomb is flat at 2** because
-its tier is already paid in health rather than AP, and **gold Cheat is 7 — deliberately above
+`CONSUMABLE_AP_COST` prices the consumable and activated cards off the formula entirely,
+because DLR-111 sets some of them off-curve for stated reasons: **Ward is flat at 2** because
+`DAMAGE_PER_HIT = 1` makes absorbing 1, 3 and 5 the same outcome, and **gold Cheat is 7 — deliberately above
 `STARTING_AP = 6`**, unplayable until the shop's `+5 AP` capacity item is bought.
 
 `buffApCost(kind, axis, tier)` dispatches between the two regimes; `apCostOf(buff)` is the single
@@ -177,19 +188,31 @@ the two can never disagree.
 2. **`alreadyActive`** — this buff is already activated for this trick.
 3. **`insufficientAp`** — the pool does not cover this buff's cost, via `canAffordAp`.
 
-> **Two members were added later, and the order is now five long.** DLR-126 put `noEffectYet`
-> **first** (see [consumable items](consumable-items.md)); DLR-154 put `timebombLive` between
-> `windowClosed` and `alreadyActive`. The full order is
-> **`noEffectYet → windowClosed → timebombLive → alreadyActive → insufficientAp`**, and it still
+> **Three members were added later, and the order is now six long:**
+> **`shopOnly → noEffectYet → windowClosed → alreadyActive → curseLive → insufficientAp`**. It still
 > reads the same way: what is true of the **card**, then of the whole **felt**, then of this card on
-> this felt. `timebombLive` is what refuses a **second Timebomb** while one is armed or primed — the
-> spend is refused outright rather than allowed and then blocked at the prime, which would strand a
-> just-paid-for card. It is a **distinct member rather than a reuse of `alreadyActive`**, which means
-> "this same card, twice in one trick" and is false of a *different* Timebomb blocked by state from
-> an earlier trick. The felt fact reaches this module the way `windowOpen` does — assembled once by
-> `roundUiState.ts`'s `buffActivationStock` and passed in — and `buffActivationStockFor` applies it
-> only to a Timebomb. Adding a member cost one enum entry and one row in
-> `buffLabels.ts`'s `BUFF_ACTIVATION_REFUSAL_MESSAGE`: nothing `switch`es over the union.
+> this felt.
+>
+> - **`shopOnly`** (DLR-162) is the **wildcard**, which is spent on the Manage Buffs screen and has
+>   no effect on the felt at all. It reads first, ahead of `noEffectYet`, and is deliberately not
+>   folded into it: `noEffectYet`'s copy reads "Not usable yet", which would be false of a card that
+>   is perfectly usable one screen away.
+> - **`noEffectYet`** (DLR-126) is a consumable whose effect needs a player-choice surface no screen
+>   provides — see [consumable items](consumable-items.md).
+> - **`curseLive`** (DLR-167) refuses a **second Curse** while one is armed and waiting for a card,
+>   or a card is already marked this trick. Two Curses armed at once would make the next hand tap
+>   ambiguous, which is `handleToggleLoadout`'s own stated rule about controls that reinterpret a
+>   hand tap. It is a **distinct member rather than a reuse of `alreadyActive`**, which means "this
+>   same card, twice in one trick" and is false of a *different* Curse blocked by felt state. The
+>   felt fact reaches this module the way `windowOpen` does — assembled once by `roundUiState.ts`'s
+>   `buffActivationStock` and passed in — and `buffActivationStockFor` applies it only to a Curse.
+>
+> Adding a member costs one entry here and one row in `buffLabels.ts`'s
+> `BUFF_ACTIVATION_REFUSAL_MESSAGE`: nothing `switch`es over the union.
+>
+> **A `timebombLive` member sat between `windowClosed` and `alreadyActive` from DLR-154 until
+> DLR-166 removed the card.** `curseLive` is the same shape reached by a different card, not a
+> revival of it.
 
 The window reason comes first for `applyDamageRefusalFor`'s reason (that predicate was deleted on DLR-156; the reason survives it): report what is true of the whole
 felt before what is true of this one control. `alreadyActive` is the one rule here with no source
@@ -283,14 +306,14 @@ uncalled, because a remount already performs it.
 
 ## `spentThisTrick` — how a consumed card still gets paid — DLR-145, 2026-08-25
 
-DLR-145 made Taker, Feeder and Sidestep single-use (`CONDITION_CARD_SINGLE_USE`,
+DLR-145 made Suit High, Suit Low and Skull Low single-use (`CONDITION_CARD_SINGLE_USE`,
 [consumable items](consumable-items.md)). On its own that change **silently pays nothing**, and the
 failure mode is the reason this section exists rather than a footnote.
 
 The trick's active set is built by filtering the *pile*: `buffHandInputFor`
 (`src/app/warCouncil/buffRoundState.ts`) reads `offeredBuffs(state)`, which is
 `activatableBuffs(state.buffs)`. `activateFromPile` removes a consumable from `state.buffs` at the
-moment of the commit tap. So the instant a Taker became consumable, activating one deleted it from
+moment of the commit tap. So the instant a Suit High card became consumable, activating one deleted it from
 the pile, the filter found nothing, and the card paid nothing — no throw, no refusal, no log, just a
 card that cost itself and did zero.
 
@@ -316,7 +339,7 @@ that union and they must be kept in step: `buffHandInputFor` and `firedOncePerHa
 `src/sim/playHand.ts`.
 
 **The alternative that was rejected** was deferring pile removal to the trick boundary, which would
-have changed DLR-142's already-shipped Cheat and Timebomb behaviour.
+have changed DLR-142's already-shipped Cheat and Shield behaviour.
 
 ## The two damage caps were removed — DLR-145, 2026-08-25
 
@@ -340,27 +363,19 @@ is no way to un-activate". `buffActivation.ts` is where that changed, because th
 lives.
 
 **`isRevocableBuff(buff)` is the single statement of which cards may come back off.** It is a
-membership test against a frozen `ReadonlySet<BuffKind>` holding exactly `Taker`, `Feeder` and
-`Sidestep` — the three condition families, whose activation touches nothing but the pool and the
+membership test against a frozen `ReadonlySet<BuffKind>` holding exactly `SuitHigh`, `SuitLow` and
+`SkullLow` — the three condition families, whose activation touches nothing but the pool and the
 pile, which is precisely what makes them putbackable. It is **false for every Activated card**:
-Cheat, Timebomb, Ward and Shield each arm felt state at the spend — `cheatTricksRemaining`,
-`timebombArmedDamage`, `activateShield`'s credited hearts, `activateWard`'s guard — none of which
-this module can reach. Reversing those is a larger rule change and its own ticket.
+Cheat, Ward, Shield and Curse each arm felt state at the spend — `cheatTricksRemaining`,
+`activateWard`'s guard, `activateShield`'s credited hearts, `curseArmedBuff` — none of which this
+module can reach. Reversing those is a larger rule change and its own ticket.
 
-> **DLR-154 renamed the set and widened it by exactly one, 2026-08-31.**
-> `REVOCABLE_CONDITION_KINDS` is now `REVOCABLE_BUFF_KINDS` — it is no longer condition-only — and
-> `BuffKind.Timebomb` joins it as **the first revocable Activated card**. That is valid only
-> because `AP_ENABLED` is `false`: with points off, the whole of a revocation is the card returning
-> to the pile, which is exactly what `deactivateFromPile` already does. Cheat, Ward and Shield stay
-> out, and the paragraph above is corrected on Timebomb alone.
+> **Curse's absence from the set is the rule, not an omission.** Putting a skull on a card has
+> already changed the felt, so a Curse cannot be taken back off the trick. The set's own docblock
+> says so, because it is the kind of thing a later edit "fixes".
 >
-> **`true` here does not mean this module can fully reverse one.** The felt-state reversal —
-> `timebombArmedDamage`, `primedTimebombDamage`, `timebombFuseRemaining`, `timebombBuff` and the
-> mark itself — is `handleRemoveBuff`'s, in `src/app/warCouncil/`, and this module must not learn
-> about any of it. In practice both of that function's Timebomb branches intercept the call before
-> the generic path below ever runs, because a Timebomb outlives the trick boundary that clears
-> `activatedThisTrick` and `deactivateFromPile` throws on exactly that membership check. See
-> [Priming a Timebomb](../war-council-ui/timebomb-priming-and-the-fuse.md).
+> A `Timebomb` member sat in this set from DLR-154, as the first revocable Activated card. It went
+> with the card on DLR-166.
 
 One predicate, read by **both** the riding row's control and the reducer's guard, is the same
 discipline `buffActivationRefusalFor` sets for activation: two readings of one gate is how a control

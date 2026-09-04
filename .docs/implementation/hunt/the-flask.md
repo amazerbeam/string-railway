@@ -195,12 +195,12 @@ gates the whole expression.
 readonly flaskCharges: number   // DLR-93
 ```
 
-- **A count** for the same reason `timebombCharges` is one: AC5 refills "regardless of whether the
+- **A count** rather than a boolean: AC5 refills "regardless of whether the
   player had 0 or 1", and the deferred re-tune of the charge count raises the ceiling without changing
   this type.
 - **Run-level**, like `coins`, and carried by both `advanceRun`'s and `recordEncounter`'s spreads. A
   free heal that reset at a fight boundary would be a per-fight heal.
-- **Never handed back by a hand**, unlike `cheats`, `timebombCharges` and `blastGuardHeld` — a hand
+- **Never handed back by a hand**, unlike `discardsRemaining` or `lowCarry` — a hand
   cannot drink the flask (AC4), so there is nothing for `WarCouncilRoundResult` to return and
   `recordEncounter` takes no flask parameter.
 - **Never persisted**, exactly as `coins` is not. Nothing in this project is saved.
@@ -226,5 +226,4 @@ and touches no global. It is unit-tested with plain function-in/value-out assert
 Vitest project — `src/hunt/__tests__/flask.test.ts` for the two exported functions, and
 `src/hunt/__tests__/run.flask.test.ts` for the charge on `RunState`, the drink-and-clamp, both
 refusals, the boss refill and the ordinary-kill non-refill (AC7's six cases). The flask's specs live
-in their own two files rather than joining `run.test.ts`, which was already at 343 lines — the same
-call `blastGuard.test.ts` made.
+in their own two files rather than joining `run.test.ts`, which was already at 343 lines.

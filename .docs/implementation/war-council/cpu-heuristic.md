@@ -22,19 +22,21 @@ already treats as legal:
   re-implemented trump/suit comparison, and the skull test is `skulls.ts`'s `isSkulled` against
   `state.skulledCards`. **The lead is deliberately unchanged** — see the module's Deferred section
   for why avoiding a skulled lead was scoped out.
-- **`chooseCpuFoxChoice(handAfterFox, trumpSuit)`** — exchanges the Fox for the lowest card of the
-  hand's most-held suit whenever that suit isn't already trump (concentrates trump in the CPU's
-  strongest suit); declines if the strongest suit is already trump, or if the hand is empty (the
-  Fox was the side's last card).
-- **`chooseCpuWoodcutterChoice(handWithDrawn)`** — always discards the lowest-ranked card of the
-  hand after the draw.
-- **`chooseCpuMove(state, side)`** — composes the above: picks the card, then — only if its rank is
-  `CardRank.Fox` or `CardRank.Woodcutter` — computes the matching ability choice, building the
-  candidate hand the exact same way `playCard.ts` does internally — since **DLR-146** that is
-  `[...handAfter, ...drawCards(state, 1).drawn]` in both places rather than a raw `drawPile[0]`
-  index, so the two stay in lockstep *and* neither can put an `undefined` in a candidate hand once
-  the player's refill has drained the pile. Returns a `CpuMove` (`{ card, choice? }`) that
-  `playCard`/`submitWarCouncilCard` always accepts.
+- **`chooseCpuTrumpChoice(handAfterFox, trumpSuit)`** — names the hand's most-held suit as trump
+  whenever that suit isn't already trump (concentrates trump in the CPU's strongest suit); declines
+  if the strongest suit is already trump, or if the hand is empty (the Fox was the side's last card).
+  It is **`chooseCpuFoxChoice`'s own heuristic with the cost removed** — DLR-163's 3 gives up no card
+  — and ties still break on `ALL_SUITS` order through `reduce`'s strict `>`, so the choice is
+  unchanged for any hand the old function would have answered the same way.
+- **`chooseCpuMove(state, side)`** — composes the above: picks the card, then — **only if its rank is
+  `CardRank.Fox`** — computes the matching ability choice. Returns a `CpuMove` (`{ card, choice? }`)
+  that `playCard`/`submitWarCouncilCard` always accepts.
+
+  **The Woodcutter branch is gone** (DLR-163): the Quarry's 5 takes no choice at all, and the swap it
+  performs is `applyQuarrySwap`'s, inside `playCard`. `chooseCpuWoodcutterChoice` and its
+  "keep your best cards" default are retired — the default itself survives, as
+  `chooseQuarrySwapCard` in `abilities.ts`, so the Quarry's behaviour with the 5 does not change
+  character.
 
 `chooseCpuMove` is **legality-generic per `PlayerSide`** — nothing in it assumes `side === Cpu` — so
 the same function drives either side's turn. This is how the module's own test suite exercises "a

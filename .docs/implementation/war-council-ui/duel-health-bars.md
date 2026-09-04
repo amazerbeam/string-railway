@@ -8,6 +8,17 @@ shows on whichever bar owes it. **DLR-115 added a second pip _type_** — the sh
 the five states rather than as a sixth one. Read the history below with that in mind; the mirror
 survives all five tickets, the geometry does not.
 
+> **DLR-166 removed the fifth state, 2026-09-03.** `HeartState` is back to **four** — `Whole`,
+> `AtRisk`, `Breaking`, `Broken` — because the `ticking` heart showed *booked Timebomb damage* and
+> nothing books damage for a later trick any more. Every section below naming `ticking`,
+> `pendingTimebombs`, `NO_PENDING_TIMEBOMB` or `timebombBookedText` is a record of what DLR-101 built
+> and DLR-166 deleted, including the CSS custom properties and the shield-absorption fix that came
+> with it. **The rest of the file — the mirror, the four surviving states, `projectedDepletion`'s
+> shape, the shield pip type, and the floor-at-zero rule — is current.**
+>
+> The one thing worth carrying forward from that section: `projectedDepletion` still exists and still
+> projects the streak's at-risk band; it simply has one source rather than two.
+
 ### The pending segment is gone, and that was the point of the redesign
 
 The bars used to carry each side's **pending damage** as a lighter segment carved out of its own
@@ -70,7 +81,7 @@ DLR-101 added `ticking`. The partition is four comparisons per index and no bran
 | ------------------------ | ---------- | --------------------------------------------------------- |
 | `i < secure`             | `whole`    | survives everything currently on screen                    |
 | `i < atRiskEnd`          | `atRisk`   | standing, but the banked streak would take it **if it cashes** |
-| `i < current`            | `ticking`   | standing, but **booked Timebomb has already claimed it**     |
+| ~~`i < current`~~        | ~~`ticking`~~ | ~~standing, but **booked Timebomb has already claimed it**~~ — **removed, DLR-166** |
 | `i < current + breaking` | `breaking` | the event **currently on screen** just took it             |
 | otherwise                | `broken`   | already gone                                               |
 

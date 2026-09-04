@@ -40,21 +40,23 @@ worth knowing before adding a third caller:
 
 ```ts
 export interface PlayCardOptions extends LegalMoveOptions {
-  readonly timebombToPlayer?: Damage
-  readonly timebombToQuarry?: Damage
-  readonly blastGuarded?: boolean
+  readonly baseDamageBonus?: number      // DLR-92, renamed DLR-156
+  readonly swanTier?: AbilityTier        // DLR-122
+  readonly buffs?: BuffHandInput         // DLR-125
 }
 playCard(state, side, card, choice?, options?: PlayCardOptions)
 ```
 
-`playCard`'s fifth parameter retyped from `LegalMoveOptions` to `PlayCardOptions`; `legalMoves` still
-takes the narrower type, and **`extends` is what lets one object satisfy both**, so `playCard` threads
-the same value it was handed into its own `legalMoves` call with no projection step. The three new
-fields are **not** legality at all — they are the Timebomb owed at this trick, which `playCard` forwards
-into `TrickFacts` and reads no further. They travel on this parameter because the queue lives on
-`EncounterState` and `src/hunt/` must not learn what a `RoundState` is; the reducer holds both and is
-the only caller that supplies them. See
-[the bank and the cash-out](the-streak-and-the-pot.md).
+`playCard`'s fifth parameter is typed `PlayCardOptions` rather than `LegalMoveOptions`; `legalMoves`
+still takes the narrower type, and **`extends` is what lets one object satisfy both**, so `playCard`
+threads the same value it was handed into its own `legalMoves` call with no projection step. The
+extra fields are **not** legality at all — they are run figures `playCard` forwards into `TrickFacts`
+and reads no further. They travel on this parameter because they live on `RunState` and
+`src/warCouncil/` must not learn what a run is; the reducer holds both and is the only caller that
+supplies them. See [the streak, the trick's damage, and the pot](the-streak-and-the-pot.md).
+
+> **Three Timebomb-and-Guard fields (`timebombToPlayer`, `timebombToQuarry`, `blastGuarded`) rode
+> this same parameter from DLR-91 until DLR-166 removed them with the mechanic.**
 
 Three properties fall out of that shape, and each replaces a guard someone could later delete:
 
@@ -135,20 +137,56 @@ design, so nothing can put a rule on screen that no code applies.
 
 ### The other four odd-card abilities
 
-All three state-mutating effects live in `abilities.ts`, kept separate from `playCard.ts`'s
-sequencing so each is independently testable against a hand-built `RoundState` fixture:
+The state-mutating effects live in `abilities.ts`, kept separate from `playCard.ts`'s sequencing so
+each is independently testable against a hand-built `RoundState` fixture. **DLR-163 rewrote the 3,
+the 5 and the 7 outright**, for both sides.
 
-- **Fox** (`CardRank.Fox`, rank 3) — `applyFoxExchange` removes the chosen hand card, makes it the
-  new decree (and thus the new `trumpSuit`), and gives the side the old decree card in return. See
-  [Trick resolution and `playCard`](trick-resolution-and-play.md) for why its ordering relative to
-  `resolveTrickWinner` is the module's single correctness-critical sequencing.
-- **Woodcutter** (`CardRank.Woodcutter`, rank 5) — `applyWoodcutterDraw` draws the top card of
-  `drawPile` into the side's hand, then removes the chosen discard (drawn or previously held) and
-  appends it to the bottom of `drawPile`. **Invariant:** `drawPile`'s length stays fixed for the
-  life of a round — **20 cards since DLR-80's six-card deal** — since every draw is paired with a
-  discard back onto the pile. Documented in
-  a comment directly above the function, since nothing type-checks this and a future mutator that
-  breaks the pairing would silently corrupt the pile.
+- **Fox** (`CardRank.Fox`, rank 3) — `applyNameTrump(state, suit)`. Playing it lets the side **name
+  any suit**; that suit becomes `trumpSuit` and the decree plate is **emptied** (`decree: null`).
+  The side gives up nothing, and declining is legal.
+
+  Two consequences are load-bearing. **The decree can now be a bare suit** rather than a card, and
+  **no card is ever moved onto the decree any more** — the replaced decree card joins `spentPile` at
+  the instant it is replaced, which is why `closeHand` has to skip a `null` decree. And **naming the
+  suit already in force returns the state unchanged**, which is what makes "the same as declining"
+  true in code rather than asserted in a comment; it is enforced here rather than at the prompt so
+  the felt and the engine cannot disagree about it.
+
+  It replaced `applyFoxExchange`, which took a card out of the player's hand. The complaint the
+  ticket quotes is that the old rule always cost a card the player wanted.
+
+- **Woodcutter** (`CardRank.Woodcutter`, rank 5) — **the two sides do different things.**
+
+  **The player's 5 has no engine effect at all.** It raises `RunState.discardCapBonus`, a run figure
+  this tree has never been allowed to see, and `commitHandlers.ts` applies that through
+  `swapPileAfterWoodcutter`. Both figures climb by `WOODCUTTER_SWAP_STEP` (1) — the cap **and** the
+  Swaps remaining — which is what makes "never refused for a full pile" true by construction: 3 of 3
+  becomes 4 of 4, and 0 of 3 becomes 1 of 4.
+
+  **The Quarry's 5 swaps a card**, through `applyQuarrySwap`. It gives up the lowest-ranked card it
+  holds (`chooseQuarrySwapCard`, mirroring the retired CPU heuristic's "keep your best cards"
+  default so the Quarry's character does not change), draws one through `drawCards`, and sends the
+  swapped card to the bottom of whatever pile the draw left. With a `QUARRY_SWAP_SKULL_CHANCE` (0.4)
+  roll, **the drawn card may be minted as a skull mid-hand** — subject to the deal's own rank rule,
+  read off the weight curve via `skullableCards` rather than restated ("never rank 1" is
+  `SKULL_RANK_WEIGHTS[1] === 0`).
+
+  That roll is the first randomness this tree has ever needed inside `playCard`, which takes no
+  generator. Rather than thread one through every call site it is drawn from `state.drawSeed` —
+  which exists precisely so mid-hand randomness is reproducible — mixed with `state.tricksPlayed`,
+  so each trick gets its own stable value and a seeded encounter reproduces its minted skulls
+  exactly as it reproduces its reshuffles. `drawSeed` is **read, never advanced**, so the existing
+  reshuffle sequence for a given seed is bit-identical. There is **exactly one `rng()` call**, before
+  the swap, so the roll cannot depend on how many times the generator was consumed.
+
+- **Treasure** (`CardRank.Treasure`, rank 7) — **no longer a card with no rule.** It has no ability
+  function, because its rule is a scoring intervention rather than a play-time trigger: a **7 played
+  into a trick by either side** sets `TrickFacts.treasureTrick`, and `resolveTrickBank` reads it
+  twice. On a **banked** trick the fight owes `TREASURE_BASE_DAMAGE_STEP` (+1) of base damage for the
+  rest of that fight; on a **hurt** one the player pays `QUARRY_TREASURE_DAMAGE` (2) health
+  **instead of** the usual 1. See
+  [the streak, the trick's damage, and the pot](the-streak-and-the-pot.md).
+
 - **Swan** (`CardRank.Swan`, rank 1) — `nextLeaderAfterTrick` normally returns the trick's winner as
   the next leader, **unless** a Swan in the trick belongs to the losing side, in which case that
   side leads next instead (covers the two-Swans case: the trick's loser leads next either way).
@@ -158,6 +196,7 @@ sequencing so each is independently testable against a hand-built `RoundState` f
   _outcome_, not any other state.
 - **Monarch** (`CardRank.Monarch`, rank 11) — has no separate ability function either; its forced
   narrowing of the follower's legal set is folded into `legalMoves` (see above).
-- **Treasure** (rank 7) has no ability function or special handling anywhere — it is an ordinary
-  playable card. Its mid-round point-award rule is deliberately not implemented (see
-  [Deferred](README.md#deferred--not-yet-implemented)).
+
+**Retired with DLR-163:** `applyFoxExchange`, `applyWoodcutterDraw`, `chooseCpuFoxChoice`,
+`chooseCpuWoodcutterChoice`, and the two rejection reasons `InvalidFoxExchangeCard` and
+`InvalidWoodcutterDiscard`. None of them exists.

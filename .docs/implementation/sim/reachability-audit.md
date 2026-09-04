@@ -32,7 +32,13 @@ filters it out of every offer. `reachability.ts`'s own docblocks say exactly tha
 
 | Reachable — 5 kinds                          | Unreachable — 14 kinds                                                                                                                                                            |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Taker, Feeder, Sidestep, **Cheat, Timebomb** | Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, **Shield**, and — since DLR-145 — Mark of the _R_, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered |
+| Suit High, Suit Low, Skull Low, **Cheat, Timebomb** | Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, **Shield**, and — since DLR-145 — Mark of the _R_, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered |
+
+> **The figures on this page are a dated snapshot and have moved since.** DLR-161 added Skull Helmet
+> and Skull Tether to the mintable set, **DLR-162 added the Wildcard and DLR-167 added Curse**, and
+> **DLR-166 removed Timebomb entirely**. `BUFF_TEMPLATE_COUNT` is **19** today — 16 condition
+> templates plus 3 activated ones (Cheat, the Wildcard, Curse). `src/sim/reachability.ts` and its
+> spec are the live answer; treat the tables below as the record of what DLR-132 measured.
 
 > **DLR-145 widened the unreachable set by eight, and it is deliberate rather than a defect.** The
 > eight new entries are still **fully declared**: they keep their `BuffKind` member, their
@@ -45,8 +51,8 @@ filters it out of every offer. `reachability.ts`'s own docblocks say exactly tha
 
 `BUFF_TEMPLATES` held **73** templates as of DLR-132 (71 condition families plus
 `ACTIVATED_TEMPLATES`'s two activated cards) — up from 71. It held **13** after DLR-145, **16** after
-DLR-150 restored Feeder's Momentum row, and holds **18 since DLR-161**: 6 Taker (3 suits ×
-Blade/Momentum) + 6 Feeder (3 suits × Blade/Momentum) + 2 Sidestep (Blade/Momentum) + 1 Skull Helmet
+DLR-150 restored Suit Low's Momentum row, and **18 after DLR-161**: 6 Suit High (3 suits ×
+Blade/Momentum) + 6 Suit Low (3 suits × Blade/Momentum) + 2 Skull Low (Blade/Momentum) + 1 Skull Helmet
 + 1 Skull Tether (one template each, since each family has exactly one reward axis) + the same 2
 activated cards. The audit's identity moved with it: **7** mintable kinds, **14** unreachable, and
 `mintable + unreachable + 1` still equals the `BuffKind` union's size. `mintFromTemplate`'s `form: 'activated'` branch delegates to

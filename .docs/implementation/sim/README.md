@@ -1,7 +1,7 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156, DLR-161,
+**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156, DLR-161, DLR-163, DLR-165, DLR-166, DLR-167,
 play-tester 2026-09-02
 
 ## Responsibility
@@ -16,15 +16,15 @@ It is separate from its neighbours because it **decides nothing about the game**
 owns only _who is at the controls_ and _what gets counted_. It is a consumer of all three and is
 imported by none of them.
 
-**DLR-150 kept the simulator on the same seam rather than beside it.** The Feeder carry crosses a
+**DLR-150 kept the simulator on the same seam rather than beside it.** The low carry crosses a
 hand boundary, so a simulator that never threaded it would have measured a game where the carry did
-not exist: `playHandWindows.ts`'s seed now passes `run.feederCarry`, `playHand.ts` dropped its
+not exist: `playHandWindows.ts`'s seed now passes `run.lowCarry`, `playHand.ts` dropped its
 hand-built `WarCouncilRoundResult` literal in favour of the shared `roundResultFor(ui)` — the same
 one `WarCouncilRound.tsx` uses, so a field added to the result can no longer reach the felt and miss
-the simulator — and `playRun.ts` hands `outcome.result.feederCarry` to `recordEncounter`. The
-reachability audit's pool figure moved 13 → 16 with the restored Feeder Momentum row, and 16 → 18
+the simulator — and `playRun.ts` hands `outcome.result.lowCarry` to `recordEncounter`. The
+reachability audit's pool figure moved 13 → 16 with the restored Suit Low Momentum row, and 16 → 18
 with DLR-161's two protective families. See
-[hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md) for the mechanic itself.
+[hunt/the-low-carry.md](../hunt/the-low-carry.md) for the mechanic itself.
 
 ## Key types & exports
 
@@ -50,7 +50,7 @@ with DLR-161's two protective families. See
 | `playRun`                                                                                                     | Drives one whole run: hands, `recordEncounter`, the shop visit, `advanceRun`                                                                                                                                                                                                                                                                                                          | `playRun.ts`             |
 | `simulate`                                                                                                    | The batch loop over N seeded runs                                                                                                                                                                                                                                                                                                                                                     | `simulate.ts`            |
 | `formatSummary`                                                                                               | Turns a `SimSummary` into the printed report — returns a string, prints nothing                                                                                                                                                                                                                                                                                                       | `report.ts`              |
-| `fixtureRunAfterFirstFight`, `fixtureHandWithPrimedTimebomb`, `fixtureHandWithStackedBuffs`                   | Deterministic deep states for component specs                                                                                                                                                                                                                                                                                                                                         | `fixtures.ts`            |
+| `fixtureRunAfterFirstFight`, `fixtureHandWithCursedCard`, `fixtureHandWithStackedBuffs`                   | Deterministic deep states for component specs                                                                                                                                                                                                                                                                                                                                         | `fixtures.ts`            |
 | `MAX_ACTIONS_PER_HAND`, `MAX_HANDS_PER_FIGHT`, `MAX_SHOP_ACTIONS_PER_VISIT`                                   | The three caps that make the process terminate                                                                                                                                                                                                                                                                                                                                        | `simConfig.ts`           |
 
 The command-line entry is **`scripts/sim.ts`**, deliberately outside `src/`: it is the only file
@@ -86,7 +86,7 @@ fallback would attribute one policy's numbers to another.
 next hand of the same fight, or run the shop visit and `advanceRun`. `playHand` (`playHand.ts`)
 drives one hand.
 
-Nothing here re-implements a rule. `applyResolution`'s four-step damage/Timebomb/payout fold and
+Nothing here re-implements a rule. `applyResolution`'s damage/payout fold and
 `handleTapBuff`'s activation-plus-consumable-spend live in `src/app/warCouncil/`, so the driver
 **dispatches actions at the real reducer** rather than calling `playCard` directly — a driver that
 skipped them would measure a game nobody plays. That is why this module imports `src/app/warCouncil/`
@@ -140,14 +140,12 @@ driver bug can never be read as a balance finding.
 
 `fixtures.ts` reuses the drivers to reach states browser QA has never been able to reach, because
 coins only arrive once a fight is finished: `fixtureRunAfterFirstFight` (a `RunState` holding real
-coins, a health delta and a quick-kill payout), `fixtureHandWithPrimedTimebomb` (a card marked and
-the detonation booked on `encounter.pendingTimebomb`), and `fixtureHandWithStackedBuffs` (two or
+coins, a health delta and a quick-kill payout), **`fixtureHandWithCursedCard`** (a Curse armed and a
+card in the player's own hand marked, DLR-167), and `fixtureHandWithStackedBuffs` (two or
 more buffs activated in one trick). Each is deterministic and returns the same value every call, so
 a `.test.tsx` component spec can import one and assert what that state _renders_.
 
-`fixtureHandWithPrimedTimebomb` buys its charge through `buyFromShop(run, ShopItem.Timebomb)`
-directly. That is legitimate rather than a back door: `buyFromShop` is total over `ShopItem` and
-still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out of the game.
+`fixtureHandWithPrimedTimebomb` sat beside them and went with the card on DLR-166.
 
 > **Its success test changed shape on DLR-154, 2026-08-31, and the change is the point.** The
 > driver used to wait for _a primed card **and** a booked payment_ together. It now waits for a
@@ -208,7 +206,7 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
   lookup and the `--pile` flag need no edit — an unknown `--pile <name>` fails exactly as it always
   did, with no names left to ask for. A future what-if pile is one new entry, not a structural
   change. `EXCLUDED_OPENING_KINDS`, `EXCLUDED_OPENING_AXIS`, `COINS_WEIGHT_FACTOR` and
-  `SIDESTEP_WEIGHT_FACTOR` went with them.
+  `SKULL_LOW_WEIGHT_FACTOR` went with them.
 - **No export format but plain text.** No CSV, no JSON, no charting, no parallel or multi-process
   batching. `--runs` has a lower bound but no upper one, so a very large batch is simply slow.
 - **The Vault is not simulated.** Starting grants and Vault-adjusted slot odds

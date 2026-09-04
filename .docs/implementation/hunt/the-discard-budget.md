@@ -7,13 +7,13 @@
 `discardsRemaining` is a `RunState` field counting how many times, for the current fight, the
 player may still spend a discard (`src/warCouncil/discard.ts` — see
 [../war-council/the-discard.md](../war-council/the-discard.md) for the swap itself). It follows the
-same wiring pattern `cheats`, `timebombCharges` and `blastGuardHeld` already established: seeded by
+the wiring pattern the other per-fight run figures established: seeded by
 `startRun`, reset by `advanceRun` at every fight boundary, and threaded through `recordEncounter` as
 a required parameter so the hand can hand its ending value back.
 
 **Its lifetime is a third shape, distinct from both existing patterns on `RunState`.** `whetstones`
-is never cleared — it stacks for the whole run. `blastGuardHeld` is spent once and then cleared by
-`guardAfter` the moment its fight resolves. `discardsRemaining` is neither: it is **spent down
+is never cleared — it stacks for the whole run. `lowCarry` is compounded within a fight and then
+cleared by `lowCarryAfter` the moment that fight resolves. `discardsRemaining` is neither: it is **spent down
 within a fight and reset — not cleared — at every fight boundary**, so a fresh fight always opens
 with the full budget rather than with whatever was left over or with nothing at all.
 
@@ -38,34 +38,30 @@ in the contract's final verification confirmed every other hit across `src/` is 
 - `startRun` seeds `discardsRemaining: DISCARDS_PER_FIGHT`.
 - `advanceRun`'s returned spread gains `discardsRemaining: DISCARDS_PER_FIGHT` beside `handOfFight:
   1` — a fresh fight resets the budget on the same line every other fight-scoped reset lives on.
-- `recordEncounter` widened to a **required seventh parameter overall** — its own sixth carried
-  figure — positioned between `blastGuardHeld` and `unplayedCards`:
+- `recordEncounter` takes it as a **required** parameter. Later tickets have deleted the required
+  parameters that once sat beside it, so it is now the third argument, ahead of `unplayedCards`:
 
 ```ts
 export function recordEncounter(
   run: RunState,
   encounter: EncounterState,
-  cheats: readonly CheatCard[],
-  timebombCharges: number,
-  blastGuardHeld: boolean,
   discardsRemaining: number,
   unplayedCards: number | null,
+  // …then the optional, defaulted figures: buffCoinsEarned, buffs, lowCarry, streak, …
 ): RunState
 ```
 
-Its returned spread carries `discardsRemaining` through unchanged, exactly as `cheats` and
-`timebombCharges` already do on the same line — the reset is `advanceRun`'s alone, never
-`recordEncounter`'s, matching how `handOfFight` is reset only by `advanceRun`/`startRun`.
+Its returned spread carries `discardsRemaining` through unchanged — the reset is `advanceRun`'s
+alone, never `recordEncounter`'s, matching how `handOfFight` is reset only by
+`advanceRun`/`startRun`.
 
 ## The planning gap this widening exposed
 
 Every prior widening of `recordEncounter` (DLR-83, DLR-90, DLR-91, DLR-95) added one required
 parameter and updated its one production call site in `App.tsx`. DLR-100's own contract carried the
 same "one call site, in scope" claim in its config-and-persisted-shape audit — and it was wrong.
-Widening the signature surfaced **38** `TS2554` errors on the first typecheck: `App.tsx` plus **six**
-pre-existing test files across `src/hunt/__tests__/` (`timebomb.test.ts`, `blastGuard.test.ts`,
-`run.flask.test.ts`, `run.integration.test.ts`, `run.quickKill.test.ts`, `run.test.ts`,
-`run.whetstone.test.ts`) still calling the old six-argument form. Every one was fixed inline in the
+Widening the signature surfaced **38** `TS2554` errors on the first typecheck: `App.tsx` plus six
+pre-existing test files across `src/hunt/__tests__/` still calling the old form. Every one was fixed inline in the
 same implementation pass — a required parameter is exactly the discipline that makes a gap like this
 loud and compile-time rather than silent and runtime, which is the reason every carried figure on
 `RunState` arrives this way rather than as an optional parameter with a default.

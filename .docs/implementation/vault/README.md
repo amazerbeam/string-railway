@@ -1,7 +1,7 @@
 # Vault — `src/vault/` and `src/app/vault/`
 
 **Status:** implemented
-**Built by:** DLR-113, DLR-118, DLR-145
+**Built by:** DLR-113, DLR-118, DLR-145, DLR-165
 
 ## Responsibility
 
@@ -149,8 +149,20 @@ even data this build cannot understand. This is the answer to the question DLR-1
 deferred to this ticket: **an unmigratable save is discarded, non-destructively, and the player
 starts fresh** — with the outcome reported so a screen can say why rather than showing a silent zero.
 
-`SAVE_SCHEMA_VERSION` stays at **1**: this is the first shape ever written, so there is nothing to
-bump from. That window is now closed — the next shape change is a real migration.
+**`SAVE_SCHEMA_VERSION` is now 2, and the Vault reset once because of it (DLR-165).** The rename of
+`BuffKind.Taker`/`Feeder`/`Sidestep` to `SuitHigh`/`SuitLow`/`SkullLow` changed every persisted
+template id — `taker:bells:magnitude` became `suitHigh:bells:magnitude` — so every id on disk became
+unresolvable.
+
+Left to itself, `reconcileVault` would have dropped each one **silently**, which is exactly the
+outcome the paragraph above says is acceptable for a *removed* template and is **not** acceptable for
+a renamed one: the developer's boosts and grants would have vanished with no message. Bumping the
+version instead makes `saveStore` return `VersionMismatch`, so `loadVault` hands back `EMPTY_VAULT`
+with a named reason a screen can report.
+
+**A migration map was rejected rather than deferred.** Mapping `taker:` → `suitHigh:` would have kept
+the retired vocabulary alive in code, which is the one thing the rename existed to remove. **The
+Vault resets once, by design.** See [../persistence/README.md](../persistence/README.md).
 
 ### Nothing containing a live `Buff` is ever persisted
 
@@ -164,8 +176,10 @@ old saves paying old numbers.
 
 The cost paid instead is that **`BuffTemplate.id`'s format is frozen from this commit** — renaming a
 `BuffKind` or `BuffRewardAxis` member value orphans saved boosts and grants. `reconcileVault` drops
-them countably rather than corrupting anything, but the currency spent on them is gone, so a future
-rename must ship a migration. Its docblock in `src/hunt/buffTemplates.ts` was corrected in the same
+them countably rather than corrupting anything, but the currency spent on them is gone. **DLR-165
+performed exactly such a rename**, and the answer taken was not a migration but a
+`SAVE_SCHEMA_VERSION` bump: the Vault resets once and the read fails by name. A future rename does
+the same. Its docblock in `src/hunt/buffTemplates.ts` was corrected in the same
 ticket, from "NOT persisted" to "PERSISTED as of DLR-113".
 
 ## Rules & invariants enforced

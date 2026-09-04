@@ -20,7 +20,7 @@ The module is a **thin adapter, not a calculator**. It performs no condition eva
 accrual arithmetic of its own: it builds a `BuffTrickContext` from plain values, hands it to
 `firedBuffs`, hands the result to `resolveFiredBuffs`, and returns what comes back. Every rule the
 preview appears to know — the cadence filter, the four per-hand caps, the Overlap Bonus, and
-DLR-150's Feeder carry — is **inherited because those two functions apply it**, never because this
+DLR-150's low carry — is **inherited because those two functions apply it**, never because this
 file reproduces it.
 
 That discipline is the whole reason the module exists. The DLR-147 mockup re-derived the buff
@@ -45,17 +45,17 @@ as a fact to report rather than a gap to fill, and it costs a second evaluation 
 to try are `[skullTrick]` when it is known, and `[false, true]` when it is not.
 
 The consequence is larger than which buffs fire, and it is what drives the return shape. Since
-DLR-150, `resolveFiredBuffs` takes a third argument, `trickIsLoss`, derived from the **outcome**
-axis — and on the `playerWon: false` branch the outcome is a **Dodge** when the trick is skulled
-and a **Clean Loss** when it is not. A Feeder fires identically in both (its predicate has no skull
-term at all), but its reward is **payable this hand** on a Dodge and **carried into the next hand**
-on a Clean Loss. Reporting a single figure there would be right about the amount and wrong about
-when the player can spend it.
+DLR-150, `resolveFiredBuffs` takes a third argument, `trickIsDefeat`, derived from the **outcome**
+axis — and on the `playerWentHigh: false` branch the outcome is a **Low Victory** when the trick is
+skulled and a **Low Defeat** when it is not. A Suit Low card fires identically in both (its predicate
+has no skull term at all), but its reward is **payable this hand** on a Low Victory and **carried
+into the next hand** on a Low Defeat. Reporting a single figure there would be right about the amount
+and wrong about when the player can spend it.
 
 So each branch returns `outcomes` — one `{ outcome, accrual }` entry per still-possible
-`TrickOutcome`. A follow gives one entry; a lead gives two. `trickIsLoss` is derived per entry as
-`!isTaken(trickOutcomeFor(playerWon, reading))`, reading `streak.ts`'s table rather than restating the
-skull inversion, exactly as `resolveTrickBank` does.
+`TrickOutcome`. A follow gives one entry; a lead gives two. `trickIsDefeat` is derived per entry as
+`!isTaken(trickOutcomeFor(playerWentHigh, reading))`, reading `streak.ts`'s table rather than
+restating the skull inversion, exactly as `resolveTrickBank` does.
 
 ## `indeterminate` falls out of a diff, not out of a name
 
@@ -63,11 +63,11 @@ A buff that fires under **every** still-possible reading lands in that branch's 
 that fires under some readings but not all is lifted out into the projection's single
 `indeterminate` set, deduplicated by `BuffId` across both branches.
 
-Today that set contains only Sidestep, and only on a lead — but **nothing in this module knows
-that.** The split is a set difference over the per-reading results, so the module holds no knowledge
-of _which_ family reads the skull and cannot fall out of step with `buffFires`. A future
-skull-reading family is handled here with no edit. The ticket's "today only `sidestep`" became a
-test assertion instead of an implementation constant.
+Today that set contains only the skull-reading families — Skull Low, Skull Helmet and Skull Tether —
+and only on a lead, but **nothing in this module knows that.** The split is a set difference over the
+per-reading results, so the module holds no knowledge of _which_ family reads the skull and cannot
+fall out of step with `buffFires`. A future skull-reading family is handled here with no edit. The
+ticket's "today only `skullLow`" became a test assertion instead of an implementation constant.
 
 DLR-153 surfaces the same diff a second way, without changing what it means. `branchFor` already
 computed each branch's own indeterminate set before merging it into the projection-level union and
@@ -83,7 +83,7 @@ branch, exactly the second copy of the rules this module exists to prevent.
 
 `buffReach(input, legalCards, buff)` runs the same projection once per card and counts a card when
 the buff appears in **either** branch's `fired` set **or** in `indeterminate`. "Could fire"
-deliberately includes "might fire": a reach of 0 for a Sidestep on a lead would read as "this buff
+deliberately includes "might fire": a reach of 0 for a Skull Low card on a lead would read as "this buff
 is dead" at exactly the moment the player is deciding whether to activate it.
 
 **It has no consumer, and that is a decision rather than an oversight.** DLR-153, the ticket that
@@ -102,7 +102,7 @@ matches the buff perfectly is not counted when it is absent from `legalCards`.
 ## What the caller supplies, and the one line to revisit later
 
 `BuffProjectionFacts` is `BuffTrickContext` minus the five fields a candidate card and a branch
-decide — `playerWon`, `skullTrick`, `playerSuits`, `playerRanks` and `remainingSuits`. The first two
+decide — `playerWentHigh`, `skullTrick`, `playerSuits`, `playerRanks` and `remainingSuits`. The first two
 come from the branch and the reading; the last three come from the candidate card, with
 `remainingSuits` derived by removing that card from `hand`, the way `buffTrickFactsFor` derives it
 from `remainingHand`. `playerSuits` and `playerRanks` are **plural** — one candidate card means a
@@ -119,9 +119,11 @@ type's own docblock says so rather than leaving it to be discovered.
 Two further limits were recorded as deliberate rather than left to drift: **no `gain` delta is
 exposed** (the consumer can subtract two accruals itself, and a second arithmetic surface here would
 be the very duplication the module prevents), and the branch fields are named `won` / `lost` rather
-than `taken`. `taken` was unavailable: `streak.ts`'s `isTaken` is the **outcome** axis, where a Dodge
-counts as taken, so a `taken` branch here would mean the opposite of the neighbouring helper. Each
-branch carries an explicit `playerWon: boolean` and a docblock naming the mechanical axis.
+than `taken`. `taken` was unavailable: `streak.ts`'s `isTaken` is the **outcome** axis, where a **Low
+Victory** counts as taken, so a `taken` branch here would mean the opposite of the neighbouring
+helper. Each branch carries an explicit `playerWentHigh: boolean` and a docblock naming the
+mechanical axis. (DLR-165 left the two branch field names `won` / `lost` alone; the field inside them
+is what carries the corrected vocabulary.)
 
 ## The suit crossing, stated once
 

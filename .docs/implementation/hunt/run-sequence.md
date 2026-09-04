@@ -19,53 +19,68 @@ export interface RunState {
   readonly encounterCount: number // QUARRY_ENCOUNTER_HEALTH.length
   readonly encounter: EncounterState
   readonly outcome: RunOutcome // 'inProgress' | 'won' | 'lost'
-  readonly cheats: readonly CheatCard[] // DLR-83 — DELETED, DLR-132
-  readonly nextCheatId: CheatCardId // DLR-83 — DELETED, DLR-132
   readonly coins: Coins // DLR-84
-  readonly timebombCharges: number // DLR-90 — DELETED, DLR-132
-  readonly blastGuardHeld: boolean // DLR-91
   readonly whetstones: number // DLR-92
+  readonly maxPlayerHealth: Health // DLR-158
+  readonly maxHealthPurchases: number // DLR-158
   readonly flaskCharges: number // DLR-93
-  readonly buffs: readonly Buff[] // DLR-105 — a held Cheat or Timebomb is a pile member here, since DLR-132
+  readonly handOfFight: number // DLR-95
+  readonly discardsRemaining: number // DLR-100
+  readonly discardCapBonus: number // DLR-163 — Swaps this fight's Woodcutters added
+  readonly treasureDamageBonus: number // DLR-163 — base damage this fight's Treasures earned
+  readonly lastQuickKillPayout: Coins // DLR-95
+  readonly buffs: readonly Buff[] // DLR-105 — every held card, activated ones included
   readonly nextBuffId: BuffId // DLR-105
-  readonly feederCarry: BuffCarry // DLR-150
+  readonly runSeed: number
+  readonly apCapacityBonus: number // DLR-116
+  readonly slotPullsThisVisit: number
+  readonly rankTiers: RankTierTable // DLR-122
+  readonly lowCarry: BuffCarry // DLR-150
+  readonly streak: StreakState // DLR-156
 }
 ```
 
-> **DLR-132 deleted `cheats`, `nextCheatId` and `timebombCharges`, 2026-08-24.** A Cheat and a
-> Timebomb are ordinary members of `buffs` now, carried and returned exactly as any other buff is —
-> see [Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md). The struct above is
-> shown with the deletions marked in place rather than silently removed, so a reader who remembers
-> the old shape can see what moved.
+> Four fields have been **deleted** since this page was written and are worth knowing about, because
+> a reader who remembers the old shape will look for them. `cheats`, `nextCheatId` and
+> `timebombCharges` went on DLR-132 — a Cheat is an ordinary member of `buffs` now, carried and
+> returned exactly as any other card is. `blastGuardHeld` went on DLR-166 with the mechanic it
+> tracked.
 
-The seven fields below the original four arrived at various tickets, and every surviving one is
-carried across a fight boundary by the `...run` spread `advanceRun` already had — no ticket needed a
-line for the carry. See [the retired cheats module](cheats-and-slots.md),
-[Coins and the shop](coins-and-the-shop.md), [Timebomb](timebomb-and-the-delayed-hit.md),
-[Blast Guard](blast-guard.md) and [the flask](the-flask.md).
+Every field is carried across a fight boundary by the `...run` spread `advanceRun` already had — no
+ticket needed a line for the carry. See [Coins and the shop](coins-and-the-shop.md) and
+[the flask](the-flask.md).
 
-**Some of them are handed back by a hand at the end of a fight, and some are not.** `blastGuardHeld`
-is owned by the hand for its lifetime and returned through `WarCouncilRoundResult`, so
-`recordEncounter` takes it as a required parameter — as `cheats` and `timebombCharges` did before
-DLR-132 deleted both. `whetstones`, `flaskCharges` and `buffs` are not handed back as a parameter: a
-hand cannot spend a Whetstone or drink the flask, and since DLR-132 a hand's buff spend (including a
-Cheat or Timebomb) never removes anything from the pile either, so there is nothing for
-`recordEncounter` to adopt — it reads all three off the run it was given.
+**Some of them are handed back by a hand at the end of a fight, and some are not.** `whetstones`,
+`flaskCharges` and `buffs` are not handed back as a parameter: a hand cannot spend a Whetstone or
+drink the flask, and a hand's buff spend never removes anything from the pile either, so there is
+nothing for `recordEncounter` to adopt — it reads all three off the run it was given.
 
-**`blastGuardHeld` is no longer the only field that is carried and then deliberately cleared.** It has to be
-run-level to survive the `advanceRun` that opens the fight it was bought for, and it has to end when
-that fight does — so `recordEncounter` passes it through a private `guardAfter` rather than adopting it
-verbatim. That pairing is what makes "fight-long" a duration rather than a label.
+**A field that a hand owns and a fight ends is a distinct third shape**, and it is now the most
+common one. Such a field has to be run-level to survive the `advanceRun` that opens the fight, and it
+has to end when that fight does — so `recordEncounter` passes it through a named `*After` rule in
+`runCarry.ts` rather than adopting it verbatim. That pairing is what makes "fight-long" a duration
+rather than a label. `lowCarry` and `streak` take that shape.
 
-**DLR-150 added `feederCarry` on exactly that pattern.** It is a `BuffCarry`
-(`{ multiplierBonus, flatDamageBonus }`), seeded empty by `startRun`, owned by the hand for its
-lifetime, handed back through `WarCouncilRoundResult.feederCarry`, and taken by `recordEncounter` as
-an **optional 8th parameter** — optional so none of the 48 existing call sites changed; `App.tsx` and
-`sim/playRun.ts` are the only callers that pass it. It goes through a private `feederCarryAfter`,
-`guardAfter`'s sibling and its reason: a carry compounds hand to hand **within** a fight and is wiped
-at the fight boundary, won or lost. The wipe lives here rather than in `advanceRun` precisely because
-a lost fight ends the run and never reaches `advanceRun` at all. Like `coins`, it is **never
-persisted**. See [The Feeder carry](the-feeder-carry.md).
+**DLR-163 added two more per-fight figures**, both seeded `0` by `startRun`, both reset to `0` by
+`advanceRun` at the fight boundary, and **neither persisted**:
+
+- **`discardCapBonus`** — Swaps added to *this fight's* cap by Woodcutters the player played. A
+  **count of steps**, not a total: `swapCapFor(discardCapBonus)` owns the addition to
+  `DISCARDS_PER_FIGHT`, so the control's readout and any future refusal cannot disagree about what
+  "full" means.
+- **`treasureDamageBonus`** — base damage earned *this fight* by banking tricks that carried a
+  Treasure. **Summed with `baseDamageBonusFor`'s run-permanent Whetstone figure at `playOptions`,
+  never merged into it**: a Whetstone is run-permanent and this dies at the fight boundary.
+
+Both reach `recordEncounter` as optional trailing parameters, defaulted to the run's own value, so
+existing call sites are unchanged.
+
+**`lowCarry` is a `BuffCarry`** (`{ multiplierBonus, flatDamageBonus }`), seeded empty by `startRun`,
+owned by the hand for its lifetime, handed back through `WarCouncilRoundResult.lowCarry`, and passed
+through `lowCarryAfter`: a carry compounds hand to hand **within** a fight and is wiped at the fight
+boundary, won or lost. The wipe lives there rather than in `advanceRun` precisely because a lost
+fight ends the run and never reaches `advanceRun` at all. Like `coins`, it is **never persisted**.
+See [The low carry](the-low-carry.md).
 
 **It holds no separate player-health field, and that is the design decision worth knowing.** The
 health a player carries is `encounter.health[DuelSide.Player]` — read out of the encounter that
@@ -87,7 +102,7 @@ is over" is what stops a screen and a transition disagreeing about it.
 | Function                              | Does                                                                                                 |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `startRun(playerHealth?, grants?, runSeed?)` | Builds fight 0 at `PLAYER_START_HEALTH`, `outcome: InProgress`, **0 coins**, and the configured Cheat grant. **Since DLR-158 the same `playerHealth` argument also seeds `maxPlayerHealth`, the run's live ceiling** |
-| `recordEncounter(run, enc, cheats, timebombCharges, blastGuardHeld)` | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, **refills the flask through `flaskAfter` if the opponent just beaten was a stage boss** (DLR-93), and **re-derives the outcome** — the AC4/AC5 decision point. The fifth argument goes through `guardAfter`, not straight onto the run |
+| `recordEncounter(run, enc, discardsRemaining, unplayedCards, …)` | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, **refills the flask through `flaskAfter` if the opponent just beaten was a stage boss** (DLR-93), and **re-derives the outcome** — the AC4/AC5 decision point. Everything after `unplayedCards` is an optional, defaulted figure a hand may hand back: `buffCoinsEarned`, `buffs`, `lowCarry`, `streak`, `discardCapBonus`, `treasureDamageBonus`. `lowCarry` and `streak` go through their `*After` rules, not straight onto the run |
 | `canAdvanceRun(run)`                  | `outcome === InProgress && encounter.winner === Player` — "the Quarry is down and another fight remains" |
 | `beatenCount(run)`                    | How many fights are behind the player, as one integer — `encounterIndex + (winner === Player ? 1 : 0)` (DLR-85) |
 | `advanceRun(run)`                     | Opens the next fight on the carried health, or throws                                                 |
@@ -209,14 +224,13 @@ stories, not a bigger starting bar.
 
 ### DLR-91 deleted a transition rather than adding one
 
-`beginNextHand` used to sit in the table above — DLR-90's payment point for a queued Timebomb hit, and
-the only total, throw-free transition in this module. **DLR-91 deleted it**, because Timebomb is now paid
-at the resolution of the next trick rather than at the deal of the next hand, and that payment happens
-one layer up in `roundReducer.ts`. `App.tsx` lost its call and the downstream resolution re-check that
-followed it in the same change. The consequence worth knowing: `recordEncounter` is once again the
-**only** transition here that adopts a hand's end state, which is why `guardAfter` is a named function
-rather than an inline ternary. See
-[Timebomb — the held charge, the delayed-hit queue, and where it is paid](timebomb-and-the-delayed-hit.md).
+`beginNextHand` used to sit in the table above — DLR-90's payment point for a queued Timebomb hit,
+and the only total, throw-free transition in this module. **DLR-91 deleted it** when the payment
+moved to the resolution of the next trick, one layer up in `roundReducer.ts`. (DLR-166 has since
+removed the whole delayed-hit mechanic: **all damage lands at the trick that caused it.**) The
+consequence worth knowing outlived both: `recordEncounter` is the **only** transition here that
+adopts a hand's end state, which is why each carry rule is a named function rather than an inline
+ternary.
 
 ## The split into `run.ts` and `runTransitions.ts` — DLR-93
 
@@ -230,7 +244,7 @@ two files on disk today.
 | -------------------- | -------------------------------------------------------------------------------------------------- |
 | `run.ts`             | The run's **shape** and its projections — `RunState`, `RunOutcome`, `startRun`, `canAdvanceRun`, `beatenCount`, `shopStockFor`, `flaskStockFor`, `baseDamageBonusFor` |
 | `runTransitions.ts`  | The run's **transitions** — `recordEncounter`, `advanceRun`, `buyFromShop`, `drinkFlask`, `pullSlotMachine`, and the private helpers only they use: `outcomeFor`, `healedBy`, `fullyHealed` |
-| `runCarry.ts`        | **DLR-158.** The five fight-boundary **carry** helpers — `guardAfter`, `feederCarryAfter`, `streakAfter`, `handOfFightAfter`, `flaskAfter` — answering one question, "what survives the end of a fight" |
+| `runCarry.ts`        | **DLR-158.** The fight-boundary **carry** helpers — `lowCarryAfter`, `streakAfter`, `handOfFightAfter`, `flaskAfter` — answering one question, "what survives the end of a fight". `guardAfter` sits with them, still exported, with **no caller** since DLR-166 removed the Blast Guard it cleared |
 
 The line drawn is **a function that produces a new `RunState` versus one that only reads an existing
 one.** `canAdvanceRun` and `beatenCount` stayed with the shape despite being logic, because they answer
@@ -276,5 +290,6 @@ one of them already inside the pure tree. `runTransitions.ts` is inside the same
 with plain function-in/value-out assertions under the `node` Vitest project
 (`src/hunt/__tests__/run.test.ts`), with no renderer — including a spec that drives a whole run to
 `Won` through `advanceRun`/`recordEncounter`, and one that pins immutability by `JSON.stringify`
-comparison across a transition. Blast Guard's own specs live in `src/hunt/__tests__/blastGuard.test.ts`
-rather than here: `run.test.ts` was already at 343 lines.
+comparison across a transition. Where a mechanic's specs would push `run.test.ts` past its length
+budget they live in their own file beside it — `run.flask.test.ts`, `run.quickKill.test.ts`,
+`run.lowCarry.test.ts` and the rest.

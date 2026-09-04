@@ -54,9 +54,12 @@ That retires the invariant the rest of the engine was quietly relying on (see
 | ---- | ---- | ------------------ |
 | The refill | `playCard.ts` | new |
 | `applyDiscard` | `discard.ts` | `state.drawPile.slice(0, discarded.length)` |
-| `applyWoodcutterDraw` | `abilities.ts` | `const [drawn, ...rest] = state.drawPile` — `undefined` into a hand on an empty pile |
+| The Woodcutter's draw | `abilities.ts` | `const [drawn, ...rest] = state.drawPile` — `undefined` into a hand on an empty pile |
 | The Woodcutter-discard **preview** | `playCard.ts` | `drawPile[0]`, which could be `undefined` |
 | `chooseCpuMove`'s Woodcutter **preview** | `cpuPlayer.ts` | `drawPile[0]`, same |
+
+(The last two sites went with DLR-163's rewrite — the Woodcutter takes no choice any more, so
+neither preview exists. `applyQuarrySwap` inherited the first site's draw, through `drawCards`.)
 
 ```ts
 export function drawCards(source: DrawSource, count: number): DrawResult
@@ -113,7 +116,7 @@ So `RoundState` gained one required field, `drawSeed: number`:
   observable counters alone was rejected because the resulting permutation would not vary with the
   run seed.
 
-It is **required rather than optional**, matching `primedCards`' reasoning: a total shape with no
+It is **required rather than optional**, matching `skulledCards`' reasoning: a total shape with no
 field a reader can forget about, at the cost of the fifteen construction sites the compiler
 enumerated (fourteen of them specs).
 

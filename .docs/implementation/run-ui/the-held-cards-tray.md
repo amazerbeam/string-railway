@@ -18,7 +18,7 @@ and suit classes, styled by `warCouncilBuffCard.css`, which `HeldBuffCard.tsx` i
 
 That is the whole point, and the alternative was tried and rejected on the project's own standing
 guidance: **a list of buff names carries no intuition**, because the names are agent-authored. A
-reader who sees `Moon-Feeder (Momentum)` in a list has been told nothing; a reader who sees the card
+reader who sees `Moon Low (Momentum)` in a list has been told nothing; a reader who sees the card
 they will be looking at during the fight has been told what they hold. Showing the object in the form
 it will be met in is the answer to "what do I have", and a list of its labels merely restates the
 question.
@@ -84,7 +84,7 @@ The order is **tier descending, then `buffStackKey` ascending** — a total orde
 always draw the same tray regardless of the order they were won in. Best cards first, because the
 tray is scanned rather than read. The function is pure and never mutates its input, both asserted.
 
-`heldBuffCount` counts **copies, not piles**, so two Bell-Takers read as two cards in the heading
+`heldBuffCount` counts **copies, not piles**, so two Bell High cards read as two cards in the heading
 while occupying one card in the row.
 
 ## Nothing renders to say nothing is held

@@ -140,7 +140,7 @@ win the trick, else play lowest."
 | fatal outcome: clean loss / skull-win | 84 / 41                                      | 65 / 15                                              |
 | forced — no legal alternative existed | 9/125                                        | 80/80                                                |
 
-Skull-awareness alone cuts fight-one losses by 36%, mostly by not walking into a visible `SkullWin`.
+Skull-awareness alone cuts fight-one losses by 36%, mostly by not walking into a visible `HighDefeat`.
 Under skull-aware play, **every** remaining loss was a genuinely forced follow-suit trap with no legal
 alternative in hand — real variance, not a missed decision.
 
@@ -293,7 +293,7 @@ the simulator's own policies, each found and fixed on 2026-09-02:
    the Quarry, whose dodge branch filters its _own_ candidates for a skull — a permanent no-op for
    the player, who is never dealt one. It therefore tried to win every trick, walking into a third of
    them the wrong way round.
-2. **Buffs were armed without deciding the trick.** Taker and Feeder of every suit were armed
+2. **Buffs were armed without deciding the trick.** Suit High and Suit Low of every suit were armed
    together though exactly one can fire, and on suits the trick would never touch. Arming only on a
    decided outcome took the share of condition cards that pay from **16.6% to 58%**.
 3. **Cheats were spent as ordinary buffs.** A Cheat's one job is turning a forced hurt into a bank;

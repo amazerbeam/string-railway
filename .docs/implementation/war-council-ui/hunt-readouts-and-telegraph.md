@@ -103,7 +103,7 @@ drift silently again.
 > Blade or Momentum card pays into its own trick's bracket and does not survive it, so there is no
 > unspent balance left to preview. `BankMeter` lost `pendingBonus`, `shownMultiplier` and the
 > `forced` figure in the same pass, and now renders `total`, `roll` and `potValue(total, roll)`.
-> `carriedIn`/`carryOut` — the Feeder carry — survive unchanged, because that axis was untouched.
+> `carriedIn`/`carryOut` — the low carry — survive unchanged, because that axis was untouched.
 > The section below is kept as the record of what was tried and why.
 
 `BankMeter` gained an optional `pendingBonus: CashOutBonus` prop, filled by
@@ -125,7 +125,7 @@ two cash-out figures, shown only when at least one axis is non-zero (`hasPending
 `NO_PENDING_BONUS` constant) when omitted, so every existing call site — and every existing test —
 reads exactly as it did before this prop existed.
 
-#### Both halves of the Feeder carry — DLR-150, 2026-08-27
+#### Both halves of the low carry — DLR-150, 2026-08-27
 
 `BankMeter` gained two more display-only props, `carriedIn` and `carryOut`, both `BuffCarry` and both
 defaulted to `EMPTY_BUFF_CARRY`. `WarCouncilRound.tsx` fills them straight off
@@ -153,7 +153,7 @@ double-count it.
 4 still sees what their opening bonus was. AC6's wording ("an opening figure at the top of the next
 hand") is satisfied either way; **whether it should instead be a one-off flourish is pacing
 judgement and the developer's**, as is every colour, glyph, border weight and word in both lines —
-all placeholder. The mechanic itself is [hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+all placeholder. The mechanic itself is [hunt/the-low-carry.md](../hunt/the-low-carry.md).
 
 > **The `.wc-bank*` rules moved house in the same ticket.** They now live in
 > `warCouncilBankMeter.css`, imported by `WarCouncilRound.tsx` alongside the others, because
@@ -251,7 +251,7 @@ The felt telegraph did not come back. What came back is **much narrower and live
 `QuarryShape`, the panel that already says what the Quarry holds, marks the row for the suit it is
 about to **lead** with.
 
-**Why it exists at all.** Almost every mintable buff is suit-scoped — Taker and Feeder are three
+**Why it exists at all.** Almost every mintable buff is suit-scoped — Suit High and Suit Low are three
 suits each — so when the player is not leading, the whole activation decision hinges on a fact the
 screen did not show. The engine had computed that fact since DLR-52 and nothing had ever asked it.
 This is the surface, not new engine work.

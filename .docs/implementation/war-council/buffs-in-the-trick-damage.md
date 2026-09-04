@@ -40,12 +40,16 @@ same fired list to two different consumers:
 
 | Consumer | Axes | Scope | Lives in |
 | --- | --- | --- | --- |
-| `trickBonusFor(fired, trickIsLoss)` | Momentum (multiplier), Blade (flat damage), the Overlap Bonus | **this trick only** (DLR-156 AC11) | `src/hunt/buffAccrual.ts` |
-| `resolveFiredBuffs(accrual, fired, trickIsLoss)` | Purse (coins), Second Wind (AP refund), DLR-150's Feeder carry | the hand's accrual, folded by the felt | `src/hunt/buffAccrual.ts` |
+| `trickBonusFor(fired, trickIsDefeat)` | Momentum (multiplier), Blade (flat damage), the Overlap Bonus | **this trick only** (DLR-156 AC11) | `src/hunt/buffAccrual.ts` |
+| `resolveFiredBuffs(accrual, fired, trickIsDefeat)` | Purse (coins), Second Wind (AP refund), DLR-150's low carry | the hand's accrual, folded by the felt | `src/hunt/buffAccrual.ts` |
 
-Both read `buff.reward` through the same `narrowToCostAxis` and the same `BuffKind.Feeder` /
-`trickIsLoss` split, so the tier table, the cadence and the Feeder carry are inherited rather than
+Both read `buff.reward` through the same `narrowToCostAxis` and the same `BuffKind.SuitLow` /
+`trickIsDefeat` split, so the tier table, the cadence and the low carry are inherited rather than
 restated in two places.
+
+A third consumer, `curseBonusOf(trick.buffs.active)`, reads the **activated** set rather than the
+fired one — a Curse has no condition to come true, so it is never in `fired`. See
+[The Curse](the-curse.md).
 
 `trickBonusFor` returns the Overlap Bonus **separately** rather than folded into `multiplierBonus`,
 so the resolution screen can give it its own beat without re-deriving `overlapBonusFor`.
@@ -60,21 +64,21 @@ and the `multiplierPaid` / `flatDamagePaid` bookkeeping. All four existed only t
 pool being paid twice by two cash-outs in one hand. There is exactly one cash-out now, and it reads
 no pool, so all four lost their reason to exist.
 
-## `trickIsLoss` — this file exports the outcome axis rather than letting `hunt` re-derive it
+## `trickIsDefeat` — this file exports the outcome axis rather than letting `hunt` re-derive it
 
-DLR-150's Feeder carry needs the **outcome** axis: a Feeder that fires on a Loss banks its reward for
-the next hand, while one that fires on a **dodge** — a Win — pays into this hand as before. Every
-buff _condition_, by contrast, reads only the mechanical axis (`ctx.playerWon`, did the player
-physically take the cards). The two disagree on exactly the tricks that matter: taking a skulled
-trick is a Loss, and not taking one is a Win.
+DLR-150's low carry needs the **outcome** axis: a Suit Low card that fires on a **Low Defeat** banks
+its reward for the next hand, while one that fires on a **Low Victory** pays into this hand as
+before. Every buff _condition_, by contrast, reads only the mechanical axis (`ctx.playerWentHigh`,
+did the player physically take the cards). The two disagree on exactly the tricks that matter: going
+high on a skulled trick is a **Defeat**, and going low on one is a **Victory**.
 
 `streak.ts` already owns that inversion, once, in the total `TAKEN` table behind `isTaken` — and
-`isTaken(outcome)` is already exactly "this trick was a Win". So `resolveTrickBank` passes
-`!isTaken(outcome)` into `resolveTrickBuffs` as a third argument, `trickIsLoss`, and passes the same
+`isTaken(outcome)` is already exactly "this trick banked". So `resolveTrickBank` passes
+`!isTaken(outcome)` into `resolveTrickBuffs` as a third argument, `trickIsDefeat`, and passes the same
 value into `trickBonusFor`. **`src/hunt/` learns nothing new about skulls.** The rejected alternative
-— a `trickWasLoss(ctx)` predicate in `buffEvaluation.ts` reading `playerWon === skullTrick` — would
+— a `trickWasDefeat(ctx)` predicate in `buffEvaluation.ts` reading `playerWentHigh === skullTrick` — would
 have put a second statement of the game's most misread rule in a different module from the first. The
-mechanic itself is [hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+mechanic itself is [hunt/the-low-carry.md](../hunt/the-low-carry.md).
 
 ## The two fields, and why both are required rather than optional
 
@@ -121,5 +125,5 @@ equation reached the preview with **no arithmetic change at all**. See
 
 It does not know what a run is, what a shop item is called, or what an action point is. The buffs
 arrive as a value assembled a layer up, exactly as `baseDamageBonus` (a Whetstone count, renamed to a
-plain fact) and the Timebomb queue already do. Nothing here calls `Math.random()`, imports React, or
+plain fact) and `treasureTrick` (a 7 was played, by either side) do. Nothing here calls `Math.random()`, imports React, or
 touches a DOM global, so the pure-core lint boundary is unchanged.

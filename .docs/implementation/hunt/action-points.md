@@ -156,7 +156,7 @@ bypass written anywhere, because `apCostFor` was already the only reader.
 player put on a buff was refunded before the next bet — firing everything every trick was strictly
 correct and nothing was ever a decision. Action points were the only thing limiting how many buffs
 fired per trick, and they were doing it badly. What replaced them is **card scarcity**: activating a
-Taker, Feeder or Sidestep now removes it from the pile for the rest of the run
+a Suit High, Suit Low or Skull Low card now removes it from the pile for the rest of the run
 (`CONDITION_CARD_SINGLE_USE`, [consumable items](consumable-items.md)). The two changes are coherent
 only together — the flag flipped without consumption would leave no limit at all.
 

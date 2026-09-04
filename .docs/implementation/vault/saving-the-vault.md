@@ -53,12 +53,14 @@ not destroy data, even data this build cannot understand.**
 That is the answer to the question DLR-106 explicitly deferred here: **an unmigratable save is
 discarded and the player starts fresh — non-destructively, and reported.** `loadVault` hands its
 caller both `EMPTY_VAULT` and the named outcome, so DLR-118's screen can say "your Vault could not
-be read" instead of showing a silent zero. Migration was the alternative and is wrong at version 1
-for a concrete reason: exactly one schema version has ever existed, so a migration function today
-would have no source shape to migrate *from* and would be untestable speculation.
+be read" instead of showing a silent zero.
 
-`SAVE_SCHEMA_VERSION` stays at **1** — this is the first shape ever written, so there is nothing to
-bump from. **That window is now closed**: the next shape change here is a real migration.
+**`SAVE_SCHEMA_VERSION` is 2**, bumped by DLR-165 when the `BuffKind` rename changed every persisted
+template id (`taker:` → `suitHigh:`, `feeder:` → `suitLow:`, `sidestep:` → `skullLow:`). Without the
+bump, `reconcileVault` would have dropped every saved boost and grant **silently**; with it, the read
+fails by name and the default is returned. **A migration map was deliberately rejected** — it would
+have kept the dead vocabulary alive in code — so **the Vault resets once, by design.** That is the
+whole of the migration story to date: the seam detects a mismatch and nothing upgrades a record.
 
 ## Nothing containing a live `Buff` is ever persisted
 
@@ -76,8 +78,9 @@ Persisting the id and persisting `{ kind, target, axis }` carry identical inform
 admits one total, cheap guard — membership in `BUFF_TEMPLATES` — where the coordinate form would
 validate three separate vocabularies and then have to search for the template anyway. So renaming a
 `BuffKind` or `BuffRewardAxis` member value now orphans saved boosts and grants: `reconcileVault`
-drops them countably rather than corrupting anything, but the currency spent on them is gone, and a
-future rename must ship a migration. `BuffTier`'s three values are frozen on the same terms, and the
+drops them countably rather than corrupting anything, but the currency spent on them is gone.
+**DLR-165 performed exactly such a rename**, and answered it with a `SAVE_SCHEMA_VERSION` bump rather
+than a migration. `BuffTier`'s three values are frozen on the same terms, and the
 guard validates against the declaration in `src/hunt/buffs.ts` rather than against literals of its
 own, so a rename fails the guard instead of silently accepting a stale save.
 

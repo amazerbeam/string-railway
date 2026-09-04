@@ -16,23 +16,31 @@ The defect this fixes: the felt said **"You take the trick"** and the panel said
 Both are true on the mechanical axis and both mislead on a skull trick, where taking the cards is the
 bad outcome. A play session read "You take the trick", saw health drop, and could not tell why.
 
-`trickOutcomeKindFor(playerTook, skullTrick)` is the whole of it — a two-by-two cross of two facts
+`trickOutcomeKindFor(playerWentHigh, skullTrick)` is the whole of it — a two-by-two cross of two facts
 the engine already decided, returning one of `TrickOutcomeKind`'s four members:
 
-|                               | Clean trick | Skull trick   |
-| ----------------------------- | ----------- | ------------- |
-| **The player took the cards** | `CleanWin`  | `AteTheSkull` |
-| **The Quarry took them**      | `CleanLoss` | `Dodge`       |
+|                               | Clean trick   | Skull trick   |
+| ----------------------------- | ------------- | ------------- |
+| **Went high** (took the cards) | `HighVictory` | `HighDefeat`  |
+| **Went low** (did not)         | `LowDefeat`   | `LowVictory`  |
 
-`playerTook` is `winner === PlayerSide.Player` — **the mechanical axis, before the skull inverts what
-it is worth**, which is the same axis `BuffTrickContext.playerWon` means and the same one every buff
-condition reads. Nothing here consults damage, the streak or the pot: the outcome word is a _name_
-for what happened, and the arithmetic that follows from it is `resolutionBeats.ts`'s job.
+`playerWentHigh` is `winner === PlayerSide.Player` — **the mechanical axis, before the skull inverts
+what it is worth**, which is the same axis `BuffTrickContext.playerWentHigh` means and the same one
+every buff condition reads. Nothing here consults damage, the streak or the pot: the outcome word is
+a _name_ for what happened, and the arithmetic that follows from it is `resolutionBeats.ts`'s job.
+
+**The names carry both axes at once, which is the whole point of DLR-165's rename.** *High* and *Low*
+say whether the player physically took the cards; *Victory* and *Defeat* say whether the trick banked
+or hurt. The old names — `CleanWin` / `Dodge` / `CleanLoss` / `AteTheSkull` — used one pair of words
+for both jobs, which is the confusion that produced the defect this page opens with. **"High" means
+winning the contest, including by trump — never the higher numeral.**
 
 Two `Record`s carry the copy, and both are **placeholders the developer has not chosen**:
-`TRICK_OUTCOME_WORD` (`Clean win` / `Dodge` / `Clean loss` / `Ate the skull` — `the-hunt.md` §7's own
-terms) and `TRICK_OUTCOME_WHY`, the one-line cause, which is the half the session found missing:
-_"they took it, and it carried a skull — so it banks, and costs you nothing"_.
+`TRICK_OUTCOME_WORD` (`High Victory` / `Low Victory` / `Low Defeat` / `High Defeat`) and
+`TRICK_OUTCOME_WHY`, the one-line cause, which is the half the session found missing: _"they took it,
+and it carried a skull — so it banks, and costs you nothing"_. **DLR-165 kept all four `WHY`
+sentences verbatim** — they were already phrased on both axes and needed no correction; only the
+headline words changed.
 
 The module lives under `src/app/warCouncil/` rather than in the pure core for the same reason
 `resolutionBeats.ts` does: **it produces user-facing words, and the engine holds no copy.** It is
@@ -46,9 +54,15 @@ word an outcome itself.**
 
 - **The trick well** (`TrickWell.tsx`, resolved branch) renders `TRICK_OUTCOME_WORD` as its own
   headline line (`.wc-well-outcome`) and `TRICK_OUTCOME_WHY` in place of the old winner sentence,
-  keeping the damage and Timebomb clauses that followed it. It reads the skull fact from a new
-  optional `skulledInTrick` prop, defaulted to `[]` like its `skulledCards` and `primedCards`
-  siblings, so a caller predating the prop still compiles and simply narrates a clean trick.
+  keeping the damage clause that followed it. It reads the skull fact from a `skulledInTrick` prop.
+
+  > **That prop is now load-bearing rather than a convenience (DLR-167 fix pass).** It carries
+  > `ResolvedTrick.skulledInTrick`, **captured from the pre-play state** at the moment the trick
+  > resolved, because `playCard` lifts a curse the instant the trick resolves. A surface that
+  > re-derived skull membership from the state *after* the play would see an empty list for a trick a
+  > Curse alone made skulled — and would word a banking **Low Victory** as a **Low Defeat**,
+  > including on the trick that ends the encounter. The well and the panel read the same captured
+  > value, which is what makes "one trick can never be worded two ways" actually true.
 - **The resolution panel** (`TrickResolutionScreen.tsx`) renders the same two strings as
   `.wc-resolve-outcome` and `.wc-resolve-outcome-why`, where `.wc-resolve-verdict` used to print
   "You took it" / "They took it". The class was renamed with the meaning.
@@ -83,9 +97,9 @@ pot over, and the trick they are deciding about was won under that trump.
 
 ## Armed and did not fire — `resolutionDeadBuffs.ts`
 
-The false bug report this exists to answer: a **Key-Feeder** — pay when a trick with a Key in it is
-lost — was armed, the player _won_ the trick, so it correctly paid nothing, and **nothing on screen
-said so.** The player reported a broken buff.
+The false bug report this exists to answer: a **Key Low** card — pay when the player goes low on a
+trick with a Key in it — was armed, the player went **high**, so it correctly paid nothing, and
+**nothing on screen said so.** The player reported a broken buff.
 
 `deadBuffsFor(armedIds, firedIds, candidates)` is a set difference and nothing else: every id in
 `buffActivation.activatedThisTrick` that is not in `resolution.firedBuffIds`, resolved to a `Buff`
@@ -126,8 +140,7 @@ until DLR-115.
 
 **Which encounter it is asked about is load-bearing.** `resolutionViewFor` is passed the encounter
 **after this trick's own damage was folded in** (`folded?.encounter ?? state.encounter`), never
-`state.encounter`: a skull's health loss or a Timebomb detonation has already landed by then, and
-only the pot has not.
+`state.encounter`: a Defeat's health loss has already landed by then, and only the pot has not.
 
 `TrickResolutionScreen` renders the fact as a word inside the Apply control — `Lethal · ends the
 fight` — and folds it into that button's `aria-label`, so a screen-reader user hears it in the
@@ -142,9 +155,14 @@ now asks `isEncounterResolved` first and answers `true` — a finished fight can
 applying more pot — with the boundary pinned by `resolutionLethal.test.ts`.
 
 **Not fixed, and deliberately so.** That early `true` is returned for _any_ resolved encounter,
-**including one resolved in the Quarry's favour — the player already dead.** That state is reachable:
-Timebomb damage can take the player to zero on a trick they physically won, which also banks a pot.
-The Apply control then reads "Lethal · ends the fight" as though the pot were about to kill the
+**including one resolved in the Quarry's favour — the player already dead.**
+
+> That was reachable when a Timebomb could take the player to zero on a trick they physically won,
+> which also banked a pot. **DLR-166 removed the delayed hit**, and every trick that banks now costs
+> the player nothing — so the state may no longer be reachable at all. Nobody has re-checked it. The
+> residual is left standing rather than closed on that reasoning.
+
+The Apply control would then read "Lethal · ends the fight" as though the pot were about to kill the
 Quarry, when the fight has already ended the other way. **Pressing it is safe** — `applyPotAction`
 no-ops on a resolved encounter — so this is misleading copy, not a crash. It was raised in review and
 routed to the developer, because the two ways out are a design reading: branch on which side the
@@ -168,6 +186,6 @@ resolved trick, and `TrickResolutionScreen.test.tsx` pins the panel's, plus the 
 and the lethal tag. Neither spec has to assert that the two surfaces agree, because neither surface
 composes the words: both read the same two `Record`s.
 
-A browser would still have to answer whether _Ate the skull_ reads well on a panel at real size,
+A browser would still have to answer whether _High Defeat_ reads well on a panel at real size,
 whether the doubled statement (felt, then panel) reads as reinforcement or as repetition, and whether
 two struck-through rows fit the panel at 640px of viewport height.

@@ -116,7 +116,7 @@ tricksPlayed <= 1` since DLR-146**, and the change matters more than it reads: i
   floor of `0` (both mean five or six tricks played) and floor-invariant thereafter.
   `cardAwarePolicy.ts` compares `deadCards.length` to `hand.length` and assumes nothing about tricks
   remaining, so it needed no equivalent change.
-- **Never** discards, marks a Timebomb, or arms a Cheat — it implements neither optional method.
+- **Never** discards or arms a Cheat — it implements neither optional method.
 - **Shop** — free pulls, then Heal → Swan tier → Witch tier while affordable, then the
   flask.
 

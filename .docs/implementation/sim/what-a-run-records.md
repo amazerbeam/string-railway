@@ -54,13 +54,13 @@ trick: what was held, what was armed, what paid, and what the arithmetic produce
 `formatSummary` gained four sections. **Tricks** prints the banked/hurt split with the seat
 breakdown. **The Cheat** prints the four `cheatMoments` totals, whose gaps say whether the card is
 rare, useless, or simply never owned. **Card supply** prints cards won, cards left unspent, combines,
-the share of condition cards that paid — broken down per family, since Taker, Feeder and Sidestep
+the share of condition cards that paid — broken down per family, since Suit High, Suit Low and Skull Low
 answer to different conditions — and how many cards fired on one trick, which is a different and
 separately rewarded question from how many fired in a hand, because the Overlap Bonus pays per extra
 card on a single trick. **The pot** prints pots cashed per hand, pot size, and the roll standing at
 each hand's end.
 
-Cheat and Timebomb are excluded from the paid-share figures: neither carries a condition, so neither
+Every activated card is excluded from the paid-share figures: none carries a condition, so none
 can ever read as paid, and counting them would report two cards as permanent failures.
 
 ## Two measurement defects fixed in the same pass

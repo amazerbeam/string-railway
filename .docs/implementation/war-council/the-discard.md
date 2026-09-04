@@ -20,7 +20,7 @@ export function applyDiscard(
 ```
 
 `n` cards come off `side`'s hand; the same `n` come off the **front** of `drawPile`; the discarded
-cards are appended to the pile's **back**. This is `applyWoodcutterDraw`'s own one-card convention
+cards are appended to the pile's **back**. This is the Woodcutter draw's own one-card convention
 (`drawPile: [...restOfPile, discard]`), generalised to n cards rather than reinvented.
 
 **Since DLR-146 the draw goes through `drawCards`, and `drawPile.length` is no longer invariant

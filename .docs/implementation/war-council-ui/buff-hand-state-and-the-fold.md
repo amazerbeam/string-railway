@@ -28,13 +28,13 @@ declaration and `createRoundUiState`'s call to `startBuffHand()`.
 | `applyDamagePressed` | DLR-109's reading — Apply Damage was **pressed**, not landed              |
 
 The `accrual` row carries two more fields since DLR-150 — `carriedIn`, what seeded this hand, and
-`carryOut`, what a Loss-firing Feeder has banked for the next one. Neither is a new channel: both
+`carryOut`, what a Defeat-firing Suit Low card has banked for the next one. Neither is a new channel: both
 ride the accrual the fold already adopts wholesale. See
-[hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+[hunt/the-low-carry.md](../hunt/the-low-carry.md).
 
 > **DLR-150 gave the reset an argument.** `startBuffHand(carriedIn?)` forwards to
-> `startHandAccrual(carriedIn)`, so a new hand's `accrual` opens on the Feeder carry the last hand
-> banked rather than on zero — and `createRoundUiState` now passes `seed.feederCarry`. It is still a
+> `startHandAccrual(carriedIn)`, so a new hand's `accrual` opens on the low carry the last hand
+> banked rather than on zero — and `createRoundUiState` now passes `seed.lowCarry`. It is still a
 > reset, and still the only one: the carry arrives as a value from `RunState`, and the hand's own
 > figures start where they always did. Optional, defaulted to `EMPTY_BUFF_CARRY`, so all 11 existing
 > seed literals reproduce today's game exactly. `createRoundUiState` and `RoundUiSeed` themselves
@@ -58,8 +58,8 @@ keeps `BuffKind.Unassigned` placeholders out without a second filter anywhere. `
 resolves fired ids back to their `Buff` the same way, so an Event family that fired stays free to
 fire again this hand while a Threshold or Terminal family is recorded as spent.
 
-> **DLR-145 widened both readings from the pile to `pile ∪ spent-this-trick`, 2026-08-25.** Taker,
-> Feeder and Sidestep became single-use, and `activateFromPile` removes a consumed card from
+> **DLR-145 widened both readings from the pile to `pile ∪ spent-this-trick`, 2026-08-25.** Suit
+> High, Suit Low and Skull Low became single-use, and `activateFromPile` removes a consumed card from
 > `state.buffs` at the commit tap — before the trick it was spent on has resolved. Filtering the
 > pile alone therefore found nothing and the card paid nothing: no throw, no refusal, no log. Both
 > functions now build their candidate list as
@@ -111,7 +111,7 @@ held.
 `recordEncounter` as the optional `buffCoinsEarned` argument. **DLR-150 collapsed the construction
 sites**: `WarCouncilRound.tsx` had two identical literals and `src/sim/playHand.ts` a third
 hand-built copy, and all three now call `roundResultFor(ui)` in `roundResult.ts`. That same function
-puts `ui.buffHand.accrual.carryOut` on `WarCouncilRoundResult.feederCarry`, which `App.tsx` and
+puts `ui.buffHand.accrual.carryOut` on `WarCouncilRoundResult.lowCarry`, which `App.tsx` and
 `sim/playRun.ts` hand to `recordEncounter` as its optional eighth parameter. Nothing about the coin path is re-derived at the component: the figure was clipped at
 `MAX_COIN_BONUS_PER_HAND` by the accrual long before it got here.
 

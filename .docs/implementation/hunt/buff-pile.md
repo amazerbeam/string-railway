@@ -1,7 +1,7 @@
 Part of [Hunt](README.md).
 
 DLR-105 gave the run a second object type owned across its whole life — `buffs.ts` is a new
-standalone, pure module holding `Buff`, and it exists so Cheat, Timebomb, Shield, and every
+standalone, pure module holding `Buff`, and it exists so Cheat, Shield, and every
 slot-machine-drawn templated card can become interchangeable objects the rest of the system draws,
 activates, and persists identically, instead of three (and counting) bespoke mechanics. This
 ticket ships only the type and the pile's persistence; nothing yet draws, activates, or renders a
@@ -9,7 +9,7 @@ buff.
 
 **`Buff` had four fields as DLR-105 shipped it, and the fourth is the one that ticket's own risk
 note singled out.** (DLR-107 later added a fifth, `kind` — the identity field described in
-[Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md). The four below are
+[Activated cards](activated-cards.md). The four below are
 unchanged by it.)
 `id` (`BuffId`, minted from `RunState.nextBuffId`, never `Math.random()` — `src/hunt/` must stay
 deterministic, exactly as `CheatCardId` already is) and `tier` (`BuffTier`, `bronze`/`silver`/`gold`)
@@ -123,8 +123,8 @@ this seed.
 > asked, which only an all-zero weight table could cause), not an upper bound on the pile.
 >
 > **Still true after DLR-145, 2026-08-25**, and the question has changed direction. The pile now
-> opens at twenty-one cards and has no cap — but it **shrinks** for the first time: Taker, Feeder
-> and Sidestep leave the pile when activated (`CONDITION_CARD_SINGLE_USE`), so the open design
+> opens at twenty-one cards and has no cap — but it **shrinks** for the first time: a Suit High,
+> Suit Low or Skull Low card leaves the pile when activated (`CONDITION_CARD_SINGLE_USE`), so the open design
 > question is no longer "does a growing pool need a ceiling" but "does a draining one need a
 > floor". Nothing enforces one, and nothing yet says whether it should.
 
@@ -137,7 +137,7 @@ way `RUN_STARTING_CHEATS` and most of this module's shop prices are.
 
 **Nothing here has a consumer yet, and that is the whole of this ticket's scope.** No component,
 hook, or reducer reads `RunState.buffs`; no function evaluates a `BuffCondition` against play state
-or applies a `BuffReward`; no slot machine exists to draw a real card into the pile. Cheat/Timebomb's
+or applies a `BuffReward`; no slot machine exists to draw a real card into the pile. Cheat's
 migration onto this pile, Shield's redesign onto it, and the slot-machine draw are three separate,
 later tickets (DLR-103's T4, T7, T8) — this ticket is exactly what it says it is: the type, and the
 owned-pile persistence, and nothing else.
@@ -157,9 +157,6 @@ that gap from theoretical into visible.
 > is the accurate record of what DLR-116 shipped; read it with this correction. See
 > [Condition evaluation](buff-condition-evaluation.md).
 
-**Since DLR-107, T4 has partly landed and this paragraph needs one correction.** Cheat and Timebomb
-now have a `Buff` representation and their tier tables — but still no consumer: nothing evaluates a
-condition, applies a reward, or reads the pile. The felt continues to drive the old bespoke Cheat and
-Timebomb state machines, so the two mechanics currently exist twice over. See
-[Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md) for why that duplication is
-deliberate and what ends it.
+**Since DLR-107, T4 has landed.** Cheat has a `Buff` representation and a tier table, and DLR-132
+deleted the bespoke felt mechanic that duplicated it, so the card exists exactly once. Curse and the
+Wildcard were built on the same shape. See [Activated cards](activated-cards.md).

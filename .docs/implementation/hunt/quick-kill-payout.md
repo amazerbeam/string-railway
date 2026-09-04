@@ -148,7 +148,7 @@ unplayedCards: number | null
 
 `null` is the legitimate value for a hand that did not end the fight — not a failure, and not a
 defaulted zero. The parameter is **required rather than optional**, which is this module's
-established idiom (`cheats`, `timebombCharges` and `blastGuardHeld` all arrived the same way): the
+established idiom (every carried run figure arrived the same way): the
 compiler then enumerates every call site. A defaulted `null` would pay 0 forever the first time a
 driver forgot to thread the figure through, and would do it silently. The cost was 31 mechanical
 test-call edits, which is exactly the point of the enumeration.
@@ -190,7 +190,7 @@ silently under-count the hand that actually earned the kill.
 
 The count therefore has two sources, chosen at the moment the encounter actually resolves:
 
-- **An ordinary kill** — a trick's own damage, a booked Timebomb detonating, or any other immediate
+- **An ordinary kill** — a trick's own damage, or any other immediate
   path — is still counted by `captureUnplayed` off the **live** hand at the resolving transition,
   unchanged from before DLR-109.
 - **A delayed kill** — a queued Apply Damage payout landing and emptying the bar — is counted by the

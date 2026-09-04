@@ -143,8 +143,8 @@ than re-deriving the rule.
 **What it reads changed with DLR-80.** It used to diff `tricksPlayed` and `tricksWon` across the
 commit: a trick resolved iff `after.tricksPlayed > before.tricksPlayed`, the winner being whichever
 side's `tricksWon` entry rose. It now tests **`after.lastResolution`** — non-null iff a trick
-resolved — and recovers the physical winner from the outcome itself: `CleanWin` and `SkullWin` favour
-the player, `Dodge` and `CleanLoss` favour the Quarry. The bank, not the trick count, is what a trick
+resolved — and recovers the physical winner from the outcome itself: `HighVictory` and `HighDefeat`
+mean the player took the cards, `LowVictory` and `LowDefeat` mean the Quarry did. The streak, not the trick count, is what a trick
 now changes, so `lastResolution` is the definitive signal; and the winner comes from an enum
 `resolveTrickBank` already consulted rather than from a second diff that could disagree with it.
 
@@ -215,7 +215,7 @@ and correct if any ancestor ever gains one again.
 Playing an ability card opens `AbilityPrompt` **before the card leaves the hand**: the reducer arms
 it, opens the prompt, and only `ChooseAbility` actually commits. `CancelSelection` — which clears
 `armed` and `prompt` together — has always undone that cleanly, and `Escape` has always dispatched
-it. **What was missing was a control anyone could see**, so a player who opened the Fox prompt with
+it. **What was missing was a control anyone could see**, so a player who opened the 3's suit prompt with
 the pointer had no visible way out and reasonably read the prompt as a commitment.
 
 Both branches now render a cancel button, worded from the card's own name — _"← Don't play the

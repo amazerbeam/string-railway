@@ -90,7 +90,7 @@ the screen — but that is still a run lost, so the guard stays where it is.
 
 ### The draw pile CAN run out mid-hand, since DLR-146 — and `drawCards` is the answer
 
-Until 2026-08-26 `drawPile.length` was **invariant for the life of a hand**. `applyWoodcutterDraw`
+Until 2026-08-26 `drawPile.length` was **invariant for the life of a hand**. The Woodcutter's draw
 returned a card for every card it took, `applyDiscard` appended the swapped cards to the pile's back
 as it took the same number off its front, and nothing else touched the pile at all. That is why one
 reshuffle check at the deal was enough, and it is why both of those sites were unguarded: their
@@ -146,9 +146,10 @@ because `FRESH_ENCOUNTER_DECK.spentPile` is already `[]`.
 `reshuffled` is written once here and is **hand-scoped**: the next deal rewrites it, so the felt's
 notice cannot persist into a hand that was not reshuffled.
 
-Two things deliberately do **not** cross the hand boundary on a card. **Timebomb marks** stay
-hand-scoped (`primedCards` is seeded `[]` at every deal), because a mark that rode a card into the
-spent pile and back out through a reshuffle would be an invisible mark on a face-down card. And
+Two things deliberately do **not** cross the hand boundary on a card. **A curse** is
+hand-scoped and in fact trick-scoped (`cursedCards` is seeded `[]` at every deal and cleared at every
+trick resolution), because a mark that rode a card into the spent pile and back out through a
+reshuffle would be an invisible mark on a face-down card. And
 **skulls are re-rolled, never remembered** — `assignSkulls` runs per-deal against the Quarry's six
 newly dealt cards, so a card that carried a skull in hand one and returns after a reshuffle is
 rolled from scratch.

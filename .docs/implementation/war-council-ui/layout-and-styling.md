@@ -96,7 +96,7 @@ hover/active/state-change duration for controls that previously snapped: the sho
 list rows, and the felt-rail plates' hover `filter`), `--wc-prompt-enter-ms` (180ms — the ability
 prompt's mount entrance) and `--wc-decree-swap-ms` (220ms — the decree pile's swap crossfade). Every
 surface this pass touched reads one of the three by `var()` rather than repeating a literal duration;
-see [the Timebomb plate's polish-pass note](timebomb-charge-and-the-mark.md#dlr-97-the-plates-polish-pass),
+see the Timebomb plate's polish-pass note (its page went with the mechanic on DLR-166),
 [the ability prompt's entrance note](accessibility.md#dlr-97-gave-the-prompts-mount-a-visible-entrance-orthogonal-to-the-focus-fix-above),
 and [the decree swap's crossfade note](interaction-and-state.md#dlr-97-the-decree-swap-now-visibly-crossfades)
 for where each is consumed. All three are the developer's to retune by eye; none is a placeholder

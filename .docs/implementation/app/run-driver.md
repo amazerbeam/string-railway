@@ -144,17 +144,16 @@ is still no effect anywhere in the file.
 ```tsx
 function handleComplete(result: WarCouncilRoundResult) {
   const recorded = recordEncounter(
-    run, result.encounter, result.cheats, result.timebombCharges, result.blastGuardHeld,
-    result.unplayedAtResolve,
+    run, result.encounter, result.discardsRemaining, result.unplayedAtResolve,
+    /* …then the optional figures a hand hands back: buffCoinsEarned, buffs, lowCarry,
+       streak, discardCapBonus, treasureDamageBonus */
   )
   setRun(recorded)
   if (isEncounterResolved(recorded.encounter)) {
     setTricks({ taken: …[Player], lost: …[Cpu] })
-    return // The verdict is next, not another hand. D5 — any queued Timebomb is discarded, because
-           // advanceRun and startRun both re-seed the encounter through startEncounter.
+    return // The verdict is next, not another hand.
   }
-  // D1 — nothing is owed at a hand boundary any more. Timebomb is paid by the reducer's
-  // applyResolution at the trick that resolves it, so an unresolved hand simply deals the next one.
+  // Nothing is owed at a hand boundary: every trick's damage lands at that trick.
   dealNextHand()
 }
 ```
@@ -169,17 +168,14 @@ delayed hit can be a killing blow, so the handler then had to **re-check resolut
 against the run that transition produced rather than the one recorded above, or it would deal a hand
 into an encounter that was already over.
 
-**DLR-91 deleted all of that.** Timebomb now lands at the resolution of the next trick, folded into that
-trick's own damage by `roundReducer.ts` — so by the time a hand reports upward there is nothing left
-owing, `beginNextHand` was deleted from `src/hunt/run.ts`, and the driver's call and its downstream
-re-check went with it. One `setRun` serves both branches again. The comment marking the _absence_ stays,
-because "we deliberately do nothing at a hand boundary now" is invisible otherwise — and because a
-Timebomb booked by the finished hand's last trick rides on `encounter.pendingTimebomb` into the next hand's
-first trick, which is D5's carry half and is easy to mistake for a leak.
+**DLR-91 deleted all of that.** Timebomb moved to the resolution of the next trick, folded into that
+trick's own damage by `roundReducer.ts` — so by the time a hand reported upward there was nothing
+left owing, `beginNextHand` was deleted from `src/hunt/run.ts`, and the driver's call and its
+downstream re-check went with it. One `setRun` serves both branches again.
 
-**The already-resolved branch still pays nothing and still needs no clear step.** `advanceRun` and
-`startRun` both re-seed the encounter through `startEncounter`, which zeroes the queue, so a booking
-cannot survive a fight or a run boundary.
+**DLR-166 then removed the delayed hit entirely.** There is no queue, nothing carries across a hand
+boundary on the encounter, and the comment marking the absence is now simply the plain rule: **every
+trick's damage lands at that trick.**
 
 `handleNewRun` calls `startRun`, clears the tally, resets `hand` to 1, and deals fresh. Advancing to the
 next fight is `leaveForNextFight`, below.
@@ -217,7 +213,7 @@ the same `WarCouncilRoundResult` round trip — and both the mount and the shop 
 (`blastGuardHeld={run.blastGuardHeld}`), plus a fourth `refusals` entry for the new item.
 **The fifth argument is the one that is not adopted verbatim**: `recordEncounter` passes it through a
 private `guardAfter`, so a Guard dies with the fight it was bought for. See
-[../hunt/blast-guard.md](../hunt/blast-guard.md).
+the Blast Guard — a mechanic DLR-166 has since removed in full.
 
 So DLR-90's note now reads as a warning met rather than a prediction: this is a **five-parameter call
 carrying four hand-returned run figures**, and the right answer at the sixth is a single `HandOutcome`
@@ -457,12 +453,12 @@ deliberately not taken, precisely because StrictMode would fire it twice.
 > clearest statement of _which_ branch wins over which; nothing about that order changed.
 >
 > The extraction was forced by the 400-line budget: `App.tsx` stood at **399** and this ticket adds
-> `feederCarry` down to the mount and back from the result. It is **379** lines after DLR-156 added
+> `lowCarry` down to the mount and back from the result. It is **379** lines after DLR-156 added
 > the streak alongside it, and still not a reducer.
 >
 > **DLR-156 threaded a third run-carried figure the same way.** `RunState.streak` (`{ total, roll }`)
 > goes down as the `streak` mount prop and comes back on `WarCouncilRoundResult.streak`, which
-> `App.tsx` hands to `recordEncounter` as its ninth argument. It is `feederCarry`'s route field for
+> `App.tsx` hands to `recordEncounter` as its ninth argument. It is `lowCarry`'s route field for
 > field, and it is what makes a streak survive a hand boundary and die at a fight boundary.
 
 ```tsx

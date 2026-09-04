@@ -80,7 +80,7 @@ All four DLR-160 fields are filled by the same sole producer, `resolutionViewFor
 everything they need in scope: `state.round.skulledCards`, `state.round.decree`,
 `state.buffActivation`, and — new on this ticket — the **post-fold encounter** passed in from the
 call site, never `state.encounter`. The distinction matters: the trick's own damage (a skull's
-health loss, a Timebomb detonation) has already landed by then, and the pot has not.
+health loss on a Defeat) has already landed by then, and the pot has not.
 
 Every new required field also had to be added to the three untyped literal fixtures the config audit
 found (`roundReducer.resolution.test.ts`, `TrickResolutionScreen.test.tsx` ×2) — there is no type
@@ -186,11 +186,11 @@ A trick with `trickDamage === null` produces exactly **one** beat, and there are
   and a Tether on `total 8, roll 2` take the pot from 16 to 18), and this beat reports loss, not gain.
   The module still runs no rule of its own beyond that clamp — it subtracts two figures the engine
   decided, and the correction is right for a Swan rung too, with no knowledge of protection.
-- **`Absorbed`** — a **replaced clean loss** (DLR-90's primed card the Quarry wins cleanly) resets
-  nothing: no health taken, `total` and `roll` standing. `damageToPlayer === 0` is a total and
-  reliable test for it, because either of `streak.ts`'s two hurt triggers being true always makes
-  `damageToPlayer` positive. It gets its own beat kind rather than a cosmetic variant of `Hurt`,
-  because `Hurt`'s wording named a pot that was never touched. **This is a real engine/screen pair
+- ~~**`Absorbed`**~~ — a **replaced clean loss** (DLR-90's primed card the Quarry wins cleanly) reset
+  nothing: no health taken, `total` and `roll` standing. **DLR-166 removed the rule and the beat**,
+  since only a Defeat resets a streak or costs health now. It got its own beat kind rather than a
+  cosmetic variant of `Hurt`,
+  because `Hurt`'s wording named a pot that was never touched. **This was a real engine/screen pair
   worth knowing about**: the one outcome where the player loses a trick and nothing at all happens.
 
 An id in `firedBuffIds` with no matching `Buff` is **dropped** rather than rendering `undefined`,
@@ -290,7 +290,7 @@ name of each button states its whole consequence, and the pot line is a `role="g
 **The branch with no choice.** A hurt trick offers nothing to decide, so it gets a **way out** rather
 than a decision: one **Onward** button, dispatching the same `RollOver` action (there is nothing left
 to reset). Its subtext branches on `absorbed` — "total and roll stand — nothing changed" when a
-primed card absorbed the loss, "trick N+1 starts from nothing" when the streak actually broke — and
+card absorbed the loss, "trick N+1 starts from nothing" when the streak actually broke — and
 so does the header line, which reads `banked`, `the streak is broken`, or `nothing changed`.
 
 ## The card's flight — `useCardMotion`
@@ -308,7 +308,7 @@ AC15: the played card **travels** from the hand to the table rather than appeari
 The **second** tap on an already-armed card is the one that plays it, so that is the tap the flight
 is wired to: the dispatch that commits the card is **deferred to the landing callback**, so the trick
 resolves only once the card visibly arrives. Every other tap — arming, cancelling, marking a
-Timebomb, toggling a discard, and the Fox/Woodcutter second tap that opens a prompt rather than
+Curse, toggling a discard, and the 3's second tap that opens a prompt rather than
 playing — dispatches immediately, exactly as before. The rank check mirrors the reducer's own so a
 flight is never started for a card that is not about to leave the hand.
 

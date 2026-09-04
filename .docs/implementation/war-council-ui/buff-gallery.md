@@ -13,10 +13,11 @@ gated by `loadoutDoorOpen` — so every spec that reached the old panel through
 `buffGalleryModel.ts` is the whole of the grouping logic and imports no React and touches no DOM.
 `buildBuffGallery(buffs, refusalFor)` walks the pile once and returns a `BuffGalleryView`:
 
-- **Duplicate collapse.** `buffStackKey(buff)` joins **kind, tier, target suit, target rank, reward
-  axis and reward value**. Two cards merge only when they are the same card in every respect a
-  player could tell apart, which is what makes the `×N` on the face exact — two Bell-Takers that pay
-  different amounts are two cards, not one card counted twice. The first copy in pile order is the
+- **Duplicate collapse.** `buffStackKey(buff)` joins **kind, tier, target suit, target rank, the wild
+  flag, reward axis and reward value**. Two cards merge only when they are the same card in every
+  respect a player could tell apart, which is what makes the `×N` on the face exact — two Bell High
+  cards that pay different amounts are two cards, not one card counted twice, and a **wild** card
+  never stacks with a suitless one. The first copy in pile order is the
   one a tap acts on (`BuffStack.buff`), so repeated taps spend a stable copy. **Since DLR-159 that
   composition lives in `src/hunt/buffCombine.ts` as `buffCombineKey`, and `buffStackKey` is a one-line
   delegation to it** — the shop combines two cards on exactly this rule, and two answers to "is this
@@ -38,9 +39,14 @@ gated by `loadoutDoorOpen` — so every spec that reached the old panel through
 The gate itself is not re-read here. `roundControlsProps.ts`'s `buffGalleryProps` passes
 `(buff) => loadoutRefusalFor(ui, buff)`, which reads `buffActivationWindowOpen` — the one owner of
 the activation window. **DLR-148 changed nothing about that gate**, which is what "the fence follows
-the code, not the mockup" means concretely: twelve of the thirteen live templates are gated on
-`discardWindowOpen` (between tricks only) and **Cheat alone** is `canAct`, usable mid-trick. The
-gallery mockup showed the inverse and the port corrected the mockup rather than moving the gate.
+the code, not the mockup" means concretely: every template but one is gated on `discardWindowOpen`
+(between tricks only) and **Cheat alone** is `canAct`, usable mid-trick. The gallery mockup showed
+the inverse and the port corrected the mockup rather than moving the gate.
+
+Two later refusals join it on the fence. A **wildcard** is refused outright with
+`BuffActivationRefusal.ShopOnly` — it is spent on the Manage Buffs screen and has no felt effect at
+all — and a **second Curse** is refused with `CurseLive` while one is armed or a card is already
+marked this trick.
 
 ## What is on a card's face
 
@@ -66,25 +72,38 @@ reads `BUFF_EVENT_WORD[buff.kind]` first and falls back to `BUFF_CADENCE_WORD[BU
 `BuffCadence.Event` is shared by three live families that fire on different branches of a trick, so
 `Event` alone would say nothing; the narrowing is a `Partial` over `BuffKind` holding the three live
 Event families, and the eight cut families fall through to the cadence table rather than rendering
-`undefined`. The words are **`TAKE` / `MISS` / `DODGE` / `WHEN` / `HAND END` / `PRESS`**.
+`undefined`. The words are **`HIGH` / `LOW` / `SKULL` / `WHEN` / `HAND END` / `PRESS`** — Suit High
+takes `HIGH`, both Suit Low and Skull Low take `LOW`, and the two protective families take `SKULL`.
 
-> **Those words are the mechanical axis, on purpose.** Every buff condition reads `playerWon` —
-> _did the player physically take the cards_ — while the bank, the multiplier and the damage read
+> **Those words are the mechanical axis, on purpose.** Every buff condition reads `playerWentHigh` —
+> _did the player physically take the cards_ — while the streak, the multiplier and the damage read
 > the outcome axis. The mockup said `WIN` / `LOSE`, which would have put outcome words on a
 > mechanical test right beside a consequence readout speaking the outcome axis in the same felt.
-> `CLAUDE.md` names that collision as the single most common source of wrong statements about this
-> game. The words themselves are **placeholder copy and the developer's**; the axis split is not.
+> That collision is the single most common source of wrong statements about this game, and **DLR-165
+> is the ticket that split the two vocabularies apart for good**: Victory and Defeat name the
+> outcome, High and Low name the act, and **a buff card uses High or Low and never names Victory or
+> Defeat.** The words themselves are placeholder copy and the developer's; the axis split is not.
+>
+> The pills read `TAKE` / `MISS` / `SKULL LOSS` / `HURT` before that rename.
 
-**The Timebomb states both figures.** `buffPayoff(buff)` returns `{ gain, risk }`, with `risk`
-non-`null` only for the Timebomb, which is what makes the split bar a shape rather than a special
-case inside the component. Both figures come from `TIMEBOMB_DAMAGE[buff.tier]` in `src/hunt/` —
-never a literal — so a retuned ladder cannot leave a card advertising a figure the engine will not
-honour. `buffPayoffFace(buff)` is a second, **face-only** rendering added in the fix pass: the full
-two-word phrasing ("+4 damage" / "−2 to you") measured 46px of content in a 33px box at 1440×900 and
-was being clipped mid-word by the bar's own `white-space: nowrap; overflow: hidden`, so the face
-shows the bare signed numeral and the position and colour of the two spans carry the gain/risk
-distinction. The **unabbreviated sentence survives in the accessible name**, via
-`buffCardAccessibleName`, which also carries the condition, both payoff figures, the `×N` suffix,
+**`BuffPayoff` is `{ gain: string }` and nothing else.** It carried a second half, `risk`, for the
+Timebomb's self-inflicted figure — and the **DLR-167 fix pass removed it**, because after DLR-166
+deleted that card `risk` was `null` at both of `buffPayoff`'s return sites, so six consumer branches
+across five files were provably unreachable and every one had to be read and dismissed by anyone
+auditing the code. It is kept as an **object** rather than collapsed to a bare `string` so a card
+that costs the player a figure can add the field back as a widening rather than a signature change
+at every call site.
+
+**Curse is the one card that pays two figures**, and `buffPayoff` special-cases it: it reads
+`CURSE_REWARD[buff.tier]` — never a literal — and prints `+2 damage, +1 multiplier` at gold and
+`+N damage` below it, so a retuned ladder cannot leave the card advertising a figure the engine will
+not honour.
+
+`buffPayoffFace(buff)` is a second, **face-only** rendering: the face has a measured 33px box and
+`white-space: nowrap; overflow: hidden`, so a card whose payoff does not fit abbreviates there while
+the full sentence stays in the accessible name. **No card in today's pool needs the abbreviation**,
+so it is currently `buffPayoff` verbatim. The unabbreviated sentence lives in
+`buffCardAccessibleName`, which also carries the condition, the payoff, the `×N` suffix,
 and either the refusal message or the poise hint — `Tap again to spend` for a `PRESS` card, whose
 second tap is irreversible.
 

@@ -135,7 +135,7 @@ inside the ticket.**
 between-tricks window now: arming it _after_ seeing the Quarry's lead let the player buy a read the
 card was never meant to sell, and unlike a Cheat's follow-suit break, a Timebomb has nothing to do
 with what was led. The door is untouched. See
-[the activation window](../hunt/cheat-and-timebomb-buffs.md#the-activation-window-cheat-mid-trick-timebomb-between-tricks-2026-08-26).
+[the activation window](../hunt/activated-cards.md#the-activation-window-is-a-hardcoded-kind-check-with-exactly-one-exception).
 
 The practical consequence, which is the shipped behaviour: mid-trick the panel **opens**, the **Cheat
 row** inside it is **live**, and every other buff row — the Timebomb's included — is **disabled
@@ -168,7 +168,8 @@ the three condition families; **Cheat, Ward and Shield are still irreversible**,
 spend also arms felt state the transition cannot reverse. (**Timebomb left that group on DLR-154**:
 the set is renamed `REVOCABLE_BUFF_KINDS` and holds it, valid only because action points are off —
 and the felt-state reversal the engine cannot do is `handleRemoveBuff`'s, in the app layer. See
-[Priming a Timebomb](timebomb-priming-and-the-fuse.md).) See
+DLR-166 then removed the card entirely, and **Curse is deliberately not revocable** — putting a
+skull on a card has already changed the felt.) See
 [the buff ride](buff-ride-and-the-card-breakdown.md). The poise stage is unchanged: activation is
 still two taps, and it is still what guards a misclick before the commit.
 
@@ -212,14 +213,14 @@ fifth `Record`, `BUFF_WIDENED_CONDITION_SENTENCE` — a `Partial` beside the tot
 `src/hunt/buffProtection.ts`. **The tier rule is read from the engine, never restated here**, which is
 the same discipline the reward figures already follow. The reward phrase is the mirror case: one axis
 (`Protection`) serves two families, so `buffRewardPhrase`'s case reads `buff.kind` to decide whether
-the sentence names the `total` or the `roll`. Every one of those strings, and the `HURT` cadence pill
+the sentence names the `total` or the `roll`. Every one of those strings, and the `SKULL` cadence pill
 that goes with them, is **placeholder copy the developer may overrule** — including the two card
 names themselves.
 
 `buffLine(buff)` composes the one glanceable line:
 
 ```
-Silver Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier.
+Silver Bell High (Momentum) — go high on Bells: +3 multiplier.
 ```
 
 > **DLR-145 removed the trailing `2 AP.` and the `apCost` parameter that produced it** (from
@@ -246,7 +247,7 @@ now leave the pile after one activation by default (`ACTIVATED_CARD_SINGLE_USE`,
 also wires `activateShield` into the `encounter` field alongside the pre-existing Ward branch —
 Shield's effect had never fired from the app layer before this ticket.
 
-> **DLR-145 did the same to Taker, Feeder and Sidestep** (`CONDITION_CARD_SINGLE_USE`), and this
+> **DLR-145 did the same to Suit High, Suit Low and Skull Low** (`CONDITION_CARD_SINGLE_USE`), and this
 > time the app layer _did_ have to change. A condition card fires at **trick resolution**, not at
 > the tap, and by then `activateFromPile` has already removed it from `state.buffs` — so
 > `buffHandInputFor`, which builds the trick's active set by filtering the pile, would have found
@@ -320,7 +321,9 @@ control now lives. `labels.ts`'s label functions were kept and are reused by the
 > path for both. The nomination this section used to defer — `commitTimebomb` replaced by
 > `activateBuff` priming a card — is what DLR-132 built: spending a Timebomb sets
 > `timebombArmedDamage`, and the very next hand-card tap primes through `primeTapped`, folded into
-> `handleTapCard`. See [Cheat and Timebomb as buff-pile objects](../hunt/cheat-and-timebomb-buffs.md).
+> `handleTapCard`. See [Activated cards](../hunt/activated-cards.md). **DLR-167's Curse is built on
+> exactly that shape** — the spend arms `curseArmedBuff`, and the next hand tap marks a card through
+> `curseTapped`, folded into `handleTapCard` beside the discard branch.
 > The two bullets immediately below are DLR-114's original record, kept for its accurate description
 > of the panel's move onto one door — only the "still bespoke" claim they made is now wrong.
 

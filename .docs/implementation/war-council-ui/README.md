@@ -1,7 +1,28 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-157, DLR-159, DLR-160, DLR-161, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-157, DLR-159, DLR-160, DLR-161, DLR-162, DLR-163, DLR-165, DLR-166, DLR-167, PT-002
+
+> **Five tickets landed on 2026-09-03/04 and the ticket-by-ticket narrative below has not been
+> rewritten around them.**
+>
+> - **DLR-166 removed the Timebomb and the Blast Guard from the felt.** The fuse, the primed-card
+>   prop chain, the `ticking` heart state (so `HeartState` is back to four), the charge plate and both
+>   of this folder's Timebomb pages are gone.
+> - **DLR-165 renamed the outcome vocabulary.** The headline words are **High Victory / Low Victory /
+>   Low Defeat / High Defeat**; the cadence pills are **`HIGH` / `LOW` / `LOW` / `SKULL`**; card names
+>   read **Bell High**, **Key Low**, **Skull Low** (a space, not a hyphen); card text reads *go high
+>   on {suit}* / *go low on {suit}*. **A buff card uses High or Low and never names Victory or
+>   Defeat.**
+> - **DLR-167 added Curse** — arming it turns the next tap on the player's own hand into a mark. It
+>   locks out the Swap rail and carry-on while armed, and `ResolvedTrick.skulledInTrick` is captured
+>   from the pre-play state so a curse-made Low Victory words correctly.
+> - **DLR-162 added the wildcard** and its Manage Buffs spend; **DLR-163** rewrote the 3's prompt to
+>   name a suit and removed the 5's prompt entirely.
+> - **`BuffPayoff` collapsed to `{ gain: string }`** and the split payoff bar is gone.
+> - New files from the fix pass's CSS and component splits, in this folder:
+>   `warCouncilAbilityPrompt.css` and `warCouncilStatusBand.css`. (`manageBuffsConfirm.css` and
+>   `WildTargetBands.tsx` are `src/app/run/`'s; `skilledCardPlay.ts` is `src/sim/`'s.)
 
 ## Responsibility
 
@@ -56,8 +77,8 @@ path; all ten importers were repointed, because two valid paths to the same type
 project's single-source-of-truth rule exists to prevent. On top of that: an `TimebombCharge` plate
 beside the Cheat rail with the same three-tap arm and `Escape` contract, a second `primed` marker on
 `PlayingCard` sharing the `skulled` prop's rendering path rather than adding a second one, and the mark
-threaded to **all four** surfaces a card renders on. See
-[The Timebomb charge plate, the card mark, and the reducer split](timebomb-charge-and-the-mark.md).
+threaded to **all four** surfaces a card renders on. (All of that went with DLR-166; the reducer
+split and the shared marker path are what survived.)
 
 **DLR-91 made this module the place Timebomb is paid, without adding a single pixel to the felt.** The hit
 used to be settled one layer up, at a hand boundary; it is now folded into the resolving trick's own
@@ -189,15 +210,15 @@ WCAG floor by parsing the real stylesheet. See [The buff gallery](buff-gallery.m
 `carriedIn` and `carryOut` — display-only `BuffCarry` props, folded into the section's existing
 `aria-label` rather than added as landmarks, and deliberately **not** folded into `cash`/`forced`,
 because the carry pays nothing in the hand that earns it.
-`WarCouncilRound.tsx` forwards a `feederCarry` mount prop into the `useReducer` seed and hands the
+`WarCouncilRound.tsx` forwards a `lowCarry` mount prop into the `useReducer` seed and hands the
 hand's `accrual.carryOut` back out. Two extractions came with it, both forced by the 400-line budget
 and both collapsing real duplication: **`roundResult.ts`**, holding `roundResultFor(ui)` — the one
 construction site of `WarCouncilRoundResult`, replacing two literals here and a third hand-built copy
 in `src/sim/playHand.ts` — and **`roundUiSeed.ts`**, holding `RoundUiSeed` and `createRoundUiState`,
 re-exported from `roundUiState.ts` so no importer had to change. The `.wc-bank*` rules moved to a new
 `warCouncilBankMeter.css` for the same reason. See
-[The readouts](hunt-readouts-and-telegraph.md#both-halves-of-the-feeder-carry--dlr-150-2026-08-27)
-and, for the mechanic, [hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+[The readouts](hunt-readouts-and-telegraph.md#both-halves-of-the-low-carry--dlr-150-2026-08-27)
+and, for the mechanic, [hunt/the-low-carry.md](../hunt/the-low-carry.md).
 
 **DLR-156 gave this module a second screen, and split the mount to make room for it.**
 `WarCouncilRound.tsx` stood at 390 of its 400-line budget and could not absorb one, so it became a
@@ -462,30 +483,15 @@ pure-core ESLint override's `files` array is untouched. Sorting `RoundState.hand
   there, **and where DLR-114 moved it (inside the loadout panel)**; why `stopPropagation` on the rail is load-bearing rather than defensive, the four slot
   states and why none is told apart by colour alone, the two-click arm in the reducer, and the three
   signals that say a Cheat is live (DLR-83).
-- [Priming a Timebomb — the waiting hand, the mark, the fuse, and taking it back](timebomb-priming-and-the-fuse.md)
-  — **DLR-154.** The one source of truth for which card is primed (`round.primedCards`, with the
-  riding row's target derived and never stored); the hint branch that had to move above
-  `quarryToLead` and the `.wc-fan.wc-is-marking` rule that had never existed; **why the window a
-  Timebomb is armed in is wider than the window `canAct` allows**, and the two places that have to
-  know it; `TimebombMark` as inline SVG with per-instance `useId()` gradients, deliberately opposite
-  `#wc-skull`'s `<symbol>`+`<use>`, hung on the card's **wrapper** so one placement serves every
-  render path — and the on-face geometry deleted rather than repointed; the **two-trick fuse** as a
-  count seeded at the prime and **booked through `queueTimebomb` rather than applied**, so the bank
-  reset, the Blast Guard and the forced cash-out are inherited; `timebombBuff`'s **three** lifetime
-  exits and the third one whose absence blocked every later Timebomb; the `TimebombLive` refusal
-  that stops a second Timebomb stranding a card; and the first **revocable Activated card**, valid
-  only because action points are off.
-- [The Timebomb charge plate, the card mark, and the reducer split that had to come first](timebomb-charge-and-the-mark.md)
-  — **the plate moved inside the loadout panel on DLR-114**, unchanged in every respect but where it
-  mounts and what gates reaching it; and why `roundReducer.ts` had to be split into `roundUiState.ts` and `roundHint.ts` before a line of
-  the feature could be written, and why nothing is re-exported from the old path; the one-nullable-field
-  selection and its three-tap cycle; the mutual exclusion with the Cheat and **the missing
-  `commit()` clear a reviewer caught**; why every card in hand becomes tappable _and_ focusable while
-  armed; `applyResolution`'s load-bearing pay → clear → re-book ordering and the `playOptions` helper (named
-  `TimebombOptions` until DLR-92)
-  that feeds it (DLR-91); the plate's `stopPropagation` and what it actually
-  prevents; the second marker on `PlayingCard` as one rendering path rather than two; and **the decree
-  pile, whose prop was built and never passed** (DLR-90).
+> **Two pages sat here until DLR-166 — `timebomb-priming-and-the-fuse.md` and
+> `timebomb-charge-and-the-mark.md` — and both were deleted with the mechanic.** The Timebomb, its
+> fuse, the primed-card prop chain, the ticking heart state and the Blast Guard are gone from the
+> felt entirely. What survived them and is still worth knowing lives elsewhere on this list: the
+> reducer split into `roundUiState.ts` and `roundHint.ts`, the rule that arming a control which
+> reinterprets the next hand tap must exclude every other such control, and `PlayingCard`'s second
+> marker rendering through the `skulled` prop's own path rather than a parallel one — all three of
+> which **DLR-167's Curse inherited rather than rebuilt**. See
+> [The Curse](../war-council/the-curse.md) for the engine half.
 - [Reading a resolved trick](reading-a-resolved-trick.md) — **DLR-160.** What the screen says once a
   trick is over: the four-outcome word and its cause from one module both the trick well and the
   resolution panel read (and why saying only who physically took it misleads on a skull trick), which
@@ -1015,11 +1021,11 @@ onLanded)` are gone, and the only `document.querySelector` the flight ever used 
   half: a tap opens the panel and nothing there closes it, since there is no pointer to leave with
   and no `Escape` to press.
 - **Whether a suitless buff lighting the whole hand still reads as information is unjudged**
-  (DLR-153). Sidestep reaches every legal card, so the halo stops discriminating and the badge is
+  (DLR-153). A Skull Low card reaches every legal card, so the halo stops discriminating and the badge is
   left carrying the state alone. That is honest, and whether it is useful is a feel question only
   playing answers.
 - **Whether two branch totals read as clarity or as arithmetic homework is unjudged** (DLR-153). Two
-  branches is correct — Taker and Feeder cannot both fire — but it puts four figures where the brief
+  branches is correct — Suit High and Suit Low cannot both fire — but it puts four figures where the brief
   asked for two. The obvious simplification, showing only the branch the player is steering toward,
   **leaks the Quarry's card**, which is why it was not done.
 - **Cheat's live duration has no readout**, and no ticket exists for one.
@@ -1085,7 +1091,7 @@ ticking. 3 at risk. 4 ticking."` **"of them" is what disambiguates the shield's 
   `cheatBuff`/`timebombBuff` in `buffCatalog.ts` is the only path either card is minted through — the
   `timebombDamageFor`/`timebombDamageOf` collapse this bullet deferred landed the same contract, as
   `queueTimebomb` taking the damage pair directly. See
-  [Cheat and Timebomb as buff-pile objects](../hunt/cheat-and-timebomb-buffs.md).
+  [Activated cards](../hunt/activated-cards.md). (The Timebomb half of that went with DLR-166.)
 - **Nothing has proved the four-row shell does not scroll** (DLR-114). jsdom has no layout engine and
   the contract's browser pass was off, so the bar's fourth grid row and its narrow-viewport override
   ship unverified at every named viewport size — the exact class of defect this module's own history

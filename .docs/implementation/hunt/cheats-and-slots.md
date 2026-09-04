@@ -6,7 +6,7 @@ Part of [Hunt](README.md).
 `grantCheats`, `addCheat`, `removeCheat`, `hasCheat` — and the config key `CHEAT_SLOT_COUNT` no
 longer exist. A Cheat is now an ordinary `Buff` object in `RunState.buffs`, drawn from the reel like
 any other card, with no capacity cap of any kind. See
-[Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md) for what replaced it, and the
+[Activated cards](activated-cards.md) for what replaced it, and the
 [Hunt README](README.md) for where the rest of the module's mechanics live.
 
 This file is kept, empty of live content, so a link or a search that lands here finds the retirement

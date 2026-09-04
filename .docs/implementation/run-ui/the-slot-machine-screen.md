@@ -193,7 +193,7 @@ would be a second source of truth for what a suit is.
 > Skull Helmet and Skull Tether share **one** colour token, `--wc-guard`, in both glyph stylesheets —
 > so the Helmet is drawn as a dome over a skull (the blow lands, the dome takes it) and the Tether as
 > a taut line to an anchor (the roll stays tied on), and each must also read distinctly from
-> Sidestep's three chevrons with colour removed. `slotSymbols.ts` picks between them through
+> Skull Low's three chevrons with colour removed. `slotSymbols.ts` picks between them through
 > `conditionGlyphFor`, a **total `switch`** over the kinds a condition template can carry, so a sixth
 > suitless family fails to compile here rather than rendering a blank window. The two `[data-glyph]`
 > values bind by string with no compiler check, in `shopSlot.css` and `shopSlotReel.css` alike, which
@@ -201,7 +201,7 @@ would be a second source of truth for what a suit is.
 > drawings, and the reel words `Helmet` / `Tether` and the axis word `Guard` are placeholders nobody
 > has judged at reel-window size.**
 
-Eight rows of `Moon-Taker (Momentum) — win a trick with Moons` was a large part of what the developer
+Eight rows of `Moon High (Momentum) — go high on Moons` was a large part of what the developer
 meant by _"a huge amount of info"_. **The compression hides nothing a decision needs**: each chip
 carries the full `slotSymbolText` sentence on both its `title` and its `aria-label`, so the long form
 is reachable by pointer and by screen reader, and it is not hover-only — the glyph, the family and
@@ -219,7 +219,7 @@ Every buff this surface names goes through DLR-114's `src/app/warCouncil/buffLab
 symbol is a `BuffTemplate` and carries **no tier**, so `slotSymbolText` mints it at bronze with a
 throwaway id purely for wording and returns `buffName(b) + ' — ' + buffConditionSentence(b)`; the
 bronze is a wording device and claims nothing. A won award is a real `Buff` and gets the full
-`buffLine(award)` — `Silver Bell-Taker (Momentum) — win a trick with Bells: +3
+`buffLine(award)` — `Silver Bell High (Momentum) — go high on Bells: +3
 multiplier.` (`buffLine` took an `apCost` second argument until DLR-145 removed action points; the
 award row passed `apCostOf(award)` and the line ended `2 AP.`) `slotLabels.test.ts` asserts `slotSymbolText`'s output against an independently
 recomputed `buffName` / `buffConditionSentence` pair, which is what proves there is one grammar
@@ -227,7 +227,7 @@ rather than two.
 
 **A duplicated tier word was caught and removed, DLR-142 (2026-08-25).** The award row used to
 prepend its own `SLOT_TIER_LABEL[award.tier]` in front of `buffLine(...)` — a leftover from before
-`buffLine` stated its own tier word — which read as `"Silver — Silver Bell-Taker..."` once `buffLine`
+`buffLine` stated its own tier word — which read as `"Silver — Silver Bell High..."` once `buffLine`
 gained the `BUFF_TIER_WORD` prefix in the same ticket. The existing test only asserted the row's
 text _contained_ `buffLine(...)`'s output, which stayed true even duplicated, so it caught nothing.
 `SLOT_TIER_LABEL` was removed from `slotLabels.ts` entirely (it had no other consumer) and the award

@@ -4,594 +4,60 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-09-02** (fourth pass that day, for DLR-161:
-two new buff cards whose reward is neither damage nor multiplier but the survival of a streak figure
-through a trick that hurt you — sections 4 and 7. The third pass was DLR-160: one new stage of play
-in section 10 — a stop before each fight — plus what the game now tells you about a trick it
-already decided. The second corrected the winnability claims in section 10, the Status register and
-Known tensions after measurement — **no rule changed** in that one, and no tuning value moved). Everything below is reachable in
-the app today except where a rule is marked **[not built]** — and except the cards and guards listed
-here, every one of which is **decided, enforced and tested, yet cannot be obtained by playing**:
+Last reviewed against the code on **2026-09-04**.
+
+Everything below is reachable in the app today except where a rule is marked **[not built]** — and
+except the following, each of which is **decided, enforced and tested, yet cannot be obtained by
+playing**:
 
 - the **blue hearts** of section 8, because nothing grants one;
 - the five **items** of section 4 — Ward, Second Thoughts, Foresight, Spyglass, Puppeteer — and a
   **Shield** as a card in your pile — because nothing mints one, whatever the reel lands on;
-- a **Blast Guard** and a **Whetstone**, because the shop stopped selling both on 2026-08-24 — noted
-  in full at section 10;
-- **eight of the thirteen buff conditions**, since 2026-08-25 — the win-with-a-named-**rank** card,
-  and every card asking you to reach a streak figure, survive unhurt tricks, hold a suit at the hand's
-  end, hold coins, be at low health, cash your pot, or win at all costs. Every one of those rules is still
+- a **Whetstone**, because the shop stopped selling it — noted in full at section 10;
+- **eight of the thirteen buff conditions** — the go-high-on-a-named-**rank** card, and every card
+  asking you to reach a streak figure, survive unhurt tricks, hold a suit at the hand's end, hold
+  coins, be at low health, cash your pot, or go high at all costs. Every one of those rules is still
   decided and still enforced; the machine and the opening draw simply no longer deal any of them.
-  Section 4 lists the five that remain — three until 2026-09-02, when **eating a skull** became a
-  dealt condition again on the two cards of section 7 that protect a streak figure. The card that
-  merely _pays_ you for eating one is still not dealt;
-- the **Swan and Witch rank ladders** of section 5, since 2026-09-01 — the tiers are decided and
-  enforced, and the shop stopped selling the rungs that reach them. Noted in full at section 10;
-- the **second slot machine**, since 2026-09-01 — the Strongbox is still stocked and priced in the
-  code and no longer appears, because choosing between it and the Skirmisher decided nothing.
-  Section 10 has the measurement.
+  Section 4 lists what remains;
+- the **Swan and Witch rank ladders** of section 5 — the tiers are decided and enforced, and the shop
+  stopped selling the rungs that reach them. Noted in full at section 10;
+- the **second slot machine** — the Strongbox is still stocked and priced in the code and no longer
+  appears, because choosing between it and the Skirmisher decided nothing. Section 10 has the
+  measurement.
 
-> **The way damage is worked out changed completely, and the decision has its own screen — DLR-156,
-> 2026-09-01.** Section 7 is rewritten around it. In short:
->
-> - **Every trick you bank works out its own damage** — `(1 + Whetstones + flat damage from the cards
-you fired on that trick) × (1 + multiplier points from those same cards + the Overlap Bonus)` —
->   and adds it to a running **total**, while a **roll** counts the tricks. What you are sitting on,
->   the **pot**, is `total × roll`.
-> - **A card you fire pays into that trick and no other.** Nothing pools across a hand any more.
-> - **Being hurt takes everything and pays the Quarry nothing.** The old two-thirds consolation is
->   gone. So is the end-of-hand cash-out: a streak now carries from one hand into the next and ends
->   only when you cash it, when a trick hurts you, or when the fight does.
-> - **The Apply Damage button is gone from the bar.** After **every** resolved trick, play stops and a
->   screen of its own carries the two played cards across, builds the trick's damage up one term at a
->   time, and asks you to **apply** (deal the pot, reset both) or **roll over** (keep both, play on).
->   A trick that hurt you reaches the same screen with nothing to decide and a single way out. There
->   is no action-point charge on either answer.
-> - **Bare play pays exactly what it always did** — 1, 4, 9, 16, 25, 36 — but with cards fired the
->   payout is roughly two and a half to three times the old figure, and **nothing caps a streak**.
->   That is deliberately unbalanced: the counterweight is a later change, and the point of shipping it
->   like this is to find out how much is needed by playing.
->
-> **Nobody has looked at the new screen running.** Every timing on it — how long a term takes to land,
-> how long it holds after you choose, how fast a card flies to the table — is a placeholder nobody has
-> chosen, and whether a whole screen firing up to six times a hand wears out is
-> [an open question](#known-tensions-recorded-not-resolved).
+That list is measured on every run by an executable audit, so a card leaving or joining it turns a
+test red rather than quietly changing what this paragraph should say. **A rule below being marked
+[settled] means the rule is decided, not that you can reach it** — the two are separate axes, and
+this is the one that says which.
 
-> **You can now see what a buff you activated is doing, and you can take it back off — DLR-153,
-> 2026-08-27.** Activating a buff used to change nothing you could see. Now, the moment a buff is
-> riding the coming trick:
->
-> - **Every card in your hand it could fire on lights up**, and no others. A card you are not allowed
->   to play never lights. A card lights with a glow, a bright cell travelling its edge, and a **number**
->   saying how many buffs could fire on it — three signals, so the state survives a colourblind
->   reading, a greyscale one, and switching motion off. The number is a **ceiling** when the Quarry's
->   card is still face down, and it says so.
-> - **A "riding this trick" list** names each buff you activated and how many of your cards it reaches
->   — including the case where the answer is **none**, which it states in words rather than as a zero.
-> - **Point at a lit card and a panel breaks that card down** — what fires if you take the trick,
->   what fires if you do not, the Overlap Bonus on its own line, and — struck through — the buffs
->   that cannot fire on that card, each saying why and where it is lighting up instead. Every row of
->   it, the struck-through ones included, will take that buff back off the trick. The panel is only
->   up while you are pointing at a lit card; moving to another lit card switches it, moving away or
->   pressing Escape closes it. Where there is nothing to point with, **tapping** a lit card opens it.
-> - **A buff you activated can be taken back off the trick** — a Taker, a Feeder or a Sidestep. The
->   card returns to your pile and the points come back. **A Cheat, a Ward and a Shield cannot**:
->   using one of those already changed the felt, and that cannot be undone. They still appear in the
->   list, saying so. Section 4. (**A Timebomb was in that group until 2026-08-31**, and now can be
->   taken back — see the note below.)
->
-> **Activating is still two taps**, and it still asks you for no card: you activate the buff for the
-> trick, never for a card. **While the breakdown is open it may cover the cards on the table**,
-> including the Quarry's played card, and on a wide screen and a narrow one it also takes the taps
-> meant for them — so the trick is not merely hidden but untappable until you move off the panel.
-> Because the panel is only up while you are pointing at a lit card, that is confined to the moments
-> you are comparing cards; at rest the table is fully visible. It is **accepted**, not a fault:
-> section 9, and [Known tensions](#known-tensions-recorded-not-resolved).
+### Two things this game had and no longer has
 
-> **A primed card now has a fuse, you can only have one bomb going at a time, and you can take a
-> Timebomb back — DLR-154, 2026-08-31.** Three rules of play changed, all of them in section 4:
->
-> - **A card you prime has two tricks to be played.** If it is still in your hand after the second
->   trick resolves, it goes off **where it sits** and the damage is yours. Marking a card and then
->   quietly never playing it no longer costs you nothing.
-> - **Only one Timebomb can be live at a time.** While one is armed or primed, every other Timebomb
->   row is refused outright, with the reason on its face — so you can never pay for a second one and
->   find you cannot use it.
-> - **A Timebomb you are riding can be taken back**, from its row or with `Escape`. The card returns
->   to your pile and the mark comes off the card. It is the first of the four "changes the felt at
->   the commit" cards that can be undone.
->
-> You can also now _see_ all of it: the hand says it is waiting for a card and says why, the marked
-> card wears a bomb that hangs off its corner and counts down, and the riding row names the card the
-> bomb is on. **Every colour, size, timing and word of that is a placeholder nobody has looked at
-> yet.**
+Stated here once, and nowhere else in this document, because a reader who remembers either will
+otherwise go looking for it.
 
-> **Your hand no longer empties as a hand goes on — DLR-146, 2026-08-26.** You are refilled to four
-> cards as each trick resolves, so the number of cards you choose from runs 6, 5, 4, 4, 4, 4 instead
-> of 6, 5, 4, 3, 2, 1, and a hand ends with three still in your hand. The Quarry is unchanged. One
-> knock-on is worth reading before you play: a hand now takes more cards off the draw pile than a
-> deal leaves, so the pile can run out mid-hand and be rebuilt from the resolved cards **in silence**.
-> Section 2 states all of it.
+- **Nothing in this game resolves later than the trick that caused it.** There was a card you could
+  mark before playing it, whose damage landed a trick later, and an item you could buy to insure
+  against your own copy of it. Both are gone, along with the fuse, the queue and the readouts they
+  needed. **Every trick's damage lands at that trick.**
+- **There is no two-thirds consolation.** A trick that hurts you takes your whole streak and pays the
+  Quarry nothing.
 
-> **The screen changed shape, and one thing you could see is gone — DLR-148, 2026-08-26.** No rule
-> of play moved: nothing about what a card does, what a trick costs, what a buff asks of you or when
-> you may spend one is different. Three things you _see_ and one thing you _do_ are:
->
-> - **The Quarry's next-trick intent is no longer telegraphed.** The suit-and-stance line that used
->   to appear before you committed — and the speculative reading against a card you had merely
->   selected — are both deleted. Section 9 states what you can and cannot see now. (**Partly undone
->   on 2026-08-31:** the _suit_ they are about to lead is shown again, in the holds panel. The stance
->   and the speculative reading are still gone. Section 9.)
-> - **A skulled card shows a skull instead of its picture**, the same skull on every rank and suit,
->   with its rank and suit still readable in the corner. Section 3.
-> - **When the Quarry leads a card that does something to you, the table now says what** — what
->   happens if you take the trick and what happens if you do not, in that card's own terms. It says
->   nothing at all when the card has nothing extra to do, when the table is empty, and when you were
->   the one who led. It never tells you which of the two will happen. Section 4.
-> - **`Escape` now unwinds one step at a time** in your buff panel: the first press drops a poised
->   card and leaves the panel open, the second closes it. Section 4.
->
-> Your buffs are also laid out as cards in a grid rather than as a list of lines, with copies of the
-> same card stacked and counted, and anything you cannot use right now moved to the end in one
-> group with the reason on it. **Nobody has played or looked at any of it.**
+### Victory and Defeat mean one thing; High and Low mean another
 
-**A Cheat and a Timebomb stopped being on that list on 2026-08-24 — DLR-132.** Both are now ordinary
-cards the reel can draw into your pile, exactly like any other buff, and every run still starts
-holding one bronze Cheat.
+This is the single most misread part of the game, and the two words below exist to keep it
+straight. Section 7 owns the table.
 
-**Since 2026-08-25 a run also opens holding many more real cards — DLR-135, then DLR-145.** Until
-DLR-135 the four cards a run started with were blanks: they were filtered out of your loadout, so you
-began every run with **one** card you could actually use. DLR-135 made them real, taking the opening
-hand to five. **DLR-145 took it to twenty-one** — twenty drawn cards plus the guaranteed Cheat — and
-made most of them things you spend rather than rent. Section 10 states the rule. Nothing about the
-five items above changed — they are still unreachable, because no card in that pool is one of them.
+- **Victory** and **Defeat** name the **outcome** — did the trick bank, or did it hurt you.
+- **High** and **Low** name the **act** — did you physically take the cards, or not.
 
-That list is not an estimate. It is measured on every run by an executable audit added on
-2026-08-24, so a card leaving or joining it turns a test red rather than quietly changing what this
-paragraph should say. **A rule below being marked [settled] means the rule is decided, not that you
-can reach it** — the two are separate axes and this is the one that says which.
+A skull inverts a trick, so the two come apart on half the table: going **low** on a skulled trick is
+a **Low Victory**, and going **high** on one is a **High Defeat**.
 
-> **Your buff cards are things you spend now, and action points are gone — DLR-145, 2026-08-25.**
-> This is the largest single change to how a fight is played since the redesign, and it is one idea
-> with four consequences.
->
-> **A buff card is spent when you use it.** Activating a Taker, a Feeder or a Sidestep now takes that
-> card out of your pile **for the rest of the run**, exactly as a Cheat or a Timebomb already did.
-> Before today those cards were _rented_: you paid for one, it fired for a trick, and it stayed. What
-> you own is now ammunition, and running out is a real thing that happens to you.
->
-> **Action points no longer exist.** Nothing costs points, no control shows a pool, and no action is
-> ever refused for want of them. They were the only thing limiting how many buffs you could fire in a
-> trick, and they did it badly — the pool refilled at every trick boundary, so the stake came back
-> before the next bet and firing everything every trick was simply correct. **What limits you now is
-> how many cards you own.** The two halves only make sense together.
->
-> **You start a fight with far more cards, and winning one pays far more.** A run opens holding
-> **twenty** drawn bronze cards plus the guaranteed Cheat — twenty-one — where it held five
-> yesterday, and beating an opponent pays **10 coins** where it paid 1. Twenty is meant to be about
-> one fight's ammunition: two to four hands of six tricks, at roughly a card a trick, and you reach
-> the first shop nearly empty with coins to restock. **The opening twenty are drawn with repeats** —
-> three copies of the same card is the intended shape, not a bad shuffle.
->
-> **Most of the card types were cut.** The pool the machine and the opening draw deal from went from
-> **73 templates to 13**: only the win-with-a-suit, lose-with-a-suit and dodge-a-skull cards remain,
-> plus the Cheat and the Timebomb. Eight conditions and two reward kinds (coins, refunded action
-> points) are no longer dealt at all. **None of them was deleted** — every one is still a decided,
-> enforced rule, and restoring a card type is one line — but you cannot obtain one.
->
-> **Two of the four reward ceilings were removed.** There is no longer any cap on the multiplier
-> bonus or the flat damage a hand's buffs can pay. Clipping a card you had merely rented cost you
-> nothing; clipping a card you had **spent** destroys it, and it bit hardest on the expensive cards
-> the shop exists to sell.
->
-> **The shop stopped selling action-point capacity**, since there is nothing to spend it on.
->
-> **Nobody has looked at any of it.** No browser pass was run. Three things in particular are unseen:
-> a loadout panel now listing around twenty-one rows where it was laid out for five, a shop purse
-> that is now a single figure, and whether the two slot machines still feel different now that both
-> of their reward tables are flat. **And one of the ticket's own claims was measured and does not
-> hold** — see [Known tensions](#known-tensions-recorded-not-resolved).
+**"High" means winning the contest, including by trump — never the higher numeral.** A 2 of trump
+that beats a 10 off-suit went high.
 
-> **A Cheat and a Timebomb are ordinary cards now — DLR-132, 2026-08-24.** Until today both were held
-> outside your pile on their own bespoke widgets — two Cheat **slots** and a Timebomb **charge**
-> counter, each with its own tap sequence. Both are now **rows in your loadout, drawn from the reel
-> like any other buff card**, spent through the same two-tap poise-then-spend gesture every other
-> card uses, and priced in action points the same way. A Cheat's **tier is now honoured as duration**:
-> a bronze Cheat still lifts follow-suit for exactly one trick, but a silver lifts it for two and a
-> gold for three (`CHEAT_DURATION_TRICKS`) — the gold row is reachable for the first time, at 7 action
-> points. A Timebomb's **tier is now honoured as damage**: the bronze figure is today's unchanged
-> 4-to-the-Quarry/2-to-you pair, and silver and gold scale both sides together (8/4, 12/6). A run
-> still starts holding **exactly one bronze Cheat** and zero Timebombs — unchanged in name and value,
-> now seeded as a buff rather than a slot grant. **Nobody has looked at any of it**: the contract ran
-> unattended with its approval and mockup gates skipped and no browser pass, so the four new slot
-> weights that decide how often either card is drawn, and whether the widened loadout list still
-> reads at a glance with a Cheat row and a Timebomb row in it, are unplayed. See
-> [Known tensions](#known-tensions-recorded-not-resolved).
-
-> **A buff you pay for now pays you back — DLR-125, 2026-08-24.** Until today activating a buff spent
-> action points and did nothing: no condition was checked and no reward was ever paid. Both halves
-> are built. Eleven conditions are checked when a trick resolves, several buffs paying on one trick
-> add up, each reward has a per-hand ceiling, and the four rewards land in a fixed order around the
-> cash-out — so a buff genuinely changes the damage you deal, the coins you bank and the action
-> points you have (section 4). The per-card `W/L` figures include them. **Three cards still pay
-> nothing** — the hold-a-suit condition cannot be true in a hand that runs its course. **A fired buff
-> is announced on screen — DLR-119, 2026-08-24** — the trick well names which card fired and what it
-> paid. Every threshold, reward and ceiling is an unplayed placeholder.
-
-> **Some cards are now spent rather than activated — DLR-126, 2026-08-24.** Five of the cards you
-> can own are **one-shot items**: using one costs action points as before, but it also **takes the
-> card out of your loadout for the rest of the run** (section 4). Until today nothing did that — a
-> Ward could be re-bought every trick, forever. **Two of the five actually do something**: a Ward
-> absorbs your next hit and then breaks, ahead of any blue heart; a Second Thoughts buys more Swaps
-> for the fight. The other three read **`Not usable yet.`** and cannot be spent at all, because each
-> needs a screen that does not exist. **All of it is engine-only and none of it is reachable** —
-> nothing mints an item yet. **The analogy this sentence originally drew — "exactly as nothing
-> mints a buff" — was falsified by DLR-132, 2026-08-24**: the reel now mints buffs, including Cheat
-> and Timebomb. Items remain the exception.
-
-> **Something now survives a run, and a lost run pays for it — DLR-118, 2026-08-24.** The **Vault**
-> has been in the code since 2026-08-23 with no way to reach it; today it got its screen. A run that
-> has ended offers **`Open the Vault`** beside `Start a new run`, and there you can see what your
-> death converted, what you hold in total, and spend it on two things that reach into your _next_
-> run (section 10). **Only a loss pays in** — a win is its own reward. This is also the first thing
-> in this game that is **saved between sessions**, so the bullet that used to say a reload starts
-> wholly fresh is no longer true. **Nothing on this screen has been seen in a browser**: the contract
-> ran unattended with its browser pass off and its mockup unseen, so whether it fits without
-> scrolling at any viewport size is untested, and every word of its copy — including the word "mark"
-> for the currency itself — is a placeholder the developer owns.
-
-> **Every card in your hand now prints what it would cost — DLR-117, 2026-08-24.** Under each card
-> sit two figures: what the Quarry takes if that card wins its trick, and what you take if it loses
-> (section 4). Both are live, both are always on screen, and both are computed by asking the game
-> what it would actually pay rather than by a second sum that could disagree with it. **Two of them
-> are honestly marked as estimates** while you are the one to lead, because the Quarry's face-down
-> card decides whether the trick carries a skull. **An activated buff still moves none of them** —
-> not an omission in the readout but the unpaid buff reward recorded below it. **Nothing on this
-> screen has been seen in a browser**: the contract ran unattended with its browser pass off and its
-> mockup unseen, so whether the strip fits under a fanned hand without cropping the row is untested
-> at every viewport size, and every choice about how it looks is the developer's.
-
-> **Your health row can draw blue hearts now, and nothing can give you one — DLR-115, 2026-08-24.**
-> A **blue heart** is protection worth one point of damage, taken before your red health is (section
-> 8). The rule has been enforced since 2026-08-23; what landed today is the reading — blue pips drawn
-> as their own cluster on your own row, named separately in the bar's spoken value, and a booked
-> Timebomb hit previewed **through** the shield rather than around it, which it was not before.
-> **You cannot reach any of it.** Nothing in the game grants a blue heart, so the count is zero for
-> the whole of every run and not one pip has ever appeared on a screen. It is stated here rather than
-> left out because the rule is real and decided; what it lacks is a way in. Every choice about how it
-> looks was taken by default in an unattended run and is the developer's.
-
-> **Every pre-trick decision now lives on one bar, and you can spend action points on a buff —
-> DLR-114, 2026-08-24.** The felt no longer has four separate plates scattered down its left edge. It
-> has **one action bar along the bottom of the screen**, carrying the four things you may do before you
-> commit a card: **Apply Buff**, **Cards**, **Swap** (yesterday's discard, renamed and relocated) and
-> **Apply Damage**. The bar is there for the whole hand: a control you cannot use right now is greyed
-> with the reason written on its own face, never removed. **Your Cheats and your Timebomb charges moved
-> inside Apply Buff** — they are one press further away than they were, and every rule about them is
-> otherwise identical.
->
-> **Apply Buff is new, and it is the first time the buffs you own have appeared anywhere in a fight.**
-> It opens a panel listing every priced buff you hold, one glanceable line each — its name, what it
-> asks of you, what it pays, and what it costs in action points — plus how many action points you have
-> left. Tapping a line once poises it; tapping it again spends the points and activates it for the
-> coming trick. You may activate more than one. **A buff can only be activated between tricks**, but
-> the panel itself opens whenever you can act at all, so you can still reach a Cheat mid-trick — which
-> is the only moment a Cheat is worth anything (section 4).
->
-> **Every row now states its tier by name — since 2026-08-25.** Bronze, Silver or Gold, the leading
-> word of the line, so you can tell which copy of a buff you are looking at without opening a second
-> surface or guessing from its numbers.
->
-> ~~**The thing to know before you spend anything: an activated buff does nothing yet.**~~ True for
-> one day and **closed by DLR-125** the same day — see the note at the head of this document. A buff's
-> condition is now checked and its reward is now paid (section 4).
->
-> **Two things you could not see before are now on screen**: how many action points you hold, and — once
-> you press Apply Damage — that a payout is queued and how many tricks it still has to run (section 7).
-> Both close gaps this document had recorded under Known tensions since DLR-109.
->
-> **Nobody has looked at any of it.** This landed in an unattended run that skipped both its approval
-> and its mockup gate and ran no browser. Four judgements were taken by default rather than decided —
-> that the bar greys rather than disappearing, that activation commits on a second tap with ~~no way to
-> un-activate~~ (**overturned for the three condition cards on 2026-08-27** — section 4), that Apply
-> Buff still opens when you can afford nothing, and that a buff is described
-> in one line — and **nothing has confirmed that a four-row screen still fits without scrolling**. All
-> of it is the developer's, and it is why the rows below carry the markers they do.
-
-> **All of this was removed on 2026-09-01 (DLR-156).** Kept as the record of what the game did; section 7 has what it does now.
->
-> **Applying damage now costs you and makes you wait — DLR-109, 2026-08-23.** Until today, applying
-> damage cashed your streak into the Quarry **instantly**, at no cost, the moment you confirmed the
-> press. It now costs **action points** to press, and the cash-out no longer lands there and then: it
-> is **queued**, and lands at the resolution of a later trick — the current trick plus one more.
-> ~~**Taking damage while it is in the air destroys it outright**~~ — true until **DLR-141,
-> 2026-08-25**, and no longer: a hit that costs you health now cuts it to `APPLY_DAMAGE_HIT_RETENTION`
-> (60%) of its frozen value, rounded down, rather than destroying it outright. A hit your blue hearts
-> eat entirely still leaves it untouched, and the encounter resolving — either side — still evaporates
-> it in full, both unchanged. If the killing blow is the delayed payout rather than a trick you won
-> outright, the coins that pay for how fast the fight ended still count the cards in your hand
-> **at the moment you pressed**, not at the moment it lands (section 7).
->
-> **Only one payout may be in the air at a time**, and a second press is refused while one is still
-> owed. And if a Timebomb hit lands on you the same trick a payout was due, **the Timebomb wins**: the
-> payout is reduced to 60%, floored, by the Timebomb's own hit before it settles — since DLR-141 — the
-> same as any other hit that catches you holding one (sections 4, 7, 8).
->
-> **Nothing on the felt tells you a payout is in the air.** You press, the bank zeroes, the Quarry's
-> health does not move, and nothing says why until either it lands or you press again and read the
-> refusal. **None of this has been played.** The AP cost, whether an outstanding
-> payout should survive to a hand's last trick rather than being lost, whether one payout at a time is
-> right, and whether a Timebomb beating a payout feels fair are all recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved), and the rule below is marked
-> `[provisional]` for exactly this reason.
-
-> **All of this was removed on 2026-09-01 (DLR-156).** Kept as the record of what the game did; section 7 has what it does now.
->
-> **Apply Damage reworked: leader-only, stacks with Timebomb, settles a trick sooner, keeps a third
-> — DLR-143, 2026-08-25.** Four things changed together, because they share the two files that gate
-> and pay the action:
->
-> 1. ~~You may press Apply Damage on your own follow, not only before the trick starts.~~ **Reversed.**
->    The press is now **leader-only** — refused the instant any card, including the Quarry's own
->    lead, is on the table. You must decide before the trick begins, not partway through it.
-> 2. ~~Applying damage is refused outright while a Timebomb hit is still booked against you or the
->    Quarry (design decision D6, 2026-08-19).~~ **Reversed outright, not merely relaxed.** A booked
->    Timebomb no longer blocks the press at all — you may press Apply Damage with a Timebomb already
->    ticking, and the two settle together at the same trick's resolution.
-> 3. ~~The cash-out lands at the resolution of a later trick — the current trick plus one more.~~ It
->    now lands at the resolution of the **very next trick** after the press — one trick sooner than
->    before.
-> 4. A hit that costs you health while a payout is queued now cuts it to **⅓**, floored — not the 60%
->    DLR-141 set three days earlier. The mechanism is unchanged: a hit your blue hearts eat entirely
->    still leaves it untouched, and the encounter resolving still evaporates it in full.
->
-> **Nothing about the fold order changed.** The Timebomb-wins ordering described above — a Timebomb
-> detonating against you the same trick a payout is due reduces the payout before it settles — was
-> already correct for this newly-reachable stacked case; only the refusal that used to keep the two
-> states from ever coexisting was removed. **None of this has been played.** The five-clause refusal
-> order (which reason a player sees when several are true at once), the leader-only gate's feel, and
-> whether one-trick settle is too fast are recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
-
-> **You can see a Timebomb hit coming now — DLR-101, 2026-08-23.** Priming a card books damage that
-> lands at the next trick's resolution, and until today **nothing on the felt showed the booking
-> existed**: a primed trick was lost, 4 damage was correctly owed by the Quarry, and its row still
-> showed every heart standing. Now the hearts the booked hit has already claimed are **drawn
-> differently from the hearts a streak merely threatens** — on **either** bar, whichever side owes
-> it — and they stay that way until the hit lands. The reading is spoken as well as drawn: the bar's
-> value now names the two figures **separately**, so damage nothing can stop is never described as
-> merely "at risk". And **the trick that books a hit says so as it resolves**, naming the side and
-> the amount. No rule changed — the amounts, the timing, and everything a primed trick does are
-> exactly as they were (sections 4, 7 and 8).
->
-> **A held Blast Guard is still invisible**, and that seam is sharper than it was: you can now see
-> Timebomb booked against you that a Guard you are carrying may cancel, and nothing on screen says you
-> are carrying it. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
->
-> **Nobody has looked at it yet.** This landed in an unattended run that skipped its approval gates,
-> the choice to draw booked Timebomb as its own state rather than reusing the at-risk one was made by
-> default rather than decided, the copy is placeholder, and **the hearts were never seen painting in
-> a real browser** — they are proven by tests, not by looking. All of that is the developer's to
-> confirm, and it is why the rows below are marked `[provisional]`.
-
-> **You can now swap cards from your hand between tricks — DLR-100, 2026-08-22.** Before a trick's
-> first card is laid — including before the Quarry has led, so you can act on "What the Quarry
-> holds" rather than on a lead already visible — you may **discard** 1 to 3 cards and draw the same
-> number blind off the top of the draw pile. Hand size never changes, and discards go to the
-> **bottom** of the pile, reusing the Woodcutter's own convention. A fight gives you **3** discards,
-> chainable within one gap, and the Quarry gets none. Engine and screen landed together and QA drove
-> the whole loop — including the pre-lead window — end to end in a real browser (section 4).
-
-> **Killing quickly now pays — DLR-95, 2026-08-21.** Winning a fight used to pay one coin whether it
-> took a single trick or five hands. It still pays that coin, and now it pays **another for every card
-> still unplayed in your hand** when the Quarry goes down — doubled if you killed them in the fight's
-> first hand, halved in the third, and nothing from the fourth hand on (section 10). The two payments
-> **add**; the flat coin is what stops a long win paying nothing at all. Engine and screen landed
-> together and the verdict names both payments, so this is playable right now.
-
-> **All of this was removed on 2026-09-01 (DLR-156).** Kept as the record of what the game did; section 7 has what it does now.
->
-> **You can cash your streak yourself now, and being caught pays less — DLR-94, 2026-08-20.** Until
-> now the bank only ever cashed when you were hit, or when the sixth trick arrived; you never chose the
-> moment. Now you do. Before you commit a card, you may **apply damage**: the bank cashes at the current
-> multiplier into the Quarry **in full**, both counters reset, and it costs you **no health** (section 7).
->
-> **And the automatic cash-out got worse, which is the whole point.** A hit you did not choose — a clean
-> loss, a skull you ate, or Timebomb landing on you — now pays only **two-thirds** of `bank × multiplier`,
-> rounded down. So a six-trick streak is worth **36** if you cash it yourself and **24** if you are caught
-> holding it. The end-of-hand cash-out is **untouched** and still pays in full.
->
-> That turns a growing bank into a bet rather than a number the game spends for you at the worst moment:
-> take the certain full value now, or push the streak and risk being paid a third less. **Engine and screen
-> landed together**, and QA drove the poise-then-commit through a real browser.
->
-> **It is locked while Timebomb is pending**, which is the design decision recorded here as `[not built]`
-> since 2026-08-19 and enforced from today (section 8).
-
-> **You have a flask, and it is free — DLR-93, 2026-08-20.** Everything that has ever restored your
-> health cost a coin. Now one does not: you carry a **flask**, and drinking it restores **60% of your
-> maximum health** — **6** on today's bar of 10 — immediately, with anything over your maximum thrown
-> away. It costs nothing.
->
-> **It holds one charge, and a charge comes back only from a stage boss.** Beat one of the five bosses
-> and your flask is full again, whether you had drunk it or not. Beating an ordinary opponent does
-> nothing for it. So across a full twenty-five-fight run there are **five flasks to drink**, and never
-> two in hand at once.
->
-> **You drink it from the shop screen, and it is not for sale.** It sits in its own block above the four
-> shelves — a potion button with no price on it, marked `Free` and `No coin`, as far from the priced
-> Heal as the screen allows. It is refused, with the reason on screen, when your flask is empty or when
-> you are already at full health. See [section 8](#8-damage-and-the-duel) and
-> [section 10](#10-between-hands-and-the-run). **Engine and screen landed together, and the drink was
-> driven end to end in a browser.**
->
-> **Nothing was retuned around it.** No health total, price or opponent curve moved, and the automatic
-> between-fight restore that has sat unwired since DLR-82 is _still_ unwired — that ticket forbade it
-> "until the flask is designed", and designing the flask turned out not to change the answer. A restore
-> the game hands you and a charge you choose to spend are different things.
-
-> **The bank's climb is now something you can buy — DLR-92, 2026-08-19.** Until now a taken trick banked
-> **1**, always, and a streak of _n_ cashed exactly `n × n`. The shop's run-permanent shelf — empty since it
-> was built — now sells a **Whetstone** for 4 coins, and **each one you own adds 1 to what every taken trick
-> banks, for the rest of the run**. It **stacks**: two of them bank 3 a trick. So a streak of _n_ now cashes
-> `(1 + copies) × n²`, and a whole hand taken unbroken pays 36 with none, 72 with one, 108 with two.
->
-> **The multiplier is untouched** — it still climbs by exactly 1 per trick taken, and the twin item that
-> would raise _it_ instead is deliberately a later ticket rather than half of this one. This is the first
-> purchase in the game that **grows** a reward rather than protecting one, and the first that lasts the
-> whole run rather than a fight or a use.
->
-> **Not yet seen in play.** The purchase and the buff are both live and reachable, but a 4-coin item against
-> 1 coin a fight put it out of reach of every QA run attempted — so the `+2` has been proven against the
-> engine and **not yet watched on screen**. Recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
-
-> **A mutual kill is now yours, and you can buy insurance against your own Timebomb — DLR-91,
-> 2026-08-19.** Three changes landed together, and the first one is easy to miss because it is a
-> **reordering**: when an event would empty both bars, **the Quarry's is settled first and you take no
-> damage from that event at all**. So a cash-out that kills the Quarry saves you the hit that would have
-> landed with it, and a mutual kill is a **win**. It used to be a loss.
->
-> **Second, Timebomb now lands at the resolution of the next trick, not at the deal of the next hand** — and
-> when it lands on you it **cashes out your streak** exactly as any other damage does, so a run you were
-> building is spent at a moment you did not choose. The amounts are no longer the same on both sides: **4
-> against the Quarry, 2 against you.**
->
-> **Third, the fight-long shelf finally has something on it: a Blast Guard, 1 coin.** Buy it between
-> fights and it is live for **exactly the next fight**. The first time your own Timebomb lands on you, you
-> still lose the 2 health but **your streak survives** — and the Guard is spent, whether or not there was a
-> streak worth saving. It is gone when the fight ends either way, and you may only hold one at a time.
-> See [section 4](#4-playing-a-trick), [section 7](#7-the-four-outcomes-the-bank-and-the-streak),
-> [section 8](#8-damage-and-the-duel) and [section 10](#10-between-hands-and-the-run).
-> **Engine and screen landed together.**
->
-> **One consequence was accepted rather than smoothed out**: because the Guard suppresses the cash-out, a
-> Quarry that would have died to that cash-out survives — so under the new ordering, **holding a Guard can
-> cost you health.** The correct play is sometimes not to hold one, and nothing on screen warns you.
-> Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
-
-> **You can prime a card, and the trick it wins pays for it — DLR-90, 2026-08-19.**
-> The shop sells a third thing: **Timebomb**, 2 coins, on the one-time-use shelf. It is not spent when you
-> buy it — it is a **charge you carry across fights**, and you spend it during a hand. A plate in the felt
-> rail beneath the Cheat rail takes **two taps to arm**, and then **a tap on any card in your hand Timebombs
-> it** — including a card that would be illegal to play, because marking is not a move. Play that card and
-> **the trick resolves by the normal rules**: the same side wins it, and it banks the same. Then, **at the
-> next trick's resolution, whoever won the primed trick takes the damage** (DLR-90 paid it at the deal of
-> the next hand; DLR-91 retimed it).
->
-> **The reason it is worth 2 coins is what happens when you lose the trick.** A primed trick the Quarry
-> wins **cleanly costs you nothing at all** — no health lost, and your bank and multiplier **survive
-> uncashed** rather than resetting. So a card you expected to throw away becomes a free strike. If you win
-> the primed trick instead, it is an ordinary clean win and **the damage lands on you** — **2, not 4**,
-> and it cashes out your streak with it. **If the fight ends before the hit is paid, the queued damage is
-> thrown away.** See [section 4](#4-playing-a-trick) and
-> [section 7](#7-the-four-outcomes-the-bank-and-the-streak). **Engine and screen landed together.**
->
-> **Nothing on screen tells you the delayed damage landed.** Hearts simply disappear mid-hand — 2 of them,
-> on a bar of 10 — and your streak vanishes with them, with no line, no flash and no announcement naming
-> the cause. **Since 2026-08-23 you are at least told the hit is coming**: pending Timebomb is drawn on the
-> bar that owes it and named by the trick that books it. **A held Guard is still invisible**, and so is
-> the moment of landing itself. No rule required either surface and choosing one is a judgement call, so
-> neither was invented. Recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
-
-> **The shop has four shelves now — DLR-89, 2026-08-18.** What the shop _sells_ has not changed, but
-> how you browse it has: the two items are laid out on a **four-shelf ladder sorted by how long a
-> purchase lasts** — **one-time use**, **fight-long**, **run-permanent**, **game-permanent** — and you
-> open one shelf at a time. The **Cheat** is on one-time use, which is the shelf you arrive on and the
-> only one holding anything. Fight-long and run-permanent are **empty and say so**, and can still be
-> opened. **Game-permanent cannot be opened**: it is drawn with a dashed edge and states "Coming
-> soon.", shown deliberately so the shape of the finished shop is visible before the items that fill
-> it exist. The **heal is on no shelf**, in its own "Also for sale" block below them, because an
-> instant transfer has no duration to sort on. Arrow keys move between the shelves, the refused one
-> included. See [section 10](#10-between-hands-and-the-run). **Engine and screen landed together, and
-> no price, refusal or purchase changed.**
-
-> **The run is twenty-five fights and you can see all of them — DLR-85, 2026-08-17.** The game now
-> **opens on a start screen** showing the whole run as one horizontal path: a short **tick** for each of
-> the twenty ordinary opponents and a filled **block** for each of the five **stage bosses**, in the
-> order you will fight them, with **every opponent named**. Four ordinary opponents then a boss, five
-> times over, closing on **Diarmuid**. The goal is stated in words, and one button starts the run by
-> naming who you fight first. **Between fights the same path is reachable again** from a `Map` control on
-> the verdict, where opponents you have beaten are **struck out and still on the path** and the next one
-> is marked out from those beyond it. **Losing the run returns you to the start screen** with a fresh
-> path. Every forward control now names the opponent it leads to — `Fight Aoife`, then `Fight Cillian` —
-> and so do the verdict headline, the shop's leave button and the fight counter. See
-> [section 10](#10-between-hands-and-the-run). **Engine and screen landed together.**
->
-> **The health bar names them too, added 2026-08-17 after a play session.** The Quarry's heart row is
-> headed **"Aoife's health"** rather than "The Quarry's health", so the bar agrees with the map. The
-> **dossier still says "The Monarch"** — that is the remaining half of the seam, and it is recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
->
-> **Two caveats stated up front.** The run is **not expected to be winnable** on today's health curve —
-> that is DLR-82's arithmetic working, not a fault — so `YOU WIN` is effectively unreachable in play. And
-> **the path does not currently fit a viewport narrower than about 1088px**: it is cropped rather than
-> scrolled, so opponents at the end of the run (Diarmuid included) simply are not on screen. That is a
-> known defect awaiting a tuning decision, not a rule.
-
-> **Winning pays, and there is somewhere to spend it — DLR-84, 2026-08-16.** Beating a Quarry pays
-> you **1 coin**, which carries for the rest of the run and is on screen while you fight for it.
-> Between fights you now choose: go straight on, or **visit a shop** selling exactly two things at 1
-> coin each — a **Cheat** into a free slot, or **4 health** restored on the spot. You may buy
-> nothing, or buy again while you can pay. Try to walk past with money you could spend and the game
-> stops to say so. See [section 10](#10-between-hands-and-the-run). **This is the first thing in the
-> game that costs something, and the first answer to a run you were expected to lose.** Engine and
-> screen landed together.
-
-> **You can break follow-suit twice a run — DLR-83, 2026-08-16.** You hold **two Cheat slots**, drawn
-> as two card frames beside the decree. A held Cheat is **armed with two clicks**, and while it is
-> armed **follow-suit does not bind you** — every card in your hand becomes legal, so a trick you
-> would have been forced to take can be refused. The next card you commit **spends** that Cheat and
-> empties its slot; the slots carry across fights like health does. It lifts **follow-suit only** —
-> the led-Monarch narrowing still binds — and the Quarry gets nothing. See
-> [section 4](#4-playing-a-trick). **Engine and screen landed together.** A run started with two when
-> this landed; **since 2026-08-17 it starts with none** and every Cheat is bought (DLR-84).
-
-> **The game is a run now — DLR-82, 2026-08-15.** _(Superseded on length by DLR-85 above: the run is
-> twenty-five fights, not three. Everything else here still holds.)_ Three fights in order, against
-> Quarries of rising health, on **one health bar that never refills**. Win and you carry your remaining health into a
-> tougher fight; empty and the run is over. A full-screen verdict states which of the three things
-> just happened. See [section 10](#10-between-hands-and-the-run). **Engine and screen landed
-> together — nothing in that section is enforced but unreachable.**
-
-> **The Quarry has no powers — DLR-81, the same day.** It plays by exactly the player's rules and has
-> no power of its own. A character is a name only. **Since 2026-08-24 the deck itself is asymmetric**:
-> a bought rank rung applies to your copies only (section 5), so the Quarry's copy of a tiered rank
-> resolves at bronze. That is a power you bought, not one it lacks. The Monarch previously carried a whole-hand narrowing
-> of the player's follow; it was placeholder framing built as though it were a decision, and it is
-> **deferred to a final boss, not deleted** — see [section 9](#9-the-quarry). Every measurement taken
-> before this date was taken against that power.
-
-> **DLR-80 replaced the whole scoring layer, and this document was rewritten around it.** The
-> declaration, the Standing tables, Spoils, the capture piles and the once-per-Hunt damage
-> application are **gone from the game**, not deferred — see
-> [What this game does not have](#11-what-this-game-does-not-have). In their place:
->
-> - A hand is **six cards each and six tricks**, then it re-deals (section 2).
-> - Roughly a third of the Quarry's cards carry a **skull**, and you can see which before you commit
->   (section 3).
-> - The skull **inverts the trick**: on a clean trick you want to win it, on a skull trick you want
->   to lose it (section 7).
-> - Taking a trick banks it and climbs a **streak multiplier**; taking damage costs **1 health**,
->   cashes `bank × multiplier` into the Quarry, and resets both to zero (sections 7–8).
-> - Damage now lands **per trick, mid-hand** — so an encounter can end on trick 3 (section 8).
->
-> **The whole of it is playable, and it has been won.**
-
-> **The bank counts tricks, not card values — PT-002, 2026-08-14.** DLR-80's bank added **both cards'
-> printed ranks** on every trick taken. It now adds **1 per trick**, so both terms of the cash-out are
-> the same number — the length of your streak — and a streak of _n_ cashes exactly **`n × n`**: 1, 4,
-> 9, 16, 25, 36 across a hand (section 7). Nothing else about the loop moved. **Both health totals now
-> stand at 10** (section 8), because a hand that used to deal about 84 now deals about 7.
-
-> **A card that pays you for losing now pays you _next_ hand — DLR-150, 2026-08-27.** The
-> lose-a-trick-with-a-named-suit card used to pay into the streak that the very loss was about to
-> wipe, so deliberately throwing tricks earned you almost nothing. Its reward now **banks for the
-> next hand** whenever the trick was a Loss, and pays into this hand only when the trick was a
-> **dodge**. Both figures are on the streak readout. In the same change that card can once again be
-> dealt as a **multiplier** card and not only a damage one, taking the pool of card types from 13 to
-> **16**. Section 4 states all of it; the size of the carry is a number nobody has chosen yet.
+**A buff card names High or Low and never names Victory or Defeat**, because a buff's condition asks
+only what you did, never what it was worth.
 
 ---
 
@@ -642,7 +108,7 @@ distinguishes what is decided from what is being played to find out.
 
 One deck of **33 cards**: three suits — **Bells**, **Keys**, **Moons** — each ranked **1–11**.
 
-Seven ranks carry a name, and the name is what the rules refer to:
+Six ranks carry a name, and the name is what the rules refer to:
 
 | Rank | Name           |
 | ---- | -------------- |
@@ -650,19 +116,20 @@ Seven ranks carry a name, and the name is what the rules refer to:
 | 3    | **Fox**        |
 | 5    | **Woodcutter** |
 | 7    | **Treasure**   |
-| 8    | **Timebomb**   |
 | 9    | **Witch**      |
 | 11   | **Monarch**    |
 
-There are no other cards. The base game's three expansion modules — special cards, goal cards, and
-the Timebomb-8 swap — are not in this game (see
-[What this game does not have](#11-what-this-game-does-not-have)). The **Timebomb** name sits on the
-ordinary rank 8 of all three suits, not on a separate module card.
+**Rank 8 has no name** — **[open]**. It carries no rule and the game prints no name on it. The base
+game calls it a Poison card and this game's code still uses that word internally, but nothing on
+screen says it, and what to call it is an undecided question recorded under
+[Known tensions](#known-tensions-recorded-not-resolved).
 
-> **The Timebomb name is now actively misleading, and that is a known problem.** The skull (section 3)
-> is a **separate marker** that can sit on any rank from 2 upward — it is not rank 8, and rank 8 has
-> nothing to do with it. Play-test 2 §6 Q3 records renaming rank 8 as an open question. It is
-> recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+Every other unnamed rank — 2, 4, 6, 10 — is likewise a plain number card with no rule, and rank 8 is
+drawn exactly as they are, deliberately: giving it a marked face would tell you it was special.
+
+There are no other cards. The base game's three expansion modules — special cards, goal cards, and
+the rank-8 swap — are not in this game (see
+[What this game does not have](#11-what-this-game-does-not-have)).
 
 ---
 
@@ -772,20 +239,33 @@ Roughly **30% of the Quarry's dealt cards carry a skull**. In a six-card hand th
 How _many_ skulls a hand carries and _which ranks_ they land on are two separate dials: the density
 below is settled, the rank curve below it is not.
 
-**No skull is ever on a rank 1.** A skulled 1 could not lose its trick, so it would be an undodgeable
-tax rather than a decision — excluding it is what leaves foreknowledge worth having (play-test 2
-§3.4). Rank 1 carries **zero weight in every rank curve the game ships**, so the rule holds whichever
-curve is in force — including any curve added later.
+**No dealt skull is ever on a rank 1.** A skulled 1 could not lose its trick, so it would be an
+unavoidable tax rather than a decision — excluding it is what leaves foreknowledge worth having
+(play-test 2 §3.4). Rank 1 carries **zero weight in every rank curve the game ships**, so the rule
+holds whichever curve is in force — including any curve added later.
 
 ### What a skull does
 
-A skull **inverts what winning the trick is worth** — the full rule is section 7. In short: a trick
-containing a skulled card is one you want to **lose**.
+A skull **inverts what taking the trick is worth** — the full rule is section 7. In short: a trick
+containing a skulled card is one you want to go **low** on.
 
 **A trick is a skull trick if _any_ card played into it is skulled** — not merely the Quarry's card.
-Skulls are only ever dealt to the Quarry, so in practice this is the Quarry's card; but a card can
-change hands mid-hand (the Quarry's Fox can exchange a skulled card into the decree, and your Fox can
-later take that decree into hand), and a skull stays with its card when it does.
+
+### Skulls come from three places, and only one of them is the deal — **[settled]**
+
+The deal is the ordinary source: at every deal, roughly a third of the Quarry's six cards are marked.
+Those marks are re-rolled each deal and never remembered from one hand to the next.
+
+**The 5 can mint one mid-hand, on the Quarry's side.** When the Quarry plays a 5 it swaps a card, and
+the card it draws may be marked as it arrives — see [section 5](#5-abilities). The same "never rank
+1" rule applies.
+
+**And you can make one yourself, with a Curse.** Arming a Curse turns your next tap on your own hand
+into a mark — see [section 4](#4-playing-a-trick). A card you mark shows the same skull the Quarry's
+does, and makes its trick a skull trick by exactly the rule above. **A curse is not subject to the
+rank rule**: you may mark any card you hold, including a 1.
+
+A card can also change hands mid-hand, and a skull stays with its card when it does.
 
 > **Whether a skull should survive changing hands is the developer's call** and it is currently
 > answered "yes" — the rule tests the trick, not the seat. It is recorded under
@@ -799,7 +279,8 @@ Two readouts carry the skulls, and neither ever reveals a rank:
 
 - **The shape readout.** For each suit, how many cards the Quarry **holds** and how many of those are
   **skulled**. So you know there are two skulls in Bells; you do not know whether they are the 2 and
-  the 4 or the 10 and the 11.
+  the 4 or the 10 and the 11. It reports the **Quarry's** skulls only — a card you cursed yourself
+  never appears in it.
 - **The skull mark on a played card.** Once a skulled card is face up on the table, it is marked as
   skulled. **Since 2026-08-26 the mark is the whole card face** — a skull replaces the card's
   picture, identically on every rank and suit, while the rank and the suit stay readable in the
@@ -812,9 +293,10 @@ so the readout removes the first and keeps the second (play-test 2 §3.5).
 
 ### How skulls are spread across ranks — **[provisional]**
 
-Skulls are **not** spread evenly. Each rank carries a **weight** — how likely a card of that rank is
-to be the one skulled — and the Quarry's skulls are drawn against those weights. Rank 1's weight is
-zero, which is where "never rank 1" now lives.
+Dealt skulls are **not** spread evenly. Each rank carries a **weight** — how likely a card of that
+rank is to be the one skulled — and the Quarry's skulls are drawn against those weights. Rank 1's
+weight is zero, which is where "never rank 1" lives. A skull the **5** mints mid-hand reads the same
+curve; a **Curse** you place yourself does not consult it at all.
 
 The curve in force concentrates skulls on the **middle ranks** and leaves the extremes light:
 
@@ -840,9 +322,10 @@ one falling with rank) so a later opponent can be given a different curve as a d
 the thing to watch.
 
 > **Rank weighting does not fix every unfair skull, and two cases survive it.** A skull in the
-> **trump suit** is near-harmless at any rank, because a trump wins its trick and a skull trick the
-> Quarry wins is a dodge for you. And a Quarry **holding nothing in the led suit** can dump a skull
-> whatever its rank, which you cannot dodge. Both are recorded in `ideas.md` and neither is addressed.
+> **trump suit** is near-harmless at any rank, because a trump takes its trick and a skull trick the
+> Quarry takes is a **Low Victory** for you. And a Quarry **holding nothing in the led suit** can dump
+> a skull whatever its rank, which you cannot avoid. Both are recorded in `ideas.md` and neither is
+> addressed.
 
 ---
 
@@ -880,7 +363,7 @@ along the bottom of the screen**:
 
 | Button         | What it does                                                                     |
 | -------------- | -------------------------------------------------------------------------------- |
-| **Apply Buff** | Opens your loadout — every buff you own, including a held Cheat or Timebomb      |
+| **Apply Buff** | Opens your loadout — every buff you own, a held Cheat or Curse included          |
 | **Cards**      | Plays the card you have selected. Greyed until you have selected one             |
 | **Swap**       | Throws cards from your hand and draws the same number blind (the discard, below) |
 
@@ -893,12 +376,11 @@ cannot use right now is **greyed with its reason printed on its own face** — n
 explained only on hover. Selecting a card and pressing **Cards** does exactly what tapping the same
 card twice does; it is a second route to the same commit, not a different one.
 
-> **This replaced four separate plates down the felt's left edge.** Until 2026-08-24 the Cheat slots,
-> the Timebomb plate, the discard control and the Apply Damage control each had their own frame in
-> their own corner. The discard and Apply Damage controls moved into this bar unchanged (and Apply
-> Damage left it again on 2026-09-01). **A Cheat and
-> a Timebomb went further, the same day**: they stopped being two bespoke widgets and became two more
-> lines in the loadout list below, one press behind **Apply Buff**.
+> **This replaced several separate plates down the felt's left edge.** Until 2026-08-24 the Cheat
+> slots, the discard control and the Apply Damage control each had their own frame in their own
+> corner. The discard and Apply Damage controls moved into this bar unchanged (and Apply Damage left
+> it again on 2026-09-01). **A Cheat went further, the same day**: it stopped being a bespoke widget
+> and became one more card in the loadout below, one press behind **Apply Buff**.
 
 #### Buffs — spending a card before a trick
 
@@ -954,20 +436,12 @@ press drops the poise and leaves the panel open; with nothing poised, it closes 
 this trick" list. Doing so returns the card to your pile, gives you back what it cost, and clears it
 from that trick — the cards it was lighting go dark, and the list says how many did.
 
-**Four cards can be taken back**: the win-with-a-suit, the lose-with-a-suit, the dodge-a-skull —
-and, **since 2026-08-31, a Timebomb**. **A Cheat, a Ward and a Shield cannot.** Using one of those
-does something to the felt at the moment you commit it — follow-suit stops binding you, a guard goes
-up — and that is not something the game can take back. All three still appear in the riding list,
-each saying plainly that it has no condition to reach and is already spent, rather than showing you
-a control that would refuse.
-
-**Taking a Timebomb back takes the mark off the card too** — **[settled]** since 2026-08-31. The
-card returns to your pile, the bomb comes off whichever card was wearing it, the countdown stops,
-and if you had not yet chosen a card the game stops waiting for one. `Escape` while the hand is
-waiting for a card does exactly the same thing, rather than throwing the card away, and the row's
-own control and `Escape` are the same act. It is the only one of the four felt-changing cards this
-is possible for, and it is possible because **nothing else was spent** — see the action-point note
-in section 4.
+**Three cards can be taken back**: the go-high-on-a-suit, the go-low-on-a-suit and the
+go-low-on-a-skull. **A Cheat, a Curse, a Ward and a Shield cannot.** Using one of those does
+something to the felt at the moment you commit it — follow-suit stops binding you, a skull goes onto
+one of your cards, a guard goes up — and that is not something the game can take back. All of them
+still appear in the riding list, each saying plainly that it has no condition to reach and is already
+spent, rather than showing you a control that would refuse.
 
 **A card that comes back is put at the end of your pile**, not back where it was — **[provisional]**,
 and the developer's, since it means the card moves under your finger. Nothing else about it changes.
@@ -1010,8 +484,8 @@ screen then shows you is which of your cards it could pay out on:
   > were reading it.
 - **Every row of the breakdown will take that buff back off the trick**, the struck-through ones
   included — **[provisional]**, since 2026-08-27. A buff named in front of you is removable where it
-  is named, with the same exception the riding list has: a Cheat, a Ward and a Shield cannot come
-  back, so their rows carry no control rather than one that would refuse. The riding list keeps its own controls, and that is not a duplicate: a buff that reaches
+  is named, with the same exception the riding list has: a Cheat, a Curse, a Ward and a Shield cannot
+  come back, so their rows carry no control rather than one that would refuse. The riding list keeps its own controls, and that is not a duplicate: a buff that reaches
   no card at all appears in no card's breakdown, so the list is the only place it can be taken off
   from. Every one of these controls names the **trick**, never the card you happen to be pointing at
   — removing takes the buff off the trick entirely.
@@ -1031,10 +505,10 @@ are comparing them, not for the whole time a buff rides.
 
 ##### Using a card takes it out of your pile — **[settled]** since 2026-08-25
 
-Every card the game currently deals you is **spent when you use it**: the three surviving condition
-buffs (win-with-a-suit, lose-with-a-suit, dodge-a-skull), the Cheat, the Timebomb, the Shield, and all
-five of the one-shot items below. Using one fires it for that trick and then **removes it from your
-pile for the rest of the run**. Nothing brings it back, and nothing refills it — the shop's machine is
+Every card the game currently deals you is **spent when you use it**: the condition buffs
+(go-high-on-a-suit, go-low-on-a-suit, go-low-on-a-skull, and the two that protect a streak figure),
+the Cheat, the Curse, the wildcard, the Shield, and all five of the one-shot items below. Using one
+fires it for that trick and then **removes it from your pile for the rest of the run**. Nothing brings it back, and nothing refills it — the shop's machine is
 the only source of more cards.
 
 **A card you spend still pays out on the trick you spent it on.** It leaves your pile at the moment
@@ -1043,8 +517,8 @@ still held it. Only the _next_ trick finds it gone.
 
 > **This is what changed on 2026-08-25.** Until then a condition buff was rented, not spent: you paid
 > action points, it fired, and the card stayed in your pile to be used again next trick. Only the
-> five items and — since a day earlier — the Cheat, Timebomb and Shield left the pile. Every card
-> now behaves the way those did.
+> five items and — since a day earlier — the Cheat and the Shield left the pile. Every card now
+> behaves the way those did.
 
 **Whether every card should be single-use is the developer's**, and it is a one-line reversal per
 card type.
@@ -1064,11 +538,12 @@ first card is laid. Mid-trick every buff line is greyed, reading that it is not 
 > worth something: it is the moment follow-suit is binding you. So mid-trick: the panel opens, a Cheat
 > line stays live, and every other buff line is greyed reading that it is not between tricks.
 >
-> > **A Timebomb was in that exception until 2026-08-26, and no longer is.** It now takes the ordinary
-> > between-tricks window like every other card. Arming it after the Quarry had led let you see the
-> > lead, work out which trick you were about to lose, and only then decide to spend — a read the card
-> > was never meant to sell, since committing before you know is its whole cost. A Cheat's exception is
-> > about what was led; a Timebomb's never was.
+> > **The reason no other card shares that exception is worth stating, because it is a rule and not
+> > an oversight.** A card that arms an effect *before* you commit has no business being armable after
+> > the Quarry has led: that would let you see the lead first, work out which trick you were about to
+> > lose, and only then decide to spend — a read those cards were never meant to sell, since
+> > committing before you know is their whole cost. A Cheat's exception is about what was **led**; no
+> > other card's is.
 
 **The panel opens even when there is nothing in it you can use right now.** Reading what you own is
 how you plan the next trick. (Until 2026-08-25 a line you could not _afford_ was greyed with its
@@ -1094,8 +569,8 @@ the rest of the run**. Nothing brings one back, and there is no charge to refill
 What separates an item from a buff you own is now only **how it fires**: an item does its one thing
 at the moment you use it, where a buff waits for a condition at the trick's resolution. Leaving the
 pile is no longer the distinction — as of 2026-08-25 every card the game deals is spent when used.
-(Until 2026-08-24 the five items were the _only_ cards that left your loadout; the Cheat, Timebomb
-and Shield joined them that day, and the three surviving condition buffs the day after.)
+(Until 2026-08-24 the five items were the _only_ cards that left your loadout; the Cheat and the
+Shield joined them that day, and the condition buffs the day after.)
 
 **Using one takes the same two taps as activating any other card** — the first poises, the second
 commits. **The second tap is the point of no return**: the card is gone. `Escape` before that second
@@ -1106,9 +581,9 @@ points now.)
 trick that never hits you, and nothing warns you. Whether the trick is worth guarding is the
 judgement the item exists to pose, and it is read off the felt, not off the button.
 
-**You may also use one against something already coming.** A Timebomb already ticking against you,
-a cash-out already booked — an item used between tricks is used against the felt as it stands, which
-is the point of holding it rather than spending it the moment you get it.
+**You may also use one against something already coming**, since an item used between tricks is used
+against the felt as it stands — which is the point of holding it rather than spending it the moment
+you get it.
 
 **Four of the five are used between tricks**, the same window the Swap and the buff activation use.
 **Puppeteer is the exception**: steering what the Quarry plays only makes sense after they have led
@@ -1169,18 +644,22 @@ hand** is **[provisional]** — see the ceilings below. `hybrid-design.md` §5.
 
 A buff you activated for a trick is checked **when that trick resolves**. If its condition came true,
 it pays; if it did not, it pays nothing and — for a card that is spent — the card is gone anyway.
+
+**Every condition asks only what you did, never what it was worth.** That is why the table below
+reads in **High** and **Low** and never in Victory or Defeat: a buff's condition tests whether you
+physically took the cards, and the skull's inversion is applied afterwards, by the streak.
+
 Thirteen conditions exist as rules, and they are eleven **rows** below because two cards share one.
-**Only five of them can be dealt to you** — three since 2026-08-25, and since 2026-09-02 the
-eat-a-skull rule as well, carried by the two protecting cards of section 7; the other eight are
-marked below and are covered in the note that follows the table.
+**Only five of them can be dealt to you**; the other eight are marked below and are covered in the
+note that follows the table.
 
 | The buff asks you to                           | It pays when                                           | Dealt?                            |
 | ---------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
-| **win** a trick with a named suit              | you win, having played that suit                       | **yes**                           |
-| **lose** a trick with a named suit             | you lose, having played that suit                      | **yes**                           |
-| **dodge** a skull with this card               | the trick carried a skull and you did not take it      | **yes**                           |
-| **win** a trick with a named rank              | you win, having played that rank                       | no                                |
-| **eat** a skull with this card                 | the trick carried a skull and you took it              | **yes**, on two cards — see below |
+| **go high** on a named suit                    | you took the cards, having played that suit            | **yes**                           |
+| **go low** on a named suit                     | you did not take them, having played that suit         | **yes**                           |
+| **go low** on a skull                          | the trick carried a skull and you did not take it      | **yes**                           |
+| **go high** on a named rank                    | you took the cards, having played that rank            | no                                |
+| **go high** on a skull                         | the trick carried a skull and you took it              | **yes**, on two cards — see below |
 | reach a **streak figure** of 2 / 3 / 4         | your roll reaches it, counting this trick's climb      | no                                |
 | survive **2 / 3 / 4** tricks without being hit | the run of unhurt tricks reaches it, counting this one | no                                |
 | **cash your pot** this hand                    | you have chosen **apply** at the prompt at least once  | no                                |
@@ -1188,12 +667,25 @@ marked below and are covered in the note that follows the table.
 | hold **5 / 10 / 20** coins                     | your purse is at or above it                           | no                                |
 | be below **60% / 45% / 33%** health            | your red hearts are below that share of your maximum   | no                                |
 
-**The eat-a-skull row went back to "yes" on 2026-09-02 — [settled]**, and it is worth reading
-carefully, because only _some_ cards carrying it are dealt. The rule itself never changed. What
-changed is that the two cards of section 7 that **protect a streak figure** carry it, so a card
-asking you to eat a skull can reach your pile again. The older card that simply _pays_ you for eating
-one is still not dealt. At **silver and gold** those two cards ask for less: any trick that hurt
-you — an eaten skull **or** a clean loss. A **dodge** satisfies neither of them, at any tier.
+**Two of those rows are the reason the vocabulary was split, and both should be read literally.**
+
+- **"Go low on a named suit" has no skull term in it at all.** It pays whenever you did not take the
+  trick — so it pays on a **Low Victory and a Low Defeat alike**. That is deliberate: it is a *Low*
+  card and it does not care how the trick turned out.
+- **"Go low on a skull" is the only condition that can never fire on a bad outcome**, because a skull
+  trick you did not take is always a Low Victory.
+
+**The go-high-on-a-skull row is dealt only on two cards — [settled]**, and it is worth reading
+carefully. The rule itself never changed; what changed is that the two cards of section 7 that
+**protect a streak figure** carry it, so a card asking you to go high on a skull can reach your pile.
+The older card that simply _pays_ you for it is still not dealt. At **silver and gold** those two
+cards ask for less: any trick that **hurt** you — a High Defeat **or** a Low Defeat. A **Low
+Victory** satisfies neither of them, at any tier.
+
+**A card can be made wild, and a wild card drops the suit and nothing else** — **[provisional]**.
+Spending a wildcard on a suited card (section 10) leaves the same card at the same tier paying the
+same amount, but its condition stops naming a suit: a wild go-high card pays on going high on **any**
+suit. The High-or-Low half is untouched — a wild go-low card still has to go low.
 
 > **Eight of the thirteen stopped being dealt on 2026-08-25 — **[settled]**.** Every rule in the table
 > is still decided and still enforced exactly as written; what changed is that the machine and the
@@ -1201,9 +693,9 @@ you — an eaten skull **or** a clean loss. A **dodge** satisfies neither of the
 > **inside a trick you are playing**, which is where a card you spend has to earn its place. Two
 > reward kinds went the same way at the same time: **coins** and **refunded action points** are no
 > longer dealt either — the second because there is no longer a pool to refund into. The pool of card
-> types went from **73 to 13** — **and back to 16 on 2026-08-27**, when the lose-a-trick card became
-> mintable as a multiplier card again as well as a damage one (see the carry, below), **and to 18 on
-> 2026-09-02**, when the two protecting cards of section 7 were added.
+> types went from **73 to 13** — back to **16** when the go-low-on-a-suit card became mintable as a
+> multiplier card again as well as a damage one (see the carry, below), to **18** when the two
+> protecting cards of section 7 were added, and it stands at **19** with the wildcard and the Curse.
 > **None of this is a deletion**: restoring a card type is one line, and
 > a card of a cut type would behave exactly as this table says if one existed. **Whose decision:** the
 > developer's, both for whether the cut is right and for whether any of the eight should come back.
@@ -1215,10 +707,10 @@ you — an eaten skull **or** a clean loss. A **dodge** satisfies neither of the
 
 > **How often each one may pay is part of the rule, not an implementation detail.** The first five
 > and the Apply Damage one pay **every trick** their condition holds. The four that name a number —
-> bank, unhurt tricks, coins, health — pay **once a hand**, because a threshold that stays true would
-> otherwise pay on every remaining trick for having been crossed once. The hold-a-suit one can only
-> pay at **the sixth trick**. Consumables — a Cheat, a Timebomb, a Ward, a Shield — have no condition
-> and never pay this way; they do what they do when you use them.
+> streak figure, unhurt tricks, coins, health — pay **once a hand**, because a threshold that stays
+> true would otherwise pay on every remaining trick for having been crossed once. The hold-a-suit one
+> can only pay at **the sixth trick**. The cards you press yourself — a Cheat, a Curse, a wildcard, a
+> Ward, a Shield — have no condition and never pay this way; they do what they do when you use them.
 
 **What a reward is worth is set by the card's tier**: flat damage 1 / 3 / 5 and a bonus to the
 multiplier 2 / 3 / 5, at bronze / silver / gold. Coins (2 / 5 / 10) and refunded action points
@@ -1227,9 +719,9 @@ multiplier 2 / 3 / 5, at bronze / silver / gold. Coins (2 / 5 / 10) and refunded
 **A third kind of reward that is still dealt arrived on 2026-09-02, and it is not a number you add
 to anything.** A card can instead **protect one of the two streak figures** from a trick that hurt
 you. There is no ladder for the protection itself — a figure either survives or it does not — so the
-tier buys **when** it happens, plus a single point on top: bronze protects only on a skull you ate,
-silver widens that to any trick that hurt you, and gold does the same **and adds 1** to whichever
-figure survived. Section 7 describes both cards in full, because what they do is a rule about the
+tier buys **when** it happens, plus a single point on top: bronze protects only on a **High Defeat**,
+silver widens that to any **Defeat**, and gold does the same **and adds 1** to whichever figure
+survived. Section 7 describes both cards in full, because what they do is a rule about the
 streak rather than a payment into it.
 
 **Several buffs paying on one trick add up; nothing multiplies anything.** Each pays into its own
@@ -1247,24 +739,21 @@ two of them are inside it:
 4. **Flat damage is added to whatever that produced**, after the reduced rate has been taken.
 5. **Coins are added to your purse.** _(No card pays this any more.)_
 
-##### A card that pays you for losing banks its reward for the next hand — **[settled]** since 2026-08-27; **its size is [provisional]**
+##### A go-low card banks its reward for the next hand when the trick hurt you — **[settled]**; **its size is [provisional]**
 
-**[settled]** — that the split exists, which side of it each outcome falls on, that the bank survives
+**[settled]** — that the split exists, which side of it each outcome falls on, that the carry survives
 every hand of a fight and dies with the fight. **[provisional]** — how much it is worth, and whether
-it should read on screen for the whole hand or only at the hand's start. `hybrid-design.md` §5; the
-change itself is specified by DLR-150's own acceptance criteria, which no design section yet covers.
+it should read on screen for the whole hand or only at the hand's start. `hybrid-design.md` §5.
 
-The lose-a-trick-with-a-named-suit card asks you to **not take** a trick while playing that suit.
-Two very different things satisfy it, and the two are now paid differently:
+The go-low-on-a-named-suit card asks you to **not take** a trick while playing that suit. Two very
+different things satisfy it, and the two are paid differently:
 
-| The trick you did not take | Which outcome that is                             | Where the reward goes              |
-| -------------------------- | ------------------------------------------------- | ---------------------------------- |
-| a clean trick              | a **loss** — you take damage, both counters reset | **banked for the next hand**       |
-| a skulled trick            | a **dodge** — you bank the trick and climb        | **paid into this hand**, as before |
+| The trick you did not take | Which outcome that is                                | Where the reward goes              |
+| -------------------------- | ---------------------------------------------------- | ---------------------------------- |
+| a clean trick              | a **Low Defeat** — you take damage, both figures reset | **banked for the next hand**       |
+| a skulled trick            | a **Low Victory** — you bank the trick and climb      | **paid into this hand**, as before |
 
-It also pays when you **take** a skulled trick, which is a loss too — you eat the skull. That is
-banked for the next hand as well. In short: **when the trick hurt you, the reward is banked; when it
-paid you, the reward is paid.**
+In short: **when the trick hurt you, the reward is banked; when it paid you, the reward is paid.**
 
 **What is banked pays nothing in the hand that earned it.** It does not raise that hand's multiplier,
 it does not add to that hand's damage, and no cash-out in that hand can reach it — which is the whole
@@ -1277,13 +766,13 @@ fight** if you keep banking without spending, and there is **no ceiling on it**.
 
 **It is wiped when the fight ends, win or lose.** Nothing carries a bank into the next opponent.
 
-> **Only the lose-a-trick card banks.** The win-a-trick card can also fire on a trick that hurt you —
-> take a skulled trick with its suit and it pays while you eat the skull — and it still pays into the
-> hand it lost. That is deliberate; **whether it should bank too is the developer's**, and it is the
-> reading most likely to change.
+> **Only the go-low card banks.** The go-high card can also fire on a trick that hurt you — go high on
+> a skulled trick with its suit and it pays on a **High Defeat** — and it still pays into the hand it
+> lost. That is deliberate; **whether it should bank too is the developer's**, and it is the reading
+> most likely to change.
 
-> **The overlap bonus does not bank either.** Two cards paying on the same losing trick still add
-> their overlap bonus to _this_ hand's multiplier, where that trick's reset then wipes it. **Whose
+> **The overlap bonus does not bank either.** Two cards paying on the same Defeat still add their
+> overlap bonus to _this_ hand's multiplier, where that trick's reset then wipes it. **Whose
 > decision:** the developer's.
 
 > **Nobody has chosen what a bank is worth.** It uses the card's ordinary reward — **1 / 3 / 5**
@@ -1392,27 +881,19 @@ readout below keeps the same discipline for the same reason: it always states bo
 never says which one is coming.
 
 **Sometimes the two numbers are an estimate, and the game says so.** While **you are the one to
-lead**, the Quarry's card is still face down, so whether the trick will carry a skull or a Timebomb
-mark is not yet decided — and a skulled Quarry card turns a trick you win into one you eat
-(section 7). In that state the readout is **slanted and prefixed with a `~`**, and reads as an
-estimate in words for a player who cannot see it. Once the Quarry's card is on the table, both
-figures are exact.
+lead**, the Quarry's card is still face down, so whether the trick will carry a skull is not yet
+decided — and a skulled Quarry card turns a **High Victory** into a **High Defeat** (section 7). In
+that state the readout is **slanted and prefixed with a `~`**, and reads as an estimate in words for
+a player who cannot see it. Once the Quarry's card is on the table, both figures are exact.
 
-**What the two numbers deliberately leave out**, because it is the same whichever card you play and
-is already drawn on the health bars:
+**A card you have cursed yourself is the exception**, because a skull of your own makes the trick
+skulled whatever the Quarry plays — so that reading is certain even while you lead.
 
-- a **Timebomb detonating on you** at this trick lands whether you win or lose, and is already the
-  ticking hearts on your own row (section 8);
-- **losing cashes your streak into the Quarry** at the reduced rate, and that is already the at-risk
-  band on the Quarry's row (section 7).
+Both figures are stated in full for a player who cannot see the row: every card's spoken description
+carries all four numbers, any shield absorption, and the estimate caveat.
 
-Both figures **are** stated in full for a player who cannot see the row: every card's spoken
-description carries all four numbers, any shield absorption, and the estimate caveat.
-
-**Two more things the readout does not show.** A Timebomb **this card would prime for the next
-trick** costs you no health at this one, so it does not appear — a primed card you win reads cheaper
-than it turns out to be until the ticking hearts arrive. And the figures are **health actually
-lost**, not raw damage: against a Quarry on 4 health, a card reading `W6` means "enough", not "six".
+**One thing the readout does not show.** The figures are **health actually lost**, not raw damage:
+against a Quarry on 4 health, a card reading `W6` means "enough", not "six".
 
 > **This is a change to what you are shown, not to what anything costs.** Every number it prints is
 > the number the game was already going to pay; nothing about damage, the bank, the streak or the
@@ -1476,8 +957,8 @@ that the opponent cannot — the first such asymmetry in the game.
 > follow-suit's whole point. **Now the specific card you spend leaves your pile once its duration
 > ends the same way a one-shot item does** — a second copy, if you hold one, is still spendable on
 > its own. This is a developer-owned, per-card default (`ACTIVATED_CARD_SINGLE_USE`) rather than a
-> structural change to what a Cheat is, so it can be reverted for Cheat alone without touching
-> Timebomb or Shield.
+> structural change to what a Cheat is, so it can be reverted for Cheat alone without touching the
+> Curse or the Shield.
 
 #### How many you get — **[provisional]**
 
@@ -1497,144 +978,88 @@ now that every further Cheat comes from elsewhere, is the standing open question
 > is gone. Every Cheat beyond your starting one comes from a pull of the machine, or from the run's
 > own opening draw.
 
-### Timebomb — priming a card before you play it
+### Curse — putting a skull on a card in your own hand
 
-**[settled]** — the procedure, since 2026-08-24, and its three 2026-08-31 additions (the two-trick
-fuse, one bomb at a time, and taking one back); **the damage figures**, **the four weights that
-decide how often the reel draws one**, and **everything you see of the mark and the priming mode**
-are **[provisional]**, below.
+**[provisional]** — the procedure is decided and enforced; **what the card pays**, **how often the
+reel draws one**, and **everything you see of the mark and the marking mode** are the developer's,
+below. So is the open reading at the foot of this section, which is a real question about what the
+card is for.
 
-A Timebomb is an ordinary buff card in your pile now, not a bought charge. **Since 2026-08-24 it is a
-row in your loadout, drawn from the same reel every other buff comes from**, at bronze, silver or
-gold — until that date it did not exist as a card at all: it was a count bought at the shop, with its
-own plate and its own three-tap cycle. **This is the one card in the whole game that was previously
-impossible to hold at all** — a fresh run started with none and nothing sold one after the shop was
-pared, so nothing before today could ever put one in your hand.
+A Curse is an ordinary buff card in your pile, drawn from the same reel every other buff comes from,
+at bronze, silver or gold. **It is the only way you can put a skull on a card of your own**, and a
+skull inverts a trick — so a card you would otherwise throw away becomes a card you can lose with on
+purpose, for a **Low Victory**.
 
-**You can only arm one between tricks — [settled] since 2026-08-26.** A Timebomb takes the ordinary
-activation window every condition buff takes: before a trick's first card is laid, the same window
-the Swap uses. Once the Quarry has led, the Timebomb row is greyed reading that it is not between
-tricks, and only a **Cheat** stays live (section 4). You commit to arming _before_ you know what you
-are up against — that is the card's cost, and being able to arm it after seeing the lead quietly
-refunded it.
-
-> Marking is a separate question from arming, and it did not change: **a card you mark can still be
-> one it would be illegal to play.** You arm between tricks, the Quarry leads a suit you must follow,
-> and the off-suit card you cannot legally play is still a legal thing to _prime_.
+**You can only arm one between tricks.** A Curse takes the ordinary activation window every condition
+buff takes: before a trick's first card is laid, the same window the Swap uses. Once the Quarry has
+led, the Curse row is greyed reading that it is not between tricks, and only a **Cheat** stays live
+(section 4). You commit to marking _before_ you know what you are up against — that is the card's
+cost, and being able to mark after seeing the lead would quietly refund it.
 
 **Spending one takes two taps, the same as every other buff row — but spending it only arms it.**
 
 1. **The first tap poises the row.** Nothing changes yet.
-2. **The second tap spends the card and arms the Timebomb.** Every card in your hand becomes
-   tappable — **including cards that are illegal to play**, which is the point, because the card
-   exists to give a card you expect to lose with a reason to be played.
-3. **The very next tap you make on a card in your hand primes it.** The Timebomb is already spent; this
-   tap only chooses which card carries it.
+2. **The second tap spends the card and arms the Curse.** Every card in your hand becomes tappable.
+3. **The very next tap you make on a card in your own hand marks it.** The Curse is already spent;
+   this tap only chooses which card carries the skull.
 
-**You can take an armed or primed Timebomb back — [settled] since 2026-08-31.** `Escape` before the
-second tap drops the poise and spends nothing, as it always did. After it, the Timebomb rides the
-trick with its own row in the riding list, and that row will give it back: the card returns to your
-pile, the mark comes off the card, and the countdown stops. `Escape` while the hand is waiting for a
-card does the same thing rather than throwing the card away. Until this date the arm could not be
-undone at all, and `Escape` at that moment silently ate the card you had paid for.
+**A card you mark can be one it would be illegal to play**, and that is the point rather than an
+oversight: marking is not a move. You may mark a card you could not legally commit this trick.
 
-> **A Timebomb is the only one of the four felt-changing cards you can take back**, and the reason
-> is that nothing else is spent on it: the game's action points are switched off, so the whole of a
-> Timebomb's cost is the card leaving your pile, and returning the card returns all of it. A Cheat, a
-> Ward and a Shield each arm something else besides — section 4's _Taking a buff back off the trick_.
+**Once the second tap lands there is no way to give it back.** `Escape` before that point drops the
+poise and spends nothing. After it, the card is gone and the Curse is riding the trick — it appears
+in the riding list saying so, with no control that would refuse. Putting a skull on a card has
+already changed the felt, and that is not something the game can take back.
 
-**You cannot have two Timebombs going at once — [settled] since 2026-08-31.** While one is armed or
-primed, every other Timebomb in your pile is refused outright, with the reason on its face, and it
-stays refused until that one goes off or you take it back. The refusal is at the **spend**, not at
-the mark: you can never pay for a second Timebomb and then find there is nothing you may do with it.
-Once the first has gone off, a second may be armed in the same hand.
+**Two controls are locked out while a Curse is armed**, because both would claim the tap the Curse is
+waiting for:
 
-**A Timebomb's tier decides how much it hits for.** Bronze is the same pair the game has always paid —
-**4 to the Quarry, 2 to you**; silver doubles both to 8 and 4; gold trebles them to 12 and 6
-(`TIMEBOMB_DAMAGE`, scaled by `TIMEBOMB_TIER_MULTIPLIER`). Whichever card you prime carries its own
-tier's figure to the trick it is played into.
+- **The Swap rail is refused**, with that reason on its own face — not "you are out of swaps", which
+  would be a different and untrue statement.
+- **Carrying on is refused**, so **the mark has to go on before the Quarry lays its lead.** Otherwise
+  a Curse armed between tricks would survive the lead and let you choose which card to mark having
+  already seen it.
 
-> **This used to be able to go wrong, and cannot any more.** Until 2026-08-31 a second Timebomb could
-> be spent over a first, and the game remembered only one figure per hand — so a card marked by a gold
-> Timebomb detonated for a bronze one's damage. Refusing the second spend outright removes the case
-> rather than tracking a figure per card.
+**You cannot have two Curses going at once.** While one is armed, or a card is already marked this
+trick, every other Curse in your pile is refused outright with the reason on its face. The refusal is
+at the **spend**, so you can never pay for a second and then find there is nothing you may do with
+it.
 
-**A primed card is marked wherever it renders** — in your hand, in the trick once you have played it,
-in an ability prompt that offers it, and on the decree if the Fox exchanges it there. The mark is a
-bomb hanging off the card's top corner, **added to the card and never replacing anything**: the
-card's rank, suit, name and picture are all still there, and a card that is both skulled and primed
-shows both. The mark is announced as part of the card's name, so it does not depend on seeing it.
-**Every part of how it looks is [provisional]** — its size, how far it overhangs, its colour and the
-speed its spark fizzes are all placeholders nobody has yet looked at on screen, and so is whether
-the countdown numeral on it stays legible at a small card size.
+**The mark shows the full skull face**, exactly as a skull dealt to the Quarry does — the card's rank
+and suit stay readable in the corner, because the trick is still won on those. Everything about how
+the mark and the marking mode look is **[provisional]** placeholder.
 
-**While the game is waiting for you to choose a card, it says so** — **[settled]** since 2026-08-31.
-Your hand is tinted and edged, its cards drift gently, and the hint line says a Timebomb is asking
-for the card it rides on. Until that date the hand showed nothing at all and the prompt was
-unreachable in practice. The tint, the drift and the wording are all **[provisional]** placeholders.
+**A marked card makes its trick a skull trick by the rule that already exists** (section 3): a trick
+is a skull trick if **any** card played into it is skulled, whoever put the skull there. Nothing else
+about the trick changes — the same side takes it, by the same rules.
 
-**Arming a Timebomb and arming a Cheat are mutually exclusive** in the sense that only one loadout
-spend can be waiting for its effect at once: arming either commits the card immediately, and
-a Timebomb's arm additionally reinterprets your very next hand-card tap as a prime rather than a play.
-Their **windows** now differ, though: a Cheat can be spent at any moment you may play a card, a
-Timebomb only between tricks.
+**The mark lasts one trick and then lapses**, whether or not you played the card it was on. It does
+not survive to the next trick, it is not a counter, and there is nothing to take off.
 
-**Playing a primed card changes nothing about the trick itself.** The same side wins it by the same
-rules, and it banks the same. What it adds is a **delayed hit** owed to **whichever side won that
-trick**, paid when the **next** trick resolves, at the figure the primed card's own tier set. Section 7
-states what the trick's own outcome does and what the hit does to your streak, and section 8 states when
-the damage lands.
+#### What a Curse pays — **[provisional]**
 
-**You may Timebomb more than one card in a hand** if you hold more than one — but only **one at a
-time**, one after another, since 2026-08-31. Hits from separate primed tricks still accumulate, on
-either side or on both.
+A Curse also pays into the damage of the trick it is riding, by its tier:
 
-**Once a primed card has been played and its trick resolved, the hit it booked is shown.** The trick
-says who owes it and how much as it resolves, and the hearts the hit has already claimed are drawn
-distinctly on that side's row until it lands (section 8). Before that — while the card is only marked —
-nothing yet owes anything, so there is nothing to show.
+| Tier   | Pays                            |
+| ------ | ------------------------------- |
+| bronze | **+1 damage**                   |
+| silver | **+2 damage**                   |
+| gold   | **+2 damage and +1 multiplier** |
 
-#### A primed card has two tricks to be played, then it goes off in your hand — **[settled]** since 2026-08-31
+Those figures are transcribed from the ticket that built the card and **nobody has played them**.
+They feed that trick's own damage terms exactly as a buff's reward does — the damage joins the base,
+the multiplier joins the multiplier (section 7).
 
-**Once you mark a card, you get the resolution of two tricks to play it.** The bomb shows the count
-on its face and it drops by one each time a trick resolves with the card still in your hand. If it
-is still there when the count reaches zero, **it detonates where it sits, and the damage is yours** —
-the same figure you would take by winning a trick you had marked, which is the smaller half of that
-tier's pair (2, 4 or 6). So you may play the marked card into the next trick or the one after it;
-after that the choice is made for you.
+> **An open reading, and it is the developer's — [open].** The reward is owed on **any trick you
+> bank while a Curse is riding**, not only on the trick the marked card was actually played into. So
+> marking a card and then never playing it earns the bonus with none of the risk the card is priced
+> for. Whether that is what the card is meant to do is a rule decision nobody has taken; the game
+> behaves exactly as written above until someone does. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
 
-The **two** is the developer's own stated figure, which is why the rule is settled rather than
-provisional; whether two is the right number is still a thing only play can answer.
-
-> **The hit is booked, not dealt — so you feel it one trick later.** A bomb going off in your hand
-> queues its damage exactly as a played one does, and every booked hit lands at the following
-> trick's resolution (section 8). That is what makes it cash out your streak, be absorbed by a Blast
-> Guard, and stop at zero without any of those rules being written twice — but it means "two tricks
-> to play it" is really "two tricks, then it goes off, then a beat before you feel it". Whether the
-> hit should instead be immediate is **[open]** and the developer's. **Whether a Blast Guard ought
-> to absorb a bomb going off in your own hand** is inherited from that shared path rather than
-> chosen, and is likewise the developer's.
-
-> **A primed card can still leave your hand without ever being played, and that spend is simply
-> wasted.** The Woodcutter can bury it on the bottom of the draw pile, and the Fox can exchange it
-> into the decree and you may never take it back. **The countdown only runs while the card is in
-> your hand**, so a card that leaves it never goes off. Nothing warns you and nothing refunds you —
-> though you can take the Timebomb back off it and get the card returned to your pile. Recorded
-> under [Known tensions](#known-tensions-recorded-not-resolved).
-
-**A run is guaranteed no Timebombs** — none is seeded on purpose. The shop no longer sells a charge
-at all: that purchase and its uncapped-charges rule are both gone with the plate they belonged to.
-
-> **A run may nonetheless open holding one — since 2026-08-25.** A Timebomb is in the pool the run's
-> four opening cards are drawn from (section 10), so chance can deal you one before your first trick.
-> Every other Timebomb comes from a pull of the machine.
-
-> **Spending a Timebomb now uses it up — since 2026-08-25.** Before this date, arming and priming a
-> Timebomb left its card in your pile, so a single Timebomb could be armed again on the very next
-> trick — and any trick after — for as long as you held it. **Now the specific card you arm leaves
-> your pile once it is spent**, the same rule this date gave Cheat and Shield; holding a second
-> Timebomb still gives you a second use. Reversible per-card via `ACTIVATED_CARD_SINGLE_USE`, the
-> developer's to flip back independently of Cheat or Shield.
+**A run is guaranteed no Curses** — none is seeded on purpose. A run may nonetheless open holding
+one, since a Curse is in the pool the run's opening cards are drawn from (section 10); every other
+Curse comes from a pull of the machine.
 
 ### The Discard, on the bar as **Swap** — swapping cards from hand between tricks
 
@@ -1650,7 +1075,7 @@ and draw the same number blind off the top of the draw pile. Hand size never cha
 the drawn cards is shown before you commit; you find out what you got by looking at your new hand.
 
 **The moment this is available reaches one step further back than every other control on the bar.**
-Cheats and Timebomb only ever open while it is your own turn to act. A discard also opens **before
+A buff card only ever opens while it is your own turn to act. A discard also opens **before
 the Quarry has led** — while you are looking at "What the Quarry holds" and the trick has not yet
 started — so you can throw against the shape you can see rather than against a lead already on the
 table. It is never available mid-trick, and never while a trick's reveal is still on screen.
@@ -1686,7 +1111,9 @@ convention every other control on the bar uses.
 A fight gives you **3** discards, and one throw can hold up to **3** cards. Both figures are the
 developer's, set 2026-08-19, and both are explicitly a first guess rather than a considered choice —
 the design's own instruction for them is "ship it, play it, move it." The budget resets at the start
-of every fight and carries across every hand within it, the same way Cheats and Timebomb charges do.
+of every fight and carries across every hand within it. **Playing a 5 raises both the budget and the
+cap by one, for the rest of that fight** (section 5), and that raise dies at the fight boundary with
+the budget it sits on.
 
 ---
 
@@ -1694,37 +1121,76 @@ of every fight and carries across every hand within it, the same way Cheats and 
 
 **[settled]** — the rules; **[open]** whether they survive a six-card hand, below.
 
-Each named rank does one thing — except two. The odd ranks act during play; the **Treasure (7) and
-the Poison (8) do nothing at all**, and are named cards with no rule attached. Every other even rank
-does nothing either.
+**Every named rank now does something, and rank 8 is the only card left in the deck with a name and
+no rule** — see section 1, where its name is an open question. Every unnamed even rank does nothing.
 
 | Rank | Name           | Effect                                                                                                                                                                                        |
 | ---- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | **Swan**       | If a Swan is in a trick and belongs to the side that **lost** it, that side **leads the next trick**. Two Swans: the loser leads either way.                                                  |
-| 3    | **Fox**        | On playing it, you **may** exchange the decree card for a card from your hand. The exchanged card becomes the new decree, and its suit becomes the new trump suit. You may decline.           |
-| 5    | **Woodcutter** | On playing it, **draw the top card of the draw pile**, then put **one card** from your hand — the drawn card or one you already held — on the **bottom** of the pile.                         |
-| 7    | **Treasure**   | **No effect at all.** A named card with no rule attached.                                                                                                                                     |
-| 8    | **Timebomb**   | **No effect at all.** A named card with no rule attached. It has nothing to do with skulls — **and nothing to do with Timebomb's primed cards** (section 4), a second collision on this name. |
+| 3    | **Fox**        | On playing it, you **may name any suit**; that suit becomes the new trump suit, and the decree plate becomes a marker showing it. **You give up nothing.** You may decline.                   |
+| 5    | **Woodcutter** | For you: your **Swap pile gains one** — both the cap and the Swaps you have left — for the rest of the fight. For the Quarry: it **swaps a card**, and the card it draws may arrive skulled.  |
+| 7    | **Treasure**   | A trick **you were victorious on** that carried a Treasure adds **1** to your base damage for the rest of the fight. A trick that **hurt** you and carried one costs **2** health instead of 1. |
+| 8    | —              | **No effect at all.** A card with no rule attached; see section 1.                                                                                                                             |
 | 9    | **Witch**      | If a trick contains **exactly one** Witch, that Witch counts as trump when the winner is decided. **Two Witches cancel** — neither is treated as trump.                                       |
 | 11   | **Monarch**    | Narrows the follower's legal play — see section 4.                                                                                                                                            |
 
-**Timing.** The Fox and the Woodcutter resolve **the instant the card is played**, before the other
-card is played and before the winner is decided. So if the Fox changes the decree, the **new** trump
-suit decides the **current** trick — as the base game's own appendix specifies.
+#### The 3 empties the decree plate — **[settled]**
 
-**A drawn card is never skulled.** The Woodcutter draws from the pile, and the pile carries no
-skulls — skulls are a property of the deal (section 3).
+The 3 no longer takes a card out of your hand. You name a suit, that suit becomes trump, and the card
+that was on the decree is spent. **The decree can therefore be a bare suit rather than a card**, and
+**no card is ever moved onto the decree.**
 
-**Opening the choice does not commit the card — [settled]; reachable by pointer since 2026-09-02.**
-Playing a Fox or a Woodcutter puts the choice in front of you _before_ the card leaves your hand, and
-you may **back out entirely**: the card returns to your hand unplayed, nothing is drawn, nothing is
-exchanged, and it is still your move.
+**Naming the suit that is already trump is exactly the same as declining** — nothing changes, and the
+game treats the two as one act rather than as two branches that could drift apart.
 
-> This is not the same as declining. **Keeping the decree still plays the Fox** — it takes the trick
-> as an ordinary 3 and leaves the trump alone. Backing out plays nothing at all, and the screen now
-> says so in as many words. Until 2026-09-02 backing out was only reachable with `Escape`, with no
-> visible control offering it, so a player who opened the choice with the pointer had no way out but
-> to play the card.
+#### The 5 does two entirely different things — **[settled]**; the skull chance is **[provisional]**
+
+**Your 5 has no effect on the trick at all.** It raises the Swap pile for the rest of the fight, by
+one — both the cap and the Swaps you have left. That is deliberate: it means playing a 5 can never be
+refused for a full pile. Three of three becomes four of four; nought of three becomes one of four.
+
+**The Quarry's 5 swaps a card.** It gives up the lowest card it holds, draws one, and puts the swapped
+card on the bottom of the pile. **The card it draws may arrive skulled** — with a chance of
+**0.4**, subject to the deal's own "never rank 1" rule (section 3). **That is the only way the
+Quarry's holding of skulls changes mid-hand**, and the shape readout will show it.
+
+The 0.4 is a placeholder nobody has played. **Whose decision:** the developer's.
+
+#### The 7 pays and costs — **[settled]**; both figures are **[provisional]**
+
+A **7 in a trick counts whoever played it** — yours or the Quarry's, it makes no difference.
+
+- A trick that **banked** and carried a 7 adds **1** to the base damage of every trick for the rest of
+  that fight. It stacks, and it dies at the fight boundary — it is not a Whetstone.
+- A trick that **hurt** you and carried a 7 costs **2** health **instead of** the usual 1. It does not
+  add to the hit; it replaces it.
+
+**"Was victorious on" means the outcome, not the act** — so a **Low Victory** earns the base damage
+and a **High Defeat** does not. Section 7 owns that distinction.
+
+> The 7 had no rule at all until this change, and it was the card the "no rule" mark on a card's face
+> was written for. **Nothing in the deck is marked "no rule" today**, because nothing is inert enough
+> to earn it.
+
+**Timing.** The 3 and the 5 resolve **the instant the card is played**, before the other card is
+played and before the winner is decided. So if the 3 changes the trump suit, the **new** suit decides
+the **current** trick — as the base game's own appendix specifies. The 7's two rules are worked out
+when the trick **resolves**.
+
+**A drawn card can be skulled, and that is new — [settled].** It used to be true that the pile
+carried no skulls, so nothing drawn from it could be marked. The Quarry's 5 breaks that: the card it
+draws may be marked as it arrives. A card you draw through a **Swap** is still never marked.
+
+**Opening the choice does not commit the card — [settled].** Playing a **3** puts the suit choice in
+front of you _before_ the card leaves your hand, and you may **back out entirely**: the card returns
+to your hand unplayed, nothing is named, and it is still your move.
+
+> This is not the same as declining. **Declining still plays the 3** — it takes the trick as an
+> ordinary 3 and leaves the trump alone. Backing out plays nothing at all, and the screen says so in
+> as many words.
+
+> **This applies to the 3 alone.** The **5 takes no choice**, so it commits on its second tap like
+> any plain card — there is no prompt to back out of.
 
 ### The named ranks carry a bronze / silver / gold ladder, bought in the shop — **[provisional]**
 
@@ -1736,12 +1202,12 @@ and the shop refuses a third purchase; unlike the Whetstone, rungs do not stack.
 
 | Rank                                                   | Silver                                                                                                                                                                                 | Gold                                                                                               | Status                                                                                                                                                                                                                                                        |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 **Swan**                                             | On a **clean loss** — not an eaten skull — your **roll survives the hit**, and you still lead the next trick. The damage still lands and your total still goes to zero. See section 7. | As silver, and the **total survives too**: nothing cashes, the streak simply carries on.           | **[provisional]** — built, unplayed                                                                                                                                                                                                                           |
+| 1 **Swan**                                             | On a **Low Defeat** — never a High Defeat — your **roll survives the hit**, and you still lead the next trick. The damage still lands and your total still goes to zero. See section 7. | As silver, and the **total survives too**: nothing cashes, the streak simply carries on.           | **[provisional]** — built, unplayed                                                                                                                                                                                                                           |
 | 9 **Witch**                                            | **Two Witches no longer cancel**: yours still counts as trump, the Quarry's does not.                                                                                                  | As silver, and yours also **beats every trump** — it counts as the highest card of the trump suit. | **[provisional]** — built, unplayed                                                                                                                                                                                                                           |
-| 3 **Fox**                                              | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — needs a new choice surface (peek at the draw pile; exchange without giving a card up)                                                                                                                                                       |
-| 5 **Woodcutter**                                       | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — needs a multi-card choice surface (draw 2 or 3, bury 1)                                                                                                                                                                                     |
-| 7 **Treasure**                                         | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — has no printed ability to tier; a coin-paying row invents one                                                                                                                                                                               |
-| 8 **Timebomb** (the rank; `TieredRank.Poison` in code) | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — the drafted row gives rank 8 a delayed hit, which collapses the very distinction this section's own warning above draws between the rank-8 name, the skull, and Timebomb's primed cards. That collision is answered before the row is built |
+| 3 **Fox**                                              | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — its drafted rungs were written against the old exchange rule, which no longer exists                                                                                                                                                        |
+| 5 **Woodcutter**                                       | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — likewise: the rule it would tier is now two different rules, one per side                                                                                                                                                                   |
+| 7 **Treasure**                                         | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — it has a rule to tier now, which it did not when this row was drafted, but nobody has drafted the rungs                                                                                                                                     |
+| 8 (the rank; `TieredRank.Poison` in code)              | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — the drafted row gives rank 8 a delayed hit, and nothing in this game resolves later than the trick that caused it                                                                                                                           |
 | 11 **Monarch**                                         | —                                                                                                                                                                                      | —                                                                                                  | **[not built]** — its gold rung has to survive into the next trick, which nothing carries yet                                                                                                                                                                 |
 
 Every magnitude here is a placeholder and the price is a tuning value; both are the developer's,
@@ -1809,17 +1275,28 @@ in the roll-over damage model written on 2026-08-27 and built on 2026-09-01, and
 is the source this section follows. Where an older design document disagrees, this document follows
 the code.
 
-Every trick resolves into exactly one of four outcomes, decided by two facts: **did you win it**, and
-**was it a skull trick**.
+Every trick resolves into exactly one of four outcomes, decided by two facts: **did you physically
+take the cards**, and **was it a skull trick**.
 
-| You…               | Clean trick (no skull)      | Skull trick                      |
-| ------------------ | --------------------------- | -------------------------------- |
-| **won the trick**  | **Clean win** — you bank it | **You ate the skull** — it hurts |
-| **lost the trick** | **Clean loss** — it hurts   | **Dodge** — you bank it          |
+| You…                        | Clean trick (no skull)             | Skull trick                     |
+| --------------------------- | ---------------------------------- | ------------------------------- |
+| **went high** — took them   | **High Victory** — it banks        | **High Defeat** — it hurts      |
+| **went low** — did not      | **Low Defeat** — it hurts          | **Low Victory** — it banks      |
 
-So the skull **inverts the trick**: on a clean trick you want to win it, on a skull trick you want to
-lose it. Everything in the rest of this section is keyed to the **banked / hurt** column of that
-table, never to who physically took the cards.
+**This table is the whole of the game's vocabulary, and it carries two independent axes.**
+
+- **High** and **Low** say what you did: took the cards, or did not.
+- **Victory** and **Defeat** say what it was worth: it banked, or it hurt you.
+
+The skull **inverts the trick**, which is why the two axes come apart on half the table: on a clean
+trick you want to go high, on a skull trick you want to go low.
+
+**"High" means winning the contest, including by trump** — a 2 of trump that beats a 10 off-suit went
+high. It never means the higher numeral.
+
+Everything in the rest of this section is keyed to the **Victory / Defeat** axis, never to who
+physically took the cards. Everything in section 4 — every buff condition without exception — is
+keyed to the **High / Low** axis, and never names Victory or Defeat.
 
 ### The two figures you are carrying
 
@@ -1832,12 +1309,13 @@ You carry two numbers, and they no longer count the same thing.
 **What you are sitting on — the pot — is `total × roll`.** That is the figure the Quarry takes if you
 cash it, and the figure you lose if you are hurt.
 
-### Banking a trick — a clean win, or a dodge
+### Banking a trick — a Victory, high or low
 
 The trick works out what it is worth, all on its own:
 
 ```
-this trick = (1 + your Whetstones + flat damage from the buffs you fired on THIS trick)
+this trick = (1 + your Whetstones + this fight's Treasure bonus
+                + flat damage from the buffs you fired on THIS trick)
              × (1 + the multiplier points from the buffs you fired on THIS trick
                   + the Overlap Bonus)
 ```
@@ -1854,7 +1332,10 @@ trick 1's figure and is gone; a multiplier card fired on trick 1 multiplies tric
 gone. Nothing pools across a hand any more. **The Overlap Bonus** for firing more than one buff on
 one trick joins that trick's multiplier.
 
-A clean win and a dodge are **identical in every respect** but their name.
+A **High Victory** and a **Low Victory** are **identical in every respect** but their name.
+
+**A banked trick that carried a 7 also earns the fight 1 more base damage**, for every trick after it
+(section 5). That is the `this fight's Treasure bonus` term above, and it stacks.
 
 ### Then you are asked: apply, or roll over — **[settled]** since 2026-09-01
 
@@ -1905,17 +1386,18 @@ nobody has chosen.**
 > holding everything back until the trick before you cash the only sensible line is **unresolved**:
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
-### Being hurt — a clean loss, or eating a skull
+### Being hurt — a Defeat, high or low
 
 Three things happen at once:
 
-1. You take **1 damage**. Always exactly 1, whatever the cards were worth.
+1. You take **1 damage** — or **2**, if a 7 was in the trick (section 5). The Treasure **replaces**
+   the flat hit rather than adding to it.
 2. Your total and your roll both **reset to zero**.
 3. The Quarry takes **nothing at all**.
 
-A clean loss and eating a skull are **identical in every respect** but their name — with one
-exception, added on 2026-09-02: the two protecting cards below tell them apart at bronze, where only
-the eaten skull counts.
+A **Low Defeat** and a **High Defeat** are **identical in every respect** but their name — with one
+exception: the two protecting cards below tell them apart at bronze, where only the High Defeat
+counts.
 
 **There is no consolation.** Until 2026-09-01 a hit paid the Quarry two-thirds of what you were
 holding; it now pays nothing, and a nine-trick streak lost on the tenth trick is worth exactly as
@@ -1985,21 +1467,16 @@ the other.
 > not a whole number above zero is ignored and the bare rule applies. This cannot happen in play, but
 > the figure feeds a health bar, and a spoiled number there would empty a bar with nothing said.
 
-### A tiered Swan survives a clean loss — **[provisional]**
+### A tiered Swan survives a Low Defeat — **[provisional]**
 
-Since 2026-08-24 there is a **second exception** to the three-part rule above, alongside the primed
-trick below, and it is bought rather than played. It fires only when **you** played a Swan into the
-trick and the trick was a **clean loss** — never an eaten skull, never a dodge, and never a trick you
-banked. The Quarry's Swan never fires it.
+There is an **exception** to the three-part rule above, and it is bought rather than played. It fires
+only when **you** played a Swan into the trick and the trick was a **Low Defeat** — never a High
+Defeat, never a Low Victory, and never a trick you banked. The Quarry's Swan never fires it.
 
 - **Silver** — the **roll** survives at the number it already held; the total still goes to zero. You
   still take the 1 damage. The purchase protects the length of the streak, not what it had earned.
 - **Gold** — **both** survive, at the values they already held. You still take the 1 damage: no rung
   insures against health.
-
-This is the primed-trick exception's own shape reached by a different trigger, not a second rule. The
-two can coincide: a trick that is both primed and a clean loss is already costless by the rule below,
-and a gold Swan additionally spares a Timebomb wipe landing on that same trick.
 
 > **The rung got simpler, and slightly better, on 2026-09-01.** It used to interact with two other
 > rules — a two-thirds forced rate and an end-of-hand cash-out — and that interaction produced an
@@ -2010,14 +1487,14 @@ and a gold Swan additionally spares a Timebomb wipe landing on that same trick.
 The rung is bought on the shop's run-permanent shelf at a fixed price in coins — a tuning value, and
 the developer's. The ladder itself is in [section 5](#5-abilities).
 
-**Whose decision:** the developer's — the price, and whether sparing a whole pot on a clean loss is
+**Whose decision:** the developer's — the price, and whether sparing a whole pot on a Low Defeat is
 too strong now that a hit otherwise takes everything.
 
-### Two cards keep a streak figure through a trick that hurt you — **[provisional]** since 2026-09-02
+### Two cards keep a streak figure through a trick that hurt you — **[provisional]**
 
-A third exception to the three-part rule above, alongside the Swan rung and the primed trick, and
-this one is **played rather than bought** — it is a buff card you spend before the trick, dealt by
-the machine like any other (section 4).
+A second exception to the three-part rule above, alongside the Swan rung, and this one is **played
+rather than bought** — it is a buff card you spend before the trick, dealt by the machine like any
+other (section 4).
 
 There are two of them, and each protects one of the two figures:
 
@@ -2027,17 +1504,16 @@ There are two of them, and each protects one of the two figures:
 | **Skull Tether** | your **roll**, at the value it held  |
 
 Whichever figure the card does not name still goes to zero, and **the health always lands**. You
-take the 1 damage on every rung of both cards — nothing here insures against it, which is the same
-line the Swan rungs, the Blast Guard and the primed trick already hold. The Quarry is still paid
-nothing.
+take the damage on every rung of both cards — nothing here insures against it, which is the same line
+the Swan rungs already hold. The Quarry is still paid nothing.
 
 **The tier decides when it fires, and gold pays one point on top:**
 
-- **Bronze** — only when you **ate a skull**: the trick carried a skull and you took it.
-- **Silver** — any trick that **hurt you**: an eaten skull **or** a clean loss.
+- **Bronze** — only on a **High Defeat**: the trick carried a skull and you took it.
+- **Silver** — any **Defeat**: a High Defeat **or** a Low Defeat.
 - **Gold** — as silver, and the figure that survived gains **1**.
 
-**Neither card fires on a dodge.** A dodge banks, so there is nothing there to protect — and a card
+**Neither card fires on a Low Victory.** That banks, so there is nothing there to protect — and a card
 spent on one is wasted.
 
 **They do not stack.** Arming a second copy of the same card on the same trick adds nothing, because
@@ -2062,90 +1538,18 @@ multiply, so it pays nothing you can see.
 >
 > **Whose decision:** the developer's, on all of it.
 
-### A primed trick the Quarry wins cleanly costs you nothing — **[settled]**
+### A Defeat is the only thing that ends a streak — **[settled]**
 
-Since 2026-08-19 there is **one exception** to the three-part rule above, and it is the whole reason
-Timebomb (section 4) is worth buying.
+There is exactly one way your streak can be wiped against your will: a trick that **hurt** you. There
+is no second trigger, nothing lands a trick later, and nothing you played two moves ago can catch
+you.
 
-If a **primed** card was played into the trick **and** the outcome would have been a **clean loss**,
-the outcome is **replaced rather than added to**:
-
-- you take **no damage**;
-- your total and your roll **both survive**, at the values they already held.
-
-You still lose the trick, and the Quarry still leads next. You simply pay nothing for it — and your
-streak carries on as though the trick had not happened. **The Quarry still takes the delayed 4
-damage** when the next trick resolves (section 8).
-
-**The screen says so in its own words.** A trick absorbed this way does not report a broken streak; it
-says nothing changed, and its one exit says your total and roll stand.
-
-**It applies to a clean loss only, and that is deliberate.** A **dodge** is also a trick the Quarry
-won, but a dodge is one you **bank** — so there is nothing there to replace, and treating it as
-replaced would delete a climb you had already earned. A dodge on a primed trick therefore banks
-exactly as it always does, _and_ queues the delayed hit against the Quarry.
-
-**Winning a primed trick is an ordinary win, with no exception at all.** A clean win banks its own
-damage and climbs the roll; **eating a skull still costs you the damage and still wipes your total and
-roll**, on top of the delayed hit landing on you at the next trick. Nothing about Timebomb softens a
-skull you chose to eat — and neither does a Blast Guard, which covers the delayed hit alone.
-
-> **The skull case is the harshest available reading, and no design document covers it.** Timebomb
-> waives only the Quarry-win case; nothing says it should also waive a skull. So a primed trick you win
-> that is _also_ a skull trick costs you the skull's damage now **and** 2 more at the next trick.
-> Confirming that, or deciding the mark should suppress that case too, is the developer's — it is
-> recorded under [Known tensions](#known-tensions-recorded-not-resolved).
-
-> **A dodge on a primed trick is a free bonus, and nobody designed it.** You bank the trick, keep your
-> streak, and the Quarry takes 4 at the next trick — for a card you played expecting to lose with it.
-> It falls out of the two rules above rather than from a decision, and it is recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
-
-### Timebomb landing on you wipes your streak — **[settled]**; the amounts are **[provisional]**
-
-Since 2026-08-19 there is a **second** way your streak can end, and it is not a trick you lost.
-
-When Timebomb you owe (section 4) lands on **you**, it behaves like any other damage you take: you
-lose the health, and your total and roll both **go to zero**. It makes no difference whether you won
-or lost the trick the Timebomb was paid at.
-
-**Since 2026-09-01 it pays the Quarry nothing**, exactly like any other hit. Until then it cashed your
-streak at a reduced rate on its way out; now the pot is simply lost. Timebomb is the case this
-document calls "the moment you cannot choose", and what that costs you is now the whole pot rather
-than a third of it.
-
-- **On a trick you also lost, the two add up.** You take 1 for the trick plus 2 for the Timebomb —
-  **3**, and one wipe, not two.
-- **On a trick you banked, the trick banks first and then the Timebomb wipes it.** So a streak that
-  banks the fifth trick while primed loses that trick's own contribution too.
-- **The Quarry has no equivalent.** Timebomb landing on the Quarry is health and nothing else; the
-  Quarry holds no streak to lose.
-
-**This is why the two amounts differ.** Your 2 is half the Quarry's 4 (both figures and their status:
-section 8) because your side of the hit also takes the streak, which is often worth far more than the
-health (`hybrid-design.md` version-4-scope §1). **That gap widened on 2026-09-01**, because the streak
-it takes is now taken in full.
-
-> **The moment you cannot choose is the whole point.** Every other way your streak can end is
-> triggered by a trick you played into, or is a choice you made at the prompt. This one is triggered
-> by a trick you played **two moves ago**, and it fires whatever you do next. Whether that reads as
-> tension or as an ambush is recorded under [Known tensions](#known-tensions-recorded-not-resolved).
-
-### A Blast Guard buys back the streak, not the health — **[settled]**; its price and the amount it lets through are **[provisional]**
-
-If you are holding a **Blast Guard** (section 10) when your own Timebomb lands on you:
-
-- you still take the **2 damage**;
-- your total and your roll **survive**, at the values they already held;
-- the Guard is **spent** — even if you were holding nothing and there was nothing to save.
-
-It covers that one case and nothing else. **A trick you simply lose still wipes your streak while a
-Guard is held, and does not consume it**; so does eating a skull. A Guard is not a shield against
-damage and never was: a 1-coin item that insured against every hit in the game would remove the reason
-losing a trick matters.
-
-**It does nothing at all when the Timebomb lands on the Quarry**, because that case already costs you
-nothing.
+> **There were two triggers, from 2026-08-19 until 2026-09-03.** A card you marked before playing it
+> booked a hit that landed at the following trick's resolution, on whichever side won that trick, and
+> it wiped a streak whether or not the trick you were on had hurt you. An item bought between fights
+> insured the streak against your own copy of it — never the health. Both are gone. **Everything they
+> made possible is gone with them**: a lost trick that cost nothing, a streak dying on a trick you
+> banked, a hit of 3, and any damage at all arriving from a trick already over.
 
 ### There is no end-of-hand cash-out — **[settled]** since 2026-09-01
 
@@ -2184,7 +1588,7 @@ Both sides hold **health**, and the encounter ends when either total reaches zer
 | ------------------------------------- | --------------------------------------------------------------------------- |
 | Player's starting health              | **10** — **[provisional]** (set 2026-08-14)                                 |
 | Quarry's health                       | **10** — **[provisional]** (set 2026-08-14, with the new bank)              |
-| Damage to the player, per event       | **1**, every time — **[settled]**                                           |
+| Damage to the player, per Defeat      | **1** — or **2** if the trick carried a 7 — **[settled]**; the 2 is **[provisional]** |
 | Health restored on winning a fight    | **None** — **[not built]**, and nothing reads the tunable yet               |
 | Health restored by buying a heal      | **4**, clamped to your maximum — **[provisional]** (DLR-84)                 |
 | Health restored by drinking the flask | **60% of your maximum** — **6** today, clamped — **[provisional]** (DLR-93) |
@@ -2246,8 +1650,14 @@ with the printed ranks adding noise around it.
 
 **[settled]**
 
-Damage is applied **as each trick resolves**, not once at the end. A trick that deals damage moves
-both bars: yours by 1, the Quarry's by the cash-out.
+Damage is applied **as each trick resolves**, not once at the end. Nothing in this game is ever owed
+by a trick that is already over.
+
+A trick that hurts you moves your bar by 1, or by 2 if a 7 was in it (section 5). The Quarry's bar
+moves only when you choose **apply** at the prompt (section 7).
+
+> **"Damage to the player, per event: 1, every time" was a rule of this game and is not any more.**
+> Any readout, projection or measurement that assumes exactly 1 has to stop assuming it.
 
 **An encounter can therefore end on trick 3.** When it does, the hand **stops where it is** — the
 remaining tricks are not played, and the outcome is stated in place of the table.
@@ -2279,10 +1689,11 @@ applied. There is no third row and no tie: both bars cannot be empty at once.
 > 2026-08-19). Both bars were depleted before either was checked, and a tie went to the Quarry. See
 > `hybrid-design.md` §9, which records the reversal rather than the argument for it.
 
-> **It applies to all damage, not only to Timebomb.** The reordering was made for Timebomb's sake and then
-> deliberately generalised, so there is one rule about which bar settles first rather than one per source.
-> Nothing was retuned in response — **no health total, damage figure or Quarry curve moved** — so the game
-> is measurably easier at exactly the moments that used to be fatal. That is a choice, not a side effect.
+> **It applies to all damage, whatever its source.** The reordering was made for one card's sake and
+> then deliberately generalised, so there is one rule about which bar settles first rather than one
+> per source. That card is gone; the general rule survived it. Nothing was retuned in response — **no
+> health total, damage figure or Quarry curve moved** — so the game is measurably easier at exactly
+> the moments that used to be fatal. That is a choice, not a side effect.
 
 **Surplus damage is discarded.** Damage past a depleted bar is not carried, banked, or converted.
 Cashing 36 into a bar with 4 left is exactly the same as cashing 4. **Health is never negative** — a
@@ -2352,95 +1763,17 @@ acceptance criteria are its specification.
 > but the moment of the hit landing over-draws. Unreachable while nothing grants a blue heart, and
 > recorded under [Known tensions](#known-tensions-recorded-not-resolved).
 
-### A primed trick's damage lands at the resolution of the next trick — **[settled]**; its amounts are **[provisional]**
+### All damage lands at the trick that caused it — **[settled]**
 
-One kind of damage does **not** land when the trick that caused it resolves. A primed card
-(section 4) books damage **against whichever side won the trick it was played into**, and that damage is
-paid **as part of the next trick's own damage** instead — folded in, not applied as a second event.
+There is no delayed damage in this game. Nothing is owed by a trick that is already over, nothing is
+queued across a hand boundary, and no bar can move for a reason that is not on the table in front of
+you.
 
-- It hits the **Quarry** if the Quarry won the trick, and **you** if you won it — but **not for the same
-  amount**: **4 against the Quarry, 2 against you.**
-- **Your share cashes out your streak**, exactly as damage from a lost trick does, unless you are holding
-  a Blast Guard. Section 7 states that rule; the Quarry has no counterpart to it.
-- Two primed tricks both land, on either side or on both, and the amounts add up.
-- It goes through the same clamp as every other damage: a bar stops at zero and the surplus is discarded.
-  It is also subject to the Quarry-first ordering above.
-- **It can kill.** A delayed hit that empties a bar ends the fight, and ends the run if the bar was
-  yours — exactly as any other killing blow does.
-- **A primed trick that is the last of a hand carries over**: the hit is paid at the first trick of the
-  next hand, because nothing happens at a hand boundary.
-- **A bomb that goes off in your hand books the same way** — **[settled]** since 2026-08-31. A primed
-  card you never played detonates against **you** when its two-trick fuse runs out (section 4), and
-  that hit is queued exactly as a played one is: it lands at the following trick's resolution, cashes
-  out your streak, is absorbed by a Blast Guard, stops at zero, and can kill. Nothing about it is a
-  second rule; it is this rule, reached by a second route.
-- **If the fight ends before the hit is paid, the queued damage is discarded.** It is never carried into
-  the next fight, and never into the next run. That includes the case where the primed trick's own
-  cash-out is what ended the fight.
-
-**The Quarry's 4** is the same figure as one fight's worth of damage and as the shop's heal,
-deliberately, so Timebomb reads on a scale you already know — it is transcribed from the design doc. **Your
-own 2** is a separate, smaller figure the developer chose on 2026-08-19, halved because your side of the
-hit also takes the streak. Whether 2-and-4 is the right size only shows in play, which is why the amounts
-are **[provisional]** while the timing is settled.
-
-> **The timing moved once already.** Until 2026-08-19 the hit landed at the **deal of the next hand**,
-> which meant it could not interact with a streak at all — a hand boundary already cashes everything.
-> Moving it inside the hand is what gave it teeth. See `hybrid-design.md` version-4-scope §1.
-
-> **Two primed cards in the SAME trick still owe only one hit.** A trick is either primed or it is
-> not; nothing counts how many marked cards were in it. Separate primed tricks do stack. Recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
-
-> **You are shown the hit is coming, but not the moment it lands.** Since 2026-08-23 the health rows
-> draw the hearts a booked hit has already claimed, on whichever side owes it, and the trick that books
-> one names the side and the amount as it resolves — so the damage is no longer a surprise. **What is
-> still unannounced is the landing itself**: at the next trick's resolution those hearts simply break
-> along with everything else that trick took, and your streak goes with them, with nothing naming the
-> cause. On a player bar of 10 that is 20% of your health plus a streak. Recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
-
-**What the bar shows while a hit is booked — [provisional]**
-
-The hearts a booked hit will take are drawn as **standing but claimed**, distinct from both an
-untouched heart and a heart the banked streak merely threatens, and they sit **nearest the depleting
-edge** of the two — Timebomb lands first and cannot be avoided, while a streak preview evaporates if the
-streak breaks. The bar's spoken value states the two figures as separate readings rather than summing
-them. Both bars use it; the streak preview remains the Quarry's alone.
-
-**Since 2026-08-24 the preview accounts for your blue hearts.** A booked hit is taken by blue hearts
-before red ones when it lands, so it is previewed that way too: the claimed pips are blue first, and
-only the part that will reach your red health is drawn on red hearts. Before that the preview showed
-red hearts breaking that a shield would in fact have absorbed — a preview that contradicted what the
-hit would do. Unreachable in play, because nothing grants a blue heart.
-
-It is `[provisional]` for three reasons, all of them the developer's: **whether booked Timebomb deserves
-its own reading at all** rather than reusing the at-risk one was decided by default in an unattended
-run rather than chosen; the tone it is drawn at is a placeholder nobody picked; and **it has never been
-seen on screen** — it is proven by tests, not by looking. Whether the row still separates at a glance
-at the third fight's eighteen hearts, with a streak preview and a booked hit on it at once, is the
-question that decides it. See `hybrid-design.md` version-4-scope §1 for the mechanic; the readout
-itself answers to no design section, because none covers it.
-
-### ~~Applying damage cannot be pressed while Timebomb is pending~~ — **removed**, the two now stack — **[settled]** since 2026-08-25
-
-The design decided (2026-08-19) that **Apply Damage** (section 7) must be **disabled while Timebomb is
-pending**, so a player could not dodge a booked hit by cashing out ahead of it, and from 2026-08-20 to
-2026-08-25 it was enforced: the control was refused while a hit was owed to **either** side, re-checked
-on the confirming second tap. See `hybrid-design.md` version-4-scope §3.
-
-**That rule was reversed outright on 2026-08-25 and no longer exists.** A booked Timebomb and a
-queued Apply Damage payout stacked from then on, settling together in the same trick's resolution.
-**And on 2026-09-01 the control itself was removed** (section 7), so there is nothing left for a
-pending Timebomb to gate: cashing is now a prompt raised after a trick has already resolved, and it
-pays immediately. The Status register carries the row.
-
-> **Since 2026-08-23, the control is refused for one further reason**: an earlier press's payout
-> still owed (**[provisional]**, DLR-109). The full order a refusal is chosen in is: not your move, a
-> card already on the table, an earlier payout still owed, too few action points, then an empty bank.
-> **The "too few action points" clause can no longer fire** — nothing costs points since 2026-08-25 —
-> but it is kept in the order rather than removed, so that turning points back on restores the
-> behaviour rather than needing it rebuilt.
+> **One kind of damage did not land at its own trick, from 2026-08-19 until 2026-09-03.** A card you
+> marked before playing it booked a hit against whichever side won the trick it was played into, paid
+> as part of the *next* trick's damage — 4 against the Quarry, 2 against you, with your share taking
+> the streak. The whole of it is gone: the queue, the fuse, the hearts that previewed it, the item
+> that insured against it, and the rule that a pending hit locked the cash-out.
 
 ### What closing a hand takes
 
@@ -2564,16 +1897,15 @@ design document, not from this section.
 | **Your Cheat slots**                                                        | **Open — since 2026-08-24 inside Apply Buff** rather than beside the decree, and since 2026-08-26 as ordinary buff cards in a `Press` group rather than two bespoke frames. A selected Cheat and an armed one differ in frame as well as tone (section 4). One press further away than they used to be, which is unplayed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Your coins**                                                              | **Open — a plate on the status band**, beside the fight counter, all hand. Also stated on the verdict and throughout the shop (section 10).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | **Both sides' health**                                                      | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The Quarry's row is **named after the opponent** — "Aoife's health" (since 2026-08-17). The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take. **That preview shows the FULL figure and deliberately still does, since DLR-94** — you can realise it on demand, so the full figure is what the streak is genuinely worth to you; the reduced figure sits beside the bank readout instead of competing with this one on the same bar.                                                                                                                                                                                       |
-| **Timebomb booked against either side**                                     | **Open — on the bar that owes it, since 2026-08-23.** The hearts a booked hit has already claimed are drawn distinctly from both untouched hearts and the streak's flashing preview, on **your** row as well as the Quarry's, and the bar's spoken value names the primed figure separately from the at-risk one. The reading is **[provisional]** (section 8).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| **The trick that books a Timebomb hit**                                     | **Stated as it resolves, since 2026-08-23** — which side owes the hit and how much. It is **transient**: the line lives on the held trick and goes when you tap to carry on, so the bar is the durable signal and this is the announcement.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| **The moment a Timebomb hit lands**                                         | **Hidden** — the hearts break and the streak goes with nothing naming the cause (section 8).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Damage owed by an earlier trick**                                         | **Nothing to show.** No damage is ever owed by a trick that is already over (section 8). Three rows sat here from 2026-08-23 until 2026-09-03, showing a booked hit on the bar that owed it, the trick that booked it, and — nowhere — the moment it landed.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **A card you have cursed**                                                  | **Open — on the card itself.** A card you mark with a Curse (section 4) shows the full skull face wherever it renders, exactly as a skull dealt to the Quarry does, and its rank and suit stay readable in the corner. It **never** appears in the Quarry's shape readout, which reports the Quarry's own skulls. Everything about how it looks is **[provisional]**.                                                                                                                                                                                                                                                                                                                                             |
 | **Your action points**                                                      | **Nothing to show since 2026-08-25** — action points were removed from the game, and the two readouts that carried them (the Apply Buff button's figure and the loadout panel's header) went with them. They were open from 2026-08-24 to 2026-08-25, and invisible from the day the pool first cost you something (2026-08-23) until then, which made an unaffordable control read as a control that had simply died (section 4).                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **How many cards you are holding**                                          | **Open since 2026-08-25 — at the top of the Apply Buff panel**, where the action-point pool used to sit, beside how many of them you can use right now. It is the scarcity figure that replaced the pool, now that a card is spent rather than rented (section 4). **Nobody has looked at it.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **The buffs you own**                                                       | **Open since 2026-08-24 — inside Apply Buff.** One line each until 2026-08-26, and **a grid of cards since**: the suit each wants, its tier as a roman numeral, when it pays, its condition and its reward, with copies of the same card stacked into one counted card and anything unusable right now moved to the end in one group carrying the reason (section 4). **The panel opens even when there is nothing in it you can use**, on purpose: reading what you hold is how you plan. Placeholder cards you cannot use are not listed at all. **Nobody has looked at the grid.**                                                                                                                                                                                                                                                                      |
 | **That a cash-out is queued**                                               | **Nothing to show since 2026-09-01** — a cash-out is never queued any more; choosing **apply** at the prompt deals the pot immediately (section 7). It was open from 2026-08-24, under the Apply Damage button.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **Whether an activated buff did anything**                                  | **Open since 2026-09-01, and fully since 2026-09-02.** The apply-or-roll prompt derives the trick's damage one term at a time, naming each buff that paid — and since 2026-09-02 it also names each buff you activated that paid **nothing**, struck through, with what it needed. Before 2026-09-01 nothing named the cause at all: the damage simply came out larger. The one reading available **in advance** is still the per-card `W/L` readout, which includes it.                                                                                                                                                                                                                                                                                                                                                                                   |
 | **The buff surface covering the table**                                     | **The decree and the spent pile can never be hidden, since 2026-08-26** — they sit in their own column of the table and the buff panel sits in another. **The cards already played can be, since 2026-08-27, and that is allowed — [provisional].** The per-card breakdown grows upward from above your hand and may cover the played-cards row while it is open; at a wide screen and at a phone-width one it also **takes the taps meant for the cards underneath**, so the trick is untappable until you move off the panel. Accepted by the developer on the basis that the cost is only paid while you are deliberately reading the breakdown; to be revisited if it gets in the way in play. **Since later the same day the panel is only up while you point at a lit card**, so at rest the table is fully visible — the cost is smaller, not gone. |
-| **A Blast Guard you are holding**                                           | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Your Swap pile's cap**                                                    | **Open — on the Swap control**, which counts both the throws you have left and the cap they are counted against. Playing a **5** raises both by one (section 5).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 **Half a telegraph came back on 2026-08-31 — [provisional].** From 2026-08-26 there was none at all:
 the whole surface was deleted, both the live reading and the speculative one. What now exists is
@@ -2629,12 +1961,13 @@ You begin every run with **twenty-one buff cards in your pile, and every one of 
 - **One Cheat, at bronze**, on top of those twenty. It is the same guaranteed Cheat a run has always
   started with (section 4).
 
-A **Cheat and a Timebomb are in the pool the twenty are drawn from**, so a run can open holding
-**more than one Cheat**, or a Timebomb it did not buy. Nothing else changes about either card.
+**Every activated card is in the pool the twenty are drawn from** — a Cheat, a Curse, a wildcard — so
+a run can open holding **more than one Cheat**, or a Curse, or a wildcard. Nothing else changes about
+any of them.
 
 **Cards bought in the Vault are added on top of these twenty-one**, at the tier you bought them. A
 Vault card of a type that is no longer dealt (section 4) **does not arrive at all**. Beyond that you
-hold nothing else at the start of a run: no items, no blue hearts, no coins, no Blast Guard and no
+hold nothing else at the start of a run: no items, no blue hearts, no coins and no
 Whetstone — the five items of section 4 are not in the pool, so no draw can produce one. Your flask
 is the exception: you begin with **one** charge in it (below).
 
@@ -2648,8 +1981,8 @@ used (section 4); before 2026-08-25 a pile was a rail you re-used, not a supply 
 > really began with **one** usable card, the Cheat (`hybrid-design.md` §5, §8).
 
 > **The repeats are new and deliberate.** The twenty used to be drawn as _distinct_ cards, which is
-> impossible from a thirteen-card pool and is also no longer wanted: three copies of the same Taker is
-> the shape "one fight's ammunition" describes.
+> impossible from a small pool and is also no longer wanted: three copies of the same Bell High card
+> is the shape "one fight's ammunition" describes.
 
 **What is provisional is the shape, not the procedure.** Whether **twenty plus a guaranteed Cheat** is
 the right opening hand — and whether the odds that pick the twenty are right — is the developer's, and
@@ -2763,7 +2096,7 @@ length legible.
   fresh: nothing struck out, and the first opponent current again.
 - **Beating the last Quarry — Diarmuid — ends the run as a win**, and it is stated differently from
   beating any earlier one. In practice you will not see it: see the health curve below.
-- **A Cheat or Timebomb carries from fight to fight exactly as any other buff does** (section 4). One
+- **Every card carries from fight to fight** (section 4). One
   spent in fight one is still gone in fight two; one held is still held. A run is granted exactly one
   bronze Cheat once, at the start; every further one comes only from a pull of the machine.
 - **Your coins carry too**, and nothing takes them away but spending them.
@@ -2962,43 +2295,19 @@ is still 1 coin and a pull is still 1, so a visit currently poses no real choice
 for now rather than overlooked. **Whose decision:** the developer's. See
 [Known tensions](#known-tensions-recorded-not-resolved).
 
-> **Four purchases left the shop on 2026-08-24; two of them left the game with it and two did not.**
-> The **Blast Guard** and the **Whetstone** are still real, still priced, and still work exactly as
-> sections 4 and 7 describe — but nothing currently sells them, so during a run you cannot acquire
-> one. **The Cheat and the Timebomb are a different case, decided the same day (DLR-132): the shop
-> purchase they describe below is gone for good**, not merely unreachable — both are now cards the
-> machine draws (section 4, section 10), so a run can hold either without the shop ever selling one
-> again. This is deliberate: the pared-down shop is meant to be played and judged before Blast Guard
-> and the Whetstone are added back. Recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
+> **Four purchases left the shop on 2026-08-24, and they did not all leave the same way.**
+>
+> - The **Whetstone** is still real, still priced, and still works exactly as section 7 describes —
+>   nothing currently sells it, so during a run you cannot acquire one. It is expected back, and the
+>   pared-down shop is meant to be played and judged first.
+> - The **Cheat** left the shop for good: it is a card the machine draws now (section 4), so a run
+>   can hold one without the shop ever selling one again.
+> - The **Timebomb** and the **Blast Guard** are gone from the game entirely, since 2026-09-03. There
+>   is nothing to sell and nothing to restore a shelf for.
 
 The screen states which opponent is coming next, and shows your **coins** and your **health against
-its maximum**, while you choose. (It showed your action points too, until 2026-08-25.) The readouts for the Guard and Whetstones went
-with the purchases that sold them; your Cheats and Timebombs are read off the loadout panel like any
-other buff, and your health is still visible on the felt.
-
-Everything from here to the end of this subsection describes purchases that are **no longer offered**,
-kept because the Blast Guard's and the Whetstone's own rules are unchanged and both are expected back.
-**The Cheat and Timebomb paragraphs immediately below describe a shop mechanism — a bought slot, a
-bought charge — that no longer exists in any form**; read section 4 for what each card is today.
-
-**Timebomb arrived on 2026-08-19 and was the only thing in the shop costing more than a coin** — twice the
-Cheat, because it is a guaranteed unconditional hit rather than a rule-break you may not need. **It is not
-spent when you buy it**: what you buy is a charge you carry into the fight and spend during a hand.
-
-**There is no cap on Timebomb charges.** Unlike a Cheat, which has nowhere to go once both slots are full,
-you may buy as many as you can afford — so the only refusal it can raise is not having the coins.
-
-**Blast Guard arrived the same day, and it is the first purchase with a duration rather than a use.** It
-is priced level with the heal, because both are a coin against roughly 4 health of value run in opposite
-directions. Three things about it are the rules:
-
-- **It is live for exactly the fight you bought it for** — not the rest of the run, and not until you
-  spend it. Leave the shop, fight, and when that fight ends the Guard is gone whether it fired or not.
-- **You may hold only one at a time.** Buying a second while one is unspent is refused with the reason
-  stated, rather than stacking or silently replacing it (see the refusals below).
-- **It is spent the first time it fires** — the first time your own Timebomb lands on you — and spent even
-  if your bank was empty and there was nothing for it to save.
+its maximum**, while you choose. (It showed your action points too, until 2026-08-25.) Your cards are
+read off the loadout panel, and your health is still visible on the felt.
 
 **The Whetstone arrived on 2026-08-19 and is by some way the most expensive thing in the shop** — four
 coins, against the one coin per fight won at the time. That is deliberate: it was the shop's one real
@@ -3055,29 +2364,27 @@ game has no deck-building layer for those words to mean anything against.
 **You may buy nothing**, and the screen says so. **You may buy more than once in a visit** while you
 still have the coins — two heals in one visit is eight health if you have the room and the money.
 
-**A purchase you cannot make is refused with the reason on the screen**, never silently. Four
-things can refuse one — and the maximum-health raise can only ever be refused by the last of them:
+**A purchase you cannot make is refused with the reason on the screen**, never silently. Three things
+can refuse one — and the maximum-health raise can only ever be refused by the last:
 
-- **Both Cheat slots are full** — a Cheat has nowhere to go.
 - **You are already at full health** — a heal would do nothing at all, so it is not sold to you.
-- **You are already holding a Blast Guard** — only one may be held at a time.
+- **A rank is already at gold** — there is no rung above it to buy (section 5).
 - **You do not have the coins.**
 
-**Only two of those four can actually fire**, because of what is currently on the shelf: full health
+**Only two of those can actually fire**, because of what is currently on the shelf: full health
 refuses a heal, and an empty purse refuses anything. Full health deliberately does **not** refuse the
-maximum-health raise, for the reason given in its own rules above. The other two are the Cheat's and the Guard's own
-caps, and they wait with the items. A third refusal joined them with the rank ladders (section 5) — a
-rank already at gold refuses another rung.
+maximum-health raise, for the reason given in its own rules above. The rank-ladder refusal waits with
+the rungs, which are off the shelf.
+
+> **A fourth refusal existed until 2026-09-03** — you could hold only one Blast Guard at a time — and
+> it went with the item. **A fifth existed until 2026-08-24**: both Cheat slots being full, which
+> went with the slots. Each belonged to one item and to no other.
 
 > **From 2026-08-24 to 2026-08-25 the action-point purchase was on the shelf**, and it had no cap and
 > no refusal of its own: it stacked without limit, so the purse was the only thing that could stop
 > you. It left the shelf when action points left the game.
 
-Each of the first three belongs to **one** item and to no other: a full Cheat slot never refuses a heal, a
-held Guard never refuses a Cheat.
-
-When more than one applies, the shop names the one that will still be true when the money
-arrives — full slots rather than an empty purse.
+When more than one applies, the shop names the one that will still be true when the money arrives.
 
 > **Refusing a heal at full health is this game's own rule, not the base game's and not the
 > ticket's.** It was added deliberately: the clamp already discards overheal, but selling a heal to a
@@ -3085,10 +2392,9 @@ arrives — full slots rather than an empty purse.
 > still costs a coin — only the wholly wasted purchase is refused.
 
 **Leaving the shop starts the next fight**, with everything you bought already in effect: the health
-you healed to, any raised maximum and the full bar that came with it, the Cheats in your slots, the Timebomb charges you hold, any Blast Guard, every Whetstone
-you own, and whatever coins you did not spend. **The Guard is the one purchase that expires**: it lasts
-that fight and no longer. **The Whetstone is at the other extreme** — it survives every remaining fight of
-the run.
+you healed to, any raised maximum and the full bar that came with it, every card in your pile, every
+Whetstone you own, every rank rung, and whatever coins you did not spend. **Nothing on the shelf
+today expires at a fight boundary** — the shop's one fight-long purchase went with the Blast Guard.
 
 ### The machine — where your buff cards come from — **[settled]** since 2026-08-24; its prices are **[provisional]**
 
@@ -3160,8 +2466,18 @@ and returning to the shop. It lays out every buff card you own, with identical c
 one counted pile.
 
 **Two cards may be combined when they are the same card in every respect — the same card and the same
-tier.** Two bronze Moon-Feeders combine. A bronze Moon-Feeder and a bronze Bell-Feeder do not, and
+tier.** Two bronze Moon Low cards combine. A bronze Moon Low and a bronze Bell Low do not, and
 neither do a bronze and a silver copy of the same card.
+
+> **One clause widens that, and it is the wildcard's — [provisional].** **The suits may differ when
+> one of the two cards is wild.** A wild bronze Suit High card combines with a *suited* bronze Suit
+> High card of the same reward, and the card you get is **wild**: wildness absorbs, so it can never
+> be merged away by accident. Where both a wild partner and a suited one are available the suited one
+> is taken, because that leaves you holding more wild cards. Family and reward still have to match —
+> only the suit is relaxed.
+>
+> **A wildcard itself cannot be combined.** Every tier of it converts exactly one card, so merging
+> two would halve your supply for nothing; the screen refuses it with that reason.
 
 - **Two bronze copies become one silver copy of that same card. Two silver become one gold.**
 - **A gold cannot be combined any further**, and the screen says so on the card rather than silently
@@ -3174,10 +2490,37 @@ neither do a bronze and a silver copy of the same card.
   going and what you are getting in the cards' own words, not as "bronze becomes silver".
 - **Nothing splits a card back down a tier.** There is no way to undo a combine.
 
-**Cheat and Timebomb combine on exactly the same rule as any condition card**, and a combined copy is
+**A Cheat and a Curse combine on exactly the same rule as any condition card**, and a combined copy is
 stronger in the way that card's own tier already means: a Cheat's tier is how many tricks it lifts
-follow-suit for, and a Timebomb's tier is the damage pair it carries. The card you get is in every
-way the same object the machine could have dealt you — it stacks with one, and it is worth the same.
+follow-suit for, and a Curse's tier is what it pays into the trick. The card you get is in every way
+the same object the machine could have dealt you — it stacks with one, and it is worth the same.
+
+### Spending a wildcard — **[provisional]**
+
+**Manage Buffs is also where a wildcard is spent.** A wildcard is a card the machine deals, rarely.
+It has no condition, no reward and no use on the felt at all — the loadout refuses it, saying so —
+and its one purpose is to be spent here.
+
+**Spending it on a suited card strips that card's suit condition**, and nothing else. The card keeps
+its family, its tier and the amount it pays; what changes is that it stops naming a suit. A wild
+go-high card pays on going high on **any** suit. The wildcard itself is consumed.
+
+**It is refused on two kinds of target, each with its reason on the tile:**
+
+- **A card that names no suit at all** — a go-low-on-a-skull card, either of the two protecting cards
+  of section 7, a card you press yourself, or another wildcard. There is nothing to take off.
+- **A card that is already wild.** There is no second suit.
+
+**How often the machine stocks a wildcard is a placeholder nobody has chosen**, and two things about
+it are worth knowing before it is set: because wildness absorbs, **one wildcard can seed an entire
+wild line** through combining — so what the weight rations is how many *independent* wild lines you
+can start, not how many wild cards you end up holding. And the machine has no per-card rarity, so a
+low weight makes the card rarely **appear** on a strip, but on a visit where it does appear it is as
+likely as anything else on that strip. **Whose decision:** the developer's.
+
+**All three tiers of a wildcard convert exactly one card.** Whether a higher tier should do more is
+an open design question nobody has answered; the tier is carried rather than ignored so the reels'
+"one gold" readout is not a lie.
 
 **Your pile is the binding resource**, so this is a trade rather than a free upgrade. Nothing on the
 screen argues either way about whether a given combine is worth making.
@@ -3288,26 +2631,22 @@ too, alongside who is coming next.
   plus the quick-kill payout counted from your **unplayed cards** (section 10). Both reward ending a
   fight decisively, but neither reads the damage you overshot by. Deliberately a different mechanic,
   not this one built late.
-- **Anything in the shop that raises the player's damage — MOSTLY BUILT since 2026-08-19.** Two purchases
-  now do it, in different ways. Timebomb deals a flat **4 damage** to the Quarry when the Quarry wins the
-  trick it is played into — a **fixed one-off hit**, not a multiplier on anything. **The Whetstone is the
-  scaling one**: it raises what every taken trick banks, permanently, so it multiplies the whole `n × n`
-  curve rather than adding to it once. The stated intention was that upgrades are what make the payout
-  scale past the early game, and **that half is now built for the bank**.
-  **What is still missing is the multiplier's side of it** — nothing raises the multiplier's climb; a twin
-  to the Whetstone that does is named as the natural next addition (`hybrid-design.md` version-4-scope §1)
-  and is **[not built]**. Timebomb's clean-loss rule and the Blast Guard both still _preserve_ a streak
-  rather than growing one. A
-  card's **value** is one of the four things Forage may edit, and since 2026-08-14 a card's rank
-  decides only who wins a trick — it feeds no scoring at all (section 7).
-- **A price curve or rerolls** — **[not built]**. The shop shows the same **five** things at the same
-  five prices on every visit. **Three items shipped on 2026-08-19** — Timebomb onto the one-time-use shelf,
-  the Blast Guard onto fight-long and the Whetstone onto run-permanent — so **every shelf a player can open
-  now holds something**, and the only empty one is the refused game-permanent shelf below. A **rotating**
-  shelf — a different selection each visit — is still **[not built]** and is a separate idea from the four
-  fixed shelves. **A price that climbs with each copy bought** is the specific version of this that the
-  Whetstone raises, since it is the first item that stacks without limit: there is none, and the flat 4
-  coins is what a second copy costs too.
+- **Anything in the shop that raises the player's damage — PARTLY BUILT.** The **Whetstone** does it,
+  and it is the **scaling** one: it raises the base damage of every banked trick, permanently, so it
+  multiplies the whole `n × n` curve rather than adding to it once. The stated intention was that
+  upgrades are what make the payout scale past the early game, and **that half is built**. (It is off
+  the shelf today — see the shop above.) The **7** does the same thing for one fight, earned by
+  playing rather than bought (section 5).
+
+  **What is still missing is the roll's side of it** — nothing raises how fast the roll climbs; a twin
+  to the Whetstone that does is named as the natural next addition (`hybrid-design.md`
+  version-4-scope §1) and is **[not built]**. A card's **value** is one of the four things Forage may
+  edit, and a card's rank decides only who wins a trick — it feeds no scoring at all (section 7).
+- **A price curve or rerolls** — **[not built]** for the shelf. The shop shows the same things at the
+  same prices on every visit. A **rotating** shelf — a different selection each visit — is
+  **[not built]**. **A price that climbs with each copy bought** does exist, but only on the
+  maximum-health raise (above); the Whetstone, which stacks without limit, is a flat 4 coins for
+  every copy.
 - **Anything at all on the game-permanent shelf** — **[not built]**, and **nothing is designed for it**.
   The shelf is shown and refused precisely so that this gap is visible rather than hidden.
   `hybrid-design.md` version-4-scope §1 explicitly declines to design it yet. **This is not the
@@ -3397,8 +2736,8 @@ Two tables: what the base game had, and what this game itself had until 2026-08-
 | **13-card hands, 13 tricks**      | **Dropped.** Six and six (section 2).                                                                                                                                                               |
 | **Goal cards (16)**               | **Dropped.** A second scoring channel.                                                                                                                                                              |
 | **Special cards (9)**             | **Dropped as cards.** The _unsuited_ concept is kept as the grammar for a Forage suit edit.                                                                                                         |
-| **The Timebomb-8 swap**           | **Dropped entirely.** Rank 8 is an ordinary card that happens to be named — and the skull is a separate marker with no connection to it (section 3).                                                |
-| **The Treasure's point**          | **Dropped.** Rank 7 has no rule.                                                                                                                                                                    |
+| **The rank-8 swap**               | **Dropped entirely.** Rank 8 is an ordinary card with no rule and no name on its face (section 1), and the skull is a separate marker with no connection to it (section 3).                        |
+| **The Treasure's point**          | **Replaced, not dropped.** Rank 7 does not score a point; it pays the fight base damage on a banked trick and costs 2 health on a hurt one (section 5).                                             |
 | **The end-of-round points table** | **Dropped entirely.** Its bands were repurposed into the Standing multiplier, which has since been deleted too (below). Nothing of it survives.                                                     |
 
 ### From this game's own earlier direction — removed 2026-08-13
@@ -3446,6 +2785,33 @@ shape is decided.
 
 One row per rule area. `Where enforced` is a pointer for checking this document has not gone stale —
 the mechanics themselves are documented in `../implementation/`.
+
+> **This register was last swept for stale paths on 2026-09-04, and the sweep was partial — say so
+> rather than trust a row you have not checked.** Five tickets landed on 2026-09-03/04 and the rules
+> above are current; the rows below have been corrected where they name something the code no longer
+> has, but the table is long and a row may have been missed. Four kinds of row are the ones to
+> distrust:
+>
+> - **Anything naming a Timebomb, a Blast Guard or a primed card.** All of it was deleted, including
+>   `src/warCouncil/timebomb.ts`, `RoundState.primedCards`, `EncounterState.pendingTimebomb`,
+>   `RunState.blastGuardHeld` and `PurchaseRefusal.GuardAlreadyActive`. No such row can still resolve.
+> - **Anything naming `playerWon`, `feederCarry`, `feederCarryAfter`, `protectionCoversCleanLoss`, or
+>   a `BuffKind` of `Taker` / `Feeder` / `Sidestep`.** Those are `playerWentHigh`, `lowCarry`,
+>   `lowCarryAfter`, `protectionCoversLowDefeat` and `SuitHigh` / `SuitLow` / `SkullLow`. The four
+>   outcome members are `HighVictory` / `LowVictory` / `LowDefeat` / `HighDefeat`.
+> - **Anything naming `applyFoxExchange`, `applyWoodcutterDraw`, `chooseCpuFoxChoice`,
+>   `chooseCpuWoodcutterChoice`, `InvalidFoxExchangeCard` or `InvalidWoodcutterDiscard`.** All six are
+>   retired; `applyNameTrump`, `applyQuarrySwap`, `chooseQuarrySwapCard` and `chooseCpuTrumpChoice`
+>   are what exist.
+> - **The two carry spec files.** `run.feederCarry.test.ts` and `WarCouncilRound.feederCarry.test.tsx`
+>   are `run.lowCarry.test.ts` and `WarCouncilRound.lowCarry.test.tsx`.
+>
+> **Rows added by those five tickets:** the wildcard (`src/hunt/buffWild.ts`), the Curse
+> (`src/warCouncil/curse.ts` and `CURSE_REWARD` in `src/hunt/buffCatalog.ts`), the 3/5/7
+> (`applyNameTrump` and `applyQuarrySwap` in `src/warCouncil/abilities.ts`, `swapPileAfterWoodcutter`
+> in `src/hunt/swapPile.ts`, `TREASURE_BASE_DAMAGE_STEP` / `QUARRY_TREASURE_DAMAGE` /
+> `QUARRY_SWAP_SKULL_CHANCE` / `WOODCUTTER_SWAP_STEP` in `src/hunt/config.ts`), and
+> `SAVE_SCHEMA_VERSION = 2` in `src/persistence/config.ts`.
 
 > **A note on two file names, 2026-08-20.** `src/hunt/run.ts` was split by DLR-93 when it crossed this
 > project's file-size ceiling. It keeps the run's **shape** — `RunState`, `startRun`, and the
@@ -3954,7 +3320,7 @@ the mechanics themselves are documented in `../implementation/`.
 | After every banked trick, play stops and offers apply or roll over                                                                                                                                           | settled — since DLR-156                                                                                                                                                                                                                                                                          | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.resolution`, set by `commitHandlers.ts`'s `resolutionViewFor` on the null-to-non-null edge of `resolvedTrick`; `WarCouncilRound.tsx` switches the whole viewport on it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Applying deals the pot immediately and zeroes both; rolling over changes nothing                                                                                                                             | settled — since DLR-156                                                                                                                                                                                                                                                                          | `src/warCouncil/pot.ts` — `applyPot`, `incomingFromPot`; dispatched by `src/app/warCouncil/commitHandlers.ts` — `applyPotAction` / `rollOverAction`, both no-ops on a null resolution rather than throws                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | The prompt costs no action points                                                                                                                                                                            | **provisional** — since DLR-156, and a flagged balance change: the cost was removed rather than retuned                                                                                                                                                                                          | nothing — `APPLY_DAMAGE_AP_COST` was deleted; the prompt is mandatory, so charging would tax every banked trick                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **Developer — whether the choice should cost anything at all**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| The streak crosses a hand boundary and is wiped at a fight boundary                                                                                                                                          | settled — since DLR-156                                                                                                                                                                                                                                                                          | `src/hunt/run.ts` — `RunState.streak`; `src/hunt/runTransitions.ts` — `streakAfter` returns `EMPTY_STREAK` once `isEncounterResolved`, exactly as `feederCarryAfter` does; carried down through `WarCouncilMountProps.streak` and back on `WarCouncilRoundResult.streak`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| The streak crosses a hand boundary and is wiped at a fight boundary                                                                                                                                          | settled — since DLR-156                                                                                                                                                                                                                                                                          | `src/hunt/run.ts` — `RunState.streak`; `src/hunt/runCarry.ts` — `streakAfter` returns `EMPTY_STREAK` once `isEncounterResolved`, exactly as `lowCarryAfter` does; carried down through `WarCouncilMountProps.streak` and back on `WarCouncilRoundResult.streak`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | There is no end-of-hand cash-out                                                                                                                                                                             | settled — since DLR-156                                                                                                                                                                                                                                                                          | `src/warCouncil/streak.ts` — `TrickFacts.finalTrick` folds nothing in; `TrickResolution.cashedAtHandEnd` and `bankAdded` were deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | A trick's damage is narrated one term at a time, in a fixed two-row ledger                                                                                                                                   | settled — the procedure; **provisional** — every timing                                                                                                                                                                                                                                          | `src/app/warCouncil/resolutionBeats.ts` — `resolutionBeatsFor`, pure and derived from what the engine already decided; `useBeatSequence.ts` plays it; `ResolutionLedger.tsx` pins the window at two rows and follows by assignment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | **Developer — `--wc-beat`, and whether a whole screen six times a hand wears out**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Every card that changes place travels there — the played card, the Quarry's, the deal, the draws, the discards and the piles                                                                                 | settled — the procedure; **provisional** — every timing                                                                                                                                                                                                                                          | `src/app/warCouncil/useCardMotion.ts` — the one primitive, with an idempotent `land()` reachable from `onfinish`, a timer and `visibilitychange`, so a backgrounded tab cannot strand the hand; `cardPlacement.ts`/`cardMotionPlan.ts` decide which cards moved and in what order; under `prefers-reduced-motion` every movement reaches its end state at once                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | **Developer — all six values in `src/app/warCouncil/warCouncilMotion.css`, and the pile-collapse threshold**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -3970,7 +3336,7 @@ the mechanics themselves are documented in `../implementation/`.
 | A rank is bought twice at most, and rungs do not stack                                                                                                                                                       | settled — since DLR-122                                                                                                                                                                                                                                                                          | `src/hunt/shop.ts` — `refusalFor` returns `PurchaseRefusal.RankAtMaxTier` before the coin check; `src/hunt/rankTiers.ts` — `steppedTo` throws past gold                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | A bought rung applies to the player's copies only                                                                                                                                                            | settled — since DLR-122                                                                                                                                                                                                                                                                          | `src/warCouncil/rankTierRules.ts` — `tierForSide` returns bronze for any side that is not the player, before the table is read; it is the only route to a tier anywhere in `src/warCouncil/`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | **Developer — whether the deck is allowed to be asymmetric at all**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | A tiered Swan spares the roll (silver) or both figures (gold) on a clean loss                                                                                                                                | **provisional** — since DLR-122, built and unplayed                                                                                                                                                                                                                                              | `src/warCouncil/streak.ts` — `resolveTrickBank` gates both on a CleanLoss outcome, so an eaten skull is excluded by the rule rather than by the caller, and folds gold-implies-silver in itself                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **Developer — the price, and whether sparing a whole pot is too strong now a hit takes everything**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| A Skull Helmet keeps the `total` and a Skull Tether keeps the `roll` through a trick that hurt the player — bronze on an eaten skull only, silver and gold on any hurt trick, gold adding 1 to the surviving figure; they do not stack, and the health always lands | **provisional** — since DLR-161, built and unplayed; the stocking weights, the AP price base and the gold `+1` are all unchosen | `src/hunt/buffProtection.ts` — `streakProtectionFor` folds a trick's fired buffs with `Math.max` rather than a sum, and `protectionCoversCleanLoss` is the single statement of the silver/gold widening, read by both the evaluator and the card face; `src/hunt/buffEvaluation.ts` — the two `buffFires` cases; `src/warCouncil/streak.ts` — `resolveTrickBank`'s reset block, rewritten as two independent `keepsTotal`/`keepsRoll` guards so one figure can survive without the other, with `damageToPlayer` computed above it and untouched | **Developer — every figure: the two families' stocking weights, the protective axis's `REWARD_BASE` and `CONDITION_MODIFIER`, and whether the gold `+1` is the right size** |
+| A Skull Helmet keeps the `total` and a Skull Tether keeps the `roll` through a **Defeat** — bronze on a **High Defeat** only, silver and gold on any Defeat, gold adding 1 to the surviving figure; they do not stack, and the health always lands | **provisional** — since DLR-161, built and unplayed; the stocking weights, the AP price base and the gold `+1` are all unchosen | `src/hunt/buffProtection.ts` — `streakProtectionFor` folds a trick's fired buffs with `Math.max` rather than a sum, and `protectionCoversLowDefeat` is the single statement of the silver/gold widening, read by both the evaluator and the card face; `src/hunt/buffEvaluation.ts` — the two `buffFires` cases; `src/warCouncil/streak.ts` — `resolveTrickBank`'s reset block, rewritten as two independent `keepsTotal`/`keepsRoll` guards so one figure can survive without the other, with `damageToPlayer` computed above it and untouched | **Developer — every figure: the two families' stocking weights, the protective axis's `REWARD_BASE` and `CONDITION_MODIFIER`, and whether the gold `+1` is the right size** |
 | A tiered Witch survives the two-Witch cancellation (silver) and outranks every trump (gold)                                                                                                                  | **provisional** — since DLR-122, built and unplayed                                                                                                                                                                                                                                              | `src/warCouncil/resolveTrick.ts` — `resolveTrickWinner`'s third parameter, defaulted to bronze; both predicates test the player's side before the tier. `cpuPlayer.ts`'s two heuristic calls evaluate at bronze deliberately                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | **Developer — whether a Quarry that misjudges a gold Witch is flavour or a defect**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | The roll, and its reset                                                                                                                                                                                      | settled                                                                                                                                                                                                                                                                                          | `src/warCouncil/streak.ts` — `resolveTrickBank`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | One statement of what a streak is worth                                                                                                                                                                      | settled — since DLR-94 as `cashValue`, renamed `potValue` by DLR-156                                                                                                                                                                                                                             | `src/warCouncil/pot.ts` — `potValue`; there is now exactly one cash-out, so the question it settled can no longer arise                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -4101,8 +3467,8 @@ the mechanics themselves are documented in `../implementation/`.
 | Activating a buff — two taps, and the card is spent                                                                                                                                                          | settled — the two taps since DLR-114; **that using a condition card removes it from the pile** since DLR-145, 2026-08-25                                                                                                                                                                         | `src/hunt/consumables.ts` — `CONDITION_CARD_SINGLE_USE` (Taker/Feeder/Sidestep, all `true`), a sibling of DLR-142's `ACTIVATED_CARD_SINGLE_USE`, both read only by `isConsumableItem`; `src/hunt/buffActivation.ts` — `activateFromPile`, which spends the card and records it on `BuffActivationState.spentThisTrick` so it still fires at this trick's resolution; the two-tap stage is `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | **Developer** — whether every card should be single-use; it is one `false` per card type to revert                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | A card spent on a trick still fires at that trick's resolution                                                                                                                                               | settled — since DLR-145, 2026-08-25                                                                                                                                                                                                                                                              | `src/hunt/buffActivation.ts` — `BuffActivationState.spentThisTrick`, appended by `activateFromPile` and cleared by `openBuffWindow` and `refreshBuffsForNewHand` on exactly the edges that clear `activatedThisTrick`. Read by unioning it with the offered pile in `src/app/warCouncil/buffRoundState.ts` — `buffHandInputFor` and `firedOncePerHandIds`, and again in `src/sim/playHand.ts`. Without it a spent card pays nothing, silently                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Which card types can be dealt at all (5 of 13 conditions, 3 of 5 reward kinds)                                                                                                                               | settled — since DLR-145, 2026-08-25; **provisional** — whether the cut is the right one                                                                                                                                                                                                          | `src/hunt/buffTemplates.ts` — `TEMPLATE_FAMILIES` (Taker, Feeder, Sidestep) and the narrowed `MintableConditionKind` / `MintableRewardAxis` types on `ConditionBuffTemplate`, which make a cut family or a cut axis **unconstructible** rather than merely unweighted. `BUFF_TEMPLATES` is **18** since DLR-161, 2026-09-02 (6 Taker + **6** Feeder + 2 Sidestep + 1 Skull Helmet + 1 Skull Tether + Cheat + Timebomb). It was **13** between DLR-145 and DLR-150, and **16** between DLR-150 and DLR-161 — the Feeder family's Momentum row came back once the carry stopped a Loss-fired multiplier being wiped by that loss's own reset, and DLR-161 added the two protective families, each holding exactly one template because each has exactly one reward axis. The eight cut families keep their `BuffKind` member, their `CONDITION_MODIFIER` price, their `buffFires` case and their `BUFF_CADENCE` row; `coins` and `apRefund` keep their `REWARD_BASE` / `REWARD_TIER_VALUE` ladders. Pinned by `src/sim/__tests__/reachability.test.ts`                                                                                                                               | **Developer** — whether the cut is right, and whether any of the eight should return. Restoring one is a `TEMPLATE_FAMILIES` row                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| A card that pays you for losing banks its reward for the next hand — **and the bank now pays nothing**                                                                                                       | **provisional** — since DLR-150, 2026-08-27; the carry is still earned, carried and shown, but DLR-156 removed the hand-long pool it was spent through, so nothing reads it. Restoring it means deciding where a carried-in bonus lands in the new per-trick bracket, which is a design decision | **Developer — where a carried bonus should land now**, and the size of the bank, and whether the opening figure should be persistent or a hand-start flourish                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `src/hunt/buffAccrual.ts` — `BuffCarry`, `accrueCarry` (uncapped, and it throws rather than accruing zero on an axis that cannot carry), `carriedIn`/`carryOut` on `BuffBonusAccrual`, `startHandAccrual(carriedIn)` seeding the new hand's two spendable figures, and the Feeder-only branch in `resolveFiredBuffs`. The Loss/Win answer is supplied by `src/warCouncil/streak.ts` as `!isTaken(outcome)` and is never re-derived. `src/hunt/run.ts` — `RunState.feederCarry`, seeded empty by `startRun`; `src/hunt/runTransitions.ts` — the private `feederCarryAfter`, which wipes it on a resolved encounter. Pinned by `src/hunt/__tests__/buffCarry.test.ts` and `run.feederCarry.test.ts` | **Developer** — the size of the bank, whether the win-a-trick card should bank on a losing trick too, whether the overlap bonus should follow the trick's outcome, and whether the multiplier version needs its own ladder                                          |
-| Both halves of the bank are on the streak readout — **naming a figure that pays nothing**                                                                                                                    | settled — since DLR-150, 2026-08-27; the **wording, colours and glyphs** are provisional                                                                                                                                                                                                         | `src/app/warCouncil/BankMeter.tsx` — the `carriedIn` / `carryOut` display-only props and their two lines, both folded into the section's existing accessible name and deliberately **not** into the cash-out figures; styled by `src/app/warCouncil/warCouncilBankMeter.css`. Pinned by `src/app/warCouncil/__tests__/BankMeter.test.tsx` and `WarCouncilRound.feederCarry.test.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | **Developer** — every word, colour and glyph, and whether the opening figure should be persistent or a one-off flourish                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| A go-low card banks its reward for the next hand when the trick hurt you — **and the carry now pays nothing**                                                                                                       | **provisional** — since DLR-150, 2026-08-27; the carry is still earned, carried and shown, but DLR-156 removed the hand-long pool it was spent through, so nothing reads it. Restoring it means deciding where a carried-in bonus lands in the new per-trick bracket, which is a design decision | **Developer — where a carried bonus should land now**, and the size of the bank, and whether the opening figure should be persistent or a hand-start flourish                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `src/hunt/buffAccrual.ts` — `BuffCarry`, `accrueCarry` (uncapped, and it throws rather than accruing zero on an axis that cannot carry), `carriedIn`/`carryOut` on `BuffBonusAccrual`, `startHandAccrual(carriedIn)` seeding the new hand's two spendable figures, and the Suit-Low-only branch in `resolveFiredBuffs`. The Defeat/Victory answer is supplied by `src/warCouncil/streak.ts` as `!isTaken(outcome)` and is never re-derived. `src/hunt/run.ts` — `RunState.lowCarry`, seeded empty by `startRun`; `src/hunt/runCarry.ts` — `lowCarryAfter`, which wipes it on a resolved encounter. Pinned by `src/hunt/__tests__/buffCarry.test.ts` and `run.lowCarry.test.ts` | **Developer** — the size of the carry, whether the go-high card should bank on a Defeat too, whether the overlap bonus should follow the trick's outcome, and whether the multiplier version needs its own ladder                                          |
+| Both halves of the low carry are on the streak readout — **naming a figure that pays nothing**                                                                                                                    | settled — since DLR-150, 2026-08-27; the **wording, colours and glyphs** are provisional                                                                                                                                                                                                         | `src/app/warCouncil/BankMeter.tsx` — the `carriedIn` / `carryOut` display-only props and their two lines, both folded into the section's existing accessible name and deliberately **not** into the cash-out figures; styled by `src/app/warCouncil/warCouncilBankMeter.css`. Pinned by `src/app/warCouncil/__tests__/BankMeter.test.tsx` and `WarCouncilRound.lowCarry.test.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | **Developer** — every word, colour and glyph, and whether the opening figure should be persistent or a one-off flourish                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | A Vault card of a type that is no longer dealt does not arrive                                                                                                                                               | settled — the behaviour predates DLR-145 (DLR-113); DLR-145 is what made it reachable                                                                                                                                                                                                            | `src/hunt/buffTemplates.ts` — `templateById` returns `undefined` for a cut id, so `mintGrants` skips it and `src/vault/vaultEconomy.ts` — `oddsBoostRefusalFor` / `startingTierRefusalFor` refuse a purchase against it; `src/vault/` — `reconcileVault` drops it and counts it. No persisted shape, field or key changed and `SAVE_SCHEMA_VERSION` did not move                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | **Developer** — nothing corrupts, but Vault currency already spent on a cut card is gone. Clearing saved data avoids the confusion                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | A condition buff can be taken back off the trick; an Activated card cannot — **except a Timebomb, since DLR-154**                                                                                            | **settled** — since DLR-153, 2026-08-27, widened by DLR-154, 2026-08-31; **provisional** — that the returned card goes to the END of the pile rather than its old place                                                                                                                          | `src/hunt/buffActivation.ts` — `isRevocableBuff` (a frozen set, `REVOCABLE_BUFF_KINDS`, of `Taker`/`Feeder`/`Sidestep`/`Timebomb`, the single statement of what may come back) and `deactivateFromPile`, which refunds through `src/hunt/actionPoints.ts` — `refundAp`, drops the id from `activatedThisTrick` and the buff from `spentThisTrick`, and appends the card to the pile only when `spentThisTrick` says it actually left. It throws rather than clamping; `src/app/warCouncil/buffHandlers.ts` — `handleRemoveBuff` is the guard that keeps the throw off a render, dispatched by `RoundUiActionKind.RemoveBuff`                                                                                                                                                                                                                                                                                                                                               | Developer — whether the card should return to its old place in the pile, and whether the poise tap still earns itself now that a commit can be undone                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Activating a buff asks for no card — it rides the trick                                                                                                                                                      | settled — the behaviour predates DLR-153; DLR-153 is what made it legible                                                                                                                                                                                                                        | `src/hunt/buffActivation.ts` — `activateBuff` takes no card argument, and no refusal about choosing one exists anywhere in `src/`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -4217,390 +3583,56 @@ the mechanics themselves are documented in `../implementation/`.
 | A refused discard states its reason                                                                                                                                                                          | settled — since DLR-100                                                                                                                                                                                                                                                                          | `src/warCouncil/discard.ts` — `DiscardRefusal`, `discardRefusalFor`; worded by `src/app/warCouncil/labels.ts` — `DISCARD_REFUSAL_MESSAGE`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Developer — the wording                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Snare (in-hand edits)                                                                                                                                                                                        | **open**, blocked                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Needs a cost before it's viable                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
-### The redesign landed whole — DLR-80 closed 2026-08-13
-
-**What a player does now that they did not before:** deal six cards instead of thirteen; read which of
-the Quarry's cards are skulled before committing; dodge a skull deliberately; watch a bank and a
-streak climb; and take damage — or deal it — several times within one hand rather than once at the
-end.
-
-**What is gone:** the declaration and its gate, both Standing tables and their four bands, rank
-inversion, the Lose-path pile swap, Spoils and the capture piles, damage rounding, pending damage,
-and the once-per-Hunt damage application with its confirmation press. All of it is deleted from the
-code, not deferred.
-
-**Engine and screen landed together.** There is no rule in this document that is enforced but
-unreachable, and none reachable but unenforced — which is the first time that has been true since
-this file was written.
-
-**Five things the developer owns**, none blocking, all named in their sections above: the Quarry's
-health placeholder, the skull rank distribution, whether the Quarry should avoid _leading_ skulls,
-whether a skull should survive changing hands, and whether rank 8 keeps the name "Poison".
-
-### The Quarry's power was removed — DLR-81, 2026-08-13
-
-**What a player does now that they did not before:** follows the Quarry's lead with **every card of
-that suit legal**, rather than only their Swan or their highest of it. The narrowing survives on a
-led rank 11 alone, and binds both sides.
-
-**What is gone:** the Quarry's whole-hand narrowing, and the rule sentence the dossier panel printed
-to describe it. A character is now a name and a trick count. Nothing in the engine reads which
-character you are facing.
-
-**Deferred, not deleted.** Powers are intended for a final boss and will be designed then. See
-[What this game does not have](#the-quarrys-character-power--removed-2026-08-13-deferred-not-deleted).
-
-### The skull rank curve landed — PT-001, 2026-08-14
-
-**What a player does now that they did not before:** reads the shape readout knowing that a skull is
-far likelier to be sitting on a mid-rank card than on a 10 or an 11. Nothing about the _procedure_
-changed — no new decision point, no new legal-move constraint — but **the game plays differently from
-the moment this landed**, because which cards carry skulls moved.
-
-**What is gone:** the separate "never below rank 2" constant. That rule is now rank 1's zero weight in
-every curve, which makes it hold for any curve added later rather than only for the current one.
-
-**Engine only, and that is complete.** The curve is a deal-time property; nothing about it is shown,
-and nothing should be — the shape readout still shows suit and count and never a rank
-([section 3](#what-you-are-shown-and-what-you-are-not)). There is no unreachable rule here.
-
-**What the developer owns:** whether hump is the right curve, and whether its weights want moving.
-Both answer only to playing. Reverting to an even spread is a one-line change.
-
-### The bank started counting tricks — PT-002, 2026-08-14
-
-**What a player does now that they did not before:** nothing procedurally — no new decision point, no
-new legal-move constraint, no new phase. **What changed is what a decision is worth.** The payout for
-a streak is now readable off the trick count alone (`n × n`: 1, 4, 9, 16, 25, 36), where it used to
-depend on which cards happened to be in the tricks you took. A player can call their next cash-out
-before it fires, which they could not do the day before.
-
-**What is gone:** card values, as a concept. Nothing in this game reads a rank except to decide who
-wins a trick. Rank inversion had already gone at DLR-80; the printed-rank sum was the last thing that
-made a card worth more than another, and it is now the case that a 2 and an 11 are worth the same to
-your bank.
-
-**Engine and screen landed together.** The readout was relabelled in the same contract — "Tricks ×
-Multiplier" rather than "Bank × Streak" — and the four outcome messages no longer say "Both cards
-banked". No rule here is enforced but unreachable, or reachable but unenforced.
-
-**The Quarry's health came down with the payout**, 400 → 10, because a hand's damage fell from about
-84 to about 7 ([section 8](#8-damage-and-the-duel)). That figure is knowingly generous and is
-the developer's to move.
-
-**What the developer owns:** whether `n × n` feels better than the rank sum (below), whether 10 is
-the right Quarry health, the placeholder wording on the readout, and whether the engine's `bank`
-field should be renamed now that it holds a trick count.
-
-### The run landed — DLR-82, 2026-08-15
-
-**What a player does now that they did not before:** plays a **second and third fight**. Beating a
-Quarry no longer ends the session with a sentence — it takes you into a tougher opponent on the
-health you have left, and that health is never given back. Losing at any point ends the run rather
-than the encounter. There is now a difference between winning a fight and winning **the run**, and
-the game says which happened.
-
-**What is gone:** the felt's terminal panel. When a bar emptied, the screen used to show a tally
-table with a one-line outcome message and no control — and that branch sat _ahead of_ the
-resolved-trick reveal, so the trick that ended a fight was never shown at all. Both are fixed by the
-same deletion: the deciding trick now gets its beat, and one tap reaches the verdict where two were
-needed before.
-
-**Engine and screen landed together.** Every rule in [section 10](#10-between-hands-and-the-run)
-that is not marked **[not built]** is reachable by playing.
-
-**What the developer owns:** the three health values (10, 14, 18 — the shape is fixed, the numbers
-are not), every word of the verdict's copy, whether the headline actually reads as unmissable, and
-whether losing the felt's hand tally at the end of a fight costs anything worth restoring.
-
-**One thing was deliberately left unwired.** `ENCOUNTER_PLAYER_RESTORE` still has no consumer, and
-the ticket forbade adding one — a between-fight heal is the flask's job, and the flask is not
-designed. The run being hard is not a reason to wire it in.
-
-### The Cheat landed — DLR-83, 2026-08-16
-
-**What a player does now that they did not before:** **refuses a trick they had no legal way to
-refuse.** Follow-suit could not be broken by anything, at any price, so a hand that dealt you one
-card of the led suit made your next move for you. You now hold two Cheats, and arming one makes your
-whole hand legal for exactly one card.
-
-**It is the first thing in this game the player can do and the Quarry cannot.** Every rule until now
-bound both sides identically — that was the whole point of removing the Quarry's power
-([section 9](#9-the-quarry)) — and this deliberately breaks the symmetry in the player's favour
-rather than the opponent's.
-
-**What is gone:** nothing. No rule was removed, no reason code retired, and with both slots empty the
-game plays exactly as it did the day before — the bypass is an argument nobody passes.
-
-**Engine and screen landed together.** The slots are on the felt beside the decree, the two-click arm
-is on the card itself, and the strongest signal that a Cheat is live is the hand fan un-greying.
-
-**What the developer owns:** how many Cheats a run starts with (2 when this shipped; **set to 0 on
-2026-08-17**), every word of
-the new copy, the slots' size and spacing, whether arming feels like a detour now the slots sit by
-the decree rather than by the hand — and the design question the ticket itself raised and deferred:
-**whether holding a Cheat changes how a hand is played before it is spent.**
-
-### The economy landed — DLR-84, 2026-08-16
-
-**What a player does now that they did not before:** **spends something.** Every decision in this
-game until now was made with cards you were dealt; beating a Quarry now pays a coin, and between
-fights you choose what to do with it. It is also the first time the player chooses **whether to see
-a screen at all** — the shop is opt-in, and continuing past it is a decision the game will question.
-
-**It is the first answer to a run the player was expected to lose.** DLR-82 shipped a health curve
-its own ticket predicted losing around fight three, and named the shop as the answer rather than a
-bigger health bar. Half of that answer now exists — 4 health for a coin, against a fight costing
-about four — and **the curve was deliberately not retuned**, so whether it is enough is now
-measurable rather than argued.
-
-**What is gone:** nothing. No rule was removed and nothing was deferred to make room. The verdict's
-single `Next fight` control became a `Continue` / `Shop` pair, and the words "Next fight" moved to
-the shop's own leave button where they are literally true.
-
-**Engine and screen landed together.** Every rule in
-[section 10](#10-between-hands-and-the-run) that is not marked **[not built]** is reachable by
-playing, and every purchase, refusal and carry was confirmed in a running browser.
-
-**One rule here is this game's own and appears in no ticket:** a heal at full health is **refused
-with a reason** rather than sold and discarded. The clamp already throws away overheal; taking a
-coin for a purchase that provably does nothing is a different thing, and it is the developer's to
-overturn.
-
-**What the developer owns:** every price and the payout (all four transcribed, none derived —
-and the ticket's own warning stands, that **buying Heal every single visit means the Cheat is
-mispriced, not uninteresting**), whether 4 health a fight is the right size of answer, whether the
-`Continue` / `Shop` pair reads at a glance, whether the warning is a safety net or a nag, whether
-`Escape` in the shop should really start the next fight, and every word of the new copy.
-
-### The run got a shape — DLR-85, 2026-08-17
-
-**What a player does now that they did not before:** **sees where they are going.** Until now the run's
-length was a number on a status band — "Fight 1 of 3" — and the opponents were anonymous. The game now
-opens on the whole path, drawn: twenty ticks and five blocks in the order you will meet them, everyone
-named, the goal stated in words, and one button that names who is first. The path is reachable again
-between every fight, with what you have beaten struck out and still on it.
-
-**The run went from three fights to twenty-five**, and that was a deliberate widening of the ticket's own
-scope, taken on the developer's ruling: the map exists to make the run's shape legible, and a three-node
-path shows no shape. Four ordinary opponents then a stage boss, five times over, closing on Diarmuid.
-
-**Naming spread to four surfaces in one pass**, because a named map beside an unnamed verdict reads as two
-different games — the verdict headline, the verdict's forward control, the shop's leave button and the
-fight counter all name the opponent now.
-
-**What is gone:** the word "Continue" from the verdict's forward control, which now reads `Fight <name>`.
-No rule was removed and nothing was deferred to make room.
-
-**Engine and screen landed together.** Every rule in
-[section 10](#10-between-hands-and-the-run) that is not marked **[not built]** is reachable by playing —
-the start screen, the map, the naming, and the return to the start screen on a loss were all confirmed in
-a running browser, including a run played to a real loss and restarted.
-
-**One structural rule is worth carrying forward:** the run's sequence has **one source**,
-`RUN_ENCOUNTERS`, and the health array is a projection of it. That is why growing the run from three
-fights to twenty-five needed no test to change. The stages are **derived from where the bosses sit**, so
-neither a stage count nor a per-stage figure appears anywhere in the code.
-
-**Two things did not land, and both are on the record rather than hidden.** The run was **not winnable**
-on this curve as measured at the time, so `YOU WIN` could not be reached by playing — DLR-82's ruling
-that the answer is the shop rather than a bigger health bar stood. And **the path does not fit a
-viewport narrower than about 1088px**: it is cropped rather than scrolled, silently, which is the
-first acceptance criterion in this epic to ship unmet.
-
-> **The first of those was overturned on 2026-09-02, with no change to the curve.** The run clears
-> 26.6–32.4% of the time when played well; the measurements behind the original claim were of a
-> simulated player, not of the game. Section 10 carries the correction.
-
-**What the developer owns:** the boss health multiplier (the one number in the change nobody chose) and
-whether a formula is the right shape for twenty-five health figures at all; the fix for the crop — a
-smaller name size, a steeper name angle, or letting the path scroll sideways; every word of the new copy,
-including whether `Fight Aoife` or `Begin run` is the right thing on the start screen and whether
-"Aoife defeated" still lands as a win; whether the map earns the extra click; whether five stages of four
-ticks and a block read as five stages **without counting**; and whether the two coexisting rosters are
-tolerable for a release.
-
-### The shop got its shelves — DLR-89, 2026-08-18
-
-**A rearrangement, not a rule change.** The shop's two items were laid out on a **four-shelf ladder
-sorted by how long a purchase lasts** — one-time use, fight-long, run-permanent, game-permanent — browsed
-one shelf at a time. The Cheat is on one-time use, the shelf you arrive on. Fight-long and run-permanent
-are empty and say so. Game-permanent cannot be opened and states "Coming soon.". The heal left the
-shelves entirely for its own "Also for sale" block, because an instant transfer has no duration to sort
-on.
-
-**Nothing a player can buy, pay, or be refused changed**, and that was the constraint the whole ticket
-was built around: the eleven existing shop-screen specs pass **unedited**, which is the evidence. What
-changed is what the shop _looks like it will become_ — the empty shelves are the point, not a gap, and
-the refused fourth one exists so that the finished shape reads before the items that fill it do.
-
-Two decisions worth recording. **The four names are this game's own** rather than Balatro's deck /
-Joker / consumable, because there is no deck-building layer here for those words to sort against. And
-the refused shelf is **marked out but still reachable by keyboard** rather than genuinely disabled: a
-truly disabled control leaves both the tab order and the arrow keys, so the one shelf whose entire job
-is to announce that something is coming would never reach the player it is announcing to.
-
-**What the developer owns:** every one of the four shelf labels, the "Coming soon." and "Nothing on this
-shelf yet." sentences, and the "Also for sale" heading — all placeholder copy; whether the refused shelf
-should be genuinely `disabled` instead (reversible in one attribute); whether the open shelf should stay
-selected when you leave and come back (it does not today); how much of a shelf is visible before it
-scrolls; and **whether the screen still reads well now it is the tallest it has ever been** — the fix
-for it fitting was a real defect fix, but the resulting tightness is an eye question.
-
-### Timebomb landed — DLR-90, 2026-08-19
-
-> **Read this as a record of what DLR-90 shipped, not as the rules.** DLR-91 retimed the hit to the
-> resolution of the **next trick**, split the amount (**4** to the Quarry, **2** to the player), and made
-> the player's share **cash out the streak**. Sections 4, 7 and 8 above are current; this section is not.
-
-**The first effect in this game that resolves later than the thing that caused it.** A third shop item at
-2 coins buys a charge you carry across fights; three taps during a hand mark a card in your own hand; the
-trick that card is played into resolves by the normal rules; and **4 damage lands on whoever won that
-trick at the deal of the next hand.** Engine and screen landed together, and the whole loop is reachable
-by playing.
-
-**The rule that makes it worth buying is a subtraction, not an addition.** A primed trick the Quarry
-wins **cleanly** costs the player nothing — no damage, and the bank and multiplier survive uncashed
-instead of resetting. That is what turns a card you expected to throw away into a free strike. Win the
-primed trick yourself and the 4 lands on **you**, which is the symmetric case rather than a penalty:
-the hit follows the trick's winner, so there is no mirrored rule anywhere.
-
-**Two readings were chosen where the ticket was ambiguous, and both are recorded rather than buried.**
-The override is keyed on the trick's **outcome** (a clean loss) rather than on **which side won**,
-because a _dodge_ is also a Quarry win and it is one the player banks — the literal reading would have
-deleted an earned bank. And a primed trick you win that is _also_ a skull trick **still costs you the
-skull**, which is the harshest available reading of a case no design document covers.
-
-**The discard rules cost nothing to enforce, which was the point of where the queue lives.** It sits on
-the encounter rather than the run, and the encounter's own opening seeds it to zeros — so a queued hit
-cannot cross a fight and cannot cross a run. (DLR-90 also had it discarded at a **hand** boundary, because
-that was where it was paid; under DLR-91 a hit booked on a hand's last trick **carries** into the next
-hand's first trick instead.)
-
-**What the developer owns:** whether **2 coins** is right against a 1-coin Cheat and 1 coin a fight;
-whether **4 damage** is right; whether **three taps** to mark reads as deliberate or as fiddly; whether
-the felt rail reads well with a second plate on it; whether the mark is legible at a glance and whether
-it stays legible on a card also carrying a skull; the `⚗` glyph and its colour; every word of placeholder
-copy; whether charges should have a **cap** (built as: no cap, coins are the limiter); whether the skull
-reading above should stand; and — the largest one — **whether the delayed hit needs to announce itself.**
-
-**It has not been played end to end.** QA drove the shop, the inert plate, the purse cell and the
-`buyFromShop` fix in a real browser, but **could not earn 2 coins in five full playthroughs** before
-dying — which is a datum about the price and the difficulty rather than about the item. The
-purchase-to-payoff loop is proven by a mounted-component test against the real component tree with real
-DOM events, and not yet by a hand on a mouse.
-
-### The flask landed — DLR-93, 2026-08-20
-
-**What a player does now that they did not before:** heals **without paying for it**. Every restore in
-this game has cost a coin since the shop existed; the flask costs a charge instead, and a charge comes
-back for beating a stage boss. So the run now has a resource that is _earned by progress_ rather than
-by income — the first one, and the only thing in the run that is given back rather than only spent.
-
-**What it changes about a decision:** the shop's heal has always competed with everything else for the
-same coin, and DLR-84 predicted it would win every visit. The flask does not compete with anything. What
-it introduces instead is a **holding decision** — a full flask is worth 6 health whenever you want it,
-so drinking early to top up a small gap wastes most of it, and the refusal at full health is the only
-part of that the game enforces for you.
-
-**What is gone:** nothing. No rule was removed or replaced, and the paid heal is untouched in price,
-amount, refusal and placement.
-
-**Engine and screen landed together**, and the drink was driven end to end in a browser rather than
-proven only against the engine — which is not how the last three item tickets went, because none of
-them could be afforded in a QA run. A free item cannot have that problem.
-
-**What the developer owns:** whether **60%** is the right size; whether **one charge per stage** is
-enough (the design defers this until it plays too thin); whether the potion glyph and the flask block
-read at final size; whether the free-versus-paid separation actually lands at a glance; every word of
-the placeholder copy; and **whether "Flask" is the name**.
-
-**What has not been measured is the point of it.** The flask exists to answer a run recorded as
-unwinnable, and nobody has yet played a run with it in. Five drinks of 6 across twenty-five fights
-against opponents ending at 135 is a real change that may still be far too small, and **nothing else
-was retuned in response** — deliberately, so the measurement is of the flask rather than of a rebalance
-around it. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
-
-### The Discard landed — DLR-100, 2026-08-22
-
-**What a player does now that they did not before:** turns a forced trick they can see coming into
-a read they can act on. The "What the Quarry holds" panel already told you what was about to arrive;
-until now there was nothing to do about it but play it out. A discard lets you throw the cards you
-do not want and draw blind — including going void in a suit outright, which frees you from
-follow-suit in it for the rest of the hand.
-
-**What makes it structurally different from Cheat and Timebomb, its two siblings on the felt rail:**
-both of those only ever open on your own turn. A discard also opens **before the Quarry has led** —
-the one moment in the game where the player may act while `canAct` reads false, because the trick
-has not started even though it is not technically your turn yet. That required one new predicate,
-`discardWindowOpen`, built deliberately independent of the turn check every other control reads, and
-the codebase's own note for future contributors: the next consumable that needs the same reach should
-read this predicate rather than invent a second version.
-
-**What's reused rather than invented:** the swap generalises the Woodcutter's own one-card
-"draw one, bury one on the bottom" convention to n cards, so there is no new discard pile and no
-reshuffle rule to build or to get wrong — the 20-card pile already dealt every hand cannot be
-emptied by any legal sequence of discards. _(That last clause stopped being true on 2026-08-26: the
-per-trick refill shortens the pile, so a Swap can now outrun it and trigger a mid-hand rebuild.
-Section 2 states the rule; the Swap's own procedure did not change.)_
-
-**Two defects were found and closed before this reached the developer.** The first was structural:
-the reducer's initial cut let the rail **open** a selection during the pre-lead gap but silently
-swallowed every attempt to **add a card to it**, because the new branch was placed behind the
-existing turn guard rather than ahead of it — so the ticket's own headline case looked like it
-worked (the rail opened) while actually being dead on arrival (nothing could be selected). Found and
-fixed inside the same implementation pass, with a test that exercises the full pre-lead sequence
-rather than only the open. The second, found at review: tapping the felt background — the same tap
-that carries a resolved trick forward — while a discard selection was open used to silently drop
-that selection and advance the Quarry's lead underneath it. `handleCarryOn` now refuses to do that
-while a selection is open, so the two interactions cannot collide.
-
-**Engine and screen landed together**, and QA drove the rail, the selection, a commit, a chain of two
-throws in the same gap, all three refusals, and the pre-lead window itself end to end in a real
-browser.
-
-**What the developer owns:** whether **3 discards a fight** and **3 cards a throw** are right; whether
-a second tap per chained throw is worth the friction against letting the rail stay open after a
-commit; every word of the placeholder copy; the discard-selected marker's glyph and colour; and the
-rail's own glyph, now that the felt carries a fourth plate.
-
-**What has not been measured is the point of it.** Nobody has yet played a fight leaning on the
-discard to dodge a telegraphed suit, so whether three throws of three cards actually changes how a
-forced trick reads at the table — rather than merely existing as a rule — is unmeasured. Recorded
-under [Known tensions](#known-tensions-recorded-not-resolved).
-
-### Cheat and Timebomb became drawable cards — DLR-132, 2026-08-24
-
-**What a player could not do before today: acquire a second Cheat past the shop's own two-slot cap,
-or ever acquire a Timebomb at all.** Three routes closed by three different tickets had left a run
-holding exactly one Cheat and zero Timebombs for the whole of the run, with no way to gain more of
-either — the Timebomb was entirely unreachable. Both are now ordinary cards the reel can draw, at
-bronze, silver or gold, exactly like any other buff (73 templates in the pool, up from 71).
-
-**What a player does differently:** a Cheat and a Timebomb are spent from the loadout by the same
-two-tap poise-then-spend gesture every other buff card uses, priced the same way in action points.
-The old two-click-arm-third-click-cancel Cheat control and the old three-tap Timebomb plate are gone.
-A Cheat's tier now sets **how long** it lasts — 1/2/3 tricks of no follow-suit for bronze/silver/gold,
-where only the bronze reading (one trick) was ever reachable before. A Timebomb's tier now sets **how
-much** it hits for — the bronze pair (4 to the Quarry, 2 to you) is unchanged, and silver and gold
-scale both sides together (8/4, 12/6).
-
-**What moved under the hood, for whoever reads the code next:** `BuffTemplate` became a discriminated
-union tagged `form`, closing the shape problem that had kept Cheat and Timebomb (and, later, the five
-consumables) out of the pool — a condition template carries a family and an axis, an activated
-template carries neither. `RunState.cheats`, `RunState.nextCheatId` and `RunState.timebombCharges`
-are deleted, along with the whole of `src/hunt/cheats.ts` and the two felt widgets `CheatSlots.tsx`
-and `TimebombCharge.tsx` — two records of "do you hold a Cheat" became one. `RUN_STARTING_CHEATS`
-keeps its name and its value of 1; only its form changed, from a slot grant to a seeded pile member.
-
-**What is recorded rather than resolved:** the four slot weights that decide how often either card is
-drawn, whether a gold Cheat's 7-action-point price is right for a mechanic `buffCatalog.ts` itself
-flags as unsafe to ship active, the one-tier-per-hand Timebomb limitation, and the redesigned loadout
-panel's readability with two more rows in it — none of it played, the mockup gate having been skipped
-for this contract. All four are under [Known tensions](#known-tensions-recorded-not-resolved).
-
 ### Known tensions, recorded not resolved
 
+> **Entries below this line have not all been swept, and a class of them is now closed. Read this
+> first, 2026-09-04.** A tension about a mechanic that no longer exists is resolved by its removal,
+> not still open — but the list is long and the sweep was partial. **Treat every entry naming a
+> Timebomb, a primed card, a fuse, a booked or delayed hit, a Blast Guard, a queued Apply Damage
+> payout, or the two-thirds forced rate as CLOSED**, whatever it says about itself. The mechanics
+> those entries argue about were deleted, and so were the questions.
+>
+> Entries phrased in the retired vocabulary — a Taker, a Feeder, a Sidestep, a dodge, a clean loss,
+> a clean win, eating a skull — are **still live**; only their words are stale. Read them as Suit
+> High, Suit Low, Skull Low, a Low Victory, a Low Defeat, a High Victory and a High Defeat.
+
+- **A Curse pays for a trick you banked even if you never played the card you marked** (new
+  2026-09-04). The reward is owed on **any** banked trick while a Curse is riding, not only on the
+  trick the marked card was played into — so marking a card and then simply playing something else
+  earns the bonus with none of the risk the card is priced for. This is a **rule question, not a
+  defect**: the code does what section 4 says, and nobody has decided whether that is the intended
+  reading. It is flagged in the engine itself so the next person to touch that branch meets it.
+  **Whose decision:** the developer's.
+- **The Curse is the first card that lets the player make a skull, and nothing is balanced around
+  that** (new 2026-09-04). Every skull rule in this game was written for a marker only the Quarry
+  could hold — the rank curve, the shape readout, the CPU's card choice, and the simulator's whole
+  card heuristic. None of them was retuned. In particular a curse **ignores the rank curve**, so a
+  cursed 1 is expressible where a dealt one is not, and the go-low-on-a-skull card can now be made to
+  fire on demand. Whether that reads as agency or as a loophole is unplayed.
+- **Two controls fight over the same tap, and the game resolves it by refusing both but one** (new
+  2026-09-04). An armed Curse claims your next tap on your own hand, so the Swap rail and carrying on
+  are both refused while one is armed. That is correct and it is stated on the controls' own faces —
+  but it means **you must place the mark before the Quarry leads**, which is a real constraint nobody
+  has played. Whether being locked out of the Swap at that moment is annoying is the developer's.
+- **A wildcard's stocking weight rations something other than what it looks like it rations** (new
+  2026-09-04). Because wildness absorbs through combining, one wildcard can seed an entire wild line
+  — so the weight controls how many *independent* wild lines a run can start, not how many wild cards
+  a player ends up holding. And the machine has no per-card rarity, so a low weight makes the card
+  rarely **appear**, but on the visit where it does appear it is as likely as anything else on that
+  strip. The figure is a placeholder. **Whose decision:** the developer's.
+- **All three tiers of a wildcard do the same thing** (new 2026-09-04). Each converts exactly one
+  card. The tier is carried rather than ignored, so the reels' "one gold" readout is not a lie — but
+  a gold wildcard is worth exactly a bronze one. Whether a higher tier should convert more, or
+  convert something a bronze cannot, is undesigned.
+- **The Quarry's 5 can mint a skull mid-hand, and the shape readout is the only warning** (new
+  2026-09-04). A 0.4 chance on a card the Quarry draws, subject to the rank curve. It is the first
+  time the Quarry's holding of skulls changes after the deal, so a read you took at the start of a
+  hand can go stale under you. The chance is a placeholder nobody has played. **Whose decision:** the
+  developer's.
+- **The 7's two figures were transcribed, not chosen, and they pull in opposite directions** (new
+  2026-09-04). A banked Treasure trick permanently raises this fight's base damage; a hurt one costs
+  2 health instead of 1. Nobody has played either. The second is also the **first time a hit is not
+  exactly 1**, which is a rule several readouts and every prior measurement were written against.
 - **The two protecting cards' gold bonus is worth ten times more on one of them than on the other**
   (new 2026-09-02, DLR-161). Both gold rungs add 1 to the figure that survived, but the pot is
   `total × roll`: at a total of 10, one extra point of roll is worth 10 and one extra point of damage
@@ -4695,7 +3727,7 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   7–55px with the prompt open; the measurement is pessimistic, and at 600px the layout wants a
   structural change rather than a tuning one. The resolution screen itself had zero overflow at every
   size tested in the approved mockup.
-- **The Feeder carry is earned, carried and displayed, and pays nothing** (new 2026-09-01, DLR-156).
+- **The low carry is earned, carried and displayed, and pays nothing** (new 2026-09-01, DLR-156).
   A card that pays you for losing still banks its reward for the next hand, that bank still crosses
   the hand boundary, and the readout still names both halves of it — but the damage a trick deals is
   now computed from the cards fired on **that trick**, and it never reads the hand's pool, so nothing
@@ -4787,7 +3819,7 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   activating **every legal buff at every window** — the first half is **0.0% at both seeds**, and the
   earliest win observed against her at all is **trick three**. The second half holds:
   **51.0% / 52.5%** of runs beat her with nothing activated. The design's worked example (one bronze
-  Bell-Taker on Momentum over two won Bell tricks paying `2 × (2 + 4) = 12` against 10 health) is
+  Bell High on Momentum over two Bell tricks gone high on, paying `2 × (2 + 4) = 12` against 10 health) is
   **not what the shipped engine produces**. **Nothing was retuned in response** and no rule above is
   marked settled on the strength of that prediction. **Whose decision:** the developer's — the gap is
   between a design expectation and the engine, and closing it is a design call, not a documentation
@@ -4832,7 +3864,7 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   > **Resolved 2026-09-02, and not in the direction this entry expected.** The 0% did **not** point
   > at the numbers. It pointed at the simulated player: it took its cards from the Quarry's own
   > heuristic, whose skull-dodge branch is a permanent no-op for a side that is never dealt a skull;
-  > it armed Taker and Feeder of every suit together though exactly one can fire, and on suits the
+  > it armed Suit High and Suit Low of every suit together though exactly one can fire, and on suits the
   > trick would never touch; it spent its Cheats as ordinary buffs, holding one at under 1% of the
   > moments a Cheat would have saved a trick; and it rationed itself against action points that have
   > been switched off since 2026-08-25. Corrected, the same player clears the run **26.6-32.4% of the

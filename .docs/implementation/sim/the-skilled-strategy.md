@@ -28,14 +28,20 @@ Measured at `--runs 500`, base seed 1, each fix isolated by a diagnostic policy 
 ### 1. The card heuristic ignored skulls
 
 Every policy before this one took its card from `chooseCpuMove` (`src/warCouncil/cpuPlayer.ts`),
-which was written for the Quarry. Its dodge branch filters _its own_ candidate cards for a skull —
-correct for the Quarry, which is the only side ever dealt one, and a permanent no-op for the player,
-who holds none. Seated on the player it collapses to "always try to win, else play lowest".
+which was written for the Quarry. Its go-low branch filters _its own_ candidate cards for a skull —
+correct for the Quarry, which is the only side ever **dealt** one, and a permanent no-op for the
+player. Seated on the player it collapses to "always try to go high, else play lowest".
 
-Since a skull inverts a trick, winning a skulled one costs a point of health where losing it banks
-for free. `chooseFollow` reads the lead's mark — which is face up — and picks the cheapest card that
-reaches the wanted outcome: the lowest loser to duck a skull, the lowest winner to take a clean
-trick. Banked tricks went from 52.1% to 60.8%.
+Since a skull inverts a trick, **going high on a skulled one is a High Defeat where going low on it
+is a Low Victory** — a point of health against a free bank. `chooseFollow` reads the lead's mark —
+which is face up — and picks the cheapest card that reaches the wanted outcome: the lowest loser to
+go low under a skull, the lowest winner to take a clean trick. Banked tricks went from 52.1% to
+60.8%.
+
+> **Since DLR-167 the player can hold a skull of their own** — a Curse marks a card in their own
+> hand. This module's information discipline still holds (a curse is the player's own state), but its
+> "the player holds none" premise no longer does. `skilledCardPlay.ts` does not know about Curse, and
+> no policy arms one.
 
 ### 2. Buffs were armed without deciding the trick — the largest single fix
 
@@ -44,17 +50,17 @@ It is not. `state.leader` already says who leads, and when it is the player the 
 their own choice; when it is the Quarry, `suitShape` posts how many cards it holds per suit, so the
 suit it holds most of is the one it most likely leads.
 
-`trickIntent` (`skilledCardPlay.ts`) turns those into a suit and an outcome — take the trick, or lose
-it and dodge — and `canPayUnder` (`skilledPolicy.ts`) then arms only cards that can pay under it.
-Three rules fall out, and every one of them was being broken:
+`trickIntent` (`skilledCardPlay.ts`) turns those into a suit and an outcome — go high, or go low —
+and `canPayUnder` (`skilledPolicy.ts`) then arms only cards that can pay under it. Three rules fall
+out, and every one of them was being broken:
 
 - never arm a suit the trick will not touch;
-- never arm Taker and Feeder together, since exactly one can fire;
-- never arm Sidestep on a trick played to win, since it pays only on a dodge.
+- never arm Suit High and Suit Low together, since exactly one can fire;
+- never arm Skull Low on a trick played to go high, since it pays only on a Low Victory.
 
-Condition cards that actually paid went from **16.6% to 58%**. Feeder, which the earlier passes had
-written off at 9%, pays 52.6% once it is armed only on tricks the player intends to lose — it was
-never a broken card, only a misused one.
+Condition cards that actually paid went from **16.6% to 58%**. Suit Low, which the earlier passes had
+written off at 9%, pays 52.6% once it is armed only on tricks the player intends to go low on — it
+was never a broken card, only a misused one.
 
 When the Quarry leads, the suit is a prediction rather than a choice, so `intent.certain` is false
 and the stack is capped at `BLIND_TRICK_CAP`: a blind trick should not eat the pile.
@@ -68,7 +74,7 @@ a skull, every legal card would take the trick and eat it, and an off-suit card 
 
 It fired 0.26 times a run, which read as the card being nearly dead. It was not rare — it was being
 armed in the ordinary buff window and gone before the moment arrived. `RESERVED_KINDS` withholds it
-(and Timebomb) from `chooseBuffs`, leaving `wantsCheatPlay` to spend it:
+from `chooseBuffs`, leaving `wantsCheatPlay` to spend it:
 
 |                                     | spent as a buff | reserved  |
 | ----------------------------------- | --------------- | --------- |
@@ -80,15 +86,16 @@ armed in the ordinary buff window and gone before the moment arrived. `RESERVED_
 `cheatMoments` on `HandReport` is what makes that table measurable; it counts the situation
 independently of whether the seated policy would have found it.
 
-**Timebomb is withheld for a different reason.** It marks the card played next and pays its damage
-to whichever side loses that trick, so a player who deliberately loses tricks primes cards it is
-about to throw. Withholding it alone took health lost per hand from 3.11 to 1.75 and the worst hand
-from 10 to 6. `skilledWithTimebombPolicy` keeps that measurable.
+> **A Timebomb was withheld for a different reason**, and the measurement is kept because it says
+> something about how this policy plays rather than about that card: it marked the card played next
+> and paid its damage to whichever side lost that trick, so a player who deliberately goes low primes
+> cards it is about to throw. Withholding it alone took health lost per hand from 3.11 to 1.75.
+> **DLR-166 removed the card and `skilledWithTimebombPolicy` with it.**
 
 ### 4. The plan and the play used different card sets
 
-`trickIntent` planned over the whole hand while the policy filtered ability-prompt cards (Fox,
-Woodcutter) out of the play, so **a third of led tricks were played in a different suit from the one
+`trickIntent` planned over the whole hand while the policy filtered ability-prompt cards out of the
+play, so **a third of led tricks were played in a different suit from the one
 the buffs were armed for** — every one a wasted stack. Both now lead through `leadCandidates`, which
 is the single statement of that exclusion. Mismatch fell to 8 tricks in ~4,900.
 
@@ -130,9 +137,10 @@ two Quarry hands with identical shape and totally different ranks produce identi
 
 Each differs from `skilled` in exactly one method and takes every other by reference, so a gap in
 its figures is attributable to that lever alone: `skilledNaiveCards` (the old card heuristic),
-`skilledUnaimed` (arm everything, no intent), `skilledWithTimebomb`, `skilledNoSwap`,
+`skilledUnaimed` (arm everything, no intent), `skilledNoSwap`,
 `skilledNoCheat`, `skilledCardsFirst` (the pre-2026-09-02 shop order), `skilledCombine` and
-`skilledCardsCombine` (the upgrade screen), `skilledCeilingPaced`, and `sharpshooterNoTimebomb`.
+`skilledCardsCombine` (the upgrade screen), and `skilledCeilingPaced`. (`skilledWithTimebomb` and
+`sharpshooterNoTimebomb` went with the card on DLR-166.)
 
 They are declared **after** `skilledPolicy` deliberately: a `const` spread before its initialiser
 runs reads the temporal dead zone, which surfaces as an empty report rather than as a type error.

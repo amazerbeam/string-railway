@@ -19,29 +19,31 @@ rectangle's position into a **pure module that a unit test can assert against**,
 | `Inert` | 7 Treasure                                       | a painting too — but a **dashed** border and a printed "no rule" mark              |
 | `Plain` | 2, 4, 6, **8**, 10                               | a printed pip lattice, the default border, and the **mirrored bottom-right** index |
 
-The Treasure is the only `Inert` rank, and it is the card the ticket exists for: it is the one face
-that looks special and does nothing. Its figure differs by suit — harp (Bells), chalice (Keys),
+The Treasure **was** the only `Inert` rank, and it was the card the ticket existed for: the one face
+that looked special and did nothing. Its figure differs by suit — harp (Bells), chalice (Keys),
 sword (Moons) — so `RankFace.figure` is either one `FigureKey` or a `Record<Suit, FigureKey>`,
 resolved in `CardFacePanel.tsx` by `typeof face.figure === 'string'`.
 
+> **DLR-163 gave the 7 a rule, so it is an acting face now.** `NO_RULE_MARK_LABEL` ("no rule") is
+> still exported and `printedRects` still pushes it for an `Inert` face — but **nothing in
+> `RANK_FACE` is `Inert` today**, so the mark is applied to nothing at all. It stays for a future
+> inert rank.
+
 ### Rank 8 is deliberately a _plain_ rank, not an inert one
 
-`.docs/game_rules/the-hunt.md` §1 names rank 8 **Timebomb** and §5 gives it "no effect at all" —
-mechanically the same nothing the Treasure does. The reference sheet followed that reading and gave
-rank 8 a dashed border, a "no rule" chip and a printed corner label. **This code deliberately does
-not**, and a future reader must not "fix" it:
+Rank 8 is **Poison** (`CardRank.Poison`), and it has no effect at all — mechanically the same nothing
+the Treasure used to do. An early reference sheet gave it a dashed border, a "no rule" chip and a
+printed corner label. **This code deliberately does not**, and a future reader must not "fix" it:
 
-- AC2 names **only** the Treasure as dashed-plus-mark.
+- AC2 named **only** the Treasure as dashed-plus-mark.
 - AC3's stated reason for rank 8 keeping pips is that it _has no settled name_ — explicitly **"not
-  because it is inert"**. `the-hunt.md` itself records the Timebomb name as actively misleading and
-  under an open rename question, in its Known tensions.
+  because it is inert"**. The 8's name is under an open question.
 - Giving 8 a dashed border while 6 gets none tells the player 8 is special. That is precisely the
   defect the ticket opens with.
 
-So rank 8 gets `faceClass: Plain`, `name: null`, pips, and the mirrored index. Its tooltip prints
-the plain-number sentence rather than the ruleset's Timebomb row — a presentation choice about an
-unsettled _name_, not a claim about the rule (the rule, "no effect", is what both say). A spec pins
-it: `cardFace.test.ts` → "gives rank 8 the plain face, with no name and no mark".
+So rank 8 gets `faceClass: Plain`, `name: null`, pips, and the mirrored index, and its tooltip prints
+the plain-number sentence. A spec pins it: `cardFace.test.ts` → "gives rank 8 the plain face, with no
+name and no mark".
 
 ### `hasAbility` is gone; "named" and "acts" are now two predicates
 
@@ -119,7 +121,7 @@ the constant silently broke the primed mark's geometry.
 > the `.wc-card .wc-primed-mark` rule and its four drift rows in `cardFaceCss.test.ts` were
 > **deleted rather than repointed** — keeping a declared rectangle would have had the drift spec
 > certify a false claim. The trap is gone; so is the guarantee that anything pins the mark's box.
-> See [Priming a Timebomb](timebomb-priming-and-the-fuse.md).
+> (DLR-166 then removed the Timebomb entirely.)
 
 ## The skull's footprint follows the rank's own content
 

@@ -54,22 +54,24 @@ consumer of either.
 
 Reusing `playOptions` rather than reading the queue again is the same single-statement discipline its
 own docblock already argued for: the preview and the commit cannot read "what is pending" differently,
-because they ask the same function. The four queue/run facts (`timebombToPlayer`, `timebombToQuarry`,
-`blastGuarded`, `baseDamageBonus`) arrive from it with `playCard.ts`'s own `?? 0` / `?? false`
-defaulting reproduced field for field.
+because they ask the same function. The run facts it carries — `baseDamageBonus` (the Whetstone
+count **summed with this fight's earned Treasure bonus**), `swanTier` and `buffs` — arrive from it
+with `playCard.ts`'s own `?? 0` / `?? false` defaulting reproduced field for field. (It carried four
+Timebomb-and-Guard facts until DLR-166 deleted them.)
 
 ## The only facts the preview assembles itself — and the only ones that can be wrong
 
 Three fields of `TrickFacts` are not `playOptions`':
 
 - `finalTrick` — `round.tricksPlayed + 1 === HAND_SIZE`. Always exact.
-- `skullTrick` — `trickIsSkulled` over the **cards the player can actually see**: the Quarry's lead
-  if it is already on the table, plus the card being considered.
-- `timebombTrick` — `trickIsPrimed` over that same visible set.
+- `skullTrick` — `trickIsSkulled`, called with `skullsOn(round)` so a **cursed** card counts, over
+  the **cards the player can actually see**: the Quarry's lead if it is already on the table, plus
+  the card being considered.
+- `treasureTrick` — whether a 7 is in that same visible set.
 
 The last two are the only facts that can be wrong, and only in one direction. While the player is to
-**lead**, the Quarry's card is face down, and skulls are dealt to the Quarry — so a skulled Quarry
-card would turn the win branch from a `CleanWin` into a `SkullWin` and invert both figures. The
+**lead**, the Quarry's card is face down, and dealt skulls go to the Quarry — so a skulled Quarry
+card would turn the high branch from a `HighVictory` into a `HighDefeat` and invert both figures. The
 preview says so rather than guessing silently: `exact` is `true` only when
 `round.currentTrick.length === 1`, and both rendered forms carry the flag.
 
@@ -104,10 +106,9 @@ preview".
 | `CARD_DAMAGE_ESTIMATE_GLYPH` | The `~`. A form signal, not colour — paired with an italic slant in the CSS.  |
 
 **The visible form carries two figures; the spoken form carries all four.** The two shown are the
-card-_dependent_ ones. The two omitted — a Timebomb detonating on a win, and the forced cash-out on a
-loss — are identical whichever card is played, and are already previewed elsewhere on the same
-screen: DLR-101's ticking hearts and DLR-86 AC3's at-risk band, both on the health bars. Repeating
-them under six cards would add noise without adding information.
+card-_dependent_ ones. The two omitted were identical whichever card was played and were already
+previewed on the health bars — DLR-101's ticking hearts and DLR-86 AC3's at-risk band. **The ticking
+hearts went with the Timebomb on DLR-166**, so the at-risk band is the whole of that argument now.
 
 `cardDamageBranchText` omits a zero term rather than saying "0 damage to you", and says `no damage`
 when a branch costs nobody anything — which is reachable, and is exactly DLR-90 AC5's REPLACED clean
@@ -128,7 +129,7 @@ This is also what makes the readout testable the way DLR-117 AC4 asks: component
 ## Where it sits on screen, and what that cost
 
 The strip could not go on the card face. All four corners are taken — rank top-left, skull
-top-right, primed mark bottom-left, ability pip bottom-right — and the centre is the large suit
+top-right, wild mark bottom-left, ability pip bottom-right — and the centre is the large suit
 mark, so there is no free area at a legible size. Keeping the numbers off the face also keeps
 `game-ux`'s "the cards take visual precedence" intact.
 
@@ -167,9 +168,8 @@ pointer moves.
 
 ## What the preview does not show — the honest list
 
-1. **A Timebomb this card would BOOK for the next trick.** `applyResolution` books it, but booking
-   costs no health at _this_ resolution, so it is absent from the delta. Playing a primed card that
-   wins reads as cheaper than it turns out to be, until the ticking hearts appear.
+1. ~~**A Timebomb this card would BOOK for the next trick.**~~ **Closed by DLR-166** — nothing books
+   damage for a later trick any more, so there is no deferred cost for the delta to be missing.
 2. **Gross damage.** Every figure is a health delta and `deplete` floors health at zero, so "win: 4"
    against a Quarry on 4 health means "enough", not "exactly 4". This matches how `duelHealthBars`
    already truncates overkill.
@@ -194,7 +194,7 @@ pointer moves.
      it can.
 4. **DLR-117's AC1 gate — still deliberately not built, and still deferred after DLR-125.** "Once
    any buff is active for the hand" was scoped out again: the readout is always visible, because
-   bank, multiplier, a pending Timebomb, a held Blast Guard, the final trick and a primed card all
+   the streak's two figures, a Treasure in the trick and the final trick all
    already move these numbers, and hiding a true number until a buff fires would withhold it for no
    reason. Hiding and revealing a readout that is currently always on screen is a judgement about
    what the felt looks like at rest, which is the developer's, and DLR-125 was an `engine`-labelled

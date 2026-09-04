@@ -1,7 +1,7 @@
 # Persistence — `src/persistence/`
 
 **Status:** implemented
-**Built by:** DLR-106
+**Built by:** DLR-106, DLR-113, DLR-165
 
 ## Responsibility
 
@@ -14,10 +14,8 @@ module**, a sibling of `app/`, `hunt/`, `warCouncil/`, `styles/` — it cannot l
 `src/hunt/`, whose ESLint override already bans `localStorage`, and it is not UI, so it is not
 `src/app/`.
 
-**Nothing in the running app calls into this module yet.** Its own specs are its only consumer;
-no screen, reducer, or `RunState`/`EncounterState` field reads or writes through it. The Vault
-(`.docs/design/Balatro-Forbidden-Solitaire/version-5-developer-idea.md` §8) is the first intended
-caller, and is DLR-113's — its currency, exchange rate and purchase shapes are all still open there.
+**The Vault is its one caller** (DLR-113) — the cross-run meta-progression store. Nothing else under
+`src/` reads or writes a save; `RunState` and `EncounterState` are in-memory only.
 
 ## Key types & exports
 
@@ -25,7 +23,7 @@ caller, and is DLR-113's — its currency, exchange rate and purchase shapes are
 |---|---|---|
 | `SAVE_NAMESPACE` | `'strings-and-stations'` — the key prefix every save shares, named for the repository rather than the game's working title | `config.ts` |
 | `SAVE_KEY_SEPARATOR` | `':'` — joins the namespace to a section name | `config.ts` |
-| `SAVE_SCHEMA_VERSION` | `1` — the schema identity stamped into every envelope written today | `config.ts` |
+| `SAVE_SCHEMA_VERSION` | **`2`** — the schema identity stamped into every envelope written today. A schema **identity**, not a tuning value: there is exactly one correct successor to any given version. Bumped 1 → 2 by DLR-165; see below | `config.ts` |
 | `StorageLike` | the three-member seam (`getItem`/`setItem`/`removeItem`) `createSaveStore` is written against | `storageDriver.ts` |
 | `createMemoryStorage()` | a fresh `Map`-backed `StorageLike` per call — the substrate of every spec | `storageDriver.ts` |
 | `browserLocalStorage()` | resolves `globalThis.localStorage`, returning `null` (never throwing) when it is absent or blocked | `browserStorage.ts` |
@@ -85,10 +83,29 @@ by design, to keep the module's overall no-throw guarantee.
 `` `${SAVE_NAMESPACE}${SAVE_KEY_SEPARATOR}${section}` `` — e.g. `strings-and-stations:vault`. The
 version lives **inside** the envelope, not the key, so there is exactly one key per section for
 all time; a versioned key would orphan the previous key on every schema bump with nothing able to
-find it again. The migration seam this makes possible ships **deliberately empty**: a store created
-with `version: 1` handed a `version: 2` record reports `VersionMismatch` and returns the default —
-the record is neither migrated nor deleted. Whether an unmigratable save should be discarded is a
-player-facing design question, explicitly deferred to DLR-113.
+find it again. The migration seam this makes possible ships **deliberately empty**: a store handed a
+record whose version it does not recognise reports `VersionMismatch` and returns the default — the
+record is neither migrated nor deleted.
+
+### The one bump so far — `SAVE_SCHEMA_VERSION` 1 → 2, DLR-165
+
+**The renamed `BuffKind` values changed the persisted template ids.** `templateIdFor` composes a
+template id from the buff kind (`<kind>[:<param>]:<axis>`), and DLR-165 renamed three of them:
+`taker:` → `suitHigh:`, `feeder:` → `suitLow:`, `sidestep:` → `skullLow:`. Every id already on disk
+became unresolvable.
+
+Without a bump, `reconcileVault` would have **dropped each one silently** — that is its documented
+behaviour for an id this build has no template for — and the developer's boosts and grants would
+have vanished with no message. The bump makes `saveStore` return `SaveReadOutcome.VersionMismatch`
+and hand back the default instead, so the failure is named rather than invisible.
+
+**A migration map was deliberately rejected.** Mapping `taker:` → `suitHigh:` would have kept the
+retired vocabulary alive in code, which is the one thing the rename existed to remove. The cost is
+accepted and stated: **the Vault resets once, by design.** A future rename does the same.
+
+This is the case `.claude/rules/save-data-versioning.md` exists for — a persisted name binds by
+string, sits outside the type checker's view, and a rename type-checks cleanly while orphaning every
+save.
 
 ## Rules & invariants enforced
 
@@ -118,12 +135,10 @@ player-facing design question, explicitly deferred to DLR-113.
 
 ## Deferred / not yet implemented
 
-- **No consumer.** Nothing under `src/app/`, `src/hunt/`, or `src/warCouncil/` reads or writes a
-  save — this ticket shipped the generic capability only (DLR-106 AC4). The first caller is DLR-113
-  (Vault currency and purchases).
-- **No React hook** (`useSaveStore` or similar). No component needs one yet; the subscription shape
-  depends on how the Vault screen ends up reading the store.
-- **No actual migration.** The envelope carries a version and `read()` *detects* a mismatch by
-  name, but nothing upgrades a v1 record to v2 — there has only ever been one version.
+- **One consumer only.** The Vault (DLR-113) is the whole of it. Nothing under `src/hunt/` or
+  `src/warCouncil/` reads or writes a save.
+- **No actual migration, and that is now a decision rather than a gap.** The envelope carries a
+  version and `read()` *detects* a mismatch by name, but nothing upgrades a v1 record to v2 — see
+  the DLR-165 note above for why a migration map was rejected rather than merely deferred.
 - **No autosave, save slots, multiple profiles, export/import, or cloud sync.**
 - **No encryption, obfuscation, or tamper resistance** — a single-player prototype has no need.

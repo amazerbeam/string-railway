@@ -4,7 +4,7 @@ _Part of [War Council](README.md)._
 
 `createDeck` in `deck.ts` builds the deck by nesting a loop over `ALL_SUITS` (`bells`, `keys`,
 `moons`) inside a loop over `RANKS` (`1`–`11`), producing exactly one `Card` per (suit, rank) pair —
-33 cards total. No expansion-module cards (special/goal/Timebomb) exist anywhere in this tree.
+33 cards total. No expansion-module cards (special/goal) exist anywhere in this tree.
 
 ### Shuffling and dealing
 

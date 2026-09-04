@@ -99,7 +99,7 @@ rank 1" is now `1: 0` in every shipped curve rather than a separate constant, wh
 single-source-of-truth rule and, more usefully, extends the guarantee to **any curve added later**
 instead of only the current one.
 
-A skulled rank 1 cannot lose its trick, so it would be an undodgeable tax rather than a decision —
+A skulled rank 1 cannot lose its trick, so it would be an unavoidable tax rather than a decision —
 excluding it is what leaves the foreknowledge the shape readout gives you worth having.
 
 It is exported separately rather than being inlined into `assignSkulls` so the eligibility rule can be
@@ -110,6 +110,14 @@ asserted on its own, including the degenerate all-rank-1 hand.
 ```ts
 trickIsSkulled(skulledCards, trick): boolean
 ```
+
+> **Since DLR-167 the player can make a skull too, and neither function here was taught about it.**
+> `isSkulled` and `trickIsSkulled` keep their plain-list signatures and are **called with the union**
+> of the dealt skulls and the cursed cards — `skullsOn(state)` in `curse.ts` is the one place the two
+> lists are read as one. That is a **convention, not an enforced boundary**: a new reader that means
+> "does this card show a skull" has to be told, because reading `skulledCards` alone type-checks and
+> returns a plausible answer. See [The Curse](the-curse.md), which also names the two readers that
+> deliberately do not use the union.
 
 **True if _any_ card played into the trick is skulled** — `trick.some(...)`, not "the Quarry's card
 is skulled".

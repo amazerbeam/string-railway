@@ -12,7 +12,7 @@ wins, and if the follower is off-suit entirely, the lead card wins unconditional
 
 ### The Fox's mid-trick trump mutation (AC2)
 
-`playCard` (see below) applies `applyFoxExchange` — which mutates `trumpSuit` on the returned state
+`playCard` (see below) applies `applyNameTrump` — which mutates `trumpSuit` on the returned state
 — **before** it ever calls `resolveTrickWinner` for that trick. Because the trump suit passed to
 `resolveTrickWinner` is read off `next.trumpSuit` after any Fox exchange earlier in the same
 `playCard` call, a trick where Fox was played uses the **post-exchange** trump suit to determine its
@@ -34,16 +34,15 @@ other exported function mutates state. Its order of operations:
 4. Reject if the card isn't in `legalMoves(state, side)` — distinguishing `MustFollowMonarch` from
    the general `MustFollowLeadSuit` based on whether Monarch was the led card.
 5. Remove the card from the hand, then dispatch by rank:
-   - **Fox** — requires an `AbilityChoice`; `FoxExchange` applies `applyFoxExchange` (rejecting
-     `InvalidFoxExchangeCard` if the named hand card isn't actually held), `FoxDecline` does
-     nothing, anything else is `UnexpectedAbilityChoice`, and no choice at all is
-     `MissingAbilityChoice`.
-   - **Woodcutter** — requires a `WoodcutterDiscard` choice with the same missing/mismatched-kind
-     split as Fox (`MissingAbilityChoice` / `UnexpectedAbilityChoice`), then rejects
-     `InvalidWoodcutterDiscard` if the named discard isn't in the post-draw hand, else applies
-     `applyWoodcutterDraw`.
-   - **Any other rank** — a supplied `choice` at all is rejected as `UnexpectedAbilityChoice` (no
-     rank other than Fox/Woodcutter expects one).
+   - **Fox** — requires an `AbilityChoice` naming a **suit**; applying it calls `applyNameTrump`.
+     Declining does nothing, anything else is `UnexpectedAbilityChoice`, and no choice at all is
+     `MissingAbilityChoice`. **No hand card is named and none is given up**, so there is no
+     invalid-card rejection to make.
+   - **Woodcutter** — takes **no choice at all**. For the player it does nothing here; for the
+     Quarry, `applyQuarrySwap` swaps a card and may mint a skull. See
+     [Legal moves and abilities](legal-moves-and-abilities.md).
+   - **Any other rank** — a supplied `choice` at all is rejected as `UnexpectedAbilityChoice` (only
+     the Fox expects one).
 6. Append the card to `currentTrick`. If this is the trick's first card, the result is `{ ok: true,
 state }` with `phase: AwaitingFollow`. If it's the second, `resolveTrickWinner` and
    `nextLeaderAfterTrick` run, `tricksWon`/`tricksPlayed` increment, and `phase` becomes `Complete`
@@ -54,11 +53,6 @@ state }` with `phase: AwaitingFollow`. If it's the second, `resolveTrickWinner` 
    progress nor change what the trick's buff evaluation saw. The Quarry is never passed to it. See
    [the hand refill](the-hand-refill.md).
 
-**The Woodcutter's discard preview in step 5 also changed (DLR-146):** it builds "the hand as it
-would be after the draw" through `drawCards` rather than indexing `drawPile[0]`, so the preview
-agrees with what `applyWoodcutterDraw` will actually hand back — including a mid-hand reshuffle — and
-never contains an `undefined` when the pile has run dry.
-
 Every rejection returns `{ ok: false, reason }` and leaves the **input** `state` untouched — no
 partial mutation, no thrown exception; a caller (a future CPU or UI ticket) branches on the named
 `IllegalMoveReason` rather than parsing an exception message.
@@ -66,10 +60,16 @@ partial mutation, no thrown exception; a caller (a future CPU or UI ticket) bran
 ### Resolving the trick's bank effect (DLR-80)
 
 The same second-card branch that increments `tricksWon[winner]` calls `resolveTrickBank` once and
-writes its result onto `lastResolution`, copying the returned `bank` and `multiplier` onto the state
-alongside it. It passes the completed trick, whether the **player** won it (`winner ===
-PlayerSide.Player`), whether the trick was skulled (`trickIsSkulled`), and whether this was the final
-trick (`tricksPlayed === HAND_SIZE`).
+writes its result onto `lastResolution`, copying the returned `total` and `roll` onto the state
+alongside it. It passes the completed trick, whether the **player went high** (`winner ===
+PlayerSide.Player`), whether the trick was skulled (`trickIsSkulled`, called with `skullsOn(state)`
+so a **cursed** card counts), whether a **Treasure** was played into it by either side, and whether
+this was the final trick (`tricksPlayed === HAND_SIZE`).
+
+**The curse is lifted in the same return**, after `skullTrick` has been computed — so the trick it
+was made for still reads as skulled, and every reader after the play sees an empty list. That is why
+`ResolvedTrick.skulledInTrick` is *captured* rather than recomputed; see
+[The Curse](the-curse.md).
 
 `playCard` decides nothing about the outcome itself — it reports those facts and lets `streak.ts`
 apply the rule. See [the streak and the pot](the-streak-and-the-pot.md).

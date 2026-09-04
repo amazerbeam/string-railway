@@ -10,7 +10,7 @@ poise-then-spend gesture every other buff card uses. There is no longer a dedica
 document: what a Cheat *does* when spent is one branch in `handleTapBuff`, described alongside Ward's
 in [action-bar-and-loadout.md](action-bar-and-loadout.md), and what governs *how long* it lasts is
 `src/hunt/buffCatalog.ts`'s `CHEAT_DURATION_TRICKS`, described in
-[the buff-pile objects](../hunt/cheat-and-timebomb-buffs.md).
+[Activated cards](../hunt/activated-cards.md).
 
 This file is kept, empty of live content, so a link or a search that lands here finds the retirement
 notice rather than a page describing a widget that no longer exists as though it still did.

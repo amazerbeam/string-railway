@@ -1,7 +1,20 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159, DLR-160
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159, DLR-160, DLR-163, DLR-165, DLR-166, DLR-167
+
+> **Four tickets landed on 2026-09-03/04.** In this folder they show up as the mount-prop contract
+> and the driver's `recordEncounter` call changing shape:
+>
+> - `WarCouncilMountProps.lowCarry` and `WarCouncilRoundResult.lowCarry` are
+>   **`lowCarry`** (DLR-165), and every Timebomb and Blast Guard prop, result field and
+>   `recordEncounter` argument is **gone** (DLR-166).
+> - **DLR-163 added two per-fight run figures** the driver threads down and back —
+>   `discardCapBonus` (Swaps this fight's 5s added) and `treasureDamageBonus` (base damage this
+>   fight's 7s earned). Both reset at the fight boundary and neither is persisted.
+> - Nothing in this folder persists a run. The Vault is the only save, and
+>   **`SAVE_SCHEMA_VERSION` is 2** since DLR-165 — see
+>   [../persistence/README.md](../persistence/README.md).
 
 ## Responsibility
 
@@ -125,11 +138,11 @@ the union outside the component; it is deliberately **not** re-exported through 
 `RunState` carries no notion of "which screen". The extraction was forced by the 400-line budget:
 `App.tsx` stood at 399 and this ticket adds to it.
 
-`WarCouncilMountProps` gained an optional `feederCarry?: BuffCarry` (defaulted to
+`WarCouncilMountProps` gained an optional `lowCarry?: BuffCarry` (defaulted to
 `EMPTY_BUFF_CARRY`, `apCapacity`'s precedent) and `WarCouncilRoundResult` a **required**
-`feederCarry: BuffCarry` (`coinsEarned`'s precedent, so the compiler enumerates every construction
-site). `App.tsx` passes `run.feederCarry` down and `result.feederCarry` back into `recordEncounter`.
-See [hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+`lowCarry: BuffCarry` (`coinsEarned`'s precedent, so the compiler enumerates every construction
+site). `App.tsx` passes `run.lowCarry` down and `result.lowCarry` back into `recordEncounter`.
+See [hunt/the-low-carry.md](../hunt/the-low-carry.md).
 
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
 project's `verbatimModuleSyntax` tsconfig setting). `src/app/warCouncil/`'s own exports —
@@ -145,7 +158,7 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
   widened `RunPhase` union, the roster reads that make this the only file naming an opponent, the two
   `RunPathScreen` mounts, and the one line of `handleNewRun` that is the whole of AC10 (DLR-71,
   DLR-80, DLR-82, DLR-84, DLR-85), and — since DLR-150 — the screen switch living in `screenFor.ts`
-  as a pure function, `RunPhase` moving there with it, and the Feeder carry threaded down and back.
+  as a pure function, `RunPhase` moving there with it, and the low carry threaded down and back.
 
 - [The `ErrorBoundary`](error-boundary.md) — where it is mounted and why root-only, why it is the
   only class in `src/`, what it does not catch, and what the fallback promises and refuses to

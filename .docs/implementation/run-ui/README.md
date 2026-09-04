@@ -1,7 +1,23 @@
 # Run verdict and shop UI — `src/app/run/`
 
 **Status:** implemented
-**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, DLR-157, DLR-158, DLR-159, DLR-160, DLR-161, 2026-09-01 (unkeyed)
+**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, DLR-157, DLR-158, DLR-159, DLR-160, DLR-161, DLR-162, DLR-165, DLR-166, DLR-167, 2026-09-01 (unkeyed)
+
+> **Four tickets landed on 2026-09-03/04 and the narrative below has not been rewritten around
+> them.**
+>
+> - **DLR-162 gave the Manage Buffs screen a second job.** Beside combining a pile it now **spends a
+>   wildcard** on a suited card, stripping that card's suit condition. `WildcardBand.tsx`,
+>   `WildTargetBands.tsx`, `WildTargetCard.tsx` and `WildMark.tsx` are its surface, and
+>   `manageBuffsConfirm.css` came out of the fix pass's CSS split. A target with no suit — Skull Low,
+>   either protective family, an activated card, another wildcard — is refused, and so is a card
+>   already wild.
+> - **DLR-165 renamed the card vocabulary.** Names read **Bell High**, **Key Low**, **Skull Low**
+>   (a space, not a hyphen); text reads *go high on {suit}* / *go low on {suit}*.
+> - **DLR-166 removed the Timebomb and the Blast Guard**, both of which this folder's shop and slot
+>   pages still name as purchasable-in-principle. They are not: their `ShopItem` members, prices and
+>   the Guard's refusal code were deleted, not shelved.
+> - **DLR-167 added Curse** to the slot machine's pool.
 
 ## Responsibility
 

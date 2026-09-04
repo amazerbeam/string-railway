@@ -1,7 +1,7 @@
 Part of [Hunt](README.md).
 
 DLR-126 is the ticket that made a consumable a consumable. Everything DLR-108 built applies equally
-to a Cheat, a Timebomb and a Ward — a between-tricks window, a tiered AP price, three refusal codes,
+to a Cheat and a Ward — a between-tricks window, a tiered AP price, three refusal codes,
 and DLR-114's two-tap poise/commit. None of it makes a card **one-shot**. Before this ticket,
 activating a Ward spent 2 AP, recorded its id in `activatedThisTrick`, had that record wiped by
 `openBuffWindow` at the next trick boundary, and **did nothing at all** — the card stayed in
@@ -14,19 +14,18 @@ had was an **effect** or any way to be **spent**.
 
 ## "Consumable" means two different things in this codebase — deliberately
 
-`buffCosts.ts` has a `BuffConsumableKind` union and a `CONSUMABLE_AP_COST` table covering **eight**
-kinds: the five one-shot items plus Cheat, Timebomb and Shield. That is a **pricing bucket** — it
-means "priced off the condition-family formula", nothing more.
+`buffCosts.ts` has a `BuffConsumableKind` union and a `CONSUMABLE_AP_COST` table that is a **pricing
+bucket** — it means "priced off the condition-family formula", nothing more.
 
 `consumables.ts`'s `ConsumableItemKind` covers **five**: `Ward`, `Puppeteer`, `SecondThoughts`,
-`Foresight`, `Spyglass`. That is the narrower thing — an item **held until used, then gone**. Cheat,
-Timebomb and Shield stay a **separate, closed union of their own**: all three are `Activated`, and
-each **arms felt state at the spend** — a Cheat sets `cheatTricksRemaining`, a Timebomb sets
-`timebombArmedDamage`, `activateShield` raises `shieldHearts` — which is orthogonal to whether the
-card *also* leaves the pile. Before DLR-142 (2026-08-25) it never did: `isConsumableItem` answered
-`false` for all three unconditionally, so a Timebomb could be spammed every trick for as long as the
-pile held one. **DLR-142 makes it a developer-owned choice, defaulted `true`** — see
-`ACTIVATED_CARD_SINGLE_USE` below.
+`Foresight`, `Spyglass`. That is the narrower thing — an item **held until used, then gone**. The
+activated cards — Cheat, Shield and Curse — stay a **separate, closed union of their own**
+(`ActivatedItemKind`): each is `Activated`, and each **arms felt state at the spend** — a Cheat sets
+`cheatTricksRemaining`, `activateShield` raises `shieldHearts`, a Curse sets `curseArmedBuff` — which
+is orthogonal to whether the card *also* leaves the pile. Before DLR-142 (2026-08-25) it never did:
+`isConsumableItem` answered `false` for all of them unconditionally, so one could be spammed every
+trick for as long as the pile held a copy. **DLR-142 makes it a developer-owned choice, defaulted
+`true`** — see `ACTIVATED_CARD_SINGLE_USE` below.
 
 The two unions are not a duplication to reconcile. They answer different questions, and
 `isConsumableItem` in `consumables.ts` is the one that decides whether an activation also spends the
@@ -36,51 +35,57 @@ narrower set can never drift out of the wider one.
 ## `ACTIVATED_CARD_SINGLE_USE` — DLR-142, a per-card revert switch
 
 ```ts
+type ActivatedItemKind = typeof BuffKind.Cheat | typeof BuffKind.Shield | typeof BuffKind.Curse
+
 export const ACTIVATED_CARD_SINGLE_USE: Readonly<Record<ActivatedItemKind, boolean>> = {
   [BuffKind.Cheat]: true,
-  [BuffKind.Timebomb]: true,
   [BuffKind.Shield]: true,
+  [BuffKind.Curse]: true,
 }
 ```
 
-`isConsumableItem(buff)` now returns `true` for the five DLR-111 items (`isConsumableItemKind`,
-unchanged) **OR** for Cheat/Timebomb/Shield when this table says so for that kind. The table is
+`isConsumableItem(buff)` returns `true` for the five DLR-111 items (`isConsumableItemKind`,
+unchanged) **OR** for Cheat / Shield / Curse when this table says so for that kind. The table is
 deliberately **not** a merge into `ConsumableItemKind` — the developer rejected that shape because
 reverting one card would then mean editing five separate tables in lock-step
 (`CONSUMABLE_TIMING`, `CONSUMABLE_EFFECT_LIVE`, `ConsumableEffect`, `consumableEffectOf`'s switch,
-plus the union itself). Reverting Timebomb alone to "stays in the pile" is one line —
-`[BuffKind.Timebomb]: false` — and nothing else in the codebase changes; `isConsumableItem` is the
-table's only reader. This follows the same pattern `AP_REFRESH_CADENCE` (`apConfig.ts`) already
-sets for a developer-owned, easily-reversed behavioural switch.
+plus the union itself). Reverting one card to "stays in the pile" is one line — `false` in this
+table — and nothing else in the codebase changes; `isConsumableItem` is the table's only reader.
+This follows the same pattern `AP_REFRESH_CADENCE` (`apConfig.ts`) already sets for a
+developer-owned, easily-reversed behavioural switch.
 
-`spendConsumable`'s own guard was changed in the same ticket, from `isConsumableItemKind(found.kind)`
-to `isConsumableItem(found)` — a fix discovered mid-implementation, not planned up front. Before the
-fix, `isConsumableItem` said "yes, spend it" for Cheat/Timebomb/Shield while `spendConsumable`'s
-guard still said "no", so calling it on one of the three threw `RangeError` instead of removing the
-card. The two must read the same predicate, since one gates the call to the other.
+> **The Wildcard is not in this table**, and that is not an omission. It is spent on the Manage
+> Buffs screen rather than on the felt (`isShopOnlyBuff`, `BuffActivationRefusal.ShopOnly`), and
+> `spendWildcard` removes it from the pile itself.
+
+`spendConsumable`'s own guard was changed in DLR-142, from `isConsumableItemKind(found.kind)` to
+`isConsumableItem(found)` — a fix discovered mid-implementation, not planned up front. Before the
+fix, `isConsumableItem` said "yes, spend it" for the activated cards while `spendConsumable`'s guard
+still said "no", so calling it on one threw `RangeError` instead of removing the card. The two must
+read the same predicate, since one gates the call to the other.
 
 ## `CONDITION_CARD_SINGLE_USE` — DLR-145, the same switch for the three condition families
 
 ```ts
 export const CONDITION_CARD_SINGLE_USE: Readonly<Record<ConsumedConditionKind, boolean>> = {
-  [BuffKind.Taker]: true,
-  [BuffKind.Feeder]: true,
-  [BuffKind.Sidestep]: true,
+  [BuffKind.SuitHigh]: true,
+  [BuffKind.SuitLow]: true,
+  [BuffKind.SkullLow]: true,
 }
 ```
 
 A **sibling** of `ACTIVATED_CARD_SINGLE_USE`, not an extension of it, and not a merge into
 `ConsumableItemKind`. The reason is the distinction at the top of this file: those five items have a
 **timing window and an effect**, and a condition card has neither — it has a **trigger**. So neither
-`CONSUMABLE_TIMING` nor `CONSUMABLE_EFFECT_LIVE` admits Taker, Feeder or Sidestep, and
+`CONSUMABLE_TIMING` nor `CONSUMABLE_EFFECT_LIVE` admits Suit High, Suit Low or Skull Low, and
 `consumableTimingOf` and `consumableEffectOf` still **throw** on one, which is correct: nothing calls
 them for a condition card.
 
 `isConsumableItem` is now three clauses, and it is still the only reader of all three tables:
 
 1. `true` for the five DLR-111 items (`isConsumableItemKind`);
-2. otherwise `ACTIVATED_CARD_SINGLE_USE[kind]` for Cheat / Timebomb / Shield;
-3. otherwise `CONDITION_CARD_SINGLE_USE[kind]` for Taker / Feeder / Sidestep.
+2. otherwise `ACTIVATED_CARD_SINGLE_USE[kind]` for Cheat / Shield / Curse;
+3. otherwise `CONDITION_CARD_SINGLE_USE[kind]` for Suit High / Suit Low / Skull Low.
 
 `false` for every other condition family — the eight DLR-145 cut from the mintable pool are still
 declared and still evaluated, and if one were ever minted again it would behave exactly as it always
@@ -89,7 +94,7 @@ did. Reverting one card to "stays in the pile" is one `false`, as above.
 `spendConsumable` needed **no** change: it gates on `isConsumableItem`, which now admits the three.
 
 **This is the change that turns a rented buff into a spent one**, and it is the whole point of the
-Version 6 pass. Before it, a Taker was re-activated and re-paid every trick and the correct play was
+Version 6 pass. Before it, a Suit High card was re-activated and re-paid every trick and the correct play was
 to dump the whole action-point pool every trick, because the pool came back before the next one.
 Action points went off in the same ticket for exactly that reason — see
 [action points](action-points.md#action-points-are-switched-off--dlr-145-2026-08-25). The two are
@@ -151,8 +156,8 @@ the count is of; merging them would report "2x Ward" for two cards that absorb d
 `activateFromPile(state, buffs, buff, windowOpen)` in `buffActivation.ts` calls `activateBuff` first
 — so a refused activation throws before the pile is touched and neither half lands — then returns
 `{ activation, buffs }` with the card removed **only** when `isConsumableItem` is true. Since
-DLR-142, that now includes a Cheat, a Timebomb or a Shield by default, and since DLR-145 a Taker, a
-Feeder or a Sidestep too — see `ACTIVATED_CARD_SINGLE_USE` and `CONDITION_CARD_SINGLE_USE` above for
+DLR-142, that now includes a Cheat, a Shield or a Curse by default, and since DLR-145 a Suit High, a
+Suit Low or a Skull Low card too — see `ACTIVATED_CARD_SINGLE_USE` and `CONDITION_CARD_SINGLE_USE` above for
 the two toggles and how to revert one card. On the consumable branch `activateFromPile` also appends
 the card to `activation.spentThisTrick`, which is what keeps it firing at this trick's resolution
 after it has left the pile.
@@ -201,14 +206,14 @@ Puppeteer through a window where it would be inert; `NoEffectYet` keeps it unspe
 
 `EncounterState` gained `wardAbsorbs: Damage`, seeded `NO_WARD` by `startEncounter` — which is what
 clears it at an encounter boundary with no explicit clear step to forget, the same argument
-`shieldHearts` and `pendingTimebomb` already make (and `pendingApplyPayout` did, until DLR-156 deleted it). It survives a hand; it does
+`shieldHearts` already makes. It survives a hand; it does
 not survive a fight.
 
 `activateWard` mirrors `activateShield` verbatim: it **SETS** the tier's figure and never adds, sets
 downward too (a bronze Ward after a gold one leaves 1, not 5), returns the encounter unchanged when
 it is already resolved, and never throws for any `BuffTier`. The copied rule is deliberate — two
 adjacent guards with opposite stacking rules is exactly the pair a later edit "makes consistent" by
-mistake, and `activateShield`'s own docblock already warns about that against `queueTimebomb`.
+mistake.
 
 Inside `applyDamage` — the module's single damage funnel — the order is **Ward → blue hearts → red
 health**. A Ward breaks on contact regardless of how much it ate; a blue heart is spent one point at
@@ -249,11 +254,14 @@ made it false; the comment was corrected rather than left.
 
 **Ward's silver and gold tiers are nearly indistinguishable in play, and all three rows ship
 anyway.** DLR-111 recommended deleting silver and gold because `DAMAGE_PER_HIT = 1` makes absorbing
-1, 3 and 5 the same outcome. The code refutes the premise: `streak.ts`'s `damageToPlayer` is
-`(trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer`, and `TIMEBOMB_DAMAGE`'s player column is
-2 / 4 / 6 — so a player hit is 1, **or 3 / 5 / 7 when a Timebomb detonates against them**. Silver
-and gold Ward are the only cards that cover those, and deleting them would remove the only answer to
-the biggest hit the game can deal. `DAMAGE_PER_HIT` was not touched; it moves the whole game.
+1, 3 and 5 the same outcome. DLR-126 refuted the premise on the strength of a Timebomb detonation
+making a player hit 3 / 5 / 7 — and **that refutation is gone with the mechanic** (DLR-166).
+
+Today `streak.ts` computes `damageToPlayer` as `trickHit ? hitDamage : 0`, where `hitDamage` is
+`QUARRY_TREASURE_DAMAGE` (2) on a Defeat that carried a Treasure and `DAMAGE_PER_HIT` (1) otherwise.
+So a player hit is **1 or 2**, and two hit sizes still do not separate three Ward rungs. All three
+rows ship because nothing has been decided about them, not because they are distinguishable.
+`DAMAGE_PER_HIT` was not touched; it moves the whole game.
 
 What remains open is a tuning question, not an engine one: the distinguishing case is
 *self-inflicted*, so unless the Quarry gains a multi-point hit, silver and gold Ward stay close to
@@ -263,8 +271,8 @@ dead content.
 
 `mintGrants` generates none of the five, and neither does the opening pile: **`buffTemplates.ts` has
 no Ward row at all**, so the five consumables are absent from the `BUFF_TEMPLATES` pool — 73
-templates when this was written (71 condition plus the two activated ones, Cheat and Timebomb), **13
-since DLR-145** (11 condition plus the same two) — that both the reel and — since
+templates when this was written, **19 today** (16 condition plus 3 activated: Cheat, the Wildcard
+and Curse) — that both the reel and — since
 DLR-135, 2026-08-25 — the run's opening draw pull from. So no path a player can reach produces a
 consumable, and not one line of this page is exercised by playing the game today.
 

@@ -18,40 +18,65 @@ trick_ (R1–R7), cited and never restated.
 
 `buffFires(buff, ctx)` in `buffEvaluation.ts` is a **total `switch` over `BuffConditionKind`**,
 guarded above the switch by `isConditionFamily(buff.kind)` (`buffCosts.ts`). Everything that is not
-one of the thirteen condition families (eleven until DLR-161) — all eight Activated consumables (Cheat, Timebomb, Ward,
-Puppeteer, Second Thoughts, Foresight, Spyglass, Shield) and `BuffKind.Unassigned` — returns `false`
-through that guard rather than through a `default` case. The switch itself has no `default`, so a
-fourteenth family added to `buffCosts.ts` fails to compile **here** rather than silently never firing.
+one of the thirteen condition families (eleven until DLR-161) — every Activated card (Cheat, Curse,
+the Wildcard, Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, Shield) and
+`BuffKind.Unassigned` — returns `false` through that guard rather than through a `default` case. The
+switch itself has no `default`, so a fourteenth family added to `buffCosts.ts` fails to compile
+**here** rather than silently never firing.
 
-The eleven, and what each reads:
+**Every case reads the mechanical axis — `playerWentHigh`, did the player physically take the cards
+— and nothing else.** That is the whole reason the axis has its own word: whether a trick banked or
+hurt is the *outcome* axis, and no condition consults it.
 
-| Family              | Fires when                                                              |
-| ------------------- | ----------------------------------------------------------------------- |
-| `taker`             | the player won the trick and played a card of the target suit           |
-| `feeder`            | the player lost the trick and played a card of the target suit          |
-| `markOfRank`        | the player won the trick and played a card of the target rank           |
-| `sidestep`          | the trick carried a skull and the player did **not** win it (a Dodge)   |
-| `glutton`           | the trick carried a skull and the player **did** win it (a Skull Win)   |
-| `hoarder`           | the bank **after this trick's climb** reaches the threshold             |
+The thirteen, and what each reads:
+
+| Family              | Fires when                                                                |
+| ------------------- | ------------------------------------------------------------------------- |
+| `suitHigh`          | the player went high and played a card of the target suit                 |
+| `suitLow`           | the player went low and played a card of the target suit                  |
+| `markOfRank`        | the player went high and played a card of the target rank                 |
+| `skullLow`          | the trick carried a skull and the player went low                         |
+| `glutton`           | the trick carried a skull and the player went high                        |
+| `skullHelmet`       | at bronze, as `glutton`; at silver and gold, any Defeat — see below        |
+| `skullTether`       | as `skullHelmet`                                                          |
+| `hoarder`           | the bank **after this trick's climb** reaches the threshold               |
 | `unbloodied`        | the run of tricks ending with no damage to the player reaches it        |
 | `debtCollector`     | Apply Damage has been **pressed** this hand                             |
 | `keepsake`          | it is the final trick and a card of the target suit is still in hand    |
 | `miser`             | the run's purse reaches the threshold                                   |
 | `cornered`          | the player's health is below the threshold percentage of the maximum    |
 
-Two of those readings are decisions rather than transcriptions and are worth stating plainly.
-**Sidestep and Glutton's "with this card" needs no target-card field**, because a buff is activated
-in the between-tricks window *for the coming trick* — so "this card" already means "the card played
-on the trick this buff was bought for". And **Debt Collector fires on the Apply Damage press, not on
+Two readings are decisions rather than transcriptions and are worth stating plainly.
+
+**Two of these families are the reason the vocabulary was split, and their predicates should be read
+literally:**
+
+- **`suitLow` is `!playerWentHigh && (wild || suit matches)`. There is no skull term in it at all**,
+  so it pays on a **Low Victory and a Low Defeat alike**. That is deliberate: it is a *Low* card and
+  it does not care about the outcome.
+- **`skullLow` is `skullTrick && !playerWentHigh`** — the only condition card that can never fire on
+  a bad outcome, because a skull trick the player did not take is always a Low Victory.
+
+**No buff attaches to a card.** A buff is activated for a *trick*, in the between-tricks window, and
+checked when that trick resolves — so `skullLow` and `glutton` need no target-card field. Their
+printed text said "with this card" until DLR-167 corrected it: that phrasing came from an unbuilt
+"Apply-to-card" category and was never what the code did. And **Debt Collector fires on the Apply
+Damage press, not on
 the landing** (DLR-109's reading, unenforced in code until now): a hand-scoped `applyDamagePressed`
 flag is set in `handleTapApplyDamage`'s committing branch and read at the next trick's resolution.
 Firing on the landing would pay a trick or more later and would quietly contradict a reading DLR-109
 already recorded.
 
-**`buffFires` never throws.** No `ErrorBoundary` exists (DLR-131) and this runs inside a reducer
-dispatch, so a throw would unmount the tree. `cornered`'s percentage is evaluated as
+**`buffFires` never throws.** A root `ErrorBoundary` exists (DLR-131), but it catches a render-phase
+throw and replaces the whole app with a fallback — it is a net, not a licence, and this runs inside
+a reducer dispatch where a throw would unmount the tree. `cornered`'s percentage is evaluated as
 `health * 100 < threshold * PLAYER_START_HEALTH` — integer on both sides, **no division anywhere in
 the module**, so no `NaN` is producible and no epsilon is needed.
+
+**A wild condition drops the suit term and nothing else.** `buffFires` reads one local,
+`const wild = buffIsWild(buff)`, and the two suited cases become
+`ctx.playerWentHigh && (wild || suit matches)` and its low twin. The mechanical axis is untouched: a
+wild Suit High card still has to go high. See [Wild cards](wild-cards.md).
 
 Every number the evaluator compares against is read from a constant, never inlined:
 `CONDITION_THRESHOLD` in `buffTemplates.ts` (Hoarder 2/3/4 bank, Unbloodied 2/3/4 tricks, Miser
@@ -65,32 +90,34 @@ A satisfied condition is not the same as a payment. `firedBuffs(active, firedThi
 its once-per-hand allowance; and its condition is satisfied. `BUFF_CADENCE` in `buffs.ts` is the
 total map, and `firesOncePerHand` is the single statement of which cadences it applies to.
 
-- **Event** (Taker, Feeder, Mark of the *R*, Sidestep, Glutton, Debt Collector) — fires on every
-  trick its condition holds.
+- **Event** (Suit High, Suit Low, Mark of the *R*, Skull Low, Glutton, Debt Collector, Skull Helmet,
+  Skull Tether) — fires on every trick its condition holds.
 - **Threshold** (Hoarder, Unbloodied, Miser, Cornered) — fires **once per hand**, filtered against
   the `firedThisHand` id list. Otherwise a condition like "purse at 10 coins" would pay on every
   remaining trick of the hand for having been true once.
 - **Terminal** (Keepsake) — only when `ctx.finalTrick`.
-- **Activated** (all eight consumables, plus `Unassigned`) — never fires from a condition at all.
+- **Activated** (Cheat, Curse, the Wildcard, Shield, the five consumables, plus `Unassigned`) —
+  never fires from a condition at all. A Curse's payoff is therefore owed for the trick it was
+  *activated* for, and `curseBonusOf` reads the activated set rather than the fired set.
 
 Order follows `active`, because the pile's order is the player's mental order.
 
 ## `resolveTrickBuffs` — one call, so `streak.ts` states R3's order and nothing else
 
-`resolveTrickBuffs(input, ctx, trickIsLoss)` composes the cadence filter with the accrual arithmetic and returns
+`resolveTrickBuffs(input, ctx, trickIsDefeat)` composes the cadence filter with the accrual arithmetic and returns
 `{ accrual, firedIds }`. It **delegates every figure to `resolveFiredBuffs`** in `buffAccrual.ts` —
 R1 (one axis per contribution), R2 (contributions add within an axis), R5 (the Overlap Bonus,
 `max(0, k − 1)`) and R6 (the per-hand caps) are never re-derived here. That is what leaves
 `src/warCouncil/streak.ts` holding exactly one rule of its own: R3's *order*.
 
-**`trickIsLoss` is the outcome axis, and this module never derives it.** DLR-150 added it as a third
-parameter that is passed straight through to `resolveFiredBuffs` and read for nothing here. It
-arrives from `src/warCouncil/streak.ts` as `!isTaken(outcome)`, because that file's `TAKEN` table *is*
-the skull inversion and a second statement of it in `src/hunt/` — a `trickWasLoss(ctx)` predicate
-reading `playerWon === skullTrick` — would be two copies of the game's most misread rule in two
-modules. Every `buffFires` case still reads only the **mechanical** axis (`ctx.playerWon`, did the
-player physically take the cards); the outcome axis is used for exactly one thing, the Feeder carry.
-See [The Feeder carry](the-feeder-carry.md).
+**`trickIsDefeat` is the outcome axis, and this module never derives it.** DLR-150 added it as a
+third parameter that is passed straight through to `resolveFiredBuffs` and read for nothing here. It
+arrives from `src/warCouncil/streak.ts` as `!isTaken(outcome)`, because that file's `TAKEN` table
+*is* the skull inversion and a second statement of it in `src/hunt/` — a `trickWasDefeat(ctx)`
+predicate reading `playerWentHigh === skullTrick` — would be two copies of the game's most misread
+rule in two modules. Every `buffFires` case still reads only the **mechanical** axis
+(`ctx.playerWentHigh`, did the player physically take the cards); the outcome axis is used for
+exactly one thing, the low carry. See [The low carry](the-low-carry.md).
 
 `BuffTrickInput` and `BuffHandContext` are declared **in this module**, not in `streak.ts`, because
 `src/hunt/` owns what a buff is and `streak.ts` is already an importer of `../hunt`. `BuffHandContext`
@@ -197,12 +224,16 @@ Two consequences worth stating:
   from before DLR-145 silently loses those starting cards and odds boosts. See
   [../vault/README.md](../vault/README.md).
 
-## Feeder's Momentum row came back — DLR-150, 2026-08-27
+## Suit Low's Momentum row came back — DLR-150, 2026-08-27
 
-`feeder` is unchanged as a **condition**: it still fires on `!ctx.playerWon && suit matches`, with no
-skull term in it at all, so it pays on a dodge and on a clean loss alike — deliberate, and not a bug.
-What changed is what a Feeder may be *minted* as. DLR-145 had cut it to Blade-only because a
-multiplier raised on the loss half was wiped by that loss's own reset before it could be spent; the
-carry removes exactly that failure mode, so `TEMPLATE_FAMILIES`'s Feeder row is `BLADE_AND_MOMENTUM`
-again and `BUFF_TEMPLATE_COUNT` is **16** (**18** since DLR-161 added the two protective families).
-The eight cut families and the two cut reward axes are untouched by this — one row came back, not the pruning. See [The Feeder carry](the-feeder-carry.md).
+`suitLow` is unchanged as a **condition**: it fires on `!ctx.playerWentHigh && (wild || suit
+matches)`, with no skull term in it at all, so it pays on a **Low Victory and a Low Defeat alike** —
+deliberate, and not a bug. What changed is what one may be *minted* as. DLR-145 had cut it to
+Blade-only because a multiplier raised on the Defeat half was wiped by that Defeat's own reset
+before it could be spent; the carry removes exactly that failure mode, so `TEMPLATE_FAMILIES`'s Suit
+Low row is `BLADE_AND_MOMENTUM` again.
+
+`BUFF_TEMPLATE_COUNT` now stands at **19** — 16 condition templates (6 Suit High + 6 Suit Low +
+2 Skull Low + 1 Skull Helmet + 1 Skull Tether) plus 3 activated ones (Cheat, the Wildcard, Curse).
+The eight cut families and the two cut reward axes are untouched by all of it — one row came back,
+not the pruning. See [The low carry](the-low-carry.md).

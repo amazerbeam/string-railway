@@ -9,7 +9,7 @@ pool, and that single fact is what shapes every decision below.
 
 **The health always lands.** Nothing on either card, at any rung, touches `damageToPlayer` — it is
 computed in `streak.ts` before the reset block these cards act in, and DLR-161 did not go near it.
-That is the same line the Swan ladder, the Blast Guard and the Timebomb exception already hold.
+That is the same line the Swan ladder already holds.
 
 ## The rule, in one place — `buffProtection.ts`
 
@@ -22,7 +22,7 @@ is why there is no second copy of `buffFires` anywhere in this tree.
 interface StreakProtection { keepsTotal, keepsRoll, totalBonus, rollBonus }
 const NO_STREAK_PROTECTION: StreakProtection
 isProtectiveKind(kind): kind is BuffProtectiveKind
-protectionCoversCleanLoss(tier): boolean
+protectionCoversLowDefeat(tier): boolean
 conditionIsWidened(buff): boolean
 streakProtectionFor(fired: readonly Buff[]): StreakProtection
 ```
@@ -32,7 +32,7 @@ streakProtectionFor(fired: readonly Buff[]): StreakProtection
   gold beside a bronze adds 1. A total either survives or it does not, so there is deliberately no
   way to express "protects by N". Both copies are still **spent** — that is the arming layer's
   business and this function does not know about it.
-- **`protectionCoversCleanLoss` is THE one statement of the tier widening**, read by two callers:
+- **`protectionCoversLowDefeat` is THE one statement of the tier widening**, read by two callers:
   `buffFires` in `buffEvaluation.ts`, to decide whether the card fires at all, and
   `buffConditionSentence` in `src/app/warCouncil/buffLabels.ts`, to decide which sentence the card
   face prints. Same shape as `conditionThresholdOf` — one rule, two readers, no drift. It reads a
@@ -48,19 +48,27 @@ streakProtectionFor(fired: readonly Buff[]): StreakProtection
 ```ts
 case 'skullHelmet':
 case 'skullTether':
-  return protectionCoversCleanLoss(buff.tier)
-    ? ctx.skullTrick === ctx.playerWon
-    : ctx.skullTrick && ctx.playerWon
+  return protectionCoversLowDefeat(buff.tier)
+    ? ctx.skullTrick === ctx.playerWentHigh
+    : ctx.skullTrick && ctx.playerWentHigh
 ```
 
-**Bronze fires on an eaten skull only.** Silver and gold widen to any trick that *hurt* the player,
-which is the union of an eaten skull and a clean loss — and on `BuffTrickContext`'s mechanical axis
-(`playerWon` = did the player physically take the trick) that union is exactly
-`skullTrick === playerWon`. Written as the equality with the derivation in a comment, rather than as
-two ORed clauses.
+**Bronze fires on a High Defeat only** — the player went high on a skull trick. Silver and gold widen
+to any **Defeat**, which is the union of a High Defeat and a Low Defeat — and on `BuffTrickContext`'s
+mechanical axis (`playerWentHigh` = did the player physically take the cards) that union is exactly
+`skullTrick === playerWentHigh`:
 
-Neither card fires on a **dodge**. A dodge is a good outcome reached by losing the trick — it banks —
-and there is nothing there to protect.
+| Outcome | `skullTrick` | `playerWentHigh` | Widened card |
+| --- | --- | --- | --- |
+| High Defeat | true | true | fires |
+| Low Defeat | false | false | fires |
+| Low Victory | true | false | does not |
+| High Victory | false | true | does not |
+
+Written as the equality with the derivation in a comment, rather than as two ORed clauses.
+
+Neither card fires on a **Low Victory**. That is a good outcome reached by going low on a skull
+trick — it banks — and there is nothing there to protect.
 
 Restoring the eaten-skull condition for these two families **did not re-enable any of the other seven
 cut condition families**: they carry their own `buffFires` cases and their own
@@ -121,13 +129,15 @@ arithmetically inert on the trick these cards fire on, because DLR-156 made dama
 hurt trick computes none; it is satisfied as written, and whether it should *show* is a design
 question the ticket flagged rather than answered.
 
-## The two templates, and the pool at 18
+## The two templates, and where the pool stands
 
 Two rows in `TEMPLATE_FAMILIES`, each carrying the single-entry `PROTECTION_ONLY` axis list, so each
-family holds exactly one template. `BUFF_TEMPLATE_COUNT` went **16 → 18**:
+family holds exactly one template. DLR-161 took `BUFF_TEMPLATE_COUNT` from 16 to 18; DLR-162 and
+DLR-167 have since added the Wildcard and Curse, and Timebomb's row is gone, so the pool now stands
+at **19**:
 
 ```
-6 Taker + 6 Feeder + 2 Sidestep + 1 Skull Helmet + 1 Skull Tether + Cheat + Timebomb
+6 Suit High + 6 Suit Low + 2 Skull Low + 1 Skull Helmet + 1 Skull Tether + Cheat + Wildcard + Curse
 ```
 
 The persisted ids are `skullHelmet:protection` and `skullTether:protection`, composed by the existing
@@ -136,8 +146,8 @@ is Vault-persisted, and this ticket **adds** two ids and renames none, so nothin
 `SAVE_SCHEMA_VERSION` was not bumped. An older save cannot contain either id, and `reconcileVault`
 already drops an id this build has no template for.
 
-`MintableConditionKind` and `MintableRewardAxis` were widened to admit them; the reachability audit
-now counts **7** mintable kinds, **14** unreachable, and 18 templates.
+`MintableConditionKind` and `MintableRewardAxis` were widened to admit them — that widening, not a
+slot weight, is what makes a family *constructible*.
 
 Combining needs no change — `buffCombineKey` already works on `(templateId, tier)`, so two identical
 Helmets merge into a silver one by the rule that was already there.
@@ -148,7 +158,7 @@ Helmets merge into a silver one by the rule that was already there.
 |---|---|---|
 | `REWARD_TIER_VALUE[Protection]` | `0 / 0 / 1` | **transcribed** from the ticket's own acceptance criterion, not chosen. The gold `+1` is flagged **by the ticket** as possibly undersized against the game's 1/3/5 damage and 2/3/5 multiplier ladders |
 | `REWARD_BASE[Protection]` | `2 / 3 / 4` AP | **nobody chose it** — no source document prices a protective axis; the ladder shape is copied from Coins' |
-| `CONDITION_MODIFIER` for both families | `0`, `0` | **nobody chose it** — the neutral row Taker already takes |
+| `CONDITION_MODIFIER` for both families | `0`, `0` | **nobody chose it** — the neutral row Suit High already takes |
 | `SLOT_FAMILY_WEIGHTS` — Skirmisher | Helmet `3`, Tether `2` | **nobody chose it** |
 | `SLOT_FAMILY_WEIGHTS` — Strongbox | Helmet `1`, Tether `1` | **nobody chose it** (Strongbox is unreachable anyway — cut 2026-09-01) |
 | `SLOT_AXIS_WEIGHTS[Protection]` | Skirmisher `3`, Strongbox `1` | **nobody chose it, and it is inert today**: each protective family has exactly one axis, so `familyAxisTotal` equals the axis weight and it cancels out of `templateWeightFor`. The row exists to keep `SlotAxisWeights` total; a second protective axis is what would make it bite |
@@ -165,6 +175,6 @@ the tier widening in both directions, a fired buff on a non-protective axis bein
 on both families. `buffAccrual.test.ts` pins that a protective buff contributes nothing to any
 accrual counter and still raises the Overlap Bonus to 1 beside a Blade. `streak.buffs.test.ts` pins
 the reset block: each figure surviving alone, both surviving together, both golds adding their `+1`,
-two gold Helmets adding 1 rather than 2, a silver Helmet protecting a clean loss where a bronze one
-does not, neither card protecting a clean win or a dodge, `DAMAGE_PER_HIT` landing on every one of
-those cases, and the three Swan rungs unchanged by the de-nesting.
+two gold Helmets adding 1 rather than 2, a silver Helmet protecting a Low Defeat where a bronze one
+does not, neither card protecting a High Victory or a Low Victory, `DAMAGE_PER_HIT` landing on every
+one of those cases, and the three Swan rungs unchanged by the de-nesting.

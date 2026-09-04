@@ -47,7 +47,7 @@ Four properties are deliberate and each is load-bearing:
 - **Drawn WITH replacement since DLR-145**, so the opening hand holds duplicates on purpose. It was
   drawn *without* replacement through DLR-135, when four cards came out of a 73-template pool and
   four different cards was the point. Twenty cards cannot be drawn distinctly from thirteen
-  templates, and distinctness is no longer wanted either: three bronze Bell-Takers is exactly the
+  templates, and distinctness is no longer wanted either: three bronze Bell High cards is exactly the
   shape "one fight's ammunition" describes. `weightedDrawWithReplacement`
   (`slotWeights.ts`) is written as the without-replacement version's sibling — same weight-summing,
   same last-candidate float-drift fallback, exactly one `rng()` call per card, no splice, and the
@@ -80,17 +80,17 @@ can enter the sum; a sum of non-negative finite terms is non-negative and finite
 
 Both sub-decisions are **one-line reversals**, recorded here because a later balance pass may want
 them: `templateWeightFor(SlotMachineId.Skirmisher, template)` for a trick-lean opening hand, and
-`if (template.form === 'activated') return 0` to exclude Cheat and Timebomb.
+`if (template.form === 'activated') return 0` to exclude the activated cards.
 
-## Cheat and Timebomb are eligible draws
+## The activated cards are eligible draws
 
-They have been ordinary members of `BUFF_TEMPLATES` since DLR-132, and excluding them here would
-re-introduce exactly the special-casing that ticket removed. So **a run can open holding more than
-one Cheat, or two Timebombs**, and the guaranteed bronze Cheat is no longer the pile's only
-`Cheat`. (Until DLR-145 the argument that neither is degenerate at bronze rested on price: a bronze
-Cheat cost 3 action points and a bronze Timebomb 2, against a 6-point opening pool. Nothing costs
-anything now, so that argument is gone and nothing has replaced it — what limits either is that
-using one spends the card.)
+Cheat has been an ordinary member of `BUFF_TEMPLATES` since DLR-132, and the Wildcard and Curse
+joined it on the same footing; excluding them here would re-introduce exactly the special-casing
+DLR-132 removed. So **a run can open holding more than one Cheat, or a Curse, or a wildcard**, and
+the guaranteed bronze Cheat is no longer the pile's only `Cheat`. (Until DLR-145 the argument that
+none of them is degenerate at bronze rested on price, against a 6-point opening pool. Nothing costs
+anything now, so that argument is gone and nothing has replaced it — what limits them is that using
+one spends the card.)
 
 This is why `reachability.test.ts` no longer asserts
 `buffs.filter(kind === Cheat).length === RUN_STARTING_CHEATS`: that stopped being a true statement of
@@ -230,7 +230,7 @@ to the real engine through the headless simulator at 200 seeded runs each at see
 | Fight 1 winnable with nothing activated at all                  | **51.0%**  | **52.5%**  |
 
 The first figure holds even under a policy that activates **every legal buff at every window**. The
-earliest observed win against Aoife is **trick 3**. Design §4's arithmetic — one bronze Bell-Taker on
+earliest observed win against Aoife is **trick 3**. Design §4's arithmetic — one bronze Bell High on
 Momentum over two won Bell tricks paying `2 × (2 + 4) = 12` against 10 HP — is **not** what the
 shipped engine produces. **AC10's first half does not hold as written.** Its second half does.
 

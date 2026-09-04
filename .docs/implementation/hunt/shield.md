@@ -124,7 +124,7 @@ absorbs passes the remainder on to the blue hearts first, ahead of red health.
   is _still_ unreachable. **No blue heart has ever been drawn by anything.** DLR-142 also made
   Shield single-use by default (`ACTIVATED_CARD_SINGLE_USE`, see
   [consumable-items.md](consumable-items.md)) — once a Shield source exists, activating one removes
-  it from the pile the same way a Cheat or Timebomb now does.
+  it from the pile the same way a Cheat now does.
 - **The `breaking` overlay over-draws** when a shield partially absorbs a landed hit: 3 damage into
   2 blue hearts drops red health by 1 but draws 3 breaking red pips, because
   `resolution.damageToPlayer` is gross while `encounter.shieldHearts` is post-absorption and the

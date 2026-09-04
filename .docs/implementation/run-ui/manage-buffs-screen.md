@@ -76,8 +76,8 @@ rendered as a button that cannot act is an affordance that lies. Its reason is o
 behind a hover.
 
 **A ready tile is a `<button>`, and the gesture is two taps on the tile itself.** The first arms it
-and replaces its lower half with the confirmation: what is destroyed (`2 × Bronze Moon-Feeder`), what
-is made (`1 × Silver Moon-Feeder — +3 damage`), the pile count as `21 → 20 cards`, and `Combine` /
+and replaces its lower half with the confirmation: what is destroyed (`2 × Bronze Moon Low`), what
+is made (`1 × Silver Moon Low — +3 damage`), the pile count as `21 → 20 cards`, and `Combine` /
 `Cancel` as the tile's own controls. `Combine` carries `autoFocus`, so the gesture's second tap lands
 on a control that already has focus. The second tap commits. Confirmation is on the object rather
 than at a distant button, and the felt already teaches this arm-then-commit rhythm for activating a
@@ -90,8 +90,8 @@ Nothing in the copy argues that combining is good value — see the tension belo
 ## Announcing what was made
 
 After a commit the panel marks the pile the new card landed in with a persistent **"Just made"**
-badge and writes one `role="status"` sentence naming both halves (_"Two Bronze Moon-Feeders became
-one Silver Moon-Feeder — +3 damage."_). The badge is a **form change and stands until the next
+badge and writes one `role="status"` sentence naming both halves (_"Two Bronze Moon Low cards became
+one Silver Moon Low — +3 damage."_). The badge is a **form change and stands until the next
 combine** — not a flash, not a colour, and not on a timer: an announcement that has faded by the time
 the player looks is the same as no announcement.
 

@@ -18,6 +18,32 @@ base game's published rulebook, transcribed, and nothing in the pipeline maintai
 Docs are organized by module, not by ticket, and accumulate across every ticket that touches that
 folder — so a mechanic's explanation lives in one place regardless of which ticket last changed it.
 
+> ## Read this before anything below — five tickets landed on 2026-09-03/04
+>
+> The **per-module folders and their mechanic files are current.** This top-level page carries a long
+> ticket-by-ticket narrative, and that narrative has **not** been rewritten around the five. The
+> substantive changes:
+>
+> - **DLR-166 removed the Timebomb and the Blast Guard in full.** The fuse, the delayed-hit queue on
+>   `EncounterState`, the ticking heart state, the primed-card prop chain, both `ShopItem` members,
+>   `RunState.blastGuardHeld` and `PurchaseRefusal.GuardAlreadyActive` are gone, along with five
+>   documentation pages. **No effect in this game resolves later than the statement that decides it.**
+> - **DLR-165 split one pair of words into two.** **Victory** and **Defeat** name the outcome (banks
+>   or hurts); **High** and **Low** name whether the player physically took the cards. They cross into
+>   **High Victory** (clean win), **Low Victory** (going low under a skull), **Low Defeat** (clean
+>   loss) and **High Defeat** (going high on a skull). `BuffKind.Taker`/`Feeder`/`Sidestep` are
+>   `SuitHigh`/`SuitLow`/`SkullLow`; `playerWon` is `playerWentHigh`; `RunState.feederCarry` is
+>   `lowCarry`. **A buff card uses High or Low and never names Victory or Defeat.** The rename changed
+>   every persisted template id, so **`SAVE_SCHEMA_VERSION` is 2** and a version-1 Vault is rejected
+>   by version rather than migrated — deliberately.
+> - **DLR-162 added the wildcard**, spent on the Manage Buffs screen to strip a card's suit condition.
+>   Wildness **absorbs**, so it cannot be merged away.
+> - **DLR-167 added Curse**, the player's own skull, on `RoundState.cursedCards`.
+> - **DLR-163 gave the 3, the 5 and the 7 rules.** The decree can be a bare suit; the 5 raises the
+>   Swap pile for the player and swaps a card (possibly minting a skull) for the Quarry; **a hurt
+>   trick carrying a 7 costs 2 health rather than 1**, which retires the old "damage to the player,
+>   per event: 1, every time".
+
 Each module gets its own folder under here (e.g. `war-council/`), not a single flat file. A
 module's `README.md` is its spine — Status, Built by, Responsibility, Key types & exports, Rules &
 invariants, Deferred — and links out to one file per mechanic once the module has more than a
@@ -26,15 +52,15 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | --------------------- | ------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, DLR-154, DLR-156, DLR-161, PT-001, PT-002                                                                                                                                                                                                                    |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159, DLR-160                                                                                                                                                                                                                                         |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-157, DLR-159, DLR-160, DLR-161, PT-002                                                                                                                           |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, DLR-157, DLR-158, DLR-159, DLR-160, DLR-161, 2026-09-01 (unkeyed)                                                                                                                                                                                                                                                                                                                                               |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-158, DLR-159, DLR-161, 2026-09-01 (unkeyed), PT-001, PT-002 |
-| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156, DLR-161, play-tester 2026-09-02                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, DLR-154, DLR-156, DLR-161, DLR-163, DLR-165, DLR-166, DLR-167, PT-001, PT-002                                                                                                                                                                                                                    |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156, DLR-158, DLR-159, DLR-160, DLR-163, DLR-165, DLR-166, DLR-167                                                                                                                                                                                                                         |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-157, DLR-159, DLR-160, DLR-161, DLR-162, DLR-163, DLR-165, DLR-166, DLR-167, PT-002                                                                                                                           |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, DLR-157, DLR-158, DLR-159, DLR-160, DLR-161, DLR-162, DLR-165, DLR-166, DLR-167, 2026-09-01 (unkeyed)                                                                                                                                                                                                                                                                                                                                               |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-158, DLR-159, DLR-161, DLR-162, DLR-163, DLR-165, DLR-166, DLR-167, 2026-09-01 (unkeyed), PT-001, PT-002 |
+| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106, DLR-113, DLR-165                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145, DLR-165                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145, DLR-165                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156, DLR-161, DLR-163, DLR-165, DLR-166, DLR-167, play-tester 2026-09-02                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -345,11 +371,9 @@ even though the amounts no longer are. And **the marker is engine state**, becau
 preserved-bank rule is a bank rule — honouring it from the UI layer would mean the reducer re-deriving
 rules `resolveTrickBank` owns.
 
-Start at [hunt/timebomb-and-the-delayed-hit.md](hunt/timebomb-and-the-delayed-hit.md) for the queue and its
-single payment point, [war-council/the-timebomb-mark.md](war-council/the-timebomb-mark.md) for the marker
-and the replaced clean loss, or
-[war-council-ui/timebomb-charge-and-the-mark.md](war-council-ui/timebomb-charge-and-the-mark.md) for the
-plate, the mark and the reducer split.
+> **All of it is gone (DLR-166).** The three pages that described it were deleted with the mechanic.
+> **No effect in this game resolves later than the statement that decides it** — every trick's damage
+> lands at that trick.
 
 **It carried three refactors and fixed one latent defect, none of which an acceptance criterion asked
 for.** `resolveTrickBank`'s four positional booleans became a `TrickFacts` object, because a fifth would
@@ -390,12 +414,12 @@ means the player takes the 2 they would otherwise have dodged. **So holding a Gu
 health**, the correct play is sometimes not to hold one, and there is no UI hint. The developer accepted
 that as a real decision rather than smoothing it out.
 
-Start at [hunt/blast-guard.md](hunt/blast-guard.md) for the flag and its lifetime,
-[hunt/encounter-state-and-end-conditions.md](hunt/encounter-state-and-end-conditions.md) for the
-Quarry-first sequencing and the two remaining end conditions,
-[war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for the two sources of a hit, or
-[war-council-ui/timebomb-charge-and-the-mark.md](war-council-ui/timebomb-charge-and-the-mark.md) for
-`applyResolution`'s pay → clear → re-book ordering.
+> **The Blast Guard is gone (DLR-166), along with the Timebomb it insured against.** What survived
+> that ticket is the Quarry-first damage sequencing — see
+> [hunt/encounter-state-and-end-conditions.md](hunt/encounter-state-and-end-conditions.md) — and the
+> reset block in
+> [war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md), which now has one
+> trigger rather than two.
 
 **Three reviewers independently caught the same gap, and it is the one worth remembering.** `DecreePile`'s
 `primed` prop was built correctly in one task and **never passed at its mount** in the next — so a
@@ -739,7 +763,7 @@ later (1 beyond the press's own trick) rather than in the same reducer transitio
 the same discipline that already made an ordinary hit's bank/multiplier reset undodgeable. A new pure
 module, `src/hunt/applyDamagePayout.ts`, is this game's **second** effect that resolves later than
 the thing that caused it, deliberately reusing Timebomb's queue-on-`EncounterState` shape
-(`hunt/timebomb-and-the-delayed-hit.md`) rather than inventing a second mechanism — and it is a
+rather than inventing a second mechanism — and it is a
 sibling of Timebomb, never a synonym: a payout is _queued_ and _lands_, never _primed_, _ticking_, or
 _detonating_.
 
@@ -960,8 +984,10 @@ already committed — because that is the only moment either has value: exactly 
 cannot disagree.
 
 > **Timebomb was narrowed out of that exception on 2026-08-26 — Cheat is now the only card in it.**
-> See [the Timebomb's activation window](hunt/cheat-and-timebomb-buffs.md#the-activation-window-cheat-mid-trick-timebomb-between-tricks-2026-08-26)
-> for why the two cards' reasoning was never actually the same one.
+> See [the activation window](hunt/activated-cards.md#the-activation-window-is-a-hardcoded-kind-check-with-exactly-one-exception)
+> for why the two cards' reasoning was never actually the same one. **Cheat is still the only
+> exception**, and DLR-167's Curse takes the ordinary between-tricks window for exactly the reason
+> stated there.
 
 **Nothing was retuned, and nothing was played.** This was an unattended sprint run: the plan-approval
 gate was auto-approved and the UI mockup gate was skipped, so the redesigned loadout panel — now
@@ -972,7 +998,7 @@ activations per hand rose from 0.88 to 1.50, mean AP spent per hand from 2.33 to
 played holding no activatable buff fell from 67.7% to **0.0%** — every hand now opens holding at
 least the starting Cheat. Win rate stayed 0.0% (0/200 both times); no faults.
 
-Start at [hunt/cheat-and-timebomb-buffs.md](hunt/cheat-and-timebomb-buffs.md) for the minting path
+Start at [hunt/activated-cards.md](hunt/activated-cards.md) for the minting path
 and the tier tables, [hunt/README.md](hunt/README.md) for the union and the deleted `RunState`
 fields, or [war-council-ui/action-bar-and-loadout.md](war-council-ui/action-bar-and-loadout.md) for
 where the two effects fire in `handleTapBuff`. `.docs/game_rules/the-hunt.md` records this as a rule
@@ -1307,8 +1333,8 @@ And the window a Timebomb is armed in is **wider than the window `canAct` allows
 reducer's tap handler and the hand's interactivity gate check `timebombArmed` ahead of it.
 
 **Every colour, size, timing and string it added is a placeholder pending the developer** — the
-mark's geometry and hue, the fizz duration, the priming tint, and all new copy. Start at
-[war-council-ui/timebomb-priming-and-the-fuse.md](war-council-ui/timebomb-priming-and-the-fuse.md).
+mark's geometry and hue, the fizz duration, the priming tint, and all new copy. **DLR-166 removed
+the whole feature and its page.**
 
 ## DLR-153, activation you can see and take back (2026-08-27)
 
@@ -1334,7 +1360,7 @@ without settling whether red is right at all.
 
 **The rule change: a buff can now come back off the trick.** `the-hunt.md` had recorded activation
 as committing on a second tap with no way to un-activate. `src/hunt/buffActivation.ts` now exposes
-`isRevocableBuff` — the single statement of which cards may be taken back, exactly `Taker`, `Feeder`
+`isRevocableBuff` — the single statement of which cards may be taken back, exactly `SuitHigh`, `SuitLow`
 and `Sidestep` — and `deactivateFromPile`, which returns the card to the pile (**appended at the
 end**, not reinserted), refunds the action-point cost through a new `refundAp`, and clears the buff
 from that trick's activations. **Cheat, Timebomb, Ward and Shield stay irreversible**, because their
@@ -1468,7 +1494,7 @@ _not_ taking a trick, and its reward used to land in the accrual that the loss's
 immediately spent into a near-empty pot — three deliberate losses in a bad hand paid three points
 into three tiny cash-outs and accumulated into nothing. The reward is now split by the trick's
 **outcome**: a Feeder firing on a **Loss** (a clean loss, or an eaten skull) diverts into a carry
-pool that pays nothing this hand, rides `RunState.feederCarry` across the hand boundary, seeds the
+pool that pays nothing this hand, rides `RunState.lowCarry` across the hand boundary, seeds the
 next hand's accrual as an ordinary spendable bonus, and is wiped at the fight boundary whether the
 fight was won or lost. A Feeder firing on a **dodge** — a skull trick the player did not take, which
 is a Win — pays into the hand exactly as before, Overlap Bonus included.
@@ -1490,7 +1516,7 @@ simulator too), `screenFor.ts` (`App.tsx`'s screen ternary, with `RunPhase` movi
 bumped.** **No number was chosen** — the carry rides the existing reward ladders, so a bronze Blade
 Feeder carries `+1` and a bronze Momentum Feeder `+2`, and whether that is enough to be felt is the
 developer's to answer by playing. Start at
-[hunt/the-feeder-carry.md](hunt/the-feeder-carry.md).
+[hunt/the-low-carry.md](hunt/the-low-carry.md).
 
 **DLR-158 gave the player's maximum health a way to grow, and the shop a second thing to sell.** The
 ceiling stopped being `PLAYER_START_HEALTH` threaded through four defaulted parameters and became

@@ -38,75 +38,73 @@ card at all** — PT-002 removed the last one, and with it the `TrickCard` impor
 
 ## The four outcomes — `trickOutcomeFor` and `isTaken`
 
-Two booleans — did the player win the trick, was it a skull trick — produce one of four named
-outcomes:
+Two booleans — did the player physically take the cards, was it a skull trick — produce one of four
+named outcomes:
 
 | | Clean trick | Skull trick |
 | --- | --- | --- |
-| **Player won** | `CleanWin` — banked | `SkullWin` — hurt |
-| **Player lost** | `CleanLoss` — hurt | `Dodge` — banked |
+| **Went high** (took the cards) | `HighVictory` — **banks** | `HighDefeat` — **hurts** |
+| **Went low** (did not) | `LowDefeat` — **hurts** | `LowVictory` — **banks** |
 
-`trickOutcomeFor(playerWon, skullTrick)` is a total function over the two booleans, and the outcome is
-a named `as const` union rather than a pair of booleans threaded through every branch — so the rule
-reads out of the code the way it reads out of the design's table.
+**The names carry two independent axes, and DLR-165 split them apart precisely because one pair of
+words used to do both jobs.** *High* and *Low* name the **mechanical act** — did the player take the
+cards. *Victory* and *Defeat* name the **outcome** — did the trick bank or hurt. A skull inverts the
+trick, so the two come apart on half the table.
+
+`trickOutcomeFor(playerWentHigh, skullTrick)` is a total function over the two booleans, and the
+outcome is a named `as const` union rather than a pair of booleans threaded through every branch — so
+the rule reads out of the code the way it reads out of the design's table.
 
 `isTaken(outcome)` answers whether an outcome **banks** or **hurts**. It reads from a total
 `Record<TrickOutcome, boolean>` rather than comparing against two members, so adding a fifth outcome
-becomes a missing-property compile error rather than a silently-false default.
+becomes a missing-property compile error rather than a silently-false default. **The two Victories
+bank and the two Defeats hurt** — which is now what the names themselves say.
 
-The pairing is exact: `CleanWin` and `Dodge` are identical in every respect but their name, as are
-`CleanLoss` and `SkullWin`. The names survive only so the UI can say _which_ rule fired.
+The pairing is exact: `HighVictory` and `LowVictory` are identical in every respect but their name,
+as are `LowDefeat` and `HighDefeat`. The names survive so the UI can say *which* rule fired.
 
 **This is the axis the whole equation is keyed to**, and getting it backwards is the most common
-error about this game. A dodge is a good outcome reached by losing the trick, and it banks; eating a
-skull is a bad outcome reached by winning one, and it hurts.
+error about this game. A **Low Victory** is a good outcome reached by *not* taking the trick, and it
+banks; a **High Defeat** is a bad outcome reached by taking one, and it hurts.
+
+> **"High" means winning the contest, including by trump — never the higher numeral.** A 2 of trump
+> that beats a 10 off-suit went high.
 
 ## The whole rule — `resolveTrickBank`
 
 ```ts
 resolveTrickBank(before: StreakState, trick: TrickFacts): TrickResolution
-// TrickFacts = { playerWon, skullTrick, finalTrick, timebombTrick,
-//                timebombToPlayer, timebombToQuarry, blastGuarded,   // DLR-91
+// TrickFacts = { playerWentHigh, skullTrick, finalTrick,            // renamed DLR-165
 //                baseDamageBonus,                                    // DLR-92, renamed DLR-156
 //                swanKeepsMultiplier, swanKeepsBank,                 // DLR-122
-//                buffs }                                             // DLR-125
+//                buffs,                                              // DLR-125
+//                treasureTrick }                                     // DLR-163
 ```
 
 One call still decides everything a trick does. `before` is the running `{ total, roll }`; the return
 is a `TrickResolution` carrying the new pair plus what the trick did to get there. The function kept
 its name and its shape through DLR-156 and lost three whole branches: the forced two-thirds cash-out,
-the end-of-hand fold, and the `payableCashOutBonus`/`markCashOutPaid` spend model.
+the end-of-hand fold, and the `payableCashOutBonus`/`markCashOutPaid` spend model. DLR-166 removed
+three more facts — `timebombTrick`, `timebombToPlayer`/`timebombToQuarry` and `blastGuarded` — along
+with the whole delayed-hit mechanic they carried.
 
-The three DLR-91 facts are **the Timebomb owed from an earlier trick, being paid at this one** — a
-`Damage` per side, `0` when nothing is owed — plus whether a Blast Guard is held. They are handed in
-rather than fetched: the pending queue lives on `EncounterState` in `src/hunt/`, `src/hunt/` must not
-learn what a `RoundState` is, and the reducer is the one place that holds both. See
-[the delayed hit](../hunt/timebomb-and-the-delayed-hit.md).
+**`treasureTrick` is a plain fact handed in, not a card read.** It says a **7 was played into this
+trick by either side**, and this module deliberately does not learn whose card it was, exactly as it
+does not learn what bought `baseDamageBonus`. It is **required**, not optional, so the compiler
+enumerates every construction site.
 
 **The flags are a parameter object since DLR-90**, and they were four positional booleans before it.
 `resolveTrickBank(START, true, false, false, false)` is unreadable at the call site — worse, **a
 transposed pair of booleans type-checks cleanly and produces plausible numbers**, on the one function
 that decides both health bars and the whole streak.
 
-**One rule was added with the fifth fact**, and it is the only way a lost trick can cost the player
-nothing — see [the Timebomb mark](the-timebomb-mark.md) for why it is keyed on the _outcome_ rather
-than on which side won:
-
-```ts
-const replaced = trick.timebombTrick && outcome === TrickOutcome.CleanLoss
-```
-
-When `replaced` is true the hurt half below is skipped entirely, so `damageToPlayer` stays 0 and
-`total`/`roll` pass through untouched rather than resetting. The resolution screen narrates this on a
-beat of its own rather than as a broken streak — see
-[the resolution screen](../war-council-ui/the-resolution-screen.md).
-
 ### On a banked trick (DLR-156 AC1/AC11)
 
 ```ts
 const bonus = trick.buffs === null ? EMPTY_TRICK_BONUS : trickBonusFor(fired, false)
-const base = BASE_DAMAGE + safeBonus(trick.baseDamageBonus)
-const buffMult = 1 + bonus.multiplierBonus + bonus.overlapBonus
+const curse = trick.buffs === null ? EMPTY_CURSE_BONUS : curseBonusOf(trick.buffs.active)
+const base = BASE_DAMAGE + safeBonus(trick.baseDamageBonus) + safeBonus(curse.damage)
+const buffMult = 1 + bonus.multiplierBonus + bonus.overlapBonus + safeBonus(curse.multiplier)
 trickDamage = { base, buffDamage: bonus.flatDamageBonus, buffMult,
                 overlapBonus: bonus.overlapBonus,
                 dealt: (base + bonus.flatDamageBonus) * buffMult }
@@ -114,7 +112,7 @@ total += trickDamage.dealt
 roll  += 1
 ```
 
-Four things about that are the decisions:
+Five things about that are the decisions:
 
 - **`BASE_DAMAGE` is read here and nowhere else in the damage path.** It is a configured constant in
   `src/hunt/config.ts` at **1**, deliberately not a variable: a card family that raises the base is a
@@ -133,23 +131,52 @@ Four things about that are the decisions:
   producer — see [buffs in the trick's damage](buffs-in-the-trick-damage.md).
 - **The Overlap Bonus joins `buffMult`, and is carried out separately on `TrickDamage`** so the
   resolution screen can give it its own beat without re-deriving `overlapBonusFor`.
+- **A Curse's two figures are read off the ACTIVATED set, not the fired set** (DLR-167). A Curse is
+  `BuffCadence.Activated`, so `firedBuffs` excludes it by design and it has no condition to come
+  true; its payoff is owed for the trick it was activated for. It is derived here rather than handed
+  in on `TrickFacts` for the same reason the protection is, below. **Only a banked trick reaches this
+  branch**, which is what makes the reward self-gating with no "only on a Low Victory" condition
+  written anywhere.
+
+> **An open rule question sits on that last bullet, flagged in the code and settled by nobody.** The
+> Curse reward is owed on **any** banked trick, not only on one the cursed card was played into — so
+> marking a card and then never playing it earns the bonus with none of the risk the card is priced
+> for. Whether that is the intended reading is the developer's decision, and the behaviour is
+> deliberately left exactly as it stands until a ticket decides it.
 
 ### On a hurt trick (DLR-156 AC7)
 
-`damageToPlayer` picks up `DAMAGE_PER_HIT`, `total` and `roll` both reset to zero, and the Quarry is
-paid **nothing**. There is no reduced share any more — `forcedCashValue`,
-`FORCED_CASH_OUT_NUMERATOR` and `FORCED_CASH_OUT_DENOMINATOR` were deleted with the branch, and with
-them the codebase's only division in this file. That is the change that makes the roll-over choice a
-real bet: losing a nine-trick streak now costs everything rather than a third, and it is expected to
-feel harsh.
+`total` and `roll` both reset to zero and the Quarry is paid **nothing**. There is no reduced share
+any more — `forcedCashValue`, `FORCED_CASH_OUT_NUMERATOR` and `FORCED_CASH_OUT_DENOMINATOR` were
+deleted with the branch, and with them this file's only division. That is the change that makes the
+roll-over choice a real bet: losing a nine-trick streak now costs everything rather than a third, and
+it is expected to feel harsh.
 
-DLR-122's Swan ladder is one exception, and its rule is unchanged: on a **clean loss** only, a silver
-Swan spares the `roll` and a gold Swan spares `total` as well. Gold implies silver, folded in here
-rather than trusted from the caller.
+**`damageToPlayer` is no longer always 1** (DLR-163 AC10):
+
+```ts
+const hitDamage = trick.treasureTrick ? QUARRY_TREASURE_DAMAGE : DAMAGE_PER_HIT
+const damageToPlayer = trickHit ? hitDamage : 0
+```
+
+A Treasure **replaces** the flat hit rather than adding to it, so a Defeat on a trick carrying a 7
+costs `QUARRY_TREASURE_DAMAGE` (2) instead of `DAMAGE_PER_HIT` (1). That is the line that retires
+`the-hunt.md`'s old "damage to the player, per event: 1, every time" — **every readout, projection
+and simulator figure that assumed exactly 1 has to stop assuming it.**
+
+The mirror half is `treasureBonusEarned`, reported out on `TrickResolution` rather than applied here:
+a trick that **banked** and carried a Treasure owes the fight `TREASURE_BASE_DAMAGE_STEP` (+1) of base
+damage. The figure is run state and this module has never been allowed to see one. `taken` is the
+**outcome** axis, deliberately — a **Low Victory earns it and a High Defeat does not**.
+
+DLR-122's Swan ladder is one exception to the reset, and its rule is unchanged: on a **Low Defeat**
+only, a silver Swan spares the `roll` and a gold Swan spares `total` as well. Gold implies silver,
+folded in here rather than trusted from the caller. It is keyed on the *outcome* rather than on the
+player going low, deliberately — a Low Victory is also a trick the player did not take.
 
 **DLR-161 added a second exception, and de-nested the guard to make room for it.** A Skull Helmet
-spares the `total` and a Skull Tether spares the `roll` through a trick that hurt the player — an
-eaten skull at bronze, either hurt outcome at silver and gold. See
+spares the `total` and a Skull Tether spares the `roll` through a trick that hurt the player — a High
+Defeat at bronze, either Defeat at silver and gold. See
 [Skull Helmet and Skull Tether](../hunt/protective-buffs.md) for the condition and the derivation;
 the reset block itself is below.
 
@@ -198,18 +225,17 @@ went with them (`plan.md` Assumption 4): the prompt is mandatory rather than a p
 chooses, so charging for it would tax every banked trick. **That is a balance change in a ticket that
 forbade balancing, and it was flagged rather than hidden.**
 
-## Two sources of a hurt trick since DLR-91, one branch
+## The reset block
 
 ```ts
-const trickHit = !taken && !replaced                                      // the pre-existing one
-const timebombResets = trick.timebombToPlayer > 0 && !trick.blastGuarded  // the new one
+const trickHit = !taken
 
-// Owed whether or not the streak resets: a Guard buys back the streak, never the health.
-const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer
+// Computed above the reset block: the health is owed regardless of what spares the streak.
+const damageToPlayer = trickHit ? hitDamage : 0
 
 const protection = streakProtectionFor(fired)   // DLR-161, derived from THIS trick's fired buffs
 
-if (trickHit || timebombResets) {
+if (trickHit) {
   const keepsTotal = swanKeepsBank || protection.keepsTotal
   const keepsRoll  = swanKeepsBank || swanKeepsMultiplier || protection.keepsRoll
 
@@ -221,18 +247,15 @@ if (trickHit || timebombResets) {
 }
 ```
 
-Five things about that shape are the decisions, each chosen against a plausible alternative:
+> **There were two sources of a hurt trick from DLR-91 to DLR-166** — a Defeat, and a Timebomb
+> detonating — reaching one branch, plus a `replaced` case where a primed trick the Quarry won
+> cleanly cost nothing. All three went with the mechanic. **A Defeat is now the only thing that
+> resets a streak or costs health.**
 
-- **Timebomb reaches the same branch rather than a branch of its own.** That is what makes "Timebomb
-  behaves like any other damage" true _in code_ instead of asserted in a comment.
-- **`damageToPlayer` is computed outside the branch.** The health is owed whether or not the streak
-  resets, which is what lets a held Guard suppress the reset without cancelling the hit. The
-  arithmetic is `2` on a trick the player won while primed and `3` on one they also lost.
-- **A banked trick banks first, then the Timebomb wipes it.** The `taken` climb above runs before
-  this branch, so a won-but-primed trick loses that trick's own contribution too. Under the old rules
-  that trick still _cashed_ the larger figure; under DLR-156 it cashes nothing at all, because a hurt
-  trick pays the Quarry nothing. The streak visibly climbing and then dying is what makes the
-  Timebomb legible as the cause.
+Three things about that shape are the decisions, each chosen against a plausible alternative:
+
+- **`damageToPlayer` is computed outside the branch**, so nothing that spares a streak figure can
+  accidentally spare the health as well. No card at any rung touches it.
 - **The guard is two independent booleans, not one nested pair** (DLR-161). The old nesting encoded
   gold-implies-silver as *structure*, and structure cannot express "the roll survives but the total
   does not" — which is exactly what a Skull Tether does. Each figure now has its own guard, an OR of
@@ -246,13 +269,9 @@ Five things about that shape are the decisions, each chosen against a plausible 
   none of its construction sites moved. Gold's `+1` is added **only** on the branch the protection
   saved: a Swan that already spared a figure does not also pay the card's bonus.
 
-`TrickResolution` carries **`timebombToQuarry`** so `incomingFrom` can sum it, and
-**`blastGuardSpent`** so the reducer can flip the run's flag rather than re-deriving "did the Guard
-matter". See [Blast Guard](../hunt/blast-guard.md).
-
 ## The streak's lifetime
 
-`total` and `roll` are **run-carried figures**, following DLR-150's `feederCarry` pattern field for
+`total` and `roll` are **run-carried figures**, following DLR-150's `lowCarry` pattern field for
 field:
 
 ```
@@ -267,7 +286,7 @@ RunState.streak                          src/hunt/run.ts — seeded EMPTY_STREAK
 `streakAfter` — in `src/hunt/runCarry.ts` since DLR-158, moved there with the other four carry
 helpers when `runTransitions.ts` crossed the 400-line budget — returns `{ total: 0, roll: 0 }` the
 moment `isEncounterResolved(encounter)` is true and
-the streak unchanged otherwise — the exact shape of `feederCarryAfter` and `guardAfter` beside it. So
+the streak unchanged otherwise — the exact shape of `lowCarryAfter` beside it. So
 **a hand boundary does nothing at all** (AC8) and **a fight boundary wipes both** (AC9). The mount
 prop is optional and defaulted so every existing mount site and fixture reproduces today's game
 without an edit; the result field is required so the compiler enumerates every construction site.
@@ -310,8 +329,8 @@ incomingFromPot(dealt): IncomingDamage      // the apply choice
 ```
 
 The program's only `PlayerSide` → `DuelSide` translations. `incomingFrom` is keyed by the side the
-damage is **applied to**: the player eats `damageToPlayer`, the Quarry eats `cashOut` (now always 0)
-plus any Timebomb paid at this trick. `incomingFromPot`'s player entry is a hard `0` — "applying
+damage is **applied to**: the player eats `damageToPlayer`, the Quarry eats `cashOut` (now always
+0). `incomingFromPot`'s player entry is a hard `0` — "applying
 deals no damage to the player" is literally that line.
 
 Existing as functions is the point. A call site building either record by hand is one transposition
@@ -336,9 +355,8 @@ describes and be shown against the next one.
 
 Four spec files, `streak.test.ts`, `streak.formula.test.ts`, `streak.buffs.test.ts` and
 `streak.integration.test.ts` (all renamed from `bank.*` with the module). `streak.test.ts` keeps the
-two equality pairs — a dodge against a clean win, eating a skull against losing a clean trick — which
-are what pin the four outcomes to two behaviours, plus DLR-91's 2-or-3 Timebomb arithmetic and the
-Blast Guard cases.
+two equality pairs — a **Low Victory** against a **High Victory**, a **High Defeat** against a **Low
+Defeat** — which are what pin the four outcomes to two behaviours.
 
 **The headline spec is still the bare curve**, now in `streak.formula.test.ts`: a streak walked from
 1 to 6 with nothing fired, whose pot after each banked trick is exactly `[1, 4, 9, 16, 25, 36]`. It
@@ -349,13 +367,13 @@ old bare rule.
 Beside it in that file: the worked six-trick example from `spec.md` (`+2` flat and `+2` momentum
 every trick paying 9 a trick, the pot reaching 324); a Blade fired on trick 1 contributing nothing to
 tricks 2–6; a hurt trick paying the Quarry `0`, zeroing both figures and returning `trickDamage:
-null`; an eaten skull being identical to a clean loss; a dodge banking; `finalTrick` on a banked
+null`; a High Defeat being identical to a Low Defeat; a Low Victory banking; `finalTrick` on a banked
 trick leaving both figures standing and paying nothing; and `baseDamageBonus` landing inside the
 base. `streak.integration.test.ts` buys two Whetstones through the real `buyFromShop` and proves a
 hit wipes the boosted total exactly as it would the bare one.
 
 `streak.buffs.test.ts` gained DLR-161's group: each protected figure surviving alone, both surviving
 together, both golds adding their `+1`, two gold Helmets adding 1 rather than 2, a silver Helmet
-protecting a clean loss where a bronze one does not, neither card touching a clean win or a dodge,
-and `DAMAGE_PER_HIT` landing on every one of those cases. The three Swan rungs sit immediately above
+protecting a Low Defeat where a bronze one does not, neither card touching a High Victory or a Low
+Victory, and `DAMAGE_PER_HIT` landing on every one of those cases. The three Swan rungs sit immediately above
 it, unchanged, which is what pins the de-nesting as behaviour-preserving.
