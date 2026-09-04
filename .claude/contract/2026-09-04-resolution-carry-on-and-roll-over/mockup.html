@@ -1,0 +1,270 @@
+<title>Resolution Choice Fix</title>
+<style>
+  :root {
+    --felt: #1d3b30;
+    --felt-edge: #162d25;
+    --ink: #f2ead9;
+    --ink-dim: #a8b6ac;
+    --card: #f4ecdb;
+    --card-ink: #22201c;
+    --brass: #c9a227;
+    --alarm: #b8462f;
+    --panel: #241f1a;
+    --panel-edge: #3d342a;
+    --riding: #d4a13c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.5 "Iowan Old Style", Georgia, serif;
+    background: #12100e;
+    color: var(--ink);
+    min-height: 100svh;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 20px 60px; }
+  h1 { font-size: 1.35rem; margin: 0 0 4px; }
+  .lede { color: var(--ink-dim); margin: 0 0 20px; max-width: 78ch; font-size: 0.95rem; }
+
+  .switcher { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+  .switcher button {
+    font: inherit; font-size: 0.9rem; padding: 9px 14px; min-height: 44px;
+    background: #241f1a; color: var(--ink); border: 1px solid var(--panel-edge);
+    border-radius: 6px; cursor: pointer;
+  }
+  .switcher button[aria-pressed="true"] { border-color: var(--brass); color: var(--brass); }
+  .switcher button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  .stage { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
+
+  /* ---- the felt ---- */
+  .felt {
+    background: radial-gradient(ellipse at 50% 35%, var(--felt), var(--felt-edge));
+    border: 1px solid #0d1c17; border-radius: 10px;
+    min-height: 340px; padding: 22px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  }
+  .trick-row { display: flex; gap: 14px; margin-bottom: 6px; }
+  .played { text-align: center; }
+  .played-side { display: block; font-size: 0.72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 4px; }
+  .pcard {
+    width: 74px; height: 104px; background: var(--card); color: var(--card-ink);
+    border-radius: 6px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; font-size: 1.5rem; border: 1px solid #cbbfa6;
+    box-shadow: 0 4px 10px rgba(0,0,0,.35);
+  }
+  .pcard.win { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .pcard small { font-size: .7rem; letter-spacing: .06em; color: #6b6355; }
+  .outcome { font-size: 1.15rem; margin: 2px 0 0; }
+  .table-line { color: var(--ink-dim); margin: 0; font-size: .9rem; text-align: center; }
+
+  .carry-btn {
+    margin-top: 12px; font: inherit; font-size: .95rem;
+    min-height: 44px; padding: 10px 22px;
+    background: #2c4a3d; color: var(--ink);
+    border: 1px solid #4a6b5b; border-radius: 6px; cursor: pointer;
+  }
+  .carry-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  @media (hover: hover) { .carry-btn:not(:disabled):hover { background: #365a4a; } }
+  .carry-btn:not(:disabled):active { transform: translateY(1px); }
+  /* PROPOSED disabled treatment — form as well as tone, so it reads in greyscale.
+     Dashed edge + reduced weight, not colour alone. The exact look is the developer's. */
+  .carry-btn:disabled {
+    cursor: not-allowed; opacity: .45;
+    border-style: dashed; background: transparent;
+  }
+  .why-blocked { margin: 8px 0 0; font-size: .82rem; color: var(--ink-dim); font-style: italic; }
+
+  /* ---- the pot card ---- */
+  .pot {
+    background: var(--panel); border: 1px solid var(--panel-edge);
+    border-radius: 10px; padding: 16px;
+  }
+  .eyebrow { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); margin: 0 0 2px; }
+  .cash { font-size: 2.6rem; margin: 0; line-height: 1; font-weight: 700; }
+  .figures { margin: 6px 0 0; color: var(--ink-dim); font-size: .88rem; }
+  .figures b { color: var(--ink); font-weight: 700; }
+
+  /* THE NEW LINE — only rendered when the pot is actually exposed. */
+  .riding {
+    margin: 10px 0 0; padding: 8px 10px;
+    border-left: 3px solid var(--riding);
+    background: rgba(212,161,60,.10);
+    font-size: .84rem; color: #e8d9b4;
+  }
+  .riding b { color: var(--riding); }
+
+  .resolve-body { margin-top: 14px; border-top: 1px solid var(--panel-edge); padding-top: 12px; }
+  .held-line { font-size: .85rem; color: var(--brass); margin: 0 0 8px; font-style: italic; }
+  .beat { display: flex; justify-content: space-between; font-size: .87rem; padding: 3px 0; color: var(--ink-dim); }
+  .beat b { color: var(--ink); }
+  .prompt { display: flex; gap: 8px; margin-top: 14px; }
+  .pbtn {
+    flex: 1; font: inherit; font-size: .9rem; min-height: 44px; padding: 10px 8px;
+    border-radius: 6px; cursor: pointer; background: #33291d;
+    color: var(--ink); border: 1px solid #5a4630;
+  }
+  .pbtn.apply { border-color: var(--alarm); }
+  .pbtn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .pbtn:disabled { opacity: .45; cursor: not-allowed; }
+  .resting { color: var(--ink-dim); font-size: .85rem; margin: 12px 0 0; font-style: italic; }
+
+  .note {
+    margin-top: 24px; padding: 14px 16px; border: 1px solid var(--panel-edge);
+    border-radius: 8px; background: #1a1714; font-size: .88rem; color: var(--ink-dim);
+  }
+  .note b { color: var(--ink); }
+  .note code { background: #241f1a; padding: 1px 5px; border-radius: 3px; font-size: .85em; color: #d8c9a4; }
+  .log { margin-top: 10px; font-family: ui-monospace, Consolas, monospace; font-size: .8rem; color: #8fa895; white-space: pre-wrap; min-height: 2.6em; }
+</style>
+
+<div class="wrap">
+  <h1>Resolution choice — Carry on refuses, and Roll over says what it actually did</h1>
+  <p class="lede">
+    Two states of the same screen. Switch between them and try the buttons. The felt is on the left,
+    the pot card on the right, exactly as they sit today — the panel is <em>beside</em> the felt, not
+    replacing it, which is what let the felt's own button leak through.
+  </p>
+
+  <div class="switcher" role="group" aria-label="Which state to show">
+    <button type="button" id="s1" aria-pressed="true"  onclick="setState('pending')">1 · Choice pending (the bug)</button>
+    <button type="button" id="s2" aria-pressed="false" onclick="setState('answered')">2 · Choice answered — Carry on works</button>
+    <button type="button" id="s3" aria-pressed="false" onclick="setState('rolled')">3 · Just after Roll over</button>
+  </div>
+
+  <div class="stage">
+    <!-- ================= FELT ================= -->
+    <section class="felt" aria-label="The felt">
+      <div class="trick-row">
+        <div class="played">
+          <span class="played-side">You</span>
+          <div class="pcard win">7<small>bells</small></div>
+        </div>
+        <div class="played">
+          <span class="played-side">Them</span>
+          <div class="pcard">4<small>moons</small></div>
+        </div>
+      </div>
+      <p class="outcome" id="outcome">High Victory</p>
+      <p class="table-line" id="whyline">You took the trick and it banks.</p>
+
+      <button type="button" class="carry-btn" id="carry" onclick="carryOn()">Carry on</button>
+      <p class="why-blocked" id="whyBlocked" hidden>
+        <!-- PROPOSED, and a gate decision: does the disabled button need to say why? -->
+        Answer the pot first — Apply Damage or Roll over.
+      </p>
+      <p class="log" id="log"></p>
+    </section>
+
+    <!-- ================= POT CARD ================= -->
+    <section class="pot" aria-label="The pot">
+      <p class="eyebrow">The pot</p>
+      <p class="cash" id="cash">4</p>
+      <p class="figures"><b id="tot">2</b> banked × <b id="rll">2</b> streak</p>
+
+      <!-- THE NEW LINE. Rendered only while total > 0 and roll > 0 — an un-applied pot is at
+           risk however it was reached. Nothing renders when there is nothing at stake. -->
+      <p class="riding" id="riding">
+        <b>4 riding</b> — 9 or better if trick 4 banks, nothing if it does not.
+      </p>
+
+      <div class="resolve-body" id="resolveBody">
+        <p class="held-line" id="heldLine" hidden></p>
+        <div class="beat"><span>Trick damage</span><b>+1</b></div>
+        <div class="beat"><span>Banked total</span><b>2</b></div>
+        <div class="beat"><span>Streak</span><b>×2</b></div>
+        <div class="prompt">
+          <button type="button" class="pbtn apply" id="applyBtn" onclick="press('apply')">Apply 4</button>
+          <button type="button" class="pbtn" id="rollBtn" onclick="press('roll')">Roll over for 9</button>
+        </div>
+      </div>
+      <p class="resting" id="resting" hidden>Nothing to answer — the pot is waiting on the next banked trick.</p>
+    </section>
+  </div>
+
+  <div class="note" id="note"></div>
+</div>
+
+<script>
+  const NOTES = {
+    pending: `<b>State 1 — the bug.</b> A trick has banked and the pot is asking its question.
+      <b>Carry on is disabled</b> here: today it is live, and pressing it starts the next trick with
+      the choice still open — on the deciding trick the whole pot is forfeited with no Apply ever
+      running. The fix is one predicate, <code>resolutionChoicePending</code>, read by both the
+      reducer (so the click does nothing) and the button (so it looks like it will do nothing).
+      Try clicking Carry on — it refuses.`,
+    answered: `<b>State 2 — the choice is answered.</b> Apply or Roll over has been pressed, the pot
+      card's foot is gone, and <b>Carry on works normally again</b>. This is the path that must keep
+      working: it is also the only route to the end of the encounter after a killing blow, which is
+      why the control is disabled rather than removed. Click Carry on.`,
+    rolled: `<b>State 3 — immediately after Roll over.</b> The old copy said
+      <code>rolled over — roll now ×3</code>, which was false: the roll is still 2 and only becomes 3
+      if the next trick banks. The proposed line names both halves of the bet. Underneath, the
+      <b>riding line</b> is the durable half — it survives the panel unmounting, so the pot's
+      exposure is still on screen when the player is choosing their next card.`,
+  };
+
+  let state = 'pending';
+
+  function setState(s) {
+    state = s;
+    for (const [id, key] of [['s1','pending'],['s2','answered'],['s3','rolled']]) {
+      document.getElementById(id).setAttribute('aria-pressed', String(key === s));
+    }
+    const carry = document.getElementById('carry');
+    const body = document.getElementById('resolveBody');
+    const resting = document.getElementById('resting');
+    const held = document.getElementById('heldLine');
+    const why = document.getElementById('whyBlocked');
+    document.getElementById('log').textContent = '';
+
+    if (s === 'pending') {
+      carry.disabled = true;  why.hidden = false;
+      body.hidden = false;    resting.hidden = true;
+      held.hidden = true;
+      document.getElementById('applyBtn').disabled = false;
+      document.getElementById('rollBtn').disabled = false;
+    } else if (s === 'answered') {
+      carry.disabled = false; why.hidden = true;
+      body.hidden = true;     resting.hidden = false;
+      held.hidden = true;
+    } else {
+      carry.disabled = true;  why.hidden = false;
+      body.hidden = false;    resting.hidden = true;
+      held.hidden = false;
+      held.textContent = 'rolled over — 9 or better if you take trick 4, nothing if you do not';
+      document.getElementById('applyBtn').disabled = true;
+      document.getElementById('rollBtn').disabled = true;
+    }
+    document.getElementById('note').innerHTML = NOTES[s];
+  }
+
+  function carryOn() {
+    const log = document.getElementById('log');
+    if (state === 'pending' || state === 'rolled') {
+      log.textContent = 'REFUSED — the reducer returns the state untouched.\nThe held reveal is NOT cleared, so the hand stays greyed out.';
+    } else {
+      log.textContent = 'Carry on accepted — the reveal clears and the Quarry leads.';
+    }
+  }
+
+  function press(which) {
+    const log = document.getElementById('log');
+    if (which === 'apply') {
+      log.textContent = 'Apply Damage — 4 dealt to the Quarry, total and streak reset.';
+      setState('answered');
+      document.getElementById('cash').textContent = '0';
+      document.getElementById('tot').textContent = '0';
+      document.getElementById('rll').textContent = '0';
+      document.getElementById('riding').hidden = true;
+      document.getElementById('note').innerHTML =
+        `<b>After Apply.</b> The pot paid out and reset, so there is nothing riding — and the riding
+         line renders <b>nothing at all</b> rather than showing a zero. Carry on is live again.`;
+    } else {
+      setState('rolled');
+      log.textContent = 'Roll over — nothing is dealt and NOTHING is reset. Both figures stand.';
+    }
+  }
+
+  setState('pending');
+</script>
