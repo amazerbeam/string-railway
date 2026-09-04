@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: IN PROGRESS
+Status: COMPLETE
 Started: 2026-09-03
 
 **Goal:** Delete the Timebomb and the Blast Guard from the game outright, along with every mechanism that exists only to serve them — the fuse, the pending-damage queue, the ticking-heart preview, the one-at-a-time activation refusal, the shop entries, the streak-reset and payout-fold ordering, and the simulator policies and fixtures that drive them — leaving the codebase ready for DLR-167 to build Curse.

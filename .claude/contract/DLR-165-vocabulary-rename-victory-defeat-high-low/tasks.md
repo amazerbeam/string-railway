@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: IN PROGRESS
+Status: COMPLETE
 Started: 2026-09-03
 
 **DLR-165 execution note (batch run, 2026-09-04).** Phases 1–5 are implemented and green except
