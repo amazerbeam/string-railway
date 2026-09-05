@@ -39,3 +39,14 @@
 *.unitypackage
 *.app
 /crashlytics-build.properties
+
+# MSBuild output for the hand-written .csproj files. Unanchored, unlike the /[Oo]bj/ above: these
+# projects live inside Assets/, and a compiled DLL left there is imported by Unity as a managed
+# plugin and clashes with the assembly the .asmdef compiles from the same sources.
+# Directory.Build.props already redirects both out to unity/Build/; these are the second line.
+[Oo]bj/
+[Bb]in/
+
+# ...but the fast gate's solution is hand-written and must stay tracked. /*.sln above would
+# otherwise swallow it, exactly as the .csproj comment further up anticipates for project files.
+!/TechDuinn.FastGate.sln

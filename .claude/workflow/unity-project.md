@@ -1,36 +1,42 @@
 # Unity project layout, runners, and developer-owned work
 
-**This file is forward-looking.** No Unity project exists on disk yet — `unity/` holds only a
-`README.md`. **No command in this file has been run.** Everything below describes the project as
-`prototype/.docs/implementation/unity-port-architecture.md` designs it, mirrored into the same shape as its
-sibling, `.claude/workflow/web-project.md`, which covers the prototype under `prototype/`. **The
-first Unity scaffolding ticket must include a task that corrects this file against the real
-project** — assembly names that turned out different, a command that needs a flag this file
-doesn't know about, a path that landed somewhere else. Until that correction lands, treat every
-command here as a plan, not a verified fact.
+The Unity project exists at `unity/`, on editor version 6000.5.1f1 with URP 2D and the Input
+System. Three of the seven assemblies designed in
+`prototype/.docs/implementation/unity-port-architecture.md` exist as of DLR-176, mirrored into the
+same shape as this file's sibling, `.claude/workflow/web-project.md`, which covers the prototype
+under `prototype/`. The fast gate below has been run for real and its output recorded on DLR-176.
+It needs the .NET 8 SDK, which is not part of a Unity install.
 
 ## Layout
 
-Seven assembly definitions, all under `unity/` (`prototype/.docs/implementation/unity-port-architecture.md`
-§2):
+Seven assembly definitions are designed (`prototype/.docs/implementation/unity-port-architecture.md`
+§2); three exist as of DLR-176. Unity only compiles code under `Assets/` or inside a package, so
+every `.asmdef` lives under `unity/Assets/`, not at `unity/` directly:
 
 ```
 unity/
-  README.md
-  TechDuinn.Table/          engine-free — cards, suits, ranks, the deal, legal moves, trick
-                             resolution, the draw pile and its reshuffle, the Shade's card choice,
-                             the four outcomes, the pot arithmetic
-  TechDuinn.Passage/        engine-free — the run: charms, the Cairn's grants, the shop, Dagda's
-                             Cauldron, health, coins, the opponent ladder, the fight boundary
-  TechDuinn.Presentation/   engine-free — view models: pure functions from rules state to what a
-                             screen shows
-  TechDuinn.Data/           references UnityEngine — ScriptableObject definitions and the mapping
-                             from an asset to the plain rules value it produces
-  TechDuinn.Persistence/    references UnityEngine — the save envelope, the key composer, the one
-                             class that touches the filesystem
-  TechDuinn.Game/           references UnityEngine — MonoBehaviours, prefabs, input, animation,
-                             audio, scene wiring, the composition root
-  TechDuinn.Simulation/     engine-free — the headless run simulator and its policies
+  Assets/
+    TechDuinn.Table/          EXISTS (DLR-176) — engine-free. Today: the seeded PRNG only.
+                               Eventually: cards, suits, ranks, the deal, legal moves, trick
+                               resolution, the draw pile and its reshuffle, the Shade's card
+                               choice, the four outcomes, the pot arithmetic
+    TechDuinn.Presentation/   EXISTS (DLR-176) — engine-free — view models: pure functions from
+                               rules state to what a screen shows
+    TechDuinn.Game/           EXISTS (DLR-176) — references UnityEngine — MonoBehaviours, prefabs,
+                               input, animation, audio, scene wiring, the composition root
+  Tests/
+    TechDuinn.Table.Tests/          the fast gate's test projects. Outside Assets/ deliberately, so
+    TechDuinn.Presentation.Tests/   Unity never imports NUnit and collides with its own bundled
+                                    com.unity.test-framework
+  Directory.Build.props       redirects MSBuild obj/ and bin/ out of Assets/ into unity/Build/
+  TechDuinn.FastGate.sln      the solution the fast gate takes as its single argument
+
+Deferred — created by the epic that first needs each, not before:
+  TechDuinn.Passage/          engine-free — the run: charms, the Cairn's grants, the shop, Dagda's
+                               Cauldron, health, coins, the opponent ladder, the fight boundary
+  TechDuinn.Data/             references UnityEngine — ScriptableObject definitions
+  TechDuinn.Persistence/      references UnityEngine — the save envelope, the key composer
+  TechDuinn.Simulation/       engine-free — the headless run simulator and its policies
 ```
 
 Cite `prototype/.docs/implementation/unity-port-architecture.md` §2 for the full per-assembly table and the
@@ -56,15 +62,32 @@ same source folders.** That is what lets `dotnet test` run them with no Unity in
 licence, and it is what makes the fast gate below possible at all. Nullable reference types are on
 for these four assemblies and off for `Data` and `Game`, per §2.1.
 
-## Verification commands
+Three mechanisms make that dual `.asmdef` + `.csproj` setup actually work, established by DLR-176
+and worth knowing before the next assembly is added:
 
-**The whole table below is not yet runnable.** No Unity project exists to run it against.
+- Nullable is turned on in the Unity half by a `csc.rsp` file beside the `.asmdef` containing
+  `-nullable:enable`. An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the
+  `.csproj` alone satisfies `dotnet test` and silently misses the editor.
+- `LangVersion` is pinned to `9.0` in every engine-free `.csproj`. Unity 6's Mono compiler is C# 9;
+  without the pin, `dotnet test` compiles syntax the editor then rejects. This is why `SeededRng`
+  is a `readonly struct` rather than the `readonly record struct` architecture §10 names.
+- `unity/Directory.Build.props` redirects `BaseIntermediateOutputPath` and `BaseOutputPath` to
+  `unity/Build/`. Without it MSBuild writes `bin/` inside `Assets/` and Unity imports the DLL as a
+  managed plugin, clashing with the assembly the `.asmdef` builds from the same sources.
+
+## Verification commands
 
 | To verify | Command |
 |---|---|
-| **Types and rules are sound (the fast gate, analogous to `npm run typecheck`)** | `dotnet test` over the four engine-free assemblies (`Table`, `Passage`, `Presentation`, `Simulation`) |
-| Anything touching `Data` or `Game` | Unity editor-mode tests, run in batch mode |
-| A player build | Unity's batch-mode build pipeline, targeting the project's chosen platform |
+| **Types and rules are sound (the fast gate, analogous to `npm run typecheck`)** | `dotnet test "unity\TechDuinn.FastGate.sln"`, run from the repository root |
+| Anything touching `Data` or `Game` | Unity editor-mode tests, run in batch mode — **still unrun** |
+| A player build | Unity's batch-mode build pipeline, targeting the project's chosen platform — **still unrun** |
+
+The fast-gate command requires the .NET 8 SDK (`winget install Microsoft.DotNet.SDK.8`). It covers
+only the engine-free assemblies currently in the solution — two of them today (`Table`,
+`Presentation`), growing as the deferred assemblies (`Passage`, `Simulation`) land, each of which
+must add itself to `TechDuinn.FastGate.sln` with `dotnet sln add`. The editor-mode test row and the
+player-build row remain genuinely unrun — say so in those terms rather than deleting the caveat.
 
 Cite `prototype/.docs/implementation/unity-port-architecture.md` §2.1 and §12 for why the fast gate is
 possible at all, and §20.4 for why this table exists as this file's sibling rather than as an
@@ -124,7 +147,12 @@ These produce bugs that compile cleanly and pass a naive review. Four are genera
   static that isn't reset between Play sessions once Fast Enter Play Mode is mandatory;
   `System.Random` because its sequence is not contractually stable across .NET versions, and the
   Mono-to-CoreCLR cutover is exactly the event that would silently change it and invalidate every
-  recorded seed. Port the prototype's own seeded PRNG instead.
+  recorded seed. `SeededRng` and `Seeds` in `TechDuinn.Table` are the one sanctioned source
+  (DLR-176) — the port of the prototype's own mulberry32 generator, pinned to it by golden vectors
+  generated under Node and asserted under `dotnet test`. `SeededRng.NextBelow` uses multiply-shift
+  rather than modulo specifically so the sequence matches the prototype's
+  `Math.floor(rng() * n)`; a future contributor "tidying" it to modulo would silently break the
+  oracle comparison without a compiler error to catch it.
 - **No floating-point arithmetic in `Table` or `Passage`** (§20.2). Integer arithmetic only, with
   percentages as integers and the rounding direction stated at every division — a float that is
   harmless in one browser is not harmless across a Windows build, a Mac build, and a recorded seed

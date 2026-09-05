@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- ProjectSettings.asset has apiCompatibilityLevel: 6 — Unity's .NET Standard 2.1 level. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>TechDuinn.Table</AssemblyName>
+    <RootNamespace>TechDuinn.Table</RootNamespace>
+    <Nullable>enable</Nullable>
+    <!-- Unity 6's Mono compiler is C# 9. Pinned so dotnet test can never go green on syntax the
+         editor will reject — the dual .asmdef/.csproj setup's one real failure mode. -->
+    <LangVersion>9.0</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+</Project>

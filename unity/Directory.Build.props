@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <!-- The engine-free .csproj files sit inside Assets/ beside their .asmdef (architecture §2.1).
+         Left at MSBuild's defaults they would write obj/ and bin/ there, and Unity would import the
+         resulting DLL as a managed plugin, clashing with the assembly the .asmdef compiles from the
+         same sources. unity/Build/ is already matched by /[Bb]uild/ in unity/.gitignore. -->
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)Build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)Build\bin\$(MSBuildProjectName)\</BaseOutputPath>
+  </PropertyGroup>
+</Project>

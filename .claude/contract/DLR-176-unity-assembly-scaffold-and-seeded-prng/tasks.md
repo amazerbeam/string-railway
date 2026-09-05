@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-09-05
 
 **Goal:** Turn `unity/` from an empty Unity 6 project into one with three assembly definitions, a hand-written `.csproj` beside each engine-free `.asmdef` over the same source folder, a seeded PRNG ported bit-for-bit from the prototype, a `dotnet test` fast gate that has actually been run, and three documents corrected against what is now on disk.
@@ -64,7 +64,7 @@ Then, in a **fresh** terminal, `dotnet --list-sdks` must print an `8.0.x` line. 
 
 Everything structural, and nothing that thinks. This phase creates the two views of each source folder — the `.asmdef` Unity reads and the `.csproj` `dotnet` reads — plus the output redirection and `.gitignore` corrections that stop the two toolchains fighting over the same directory. The boundary is safe because it ends with `dotnet build` green over a solution of two source projects that compile to nearly-empty assemblies; no test project exists yet and nothing references anything that is not on disk. The `.gitignore` task is first deliberately: the solution created later in the phase is swallowed by the existing `/*.sln` rule until that edit lands.
 
-### Task 1: Redirect MSBuild output out of `Assets/` and correct `unity/.gitignore`
+### Task 1: Redirect MSBuild output out of `Assets/` and correct `unity/.gitignore` ✓
 
 - Skill: `unity-programmer`
 
@@ -72,7 +72,7 @@ Everything structural, and nothing that thinks. This phase creates the two views
 - Create: `unity/Directory.Build.props`
 - Modify: `unity/.gitignore`
 
-- [ ] **Step 1: Create `unity/Directory.Build.props`**
+- [x] **Step 1: Create `unity/Directory.Build.props`**
 
 `Directory.Build.props` is imported at the top of `Sdk.props`, which is the only point early enough for `BaseIntermediateOutputPath` to affect NuGet restore. Setting these inside each `.csproj` would be too late.
 
@@ -89,7 +89,7 @@ Everything structural, and nothing that thinks. This phase creates the two views
 </Project>
 ```
 
-- [ ] **Step 2: Append the two corrections to `unity/.gitignore`**
+- [x] **Step 2: Append the two corrections to `unity/.gitignore`**
 
 The existing patterns `/[Oo]bj/`, `/[Bb]uild/` and `/*.sln` all carry a leading slash, so they match only at the root of `unity/`. Two consequences this step fixes: an `obj/` or `bin/` created inside `Assets/` would be committed, and the hand-written solution would be silently ignored. Append at the end of the file:
 
@@ -107,14 +107,14 @@ The existing patterns `/[Oo]bj/`, `/[Bb]uild/` and `/*.sln` all carry a leading 
 !/TechDuinn.FastGate.sln
 ```
 
-- [ ] **Step 3: Confirm git will track the solution path once it exists**
+- [x] **Step 3: Confirm git will track the solution path once it exists**
 
 Run: `git check-ignore -v unity/TechDuinn.FastGate.sln; echo "exit=$LASTEXITCODE"`
 Expected: no rule is printed and `exit=1` — `git check-ignore` exits 1 when the path is **not** ignored, which is the outcome wanted here. If it prints `unity/.gitignore:NN:/*.sln`, the negation is in the wrong place; it must come after the `/*.sln` line.
 
 Note: `git` is not on `PATH` in PowerShell on this machine — run this step through the Bash tool, or prefix with `$env:Path = "C:\Program Files\Git\cmd;$env:Path";`.
 
-### Task 2: Create the `TechDuinn.Table` assembly
+### Task 2: Create the `TechDuinn.Table` assembly ✓
 
 - Skill: `unity-programmer`
 
@@ -123,7 +123,7 @@ Note: `git` is not on `PATH` in PowerShell on this machine — run this step thr
 - Create: `unity/Assets/TechDuinn.Table/TechDuinn.Table.csproj`
 - Create: `unity/Assets/TechDuinn.Table/csc.rsp`
 
-- [ ] **Step 1: Write the assembly definition**
+- [x] **Step 1: Write the assembly definition**
 
 `noEngineReferences: true` is the structural enforcement of the engine-free boundary — with it set, `UnityEngine.Random` will not compile in this assembly. References are written by **name**, not GUID: GUIDs come from `.meta` files Unity has not generated yet.
 
@@ -146,7 +146,7 @@ Note: `git` is not on `PATH` in PowerShell on this machine — run this step thr
 }
 ```
 
-- [ ] **Step 2: Write the `.csproj` beside it, over the same folder**
+- [x] **Step 2: Write the `.csproj` beside it, over the same folder**
 
 The SDK's default glob picks up `**/*.cs` from the project directory, which is what makes this the same source folder as the `.asmdef`. No `<Compile Include>` is needed and none should be added.
 
@@ -169,7 +169,7 @@ The SDK's default glob picks up `**/*.cs` from the project directory, which is w
 </Project>
 ```
 
-- [ ] **Step 3: Write the `csc.rsp` that turns nullable on in the Unity half**
+- [x] **Step 3: Write the `csc.rsp` that turns nullable on in the Unity half**
 
 An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the `.csproj` alone would satisfy the nullable requirement for `dotnet test` and silently miss it for the editor. `csc.rsp` is Unity's per-assembly compiler-option mechanism.
 
@@ -179,7 +179,7 @@ An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the `.cs
 -nullable:enable
 ```
 
-### Task 3: Create the `TechDuinn.Presentation` assembly
+### Task 3: Create the `TechDuinn.Presentation` assembly ✓
 
 - Skill: `unity-programmer`
 
@@ -188,7 +188,7 @@ An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the `.cs
 - Create: `unity/Assets/TechDuinn.Presentation/TechDuinn.Presentation.csproj`
 - Create: `unity/Assets/TechDuinn.Presentation/csc.rsp`
 
-- [ ] **Step 1: Write the assembly definition, with the one-way reference on `Table`**
+- [x] **Step 1: Write the assembly definition, with the one-way reference on `Table`**
 
 `unity/Assets/TechDuinn.Presentation/TechDuinn.Presentation.asmdef`:
 
@@ -211,7 +211,7 @@ An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the `.cs
 }
 ```
 
-- [ ] **Step 2: Write the `.csproj`, with the matching project reference**
+- [x] **Step 2: Write the `.csproj`, with the matching project reference**
 
 `unity/Assets/TechDuinn.Presentation/TechDuinn.Presentation.csproj`:
 
@@ -233,7 +233,7 @@ An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the `.cs
 </Project>
 ```
 
-- [ ] **Step 3: Write the `csc.rsp`**
+- [x] **Step 3: Write the `csc.rsp`**
 
 `unity/Assets/TechDuinn.Presentation/csc.rsp`, one line, with a trailing newline:
 
@@ -241,7 +241,7 @@ An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the `.cs
 -nullable:enable
 ```
 
-### Task 4: Create the `TechDuinn.Game` assembly
+### Task 4: Create the `TechDuinn.Game` assembly ✓
 
 - Skill: `unity-programmer`
 
@@ -251,7 +251,7 @@ An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the `.cs
 - Create: `unity/Assets/TechDuinn.Game/TechDuinn.Game.asmdef`
 - Create: `unity/Assets/TechDuinn.Game/GameAssembly.cs`
 
-- [ ] **Step 1: Write the assembly definition**
+- [x] **Step 1: Write the assembly definition**
 
 `unity/Assets/TechDuinn.Game/TechDuinn.Game.asmdef`:
 
@@ -275,7 +275,7 @@ An `.asmdef` has no nullable field, so `<Nullable>enable</Nullable>` in the `.cs
 }
 ```
 
-- [ ] **Step 2: Write the placeholder type**
+- [x] **Step 2: Write the placeholder type**
 
 Deliberately not a `MonoBehaviour`, and deliberately carrying no magic methods — an empty `Update` or `Start` costs a crossing into managed code every frame, per component. A `const`, not a `static readonly` field, so there is no static state to go sticky under Fast Enter Play Mode.
 
@@ -297,14 +297,14 @@ namespace TechDuinn.Game
 }
 ```
 
-### Task 5: Create the fast gate's solution and confirm both engine-free projects build
+### Task 5: Create the fast gate's solution and confirm both engine-free projects build ✓
 
 - Skill: `unity-programmer`
 
 **Files:**
 - Create: `unity/TechDuinn.FastGate.sln`
 
-- [ ] **Step 1: Create the solution and add the two source projects**
+- [x] **Step 1: Create the solution and add the two source projects**
 
 `dotnet new sln` names the solution after its output folder unless told otherwise, which would produce `unity.sln`; `--name` is what makes it `TechDuinn.FastGate.sln`.
 
@@ -316,12 +316,12 @@ dotnet sln "unity\TechDuinn.FastGate.sln" add "unity\Assets\TechDuinn.Presentati
 ```
 Expected: all three exit 0; the second and third print `Project ... added to the solution.`
 
-- [ ] **Step 2: Build the solution**
+- [x] **Step 2: Build the solution**
 
 Run: `dotnet build "unity\TechDuinn.FastGate.sln"`
 Expected: exits 0, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. Two assemblies are produced. `TechDuinn.Table` compiles to a nearly-empty assembly at this point, which is correct — its only source file arrives in Phase 2.
 
-- [ ] **Step 3: Confirm no build output landed inside `Assets/`**
+- [x] **Step 3: Confirm no build output landed inside `Assets/`**
 
 This is the check that `Directory.Build.props` actually took effect. A `bin/` or `obj/` under `Assets/` means Unity will import a DLL as a managed plugin and end up with two copies of every type in the assembly.
 
@@ -337,7 +337,7 @@ Expected: at least one path printed, confirming the output went where it was red
 
 The one piece of real logic in the ticket. The generator is ported bit-for-bit from `prototype/src/hunt/seededRng.ts`, then pinned by golden values that are **generated from the prototype under Node and not from the port** — freezing values the C# produced itself would prove only that it agrees with itself. The boundary is safe because it ends with the whole solution building and `dotnet test` passing over a single test project; the vector-generation step is read-only against `prototype/` and writes only to the scratchpad.
 
-### Task 6: Generate the golden vectors from the prototype
+### Task 6: Generate the golden vectors from the prototype ✓
 
 - Skill: `none — read-only extraction from the prototype to produce test data; no source file is written`
 
@@ -346,7 +346,7 @@ This task produces numbers, not code. Its output is pasted into Task 8's test fi
 **Files:**
 - Create: `C:\Users\jossd\AppData\Local\Temp\claude\E--Game-Dev-StringsAndStations\3ce88c2e-8e09-4ec7-807a-7eff60428d34\scratchpad\goldenVectors.mjs` — scratchpad only, not part of the repository
 
-- [ ] **Step 1: Read the prototype's generator and copy its arithmetic verbatim**
+- [x] **Step 1: Read the prototype's generator and copy its arithmetic verbatim**
 
 Read `prototype/src/hunt/seededRng.ts`. The two bodies needed are `createSeededRng` (the four statements inside the returned closure) and `mixSeed` (the loop body). **Copy them character for character.** Do not retype the arithmetic and do not simplify it — if the copy drifts, the golden vectors will be self-consistent and wrong, and the port will be pinned to a generator the prototype does not have. This is the most fragile step in the ticket.
 
@@ -398,23 +398,23 @@ console.log(
 )
 ```
 
-- [ ] **Step 2: Run it and record the output**
+- [x] **Step 2: Run it and record the output**
 
 Run: `node "C:\Users\jossd\AppData\Local\Temp\claude\E--Game-Dev-StringsAndStations\3ce88c2e-8e09-4ec7-807a-7eff60428d34\scratchpad\goldenVectors.mjs"`
 Expected: exits 0 and prints seven labelled lines — `SEED 0:`, `SEED 1:`, `SEED 12345:`, `MIX_1_2_3:`, `MIX_3_2_1:`, `DEAL_1234_2_3:`, `BELOW_52 (seed 12345):`. Every number is a non-negative integer below 2³² (the `BELOW_52` line, below 52). Keep the exact output — Task 8 pastes these literals into the test file, and the numbers are not known before this step runs.
 
-- [ ] **Step 3: Sanity-check the output before trusting it**
+- [x] **Step 3: Sanity-check the output before trusting it**
 
 `MIX_1_2_3` and `MIX_3_2_1` must differ — `mixSeed` is order-sensitive, and equal values would mean the loop body was copied wrong. The three `SEED` lines must all differ from each other. If any of those hold equal, re-read `prototype/src/hunt/seededRng.ts` and fix the copy before going on.
 
-### Task 7: Write `SeededRng` and `Seeds` in `TechDuinn.Table`
+### Task 7: Write `SeededRng` and `Seeds` in `TechDuinn.Table` ✓
 
 - Skill: `unity-programmer`
 
 **Files:**
 - Create: `unity/Assets/TechDuinn.Table/SeededRng.cs`
 
-- [ ] **Step 1: Write the generator**
+- [x] **Step 1: Write the generator**
 
 Block namespace, not file-scoped — file-scoped namespaces are C# 10 and this assembly is pinned to C# 9. A `readonly struct` rather than the `readonly record struct` architecture §10 names, for the same reason. `Next` returns its successor rather than mutating, which is what makes §10's "seeds are values in state, never fields on a service" structurally true and leaves nothing static to go sticky under Fast Enter Play Mode.
 
@@ -543,7 +543,7 @@ namespace TechDuinn.Table
 }
 ```
 
-- [ ] **Step 2: Build, and measure the file**
+- [x] **Step 2: Build, and measure the file**
 
 Run: `dotnet build "unity\TechDuinn.FastGate.sln"`
 Expected: exits 0, `0 Warning(s)`, `0 Error(s)`. `TreatWarningsAsErrors` is on, so any nullable warning fails here.
@@ -551,7 +551,7 @@ Expected: exits 0, `0 Warning(s)`, `0 Error(s)`. `TreatWarningsAsErrors` is on, 
 Run: `(Get-Content unity\Assets\TechDuinn.Table\SeededRng.cs).Count`
 Expected: a number well under 400. Use `.Count` on the raw content, not `Measure-Object -Line`, which drops blank lines and undercounts.
 
-### Task 8: Test the generator against the prototype's golden vectors
+### Task 8: Test the generator against the prototype's golden vectors ✓
 
 - Skill: `unity-programmer`
 
@@ -559,7 +559,7 @@ Expected: a number well under 400. Use `.Count` on the raw content, not `Measure
 - Create: `unity/Tests/TechDuinn.Table.Tests/TechDuinn.Table.Tests.csproj`
 - Test: `unity/Tests/TechDuinn.Table.Tests/SeededRngTests.cs`
 
-- [ ] **Step 1: Create the test project**
+- [x] **Step 1: Create the test project**
 
 It lives at `unity/Tests/`, outside `Assets/`, so Unity never tries to import NUnit and the test adapter and collide with its own bundled `com.unity.test-framework`. The `None` items copy the three `.asmdef` files into the output so Task 10's boundary test can read what the editor reads. The `TechDuinn.Presentation` project reference is there so that same test can reflect over the forward edge.
 
@@ -590,12 +590,12 @@ It lives at `unity/Tests/`, outside `Assets/`, so Unity never tries to import NU
 </Project>
 ```
 
-- [ ] **Step 2: Add the test project to the solution**
+- [x] **Step 2: Add the test project to the solution**
 
 Run: `dotnet sln "unity\TechDuinn.FastGate.sln" add "unity\Tests\TechDuinn.Table.Tests\TechDuinn.Table.Tests.csproj"`
 Expected: exits 0, prints `Project ... added to the solution.`
 
-- [ ] **Step 3: Write the tests, pasting Task 6's real output as the golden literals**
+- [x] **Step 3: Write the tests, pasting Task 6's real output as the golden literals**
 
 Every `TODO` marker below must be replaced with the actual numbers Task 6 printed. **Do not invent them and do not compute them from the C# — the whole point is that they come from a different process, a different runtime and a different language.** The eight-value arrays come from the `SEED n:` lines, the three single values from `MIX_1_2_3`, `MIX_3_2_1` and `DEAL_1234_2_3`, and the bounded array from `BELOW_52 (seed 12345):`.
 
@@ -739,12 +739,12 @@ namespace TechDuinn.Table.Tests
 }
 ```
 
-- [ ] **Step 4: Run the test project**
+- [x] **Step 4: Run the test project**
 
 Run: `dotnet test "unity\Tests\TechDuinn.Table.Tests\TechDuinn.Table.Tests.csproj"`
 Expected: exits 0; the summary line reports `Failed: 0` and a non-zero `Passed` count. If the golden-vector tests fail, the port and the prototype disagree — **fix the port, never the golden values**, unless Task 6's copy is provably wrong.
 
-- [ ] **Step 5: Confirm no `TODO` marker survived**
+- [x] **Step 5: Confirm no `TODO` marker survived**
 
 Run: `Select-String -Path unity\Tests\TechDuinn.Table.Tests\SeededRngTests.cs -Pattern "TODO"`
 Expected: no output. A surviving marker means a golden array was left empty and its test passed vacuously.
@@ -755,7 +755,7 @@ Expected: no output. A surviving marker means a golden array was left empty and 
 
 `TechDuinn.Presentation` gets one real function so its reference on `TechDuinn.Table` is load-bearing rather than decorative, and the boundary that makes the whole architecture worth having gets asserted rather than assumed. The boundary is safe because it ends with the full solution building and both test projects passing.
 
-### Task 9: Write `SeedDisplay` in `TechDuinn.Presentation` and test it
+### Task 9: Write `SeedDisplay` in `TechDuinn.Presentation` and test it ✓
 
 - Skill: `unity-programmer`
 
@@ -764,7 +764,7 @@ Expected: no output. A surviving marker means a golden array was left empty and 
 - Create: `unity/Tests/TechDuinn.Presentation.Tests/TechDuinn.Presentation.Tests.csproj`
 - Test: `unity/Tests/TechDuinn.Presentation.Tests/SeedDisplayTests.cs`
 
-- [ ] **Step 1: Write the view model**
+- [x] **Step 1: Write the view model**
 
 Architecture §2 describes `TechDuinn.Presentation` as "pure functions from rules state to what a screen shows". This is the smallest honest example of one, and it takes a `TechDuinn.Table` type as its parameter so the reference edge carries real weight.
 
@@ -791,7 +791,7 @@ namespace TechDuinn.Presentation
 }
 ```
 
-- [ ] **Step 2: Create the second test project and add it to the solution**
+- [x] **Step 2: Create the second test project and add it to the solution**
 
 `unity/Tests/TechDuinn.Presentation.Tests/TechDuinn.Presentation.Tests.csproj`:
 
@@ -816,7 +816,7 @@ namespace TechDuinn.Presentation
 Run: `dotnet sln "unity\TechDuinn.FastGate.sln" add "unity\Tests\TechDuinn.Presentation.Tests\TechDuinn.Presentation.Tests.csproj"`
 Expected: exits 0, prints `Project ... added to the solution.`
 
-- [ ] **Step 3: Write the tests**
+- [x] **Step 3: Write the tests**
 
 `unity/Tests/TechDuinn.Presentation.Tests/SeedDisplayTests.cs`:
 
@@ -855,19 +855,19 @@ namespace TechDuinn.Presentation.Tests
 }
 ```
 
-- [ ] **Step 4: Run the new test project**
+- [x] **Step 4: Run the new test project**
 
 Run: `dotnet test "unity\Tests\TechDuinn.Presentation.Tests\TechDuinn.Presentation.Tests.csproj"`
 Expected: exits 0; `Failed: 0`, `Passed: 3`.
 
-### Task 10: Prove the reference edge runs one way only
+### Task 10: Prove the reference edge runs one way only ✓
 
 - Skill: `unity-programmer`
 
 **Files:**
 - Test: `unity/Tests/TechDuinn.Table.Tests/AssemblyBoundaryTests.cs`
 
-- [ ] **Step 1: Write the boundary test**
+- [x] **Step 1: Write the boundary test**
 
 Two independent proofs. Reflection over the built assemblies reads what the compiler actually emitted, which is the strong one; parsing the `.asmdef` files catches someone adding a reference through the editor's inspector later. The `.asmdef` assertions deliberately avoid the literal reference *names* — Unity may rewrite name references to GUIDs when it saves the file, but an empty `references` array and the `noEngineReferences` flag both survive that rewrite.
 
@@ -972,7 +972,7 @@ namespace TechDuinn.Table.Tests
 }
 ```
 
-- [ ] **Step 2: Run both test projects together**
+- [x] **Step 2: Run both test projects together**
 
 Run: `dotnet test "unity\TechDuinn.FastGate.sln"`
 Expected: exits 0; `Failed: 0` across both test projects.
@@ -983,14 +983,14 @@ Expected: exits 0; `Failed: 0` across both test projects.
 
 The first three phases made the fast gate possible; this one runs it, records what it actually printed, and fixes the three documents that still say it cannot exist. The boundary is safe because the code is finished and unchanged from here — every task below either runs a command or edits prose.
 
-### Task 11: Run the fast gate and record its real output on DLR-176
+### Task 11: Run the fast gate and record its real output on DLR-176 ✓
 
 - Skill: `management-jira`
 
 **Files:**
 - (no repository file changes — this task runs a command and comments on a Jira issue)
 
-- [ ] **Step 1: Run the fast gate from the repository root, clean**
+- [x] **Step 1: Run the fast gate from the repository root, clean**
 
 Run:
 ```
@@ -1001,24 +1001,24 @@ Expected: both exit 0. The build reports `0 Warning(s)`, `0 Error(s)`; the test 
 
 If either command fails, stop. The brief is explicit: say so plainly rather than falling back to editor-mode tests and reporting a pass.
 
-- [ ] **Step 2: Comment the command and its real output on DLR-176**
+- [x] **Step 2: Comment the command and its real output on DLR-176**
 
 Invoke the `management-jira` skill and add a comment to `DLR-176` containing the exact command line used as the fast gate (`dotnet test "unity\TechDuinn.FastGate.sln"`, run from the repository root) and the verbatim summary lines from Step 1 — the `Build succeeded` / warning / error counts, and the `Passed` / `Failed` / `Skipped` / duration line from the test run. Note in the comment that the .NET 8 SDK is a prerequisite and give the version `dotnet --list-sdks` reported.
 
 Do not transition the issue here — `/fb-apply` owns the status move.
 
-### Task 12: Correct `.claude/workflow/unity-project.md` against the project that now exists
+### Task 12: Correct `.claude/workflow/unity-project.md` against the project that now exists ✓
 
 - Skill: `none — documentation; this file is its own owner per CLAUDE.md's single-source-of-truth table`
 
 **Files:**
 - Modify: `.claude/workflow/unity-project.md`
 
-- [ ] **Step 1: Replace the forward-looking header**
+- [x] **Step 1: Replace the forward-looking header**
 
 Delete the opening paragraph beginning *"**This file is forward-looking.** No Unity project exists on disk yet"* in its entirety, including the sentence instructing the first scaffolding ticket to correct this file — that instruction has now been carried out and leaving it invites a second correction. Replace it with a paragraph stating: the Unity project exists at `unity/`, on editor version 6000.5.1f1 with URP 2D and the Input System; three of the seven assemblies exist as of DLR-176; and the fast gate below has been run and its output recorded on DLR-176. Name the .NET 8 SDK as a prerequisite for the fast gate, since it is not part of a Unity install.
 
-- [ ] **Step 2: Correct the Layout section — both the paths and which assemblies exist**
+- [x] **Step 2: Correct the Layout section — both the paths and which assemblies exist**
 
 The current tree draws the assemblies as `unity/TechDuinn.Table/`, which cannot work: Unity only compiles code under `Assets/` or inside a package, so an `.asmdef` outside `Assets/` is never seen by the editor. Redraw the tree with the real paths and mark what exists:
 
@@ -1048,7 +1048,7 @@ Deferred — created by the epic that first needs each, not before:
   TechDuinn.Simulation/       engine-free — the headless run simulator and its policies
 ```
 
-- [ ] **Step 2b: Record the three mechanisms the dual setup actually needs**
+- [x] **Step 2b: Record the three mechanisms the dual setup actually needs**
 
 The existing §2.1 paragraph describes the dual `.asmdef` + `.csproj` design but not what it takes to make it work. Add, immediately after it, the three facts DLR-176 established, since each is a trap the next assembly will hit:
 
@@ -1056,7 +1056,7 @@ The existing §2.1 paragraph describes the dual `.asmdef` + `.csproj` design but
 - `LangVersion` is pinned to `9.0` in every engine-free `.csproj`. Unity 6's Mono compiler is C# 9; without the pin, `dotnet test` compiles syntax the editor then rejects. This is why `SeededRng` is a `readonly struct` rather than the `readonly record struct` architecture §10 names.
 - `unity/Directory.Build.props` redirects `BaseIntermediateOutputPath` and `BaseOutputPath` to `unity/Build/`. Without it MSBuild writes `bin/` inside `Assets/` and Unity imports the DLL as a managed plugin, clashing with the assembly the `.asmdef` builds from the same sources.
 
-- [ ] **Step 3: Correct the Verification commands section**
+- [x] **Step 3: Correct the Verification commands section**
 
 Delete the line *"**The whole table below is not yet runnable.** No Unity project exists to run it against."* Replace the fast-gate row's prose description with the command that was really run in Task 11:
 
@@ -1066,16 +1066,16 @@ dotnet test "unity\TechDuinn.FastGate.sln"
 
 Run from the repository root. Note that it requires the .NET 8 SDK (`winget install Microsoft.DotNet.SDK.8`) and that it covers only the engine-free assemblies currently in the solution — two of them today, growing as the deferred assemblies land, each of which must add itself with `dotnet sln add`. Leave the other two rows — editor-mode tests and the player build — marked as still unrun, because they are; say so in those terms rather than deleting the caveat wholesale.
 
-- [ ] **Step 4: Add the seeded PRNG to the Correctness traps section**
+- [x] **Step 4: Add the seeded PRNG to the Correctness traps section**
 
 The existing trap *"No `UnityEngine.Random` or `System.Random` in a rules path"* ends with "Port the prototype's own seeded PRNG instead." That has now happened. Amend it to name `SeededRng` and `Seeds` in `TechDuinn.Table` as the one sanctioned source, note that it is pinned to the prototype by golden vectors generated under Node and asserted under `dotnet test`, and state that `SeededRng.NextBelow` uses multiply-shift rather than modulo specifically so the sequence matches the prototype's `Math.floor(rng() * n)` — a future contributor "tidying" it to modulo would silently break the oracle comparison.
 
-- [ ] **Step 5: Confirm no stale claim survives**
+- [x] **Step 5: Confirm no stale claim survives**
 
 Run: `Select-String -Path .claude\workflow\unity-project.md -Pattern "forward-looking|No Unity project exists|not yet runnable|has been run"`
 Expected: no hit for `forward-looking`, `No Unity project exists`, or `not yet runnable`. Hits for `has been run` are expected and correct.
 
-### Task 13: Correct `CLAUDE.md` and `unity/README.md`
+### Task 13: Correct `CLAUDE.md` and `unity/README.md` ✓
 
 - Skill: `none — documentation`
 
@@ -1085,17 +1085,17 @@ Both restate the claim `unity-project.md` owns, and both become false the moment
 - Modify: `CLAUDE.md:167`
 - Modify: `unity/README.md`
 
-- [ ] **Step 1: Rewrite the Unity paragraph in `CLAUDE.md`**
+- [x] **Step 1: Rewrite the Unity paragraph in `CLAUDE.md`**
 
 Replace the paragraph at line 167 that begins *"The project exists on disk (Unity 6000.5.1f1, URP 2D, the input system, one sample scene) but **no gate has ever been run against it**"*. The new paragraph keeps the same job — pointing at `unity-project.md` as the owner and warning that unrun commands are unproven — but tells the truth: the fast gate `dotnet test "unity\TechDuinn.FastGate.sln"` has been run and passes as of DLR-176, it needs the .NET 8 SDK, and the Unity batch-mode test and build commands remain unrun and unproven. Keep the existing instruction to report what a command actually printed rather than what it was supposed to print.
 
 Do not restate the assembly list or the layout here — `unity-project.md` owns those, and duplicating them is what this rule exists to prevent.
 
-- [ ] **Step 2: Rewrite `unity/README.md`**
+- [x] **Step 2: Rewrite `unity/README.md`**
 
 Replace *"Deliberately empty. The Unity project is scaffolded by its own ticket; nothing here yet."* with a short statement of what is now here: three assembly definitions under `Assets/`, two of them engine-free and carrying a `.csproj` beside their `.asmdef`, plus the test projects under `Tests/` and the fast-gate solution. Point at `.claude/workflow/unity-project.md` for the commands and the current layout, and keep the existing pointers to the architecture document and to `prototype/` as the oracle. Keep it to a handful of lines — it is a signpost, not a second copy of the workflow file.
 
-- [ ] **Step 3: Confirm the stale phrasing is gone repository-wide**
+- [x] **Step 3: Confirm the stale phrasing is gone repository-wide**
 
 Run: `Select-String -Path CLAUDE.md,unity\README.md,.claude\workflow\unity-project.md -Pattern "no gate has ever been run|Deliberately empty|nothing here yet|No Unity project exists"`
 Expected: no output.
@@ -1106,75 +1106,93 @@ Expected: no output.
 
 No production changes. Only sanity-checks that the cumulative work is clean, that the boundaries the ticket exists to establish actually hold, and that nothing crossed a line the architecture forbids.
 
-### Task 14: Confirm the engine-free boundary and the banned random sources
+### Task 14: Confirm the engine-free boundary and the banned random sources ✓
 
 - Skill: `unity-programmer`
 
 **Files:**
 - (no changes — verification only)
 
-- [ ] **Step 1: Grep the two engine-free assemblies for any engine or banned-random reference**
+- [x] **Step 1: Grep the two engine-free assemblies for any engine or banned-random reference**
 
 Run: `Select-String -Path unity\Assets\TechDuinn.Table\*.cs,unity\Assets\TechDuinn.Presentation\*.cs -Pattern "UnityEngine|System\.Random|\bnew Random\b|MonoBehaviour|ScriptableObject"`
 Expected: no output. `UnityEngine` is already structurally impossible via `noEngineReferences`, but `System.Random` is not — this grep is its only gate.
 
-- [ ] **Step 2: Confirm no floating-point arithmetic reached `TechDuinn.Table`**
+Actual: 2 hits, both inside doc comments in `SeededRng.cs` (line 10: "UnityEngine.Random is structurally unreachable here…"; line 11: "System.Random is banned by architecture §10…"). No executable code matched. See Implementer Report.
+
+- [x] **Step 2: Confirm no floating-point arithmetic reached `TechDuinn.Table`**
 
 Architecture §20.2: integer arithmetic only, because a float that is harmless in one browser is not harmless across a Windows build, a Mac build, and a recorded seed that has to replay on both.
 
 Run: `Select-String -Path unity\Assets\TechDuinn.Table\*.cs -Pattern "\bfloat\b|\bdouble\b|\bdecimal\b|\bMathf\b"`
 Expected: no output.
 
-- [ ] **Step 3: Confirm nullable is on where it must be and off where it must not**
+Actual: 1 hit, a doc comment on line 32 of `SeededRng.cs` ("No float is ever produced…"). No executable code matched. See Implementer Report.
+
+- [x] **Step 3: Confirm nullable is on where it must be and off where it must not**
 
 Run: `Get-ChildItem unity\Assets -Recurse -Filter csc.rsp | Select-Object -ExpandProperty FullName`
 Expected: exactly two paths — one under `TechDuinn.Table`, one under `TechDuinn.Presentation`. A third under `TechDuinn.Game` would be a defect: nullable must stay off there, because a `[SerializeField]` the Inspector never filled is null while the compiler believes it cannot be.
 
+Actual: exactly two paths, as expected — `unity\Assets\TechDuinn.Presentation\csc.rsp` and `unity\Assets\TechDuinn.Table\csc.rsp`. No `TechDuinn.Game\csc.rsp`.
+
 Run: `Select-String -Path unity\Assets\TechDuinn.Table\TechDuinn.Table.csproj,unity\Assets\TechDuinn.Presentation\TechDuinn.Presentation.csproj -Pattern "<Nullable>enable</Nullable>|<LangVersion>9.0</LangVersion>"`
 Expected: four hits — both properties in both files.
 
-### Task 15: Confirm the solution and the working tree are consistent
+Actual: exactly four hits, as expected.
+
+### Task 15: Confirm the solution and the working tree are consistent ✓
 
 - Skill: `unity-programmer`
 
 **Files:**
 - (no changes — verification only)
 
-- [ ] **Step 1: Confirm every project the solution lists exists on disk**
+- [x] **Step 1: Confirm every project the solution lists exists on disk**
 
 The solution's project paths bind by string and no compiler checks them; a typo produces a project that is silently never built or a solution the gate cannot open.
 
 Run: `dotnet sln "unity\TechDuinn.FastGate.sln" list`
 Expected: exactly four project paths — the two engine-free source projects under `Assets\` and the two test projects under `Tests\`.
 
+Actual: exactly four, as expected — `Assets\TechDuinn.Presentation\TechDuinn.Presentation.csproj`, `Assets\TechDuinn.Table\TechDuinn.Table.csproj`, `Tests\TechDuinn.Presentation.Tests\TechDuinn.Presentation.Tests.csproj`, `Tests\TechDuinn.Table.Tests\TechDuinn.Table.Tests.csproj`.
+
 Run: `dotnet sln "unity\TechDuinn.FastGate.sln" list | Select-String "\.csproj$" | ForEach-Object { $p = Join-Path "unity" $_.ToString().Trim(); if (-not (Test-Path $p)) { "MISSING: $p" } }`
 Expected: no output.
 
-- [ ] **Step 2: Confirm the solution and every hand-written project file will actually be committed**
+Actual: no output, as expected.
+
+- [x] **Step 2: Confirm the solution and every hand-written project file will actually be committed**
 
 Run through the Bash tool, or prefix with `$env:Path = "C:\Program Files\Git\cmd;$env:Path";` — git is not on `PATH` in PowerShell on this machine:
 
 Run: `git status --porcelain unity | Select-String "TechDuinn.FastGate.sln|Directory.Build.props|\.asmdef|\.csproj|csc\.rsp"`
 Expected: an untracked or added entry for the solution, `Directory.Build.props`, all three `.asmdef` files, all four `.csproj` files, and both `csc.rsp` files. A missing solution entry means the `!/TechDuinn.FastGate.sln` negation is not working.
 
-- [ ] **Step 3: Confirm no build output is staged for commit**
+Actual: the literal command returned only `?? unity/Directory.Build.props` and `?? unity/TechDuinn.FastGate.sln` — `git status --porcelain` collapses an entirely-untracked directory to one `??` line for the directory itself, so the `.asmdef`/`.csproj`/`csc.rsp` files inside `Assets/TechDuinn.Table/`, `Assets/TechDuinn.Presentation/`, `Assets/TechDuinn.Game/` and `Tests/` don't appear as individual lines under the default flag. Re-ran with `-uall` to force per-file listing and confirmed all of them are present: `unity/Assets/TechDuinn.Game/TechDuinn.Game.asmdef`, `unity/Assets/TechDuinn.Presentation/TechDuinn.Presentation.asmdef`, `unity/Assets/TechDuinn.Presentation/TechDuinn.Presentation.csproj`, `unity/Assets/TechDuinn.Presentation/csc.rsp`, `unity/Assets/TechDuinn.Table/TechDuinn.Table.asmdef`, `unity/Assets/TechDuinn.Table/TechDuinn.Table.csproj`, `unity/Assets/TechDuinn.Table/csc.rsp`, `unity/Directory.Build.props`, `unity/TechDuinn.FastGate.sln`, `unity/Tests/TechDuinn.Presentation.Tests/TechDuinn.Presentation.Tests.csproj`, `unity/Tests/TechDuinn.Table.Tests/TechDuinn.Table.Tests.csproj`. The solution entry is present, so the `!/TechDuinn.FastGate.sln` negation works. See Implementer Report.
+
+- [x] **Step 3: Confirm no build output is staged for commit**
 
 Run: `git status --porcelain unity | Select-String "unity/Build/|/obj/|/bin/|\.dll$"`
 Expected: no output.
 
-- [ ] **Step 4: Measure every source file created**
+Actual: no output, as expected.
+
+- [x] **Step 4: Measure every source file created**
 
 Run: `Get-ChildItem unity\Assets,unity\Tests -Recurse -Filter *.cs | ForEach-Object { "$($_.FullName): $((Get-Content $_.FullName).Count)" }`
 Expected: every count well under 400. Use `.Count` on the raw content, not `Measure-Object -Line`, which drops blank lines and undercounts.
 
-### Task 16: The fast gate, clean, from a cold build
+Actual: `GameAssembly.cs` 13, `SeedDisplay.cs` 18, `SeededRng.cs` 122, `SeedDisplayTests.cs` 32, `AssemblyBoundaryTests.cs` 96, `SeededRngTests.cs` 147 — all well under 400.
+
+### Task 16: The fast gate, clean, from a cold build ✓
 
 - Skill: `unity-programmer`
 
 **Files:**
 - (no changes — verification only)
 
-- [ ] **Step 1: Restore, build and test from scratch**
+- [x] **Step 1: Restore, build and test from scratch**
 
 Run:
 ```
@@ -1184,21 +1202,25 @@ dotnet test "unity\TechDuinn.FastGate.sln"
 ```
 Expected: all three exit 0. The build reports `0 Warning(s)`, `0 Error(s)`; the test run reports `Failed: 0` with a non-zero `Passed` count across both test projects. Report the actual numbers printed, not the numbers expected.
 
-- [ ] **Step 2: Confirm the prototype was not touched**
+Actual: all three exited 0. `dotnet restore` — "All projects are up-to-date for restore." `dotnet build --no-incremental` — "Build succeeded. 0 Warning(s) 0 Error(s)." `dotnet test` — `TechDuinn.Table.Tests.dll (net8.0)`: Failed 0, Passed 21, Skipped 0, Total 21, Duration 21 ms. `TechDuinn.Presentation.Tests.dll (net8.0)`: Failed 0, Passed 3, Skipped 0, Total 3, Duration 13 ms.
+
+- [x] **Step 2: Confirm the prototype was not touched**
 
 The prototype is read from in Task 6 and must not be edited. Run through the Bash tool, or with the `$env:Path` prefix above:
 
 Run: `git status --porcelain prototype`
 Expected: no output.
 
-### Task 17: Update the PR description
+Actual: no output, as expected.
+
+### Task 17: Update the PR description ✓
 
 - Skill: `none — documentation`
 
 **Files:**
 - Create: `.claude/contract/DLR-176-unity-assembly-scaffold-and-seeded-prng/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 - A link to `plan.md` in this folder.
