@@ -6,7 +6,7 @@ Every value this game persists goes through `prototype/src/persistence/`. It is 
 
 ## Why
 
-Storage keys and persisted field names bind by string and sit outside the type checker's view (`.claude/workflow/web-project.md` → Correctness traps), so a rename type-checks cleanly and silently orphans every save. Unlike every other kind of breakage in this prototype, a bad save shape damages data the developer cannot regenerate by re-running the app — there is no rebuild step that fixes a corrupted or orphaned record on a player's disk.
+Storage keys and persisted field names bind by string and sit outside the type checker's view (`.claude/workflow/web-project.md` → Correctness traps), so a rename type-checks cleanly and silently orphans every save. Unlike every other kind of breakage in this project, a bad save shape damages data the developer cannot regenerate by re-running the app — there is no rebuild step that fixes a corrupted or orphaned record on a player's disk.
 
 ## When to enforce
 

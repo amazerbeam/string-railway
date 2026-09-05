@@ -13,8 +13,16 @@ implemented systems actually work — the doc a developer opens months from now 
 the cards shuffled" without reading the source, and the doc that answers "what's actually been
 built" without archaeology through old tickets.
 
-**Scope:** one folder per `prototype/src/` module, updated cumulatively as tickets touch it — never one file
-(or folder) per ticket. A mechanic's explanation lives in exactly one place regardless of which
+**Which tree you write to.** `.docs/` at the repository root is the live game's documentation,
+covering `unity/`, and it is the **only** tree this skill writes to. `prototype/.docs/` is the
+retained web prototype's own documentation — a complete record of the previous build, frozen.
+Read it as prior art; never update it, never add a module folder to it, and never let its
+contents stand in for a doc the root tree has not yet been given. The root tree starts nearly
+empty: a module doc that does not exist yet is one you create, not one you go looking for under
+`prototype/`.
+
+**Scope:** one folder per module of the codebase being built, updated cumulatively as tickets touch
+it — never one file (or folder) per ticket. A mechanic's explanation lives in exactly one place regardless of which
 ticket last touched it. This mirrors `.docs/design/` (design intent) and `.docs/game_rules/`
 (rules-as-written) — this folder is the third leg: implementation-as-built.
 
@@ -26,10 +34,10 @@ the module docs, and the boundary is what keeps either useful:
 | Doc                              | Owns                                                     | Answers                    |
 | -------------------------------- | -------------------------------------------------------- | -------------------------- |
 | `.docs/game_rules/the-hunt.md`   | The playable procedure as it currently stands             | "What are the rules?"      |
-| `.docs/design/…/hybrid-design.md` | Why each rule exists, the discarded branches, open forks | "Why this rule?"           |
+| `.docs/design/` | Why each rule exists, the discarded branches, open forks | "Why this rule?"           |
 | `.docs/implementation/<module>/` | What the code does, per module                            | "How does the code do it?" |
 
-`the-hunt.md` is organised by **the order a player does things**, not by `prototype/src/` folder — so one rule
+`the-hunt.md` is organised by **the order a player does things**, not by source folder — so one rule
 that three modules implement is stated once, in the section a player would look for it. It names no
 function in its prose; every code pointer lives in its own **Status register** table, once.
 `fox-in-the-forest.md` in the same folder is the **base game, transcribed** and is *not* maintained
@@ -57,8 +65,8 @@ by this skill — it is a fixed reference to a published rulebook. Only `the-hun
   or its Status register names a file or constant that no longer exists.
 
 Not for: design intent or open design questions (`game-designer` owns `.docs/design/`), transcribing
-a *published* rulebook (`.docs/game_rules/fox-in-the-forest.md` is a fixed reference, written
-directly and never maintained here), writing the code itself (`react-frontend` owns that), or a
+a *published* rulebook (`prototype/.docs/game_rules/fox-in-the-forest.md` is a fixed reference, written
+directly and never maintained here), writing the code itself (`unity-programmer` owns that), or a
 single ticket's PR description (the contract's own `pr-description.md` is ephemeral and
 ticket-scoped — this skill's output is the opposite: permanent and cumulative).
 
@@ -67,9 +75,9 @@ ticket-scoped — this skill's output is the opposite: permanent and cumulative)
 ```
 .docs/implementation/
   README.md                    top-level index: one row per module, its folder, status, tickets
-  <module-slug>/                one folder per prototype/src/ module — kebab-case of the folder name
-                                (prototype/src/warCouncil/ -> war-council/, prototype/src/vanguard/ -> vanguard/,
-                                 prototype/src/battle/ -> battle/)
+  <module-slug>/                one folder per module of the live codebase — kebab-case of its name
+                                (a Unity assembly or folder maps to its kebab-case slug, e.g.
+                                 WarCouncil -> war-council/)
     README.md                  the module's spine — Status, Built by, Responsibility, Key types &
                                 exports, a How-it-works index (links, not the content itself once
                                 there's more than one mechanic file), Rules & invariants, Deferred
@@ -79,7 +87,7 @@ ticket-scoped — this skill's output is the opposite: permanent and cumulative)
 
 **Every module gets a folder, not a bare `.md` file**, even a thin one — this is what makes the
 structure extensible without a rename later. A module gets a folder the first time any ticket
-creates or meaningfully populates its `prototype/src/` folder. `App.tsx` / `main.tsx` (not yet inside a named
+creates or meaningfully populates it. `App.tsx` / `main.tsx` (not yet inside a named
 folder) share an `app-shell/` folder if they ever need more than a line in the top-level README.
 
 ### When to split a mechanic out of `README.md` into its own file
@@ -99,7 +107,7 @@ invariants, Deferred, and **How it works** written inline. Split a mechanic out 
 
 When splitting, group related mechanics into one file rather than one file per subsection — a file
 per *question a developer would actually ask*, not per H3 heading. Five or six files per module is
-a reasonable ceiling; if a module needs more than that, its `prototype/src/` folder likely deserves a second
+a reasonable ceiling; if a module needs more than that, its source folder likely deserves a second
 look before its doc does. `README.md` keeps a short **How it works** index — one line per mechanic
 file, naming the file and what it answers — so a reader lands on the right file without opening
 several.
@@ -111,7 +119,7 @@ driven by the module's actual size and shape, not by an ambition to look organiz
 ## Per-module `README.md` template (unsplit — the default for a new or thin module)
 
 ```markdown
-# <Module display name> — `prototype/src/<folder>/`
+# <Module display name> — `<module path>`
 
 **Status:** scaffold | partial | implemented
 **Built by:** DLR-19, DLR-21, ...
@@ -145,7 +153,7 @@ here instead of leaving the reader to wonder.]
 ## Per-module `README.md` template (split — once the module has mechanic files)
 
 ```markdown
-# <Module display name> — `prototype/src/<folder>/`
+# <Module display name> — `<module path>`
 
 **Status:** scaffold | partial | implemented
 **Built by:** DLR-19, DLR-21, ...
@@ -205,7 +213,7 @@ value is what a reader would act on. State the number, then mark it, then say wh
 
 ### Three rules about the prose
 
-- **No rationale.** Where a rule needs justifying, cite `hybrid-design.md §N` and stop. Reproducing
+- **No rationale.** Where a rule needs justifying, cite the live design doc under `.docs/design/` and stop. Reproducing
   the argument creates a second copy that will drift from the first.
 - **No function or file names in the prose.** They belong in the **Status register** only. Prose
   written for a player survives a refactor; prose naming `resolveTrickWinner` does not.
@@ -235,7 +243,7 @@ what it needs is the note, not omission.
 
 - Get the list of touched files: the cumulative changed-files log from the calling `/fb-apply` run,
   or — if invoked standalone — `git status` / `git diff` plus the task description.
-- Group touched files by their `prototype/src/<folder>/` prefix. Each distinct folder is a module to update.
+- Group touched files by their module folder. Each distinct folder is a module to update.
 - Glob `.docs/implementation/*/README.md` for existing module docs. A touched module with no doc
   yet needs a folder created; a touched module with a doc needs it updated, not replaced wholesale.
 - **Also check every *other* module's docs for a reference into anything this contract deleted or
@@ -243,7 +251,7 @@ what it needs is the note, not omission.
   ticket deleted a file or a vocabulary term a *different* module's doc still names. Grep every
   `.docs/implementation/**/*.md` for each identifier, path, and vocabulary term the contract
   deleted or renamed. This is what catches a case like: Module A's doc's Deferred section still
-  says "see `prototype/src/otherModule/`'s state" after a separate ticket deleted `prototype/src/otherModule/` entirely
+  says "see another module's state" after a separate ticket deleted that module entirely
   — A's own code never changed, but A's doc is now wrong.
 - **Decide whether this contract changed a game rule.** Read `.docs/game_rules/the-hunt.md` and ask
   the question from the player's side: *does anything in this diff change what a player may do, must
@@ -279,7 +287,7 @@ matters, because each one can correct the one before it:
 - `plan.md`'s **Assumptions** and **Risks** — this is where a reading was chosen between two
   defensible ones, and where a value was explicitly routed to the developer. An assumption recorded
   there is what makes a `[provisional]` marker honest rather than a guess.
-- **The design section the rule sits in** (`hybrid-design.md §N`) for the citation, and for whether
+- **The design section the rule sits in** (the relevant section under `.docs/design/`) for the citation, and for whether
   the design still says what the code now does. Where the two disagree, the code is the rule and the
   disagreement is worth a short note — that is a real finding, not a formatting problem.
 - **The constant itself**, read from source. A tunable's comment usually states its unit, whose
@@ -296,7 +304,7 @@ matters, because each one can correct the one before it:
 - Check whether the ticket key is already in **Built by** before appending — don't duplicate it
   across re-runs of the same contract.
 - **A rename or deletion this contract performs must be reflected everywhere it's named**, not just
-  in the module whose code changed. If this contract deleted `prototype/src/foo/` or removed a piece of
+  in the module whose code changed. If this contract deleted a module or removed a piece of
   project vocabulary, grep every doc under `.docs/implementation/` (not only the touched module's)
   for the old name and fix every hit — a Deferred bullet in an untouched module that still
   describes deleted code as future work is exactly the kind of drift this skill exists to prevent.
@@ -411,5 +419,5 @@ currently empty; re-scan rather than assuming it stays that way.
   look more decided than it is.
 - **A rule live in the engine but not yet on screen is in the body with the in-progress note** —
   neither omitted nor mislabelled `[not built]`.
-- `the-hunt.md`'s prose names no function or file, and cites `hybrid-design.md §N` rather than
+- `the-hunt.md`'s prose names no function or file, and cites the live design doc under `.docs/design/` rather than
   reproducing its argument — the two boundaries that keep it from becoming a fourth source of truth.

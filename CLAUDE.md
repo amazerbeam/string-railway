@@ -24,13 +24,17 @@ intuition.
 
 ## Project state — read this first
 
-**The repository now holds two codebases.** `prototype/` is the retained Vite + React 19 + TypeScript prototype — still runnable, still green — and `unity/` is the Unity project, empty until its scaffolding ticket.
+**The repository holds two codebases, and `unity/` is the one being built.** `unity/` is the live game — a Unity 6 (6000.5.1f1) URP 2D project, on disk and opening in the editor. `prototype/` is the retained Vite + React 19 + TypeScript implementation — still runnable, still green — kept as an oracle, not as the thing under construction.
+
+**New work goes to `unity/` and is written in C#.** The `unity-programmer` skill governs it. React and `prototype/src/` are oracle maintenance only: a change there is justified by keeping the reference implementation correct or by a seed-for-seed comparison against the Unity build, never by "this is where the game is built". A brief that would put new game behaviour in `prototype/src/` is a brief to question.
 
 `prototype/src/` holds 271 source files across eight modules (measured DLR-121) — `app/` (React screens and the app shell), `warCouncil/` (the card-layer engine), `hunt/` (the Hunt configuration module and domain types), `persistence/` (cross-run save storage), `vault/` (cross-run meta-progression), `sim/` (the headless run simulator, lint-enforced pure), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 139 of those files are tests.
 
-**The prototype is kept as an oracle, not as an archive.** It is a working, measured, deterministic implementation of the game's rules, and the Unity port's own simulator is checked against it seed-for-seed — see `.docs/implementation/unity-port-architecture.md` §20.1. Do not treat it as legacy code to eventually delete.
+**The prototype is kept as an oracle, not as an archive.** It is a working, measured, deterministic implementation of the game's rules, and the Unity port's own simulator is checked against it seed-for-seed — see `prototype/.docs/implementation/unity-port-architecture.md` §20.1. Do not treat it as legacy code to eventually delete.
 
-**The POC implements the project's previous design direction.** The live design is `.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md`. The POC code and its per-module record in `.docs/implementation/` are retained as a working reference — not as a description of where the game is going. The superseded direction's design documents, its art tree, and its build contracts were retired on DLR-45.
+**The prototype's design documents describe the prototype, not the game being built.** `prototype/.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md` is the fullest statement of the previous direction — worth mining, and the reason its folder name and the "hybrid" label survive is history, not intent. It is **not** the live design. It describes mechanics the new build has not adopted and may never adopt, so never quote it as current, and never answer "what does the game do" from it.
+
+**The live design is being written fresh, at the root `.docs/`, as each system is actually built.** It starts nearly empty. A rule that is not yet written there is undecided — not silently inherited from the prototype. The order of work is the order of the build: the core trick-taking loop first, up to a player playing a hand against a skull and damage changing hands, and nothing documented ahead of being built.
 
 Everything removed is fully recoverable — nothing was force-pushed, no branch was deleted, and no history was rewritten. Any file can be restored with:
 
@@ -40,7 +44,7 @@ $env:Path = "C:\Program Files\Git\cmd;$env:Path"; git show <commit>:<path>
 
 commit `2cf7ec7` on `origin/master` is the last commit before the 2026-08-01 removal of an earlier prototype.
 
-`.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`. `.docs/implementation/` holds one folder per `prototype/src/` module — living, cumulative documentation of how the shipped code actually works (responsibilities, key exports, the mechanics behind each rule, enforced invariants), maintained by the `implementation-doc-writer` skill and updated on every `/fb-apply` run, never by hand. It answers "how does X actually work" or "what's been built so far" without re-reading old contracts — see that skill's `SKILL.md` for the folder's internal shape.
+`.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`. `.docs/` at the repository root is the live game's documentation, written fresh against `unity/` as each system is built; `prototype/.docs/` is the prototype's own equivalent, complete and frozen as reference. `.docs/implementation/` holds one folder per module — living, cumulative documentation of how the shipped code actually works (responsibilities, key exports, the mechanics behind each rule, enforced invariants), maintained by the `implementation-doc-writer` skill and updated on every `/fb-apply` run, never by hand. It answers "how does X actually work" or "what's been built so far" without re-reading old contracts — see that skill's `SKILL.md` for the folder's internal shape.
 
 ## The single-source-of-truth rule
 
@@ -53,10 +57,11 @@ This project is deliberately organised so each fact is stated once. When somethi
 | Where plans live, slug grammar, how a command picks *which* plan | `.claude/workflow/plan-resolution.md` |
 | Jira status vocabulary, what each board status means, which transitions the `/fb-*` commands automate | `.claude/skills/management-jira/SKILL.md` → its status-model section |
 | Jira label vocabulary — the closed layer set (`ui` / `engine` / `infra` / `design` / `spike`) and the `playable` marker | `.claude/skills/management-jira/SKILL.md` → its label-vocabulary section |
-| How to write React/TypeScript here — conventions, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
+| How to write C# for the live game — Unity conventions, allocation, data and event architecture | `.claude/skills/unity-programmer/SKILL.md` |
+| How to write React/TypeScript in the retained prototype — conventions, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
 | How a game screen is laid out and operated — viewport shell, zoning, interaction cost, navigating a collection of controls; and how feedback about a screen becomes a redesign | `.claude/skills/game-ux/SKILL.md` + its `references/full-viewport-layout.md` and `references/feedback-to-redesign.md` |
-| The game's name, and the fiction and myth-sourcing behind every other name in it | `.docs/design/tech-duinn-lore.md` |
-| Game design frameworks, designer research, the critique checklist | `.docs/design/design-principles.md` |
+| The game's name, and the fiction and myth-sourcing behind every other name in it | `prototype/.docs/design/tech-duinn-lore.md` |
+| Game design frameworks, designer research, the critique checklist | `prototype/.docs/design/design-principles.md` |
 | What the game's rules currently are, and which are still undecided | `.docs/game_rules/the-hunt.md` — see the three-doc split below |
 | How implemented code actually works — per-module mechanics, key types, enforced rules | `.claude/skills/implementation-doc-writer/SKILL.md`, output in `.docs/implementation/` |
 | Project-wide domain constraints | `.claude/rules/<topic>.md`; see its `README.md` |
@@ -70,87 +75,72 @@ The game itself is documented three times, deliberately, because these are three
 | Doc | Owns | Answers |
 |---|---|---|
 | `.docs/game_rules/the-hunt.md` | The playable procedure as it currently stands | "What are the rules?" |
-| `.docs/design/…/hybrid-design.md` | Why each rule exists, the discarded branches, §9's open forks | "Why this rule?" |
+| `.docs/design/` | Why each rule exists, and the branches discarded on the way | "Why this rule?" |
 | `.docs/implementation/<module>/` | What the code does, per module | "How does the code do it?" |
 
 Two consequences worth stating, because both are easy to get wrong:
 
-- **`the-hunt.md` is the ruleset, not a changelog.** It is organised in playing order, marks every rule `[settled]` / `[provisional]` / `[open]` / `[not built]`, cites `hybrid-design.md §N` rather than reproducing its reasoning, and names no functions outside its Status register. `implementation-doc-writer` owns it and `/fb-apply` updates it every run that changes a rule — never edit it by hand, and never add a per-ticket section to it.
-- **`.docs/game_rules/fox-in-the-forest.md` is not part of this split.** It is the base game's published rulebook, transcribed, and it is a fixed reference — nothing in the pipeline maintains it.
+- **`the-hunt.md` is the ruleset, not a changelog.** It is organised in playing order, marks every rule `[settled]` / `[provisional]` / `[open]` / `[not built]`, cites the live design doc under `.docs/design/` rather than reproducing its reasoning, and names no functions outside its Status register. `implementation-doc-writer` owns it and `/fb-apply` updates it every run that changes a rule — never edit it by hand, and never add a per-ticket section to it.
+- **`prototype/.docs/game_rules/fox-in-the-forest.md` is not part of this split.** It is the base game's published rulebook, transcribed, and it is a fixed reference — nothing in the pipeline maintains it.
 
 ### The four names a trick can have — use them in prose, not only in code
 
-A skull **inverts** a trick, so the mechanical act and the outcome come apart. DLR-165 gave each
-fact its own words, and the two combine into exactly four names:
+**This vocabulary carries forward; the mechanics it describes are the prototype's and are being
+rebuilt.** The four names below are how this project talks about a trick, and they stay in use
+because the distinction they draw is the one that keeps discussion honest. The specific numbers,
+the pot arithmetic, and the buff behaviour underneath them describe `prototype/src/` — treat those
+as the reference implementation's rules, decided again in the root `.docs/game_rules/the-hunt.md`
+as each is actually built, not inherited by default.
 
-- **Victory** and **Defeat** name the **outcome** and nothing else. A Victory banks; a Defeat hurts.
-- **High** and **Low** name the **mechanical act** — whether the player physically took the cards.
-  This is what `playerWentHigh` in `BuffTrickContext` means, and **every buff condition reads this
-  axis and nothing else**. "High" means winning the contest, trump included — not the higher numeral.
+A skull **inverts** a trick, so what you did and what you got come apart. Two facts, each with its
+own word, combining into exactly four names:
 
-The four outcomes, which `.docs/game_rules/the-hunt.md` §7 owns:
+- **Straight** and **Skulled** name the **trick** — whether a skull was played into it.
+- **Victory** and **Loss** name the **outcome** and nothing else. A Victory banks; a Loss hurts.
 
-| | Clean trick | Skull trick |
+The four, which `.docs/game_rules/the-hunt.md` owns once it is written:
+
+| | Straight trick (no skull) | Skulled trick |
 |---|---|---|
-| **Went high** (took the cards) | **High Victory** — **banks**: the trick's damage into `total`, `roll` +1 | **High Defeat** (ate the skull) — **hurts**: −1 health, `total` and `roll` to zero, the Quarry paid nothing |
-| **Went low** (did not) | **Low Defeat** — **hurts**: −1 health, `total` and `roll` to zero, the Quarry paid nothing | **Low Victory** (the dodge) — **banks**: the trick's damage into `total`, `roll` +1 |
+| **You took the cards** | **Straight Victory** — banks | **Skulled Loss** — you ate the skull; it hurts |
+| **You did not** | **Straight Loss** — it hurts | **Skulled Victory** — the dodge; banks |
 
-DLR-156 replaced `bank × multiplier` with a per-trick pot. A banked trick adds
-`(BASE_DAMAGE + baseDamageBonus + buffDamage) × buffMult` to `total` and climbs `roll` by one; the
-pot is `total × roll`, and it is paid **only** when the player chooses *apply* on the resolution
-screen. **A Defeat pays the Quarry nothing** — the old two-thirds consolation is gone.
+**Straight** and **Skulled** are also the adjectives for a trick on its own — a straight trick, a
+skulled trick — so the vocabulary works before the outcome is known.
+
+**High** and **low** survive as separate words for the **act**: whether the player took the cards.
+High means winning the contest, trump included — not the higher numeral. The four outcome names no
+longer carry that axis, and it is still the axis a buff condition reads, so a rule about going low
+has to say "went low" rather than grouping two of the four names.
 
 **These are the words to use everywhere, not only in shipped strings** — in conversation with the
 developer, in a plan, in a ticket, in an agent dispatch prompt, and in a reviewer finding. "Win a
-trick" is never an acceptable way to describe a Low Victory. A sentence about a trick either names
-one of the four outcomes or says high/low.
+trick" is never an acceptable way to describe a Skulled Victory. A sentence about a trick either
+names one of the four outcomes or says high or low.
 
-Two consequences that are routinely got wrong:
+**A Skulled Victory is a good outcome reached by going low.** Playing a 2 under a skulled 5 is the
+correct play — no damage, and the trick banks. Damage on a skulled trick comes from going **high**
+on it, never from going low.
 
-- **A Low Victory is a good outcome reached by going low.** Playing a 2 under a skulled 5 is the
-  correct play — no damage, and the trick banks. Damage on a skull trick comes from going **high**
-  on it, never from going low.
-- **The Low family fires on both.** Suit Low's predicate is `!playerWentHigh && suit matches` —
-  there is no skull term in it at all, so it pays whether the trick was a Low Victory or a Low
-  Defeat. That is deliberate, not a bug. Skull Low, by contrast, is `skullTrick && !playerWentHigh`,
-  which makes it the only condition card that can never fire on a bad outcome.
+**The prototype uses the older names.** `prototype/src/` and everything under `prototype/.docs/`
+say High Victory, High Defeat, Low Victory and Low Defeat, and its code field is
+`playerWentHigh`. That is the retained reference implementation and it is not being renamed. Read
+across the mapping — Straight Victory was High Victory, Straight Loss was Low Defeat, Skulled
+Victory was Low Victory, Skulled Loss was High Defeat — and use the new names in everything written
+now.
 
-Card text now states its own condition, so the old warning that a card's printed text may contradict
-the code is gone — DLR-165 fixed it. **No buff attaches to a card**: a buff is activated for a trick
-and checked when that trick resolves.
+### The prototype's buff pool is the prototype's, not a specification
 
-### Cut buffs are cut until a ticket brings them back
+The retained web build ships 19 mintable buff templates and keeps a further eight condition
+families, two reward axes and five consumables as dead restoration paths. That whole arrangement —
+which cards exist, which are cut, why Momentum was unsafe on one row — is documented in
+`prototype/.docs/` and asserted by `prototype/src/hunt/__tests__/buffTemplates.test.ts`. Read it
+as prior art when designing the equivalent for the live game.
 
-DLR-145 pared the mintable buff pool to 13 templates. It now stands at **19 templates** (the figure
-`prototype/src/hunt/__tests__/buffTemplates.test.ts` asserts): 16 condition templates — Suit High (3 suits ×
-Blade/Momentum), Suit Low (3 suits × Blade/Momentum), Skull Low (Blade/Momentum), Skull Helmet and
-Skull Tether (one each, Guard) — plus the three activated cards Cheat, the wildcard and Curse.
-`prototype/src/hunt/buffTemplates.ts` is the owner; `MintableConditionKind` and `MintableRewardAxis` narrow
-the *types*, so everything outside that set is **unconstructible, not merely unweighted**. Momentum
-was unsafe on Suit Low while a multiplier raised on a Defeat trick was wiped by that trick's own
-reset; the low carry lets it escape the hand first, which is what made the row safe to restore
-(DLR-150).
-
-Everything cut is **removed from the game until a ticket explicitly restores it** — treat it as
-absent when planning, reviewing, writing docs, or answering a question about what the game contains:
-
-- **Eight condition families** — Mark of the *R*, Glutton, Hoarder, Unbloodied, Debt Collector,
-  Keepsake, Miser, Cornered. They keep their `BuffKind` entry, their `CONDITION_MODIFIER` price,
-  their `buffFires` case and their `BUFF_CADENCE` row, and none of that makes them live.
-- **Two reward axes** — Purse (coins) and Second Wind (AP refund). No card pays on either.
-- **Five consumables** — Ward, Second Thoughts, Puppeteer, Foresight, Spyglass. `consumables.ts`
-  holds their timings and tier tables; no template and no slot weight exists for any of them.
-
-Retained code is a restoration path, not a live mechanic. Do not describe a cut card as something
-the player can get, do not treat its presence in `prototype/src/hunt/` or in an older design document as
-evidence it ships, and do not quietly re-add one while doing adjacent work — restoring a family is a
-row in `TEMPLATE_FAMILIES` plus a type widening, which is a ticket's decision, never a side effect.
-
-Two places still describe the wider pool and are **superseded on this point**:
-`.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` (the 71-template v1 list, including
-its unbuilt "Apply-to-card" category — no buff attaches to a card; a buff is activated for a trick
-and checked when that trick resolves) and `.claude/contract/DLR-147-full-ui-pass/mockup-buff-gallery.html`,
-which shows cut cards deliberately, to load-test the grid.
+**None of it is inherited.** The game being built has whatever buffs its own design gives it, decided
+one at a time and written into the root `.docs/` as each ships. Do not describe a prototype card as
+something the player can get, do not port one because it exists, and do not treat an older design
+document listing charms, consumables or a 71-template pool as a backlog.
 
 ## Commands
 
@@ -174,7 +164,9 @@ Every command below runs from `prototype/`, not the repository root — `.claude
 
 ### The Unity project
 
-No gate is runnable yet — no Unity project exists on disk. `.claude/workflow/unity-project.md` owns the planned commands (`dotnet test` over the four engine-free assemblies as the fast gate, Unity batch-mode tests, a batch-mode build) and states plainly that none of them has been run.
+The project exists on disk (Unity 6000.5.1f1, URP 2D, the input system, one sample scene) but **no gate has ever been run against it**. `.claude/workflow/unity-project.md` owns the planned commands (`dotnet test` over the four engine-free assemblies as the fast gate, Unity batch-mode tests, a batch-mode build) and states plainly that none of them has been run — treat a first invocation of any of them as unproven, and report what it actually printed rather than what it was supposed to print.
+
+**The Unity editor is reachable live over MCP.** Unity's official MCP server ships in the `com.unity.ai.assistant` package and is registered with Claude Code as `unity-mcp`; the bridge is at Edit → Project Settings → AI → Unity MCP inside the editor. It exposes the running editor — console logs, the scene and GameObject tree, the asset database, the profiler, screenshot capture, and script editing. Two consequences: a question about the *live* editor should be answered by asking it rather than by inferring from files on disk; and its script-writing tools do **not** exempt anything from the `/fb-apply` rule below. A scene edit made through it lands in editor memory and reaches git only once the developer saves, so never treat an unsaved scene change as recoverable.
 
 Four failure modes that are **not** code defects:
 
@@ -244,9 +236,9 @@ Nobody in this pipeline decides a tuning value or a design reading on their own 
 
 ## Code conventions
 
-**`.claude/skills/react-frontend/SKILL.md` is the authority** — it holds the MUST/NEVER contract, the stack, the layout, and the success criteria, with general standards in `references/engineering-standards.md`. Read it before writing or editing anything under `prototype/src/`. Invoke it via the `Skill` tool; do not work from a remembered summary of it.
+**`.claude/skills/unity-programmer/SKILL.md` is the authority for the live game** — read it before writing or editing anything under `unity/`. `.claude/skills/react-frontend/SKILL.md` is the authority for the retained prototype — it holds the MUST/NEVER contract, the stack, the layout, and the success criteria, with general standards in `references/engineering-standards.md`; read it before touching anything under `prototype/src/`. Invoke either via the `Skill` tool; do not work from a remembered summary.
 
-The toolchain-level rules that survive with no application code, restated here only because every reviewer enforces them:
+The rules below are the **prototype's** toolchain rules, restated here because every reviewer enforces them on work in that tree. They do not describe C# — `unity-programmer` owns the equivalents for `unity/`, and applying a React rule to a Unity file is a category error:
 
 - Strict TypeScript. An `any` needs a stated reason in the summary.
 - Every listener, observer, timer, and `requestAnimationFrame` created in an effect is released in that effect's cleanup — an orphan leaks and double-fires after the next mount.
@@ -263,12 +255,12 @@ Glob `.claude/skills/*/SKILL.md` to see what actually exists — never classify 
 
 | Skill | Owns |
 |---|---|
-| `react-frontend` | anything under `prototype/src/` |
-| `unity-programmer` | anything under `unity/` |
+| `unity-programmer` | anything under `unity/` — the live game |
+| `react-frontend` | anything under `prototype/src/` — the retained reference implementation |
 | `management-jira` | creating and transitioning Jira tickets |
 | `skill-creator` | writing a new skill |
 | `game-designer` | critiquing and developing game designs; anything under `.docs/design/` |
 | `game-ux` | the game-screen layer — full-viewport no-scroll layout, zoning, interaction cost, keyboard navigation of a hand or board; and turning play-session feedback about a screen into a redesign doc |
 | `implementation-doc-writer` | maintaining `.docs/implementation/` — per-module docs on how shipped code actually works — and `.docs/game_rules/the-hunt.md`, the game's current ruleset |
 
-**Neither `react-frontend` nor `unity-programmer` is a default any more — each owns one codebase, and the repository holds two.** A task naming either should be able to say why that codebase is the right place for the work. Reserve `Skill: none — <reason>` for genuinely non-code work: a spec document, a Jira-only task, a decision hand-off to the developer. Never name a skill that does not resolve to a real file on disk; a plan that tells the executor to invoke a missing skill wastes a turn.
+**`unity-programmer` is the default for code work — it owns the codebase being built.** `react-frontend` owns `prototype/src/`, which is reference: naming it means the work is oracle maintenance, and a task naming it should be able to say why the change belongs in the reference implementation rather than in the game. Reserve `Skill: none — <reason>` for genuinely non-code work: a spec document, a Jira-only task, a decision hand-off to the developer. Never name a skill that does not resolve to a real file on disk; a plan that tells the executor to invoke a missing skill wastes a turn.

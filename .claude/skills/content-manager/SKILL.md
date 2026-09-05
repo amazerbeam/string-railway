@@ -114,9 +114,11 @@ chat:
 
 - **Never say a card or buff name bare.** Say what it does the first time it appears. The names
   were agent-authored and carry no intuition — for a viewer they carry less than none.
-- **Use the four outcome names correctly.** A trick is a High Victory, a High Defeat, a Low
-  Victory or a Low Defeat. "Winning a trick" is not a way to describe a Low Victory. Getting this
-  wrong on camera teaches the audience the wrong model of the game and is hard to walk back.
+- **Use the four outcome names correctly.** A trick is a Straight Victory, a Straight Loss, a
+  Skulled Victory or a Skulled Loss. "Winning a trick" is not a way to describe a Skulled Victory.
+  Getting this wrong on camera teaches the audience the wrong model of the game and is hard to walk
+  back. The prototype and its docs still use the older High/Low names — do not copy those into a
+  script.
 
 A deckbuilder has one enormous advantage as clip material: a number going absurdly high is the
 entire short-form format, already solved. Lean on it.
@@ -220,8 +222,8 @@ that requires them to edit a video has failed at its own purpose.
 - Asked "what do I post this week", the answer is a specific list pulled from `clip-backlog.md`,
   each item naming its hook and the shot it needs — not a category of content.
 - No draft script names a buff or card without saying what it does at first mention.
-- No draft describes a trick outcome as anything other than High Victory, High Defeat, Low
-  Victory or Low Defeat.
+- No draft describes a trick outcome as anything other than Straight Victory, Straight Loss,
+  Skulled Victory or Skulled Loss.
 - Nothing outside `.docs/marketing/` was modified.
 
 ## NEVER SAY THESE PHRASES:

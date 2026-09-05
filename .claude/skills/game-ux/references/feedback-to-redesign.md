@@ -328,7 +328,7 @@ Stated plainly rather than dressed up:
 - **Genuinely missing:** a primary-source teardown of a *card-game* UI redesign driven by logged
   feedback. The digital-board-game complaint material is aggregated player reviews, not a designer's
   account of what they changed and why. The closest thing this repo has to that is its own
-  `.docs/design/Balatro-Forbidden-Solitaire/balatro-play-notes.md`. If a good card-game teardown
+  `prototype/.docs/design/Balatro-Forbidden-Solitaire/balatro-play-notes.md`. If a good card-game teardown
   turns up, it belongs here.
 
 ## Sources

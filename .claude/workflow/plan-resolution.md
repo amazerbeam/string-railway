@@ -36,7 +36,7 @@ constraint  := total length <= 60 characters
 collision   := if .claude/contract/<slug>/ already exists, append "-2", then "-3", …
 ```
 
-Prefer the Jira key when the work has one; fall back to the planning date. This project tracks the prototype in the `DLR` project on Jira (the epic is DLR-1), so most plans take the key branch — `DLR-8-scaffold-vite-app`. The key makes the plan folder traceable to its ticket; the date prefix sorts chronologically, so where dates are used the newest plan is last in a directory listing.
+Prefer the Jira key when the work has one; fall back to the planning date. This project tracks its work in the `DLR` project on Jira (the epic is DLR-1), so most plans take the key branch — `DLR-8-scaffold-vite-app`. The key makes the plan folder traceable to its ticket; the date prefix sorts chronologically, so where dates are used the newest plan is last in a directory listing.
 
 ## Resolving the target plan
 

@@ -2,7 +2,7 @@
 
 **This file is forward-looking.** No Unity project exists on disk yet — `unity/` holds only a
 `README.md`. **No command in this file has been run.** Everything below describes the project as
-`.docs/implementation/unity-port-architecture.md` designs it, mirrored into the same shape as its
+`prototype/.docs/implementation/unity-port-architecture.md` designs it, mirrored into the same shape as its
 sibling, `.claude/workflow/web-project.md`, which covers the prototype under `prototype/`. **The
 first Unity scaffolding ticket must include a task that corrects this file against the real
 project** — assembly names that turned out different, a command that needs a flag this file
@@ -11,7 +11,7 @@ command here as a plan, not a verified fact.
 
 ## Layout
 
-Seven assembly definitions, all under `unity/` (`.docs/implementation/unity-port-architecture.md`
+Seven assembly definitions, all under `unity/` (`prototype/.docs/implementation/unity-port-architecture.md`
 §2):
 
 ```
@@ -33,7 +33,7 @@ unity/
   TechDuinn.Simulation/     engine-free — the headless run simulator and its policies
 ```
 
-Cite `.docs/implementation/unity-port-architecture.md` §2 for the full per-assembly table and the
+Cite `prototype/.docs/implementation/unity-port-architecture.md` §2 for the full per-assembly table and the
 reasoning behind each row; it is not restated here.
 
 ## Architectural boundaries
@@ -66,7 +66,7 @@ for these four assemblies and off for `Data` and `Game`, per §2.1.
 | Anything touching `Data` or `Game` | Unity editor-mode tests, run in batch mode |
 | A player build | Unity's batch-mode build pipeline, targeting the project's chosen platform |
 
-Cite `.docs/implementation/unity-port-architecture.md` §2.1 and §12 for why the fast gate is
+Cite `prototype/.docs/implementation/unity-port-architecture.md` §2.1 and §12 for why the fast gate is
 possible at all, and §20.4 for why this table exists as this file's sibling rather than as an
 addition to `web-project.md`.
 
@@ -105,7 +105,7 @@ developer must do or decide, wait for their answer, then continue.
 
 These produce bugs that compile cleanly and pass a naive review. Four are general to Unity C#
 (`.claude/skills/unity-programmer/SKILL.md`'s own trap list); two are specific to this game
-(`.docs/implementation/unity-port-architecture.md`).
+(`prototype/.docs/implementation/unity-port-architecture.md`).
 
 - **`== null`, not `is null`, on anything deriving from `UnityEngine.Object`.** Unity overloads
   `==` so a destroyed object compares equal to null even though its managed wrapper still exists;

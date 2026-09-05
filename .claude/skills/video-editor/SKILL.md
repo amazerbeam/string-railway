@@ -210,7 +210,7 @@ pass — and the reasons are not marginal:
 
 - Most short-form is watched with the sound off. An uncaptioned short is a silent one.
 - A game with rules to explain is a game that benefits from its terms being *readable*, not only
-  audible. "Low Victory" heard once is a phrase; seen written, it is a term.
+  audible. "Skulled Victory" heard once is a phrase; seen written, it is a term.
 - Accessibility. A deaf viewer either can watch it or cannot, and that is decided here.
 - Retention. Captions measurably hold viewers through the first seconds, which is where short-form
   is won or lost.
@@ -322,8 +322,8 @@ Burned captions are shipped text. Two rules from `CLAUDE.md` apply to every word
 
 - **No card or charm name appears bare.** Say what it does at first mention. The names carry no
   intuition for a viewer who has never played.
-- **A trick outcome is a High Victory, a High Defeat, a Low Victory or a Low Defeat.** "Winning a
-  trick" is never how a Low Victory is described. If the developer says it wrong on the take, flag
+- **A trick outcome is a Straight Victory, a Straight Loss, a Skulled Victory or a Skulled Loss.**
+  "Winning a trick" is never how a Skulled Victory is described. If the developer says it wrong on the take, flag
   it — do not caption it wrong to match, and do not silently fix a spoken word into a different
   written one.
 

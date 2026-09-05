@@ -38,7 +38,7 @@ For each source, identify:
 - **What caused failures?** — Root causes of any ✗ tasks (not just symptoms)
 - **What was surprising?** — Unexpected issues, missing context, or wrong assumptions in the plan
 - **Gaps** — edge cases or quality patterns not covered by an existing rule, by `react-frontend`, or by `web-project.md`
-- **Tuning signal** — did real-world testing show a chosen configuration value is wrong? That is not a code learning; it is the output a prototype exists to produce. Record it as a developer decision rather than proposing a code change.
+- **Tuning signal** — did real-world testing show a chosen configuration value is wrong? That is not a code learning; it is the output that playing the game exists to produce. Record it as a developer decision rather than proposing a code change.
 
 If `corrections.md` is present and most issues were already applied via `/fb-issue` during the session, Steps 4 and 5 may have little to add — that is fine. Skip them honestly rather than inventing updates.
 

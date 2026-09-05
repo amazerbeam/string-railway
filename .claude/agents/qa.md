@@ -45,7 +45,7 @@ Four runner facts gate everything you do:
 - Run `npm install` / `npm ci` unless the orchestrator explicitly delegated it — installing changes the tree
 - **Use `evaluate_script` to mutate application state, dispatch a reducer action, or stub a function so a check passes.** Read state, read the DOM, read computed values — never write. A check that only passes because you drove the app into the state by hand has verified nothing
 - **Leave a server running that you started.** Kill your PID before you report (Step 4.5)
-- **Navigate anywhere but the local app.** `localhost` on the port you started or found; no external site, no login, nothing outside this prototype
+- **Navigate anywhere but the local app.** `localhost` on the port you started or found; no external site, no login, nothing outside this project
 - Skip any validation step
 - Mark a task as passed if ANY validation step fails for it
 - Attempt to fix issues yourself — only report them
@@ -186,7 +186,7 @@ This step validates two different things, and both must hold: the **behaviour** 
    - **NOT MET** — the implementation does not satisfy the criterion → **FAIL** with category `ac-not-met`, with the evidence of the mismatch.
    - **MANUAL VERIFICATION NEEDED** — genuinely unverifiable with available tools; state exactly what a human must do and look for.
 
-**Be honest about the structural limit here — and about where it now sits.** A criterion about how something *feels* — whether an interaction is satisfying, whether the UI reads clearly — cannot be unit-tested or automated, and demanding either is noise. Say so and route it to manual verification; in a prototype those criteria are often the *point*, not an afterthought. A criterion about *logic* ("a value outside its allowed range is rejected") is testable, and if it lives inside a component such that it can't be tested, that is a boundary finding, not an excuse.
+**Be honest about the structural limit here — and about where it now sits.** A criterion about how something *feels* — whether an interaction is satisfying, whether the UI reads clearly — cannot be unit-tested or automated, and demanding either is noise. Say so and route it to manual verification; on a game those criteria are often the *point*, not an afterthought. A criterion about *logic* ("a value outside its allowed range is rejected") is testable, and if it lives inside a component such that it can't be tested, that is a boundary finding, not an excuse.
 
 The middle category depends on whether a browser pass was requested. **If it was**, a criterion about *observable behaviour* ("the rejected action does not commit and the reason names a specific code") is **yours to verify in the browser**, and `MANUAL VERIFICATION NEEDED` on something Step 4.5 could have driven is under-verification dressed as humility. **If it was not** — the default — that same criterion routes to the developer with the exact interaction and expected outcome spelled out. Routing it there is correct in that case; what is never acceptable is claiming it verified when nothing drove it.
 

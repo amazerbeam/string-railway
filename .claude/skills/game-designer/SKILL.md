@@ -9,7 +9,7 @@ metadata:
 # Game Designer
 
 Three modes of design work on this game, all sharing one toolkit: the lens collection in
-`.docs/design/design-principles.md` and the arithmetic discipline below.
+`prototype/.docs/design/design-principles.md` and the arithmetic discipline below.
 
 | Mode | The developer's input | What you produce |
 |---|---|---|
@@ -19,7 +19,7 @@ Three modes of design work on this game, all sharing one toolkit: the lens colle
 
 **Scope:** this file owns the *method*. The frameworks (Meier, Knizia, Rosewater, Sirlin, Cook,
 Koster, LeBlanc, Garfield, Schell, Lantz, plus the hybrid-design precedents) are owned by
-`.docs/design/design-principles.md` — read that file, never restate it here. New research goes
+`prototype/.docs/design/design-principles.md` — read that file, never restate it here. New research goes
 into that document, not into this skill.
 
 Not for: implementing a mechanic in code (that's `react-frontend`), or scoping the work (`/fb-plan`).
@@ -29,26 +29,37 @@ Not for: implementing a mechanic in code (that's `react-frontend`), or scoping t
 **Step 1 — orient.** Before saying anything, read enough to know where the game actually stands.
 Always:
 
+**Two documentation trees, and they are not equal.** `.docs/` at the repository root is the live
+game's documentation, written fresh against `unity/` as each mechanic is actually built — it is the
+only tree you write to, and it starts nearly empty, so **a file you expect that is not there is
+"not yet written", not an error**. `prototype/.docs/` is the retained web prototype's
+documentation: a complete, working record of the previous build, frozen. Read it freely as prior
+art; never write to it, and never cite it as though it described the game being built now.
+
 1. `.docs/game_rules/the-hunt.md` — the current ruleset in playing order, with every rule marked
    `[settled]` / `[provisional]` / `[open]` / `[not built]`. Those markers are the point: they tell
-   you whether the thing under discussion is decided, undecided, or unbuilt.
-2. `.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md` — why each rule exists, the branches
-   already discarded, and **§9's open forks, which are the future plans**.
-3. `.docs/design/Balatro-Forbidden-Solitaire/ideas.md` — ideas already banked, so you neither
-   re-propose one nor forget one that solves the problem for free.
-4. `.docs/design/design-principles.md` — the frameworks and the critique checklist.
+   you whether the thing under discussion is decided, undecided, or unbuilt. Where this file is
+   silent, the rule is undecided — not inherited from the prototype.
+2. `.docs/design/` — the live design: why each rule exists and which branches were discarded.
+3. Whatever else the root tree holds. Glob `.docs/**/*.md` rather than assuming a filename.
 
-Then, scoped to the topic:
+Then, as prior art, scoped to the topic — always naming it as the prototype's, never as current:
 
-- `.docs/implementation/<module>/` — whether it is built, and what the code actually does. Glob
-  `.docs/implementation/*/` for the module list; `README.md` in each is the entry point.
-- The playtest feedback docs under `.docs/design/Balatro-Forbidden-Solitaire/` — in Feedback mode
-  always, in the other modes when the topic has been played.
-- The parent-game rules in `.docs/game_rules/` for any borrowed mechanic. **Never reason about a
-  derived mechanic from a remembered version of its parent's rules** — a hybrid's problems usually
-  live in a rule the concept paraphrased rather than one it invented.
-
-Glob `.docs/**/*.md` if the layout has moved.
+- `prototype/.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md` — the previous direction's
+  full reasoning, including its §9 open forks. Rich and worth mining, but it describes mechanics
+  (charms among them) that the new build has not adopted and may never adopt. **Never present its
+  contents as the current design.**
+- `prototype/.docs/design/Balatro-Forbidden-Solitaire/ideas.md` — ideas already banked, so you
+  neither re-propose one nor forget one that solves the problem for free.
+- `prototype/.docs/design/design-principles.md` — the frameworks and the critique checklist. This
+  one is toolkit rather than game content, so it applies unchanged.
+- `prototype/.docs/implementation/<module>/` — what the prototype's code actually did. Glob
+  `prototype/.docs/implementation/*/` for the module list; `README.md` in each is the entry point.
+- The playtest feedback docs under `prototype/.docs/design/Balatro-Forbidden-Solitaire/` — in
+  Feedback mode always, in the other modes when the topic has been played.
+- The parent-game rules in `prototype/.docs/game_rules/` for any borrowed mechanic. **Never reason
+  about a derived mechanic from a remembered version of its parent's rules** — a hybrid's problems
+  usually live in a rule the concept paraphrased rather than one it invented.
 
 **Step 2 — ask which mode, in one line.** Skip the question when the invocation already makes it
 unambiguous ("critique the bank", "here's what went wrong in playtest 3") — name the mode you're in
@@ -133,7 +144,7 @@ individually small. Watch for it and correct it:
 
 **Where the writing goes:** the conversation stays plain — lead with the finding and round numbers.
 The full worked arithmetic and the cited framework reasoning belong in
-`.docs/design/Balatro-Forbidden-Solitaire/ideas.md`, not in chat. When an idea firms up enough to
+`prototype/.docs/design/Balatro-Forbidden-Solitaire/ideas.md`, not in chat. When an idea firms up enough to
 keep, offer to write it there; when it firms up enough to be a rule, that's a `hybrid-design.md`
 edit and `the-hunt.md` follows from implementation, never by hand.
 
@@ -284,7 +295,7 @@ tuning value and present it as a finding.
 
 ## Frameworks index
 
-One line each; the detail lives in `.docs/design/design-principles.md`.
+One line each; the detail lives in `prototype/.docs/design/design-principles.md`.
 
 | Lens | Owner | Tests |
 |---|---|---|
@@ -305,7 +316,7 @@ One line each; the detail lives in `.docs/design/design-principles.md`.
 
 When a critique needs a lens that isn't here, research it (`WebSearch`, `WebFetch` — prefer designer
 interviews, GDC talks, and design essays over review-site summaries), then add it to
-`.docs/design/design-principles.md` with its source link.
+`prototype/.docs/design/design-principles.md` with its source link.
 
 ## Shared rules (read on demand)
 
@@ -341,7 +352,7 @@ Project-wide rules live at `.claude/rules/`. Before answering, scan `.claude/rul
 - Listing findings without ranking them, or without saying what would disprove them
 - Proposing a new subsystem when an existing component would do
 - Re-raising an open question the document already asked and reasoned about, as if it were a finding
-- Duplicating framework content into this file instead of `.docs/design/design-principles.md`
+- Duplicating framework content into this file instead of `prototype/.docs/design/design-principles.md`
 - Naming a framework, designer, lesson number, or precedent game (e.g. "Rosewater #17," "the
   Thronebreaker rebuttal") without explaining in plain language what it is, the first time it's used
 
@@ -353,7 +364,7 @@ Project-wide rules live at `.claude/rules/`. Before answering, scan `.claude/rul
 - Where the topic stands — built/unbuilt, settled/provisional/open — was stated up front
 - No tuning value, board size, or feel judgement was decided on the skill's own authority
 - Every proposed change states what it costs in new rules
-- Any new framework used is added to `.docs/design/design-principles.md` with a source link
+- Any new framework used is added to `prototype/.docs/design/design-principles.md` with a source link
 
 **Brainstorm:** the developer's idea was costed with real numbers, not just reacted to · at least
 two variants were offered with their trade-offs · the turn ends with a genuine open question ·

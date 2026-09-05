@@ -198,7 +198,7 @@ A single driven run is an anecdote, not a measurement — useful for "does the m
 designed" and for a qualitative read a developer can act on, but not a substitute for
 `play-tester`'s seeded, thousand-run statistics. When a live playthrough surfaces something that
 looks like a real, reportable pattern (not just "won" or "lost"), write it to
-`.docs/ai-play-tester/` alongside `play-tester`'s findings — see that folder's `README.md` for the
+`prototype/.docs/ai-play-tester/` alongside `play-tester`'s findings — see that folder's `README.md` for the
 shape a finding takes, and be explicit that the finding's source is a single live browser session
 (name the fights and the outcome) rather than a simulator batch, so nobody mistakes an n=1
 observation for a measured statistic.

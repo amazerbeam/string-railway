@@ -168,7 +168,7 @@ The reject condition is the ordinary one: a summary is read once per round, so i
 anything the player needs *during* a round. If a number belongs to a live decision, it belongs on the
 screen the decision is made on.
 
-Source: developer play session, recorded at `.docs/design/Balatro-Forbidden-Solitaire/balatro-play-notes.md`
+Source: developer play session, recorded at `prototype/.docs/design/Balatro-Forbidden-Solitaire/balatro-play-notes.md`
 (note 7, and §3.4 for the worked application). This is one session's observation, not researched
 literature — treated as a pattern worth reusing, not as an established principle.
 
