@@ -50,3 +50,28 @@
 # ...but the fast gate's solution is hand-written and must stay tracked. /*.sln above would
 # otherwise swallow it, exactly as the .csproj comment further up anticipates for project files.
 !/TechDuinn.FastGate.sln
+
+# Play-mode test scaffolding. Unity writes a scene into Assets/ when the test
+# runner enters Play mode and does not always remove it again.
+/[Aa]ssets/InitTestScene*.unity
+/[Aa]ssets/InitTestScene*.unity.meta
+
+# Addressables build output, if the package is ever added.
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Unity writes a .meta beside every folder inside Assets/, including the obj/ and
+# bin/ folders ignored above. Unanchored for the same reason those two are: these
+# folders appear inside Assets/, not at the root of unity/. Without these lines an
+# MSBuild run that beats Directory.Build.props leaves an orphan .meta in git status
+# with nothing to explain it.
+[Oo]bj.meta
+[Bb]in.meta
+
+# Crash, diagnostic and export droppings.
+sysinfo.txt
+*.stackdump
+/[Ee]xportedObj/
+/.consulo/
+*.pidb.meta
+*.mdb.meta

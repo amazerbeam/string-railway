@@ -1,5 +1,7 @@
-# Unity YAML — text, so scenes and prefabs stay diffable. Serialization mode is
-# already Force Text in ProjectSettings/EditorSettings.asset.
+# Unity YAML and UI-toolkit sources — text, so scenes, prefabs and layouts stay
+# diffable. Two project settings make this work and are committed: asset
+# serialization is Force Text (EditorSettings.asset, m_SerializationMode: 2) and
+# .meta files are visible (VersionControlSettings.asset, m_Mode: Visible Meta Files).
 *.unity      text eol=lf
 *.prefab     text eol=lf
 *.asset      text eol=lf
@@ -8,38 +10,70 @@
 *.anim       text eol=lf
 *.controller text eol=lf
 *.physicMaterial2D text eol=lf
+*.physicMaterial   text eol=lf
+*.overrideController text eol=lf
+*.mask       text eol=lf
+*.preset     text eol=lf
+*.mixer      text eol=lf
+*.renderTexture text eol=lf
+*.cubemap    text eol=lf
+*.lighting   text eol=lf
+*.signal     text eol=lf
+*.playable   text eol=lf
+*.spriteatlas   text eol=lf
+*.spriteatlasv2 text eol=lf
+*.inputactions text eol=lf
+*.uxml       text eol=lf
+*.uss        text eol=lf
 *.asmdef     text eol=lf
 *.asmref     text eol=lf
 *.shader     text eol=lf
 *.shadergraph text eol=lf
 *.cs         text eol=lf diff=csharp
 
-# Binary assets go to LFS. Scoped to unity/ deliberately: the prototype's own
-# images are already in plain git history and are left alone.
-*.png  filter=lfs diff=lfs merge=lfs -text
-*.jpg  filter=lfs diff=lfs merge=lfs -text
-*.jpeg filter=lfs diff=lfs merge=lfs -text
-*.gif  filter=lfs diff=lfs merge=lfs -text
-*.bmp  filter=lfs diff=lfs merge=lfs -text
-*.tga  filter=lfs diff=lfs merge=lfs -text
-*.tif  filter=lfs diff=lfs merge=lfs -text
-*.tiff filter=lfs diff=lfs merge=lfs -text
+# Large binaries go to Git LFS. Narrowed deliberately on DLR-177 after the
+# developer was asked: LFS carries the source and media formats that are
+# megabytes each and never diff usefully, and nothing else. Scoped to unity/ —
+# the prototype's own images are already in plain git history and are left alone.
+# See "Which files go to Git LFS" in unity/README.md for the reasoning.
 *.psd  filter=lfs diff=lfs merge=lfs -text
 *.psb  filter=lfs diff=lfs merge=lfs -text
+*.aseprite filter=lfs diff=lfs merge=lfs -text
+*.ase  filter=lfs diff=lfs merge=lfs -text
 *.exr  filter=lfs diff=lfs merge=lfs -text
 *.hdr  filter=lfs diff=lfs merge=lfs -text
-*.ico  filter=lfs diff=lfs merge=lfs -text
+*.tif  filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.tga  filter=lfs diff=lfs merge=lfs -text
 *.wav  filter=lfs diff=lfs merge=lfs -text
-*.mp3  filter=lfs diff=lfs merge=lfs -text
-*.ogg  filter=lfs diff=lfs merge=lfs -text
+*.flac filter=lfs diff=lfs merge=lfs -text
 *.aif  filter=lfs diff=lfs merge=lfs -text
 *.aiff filter=lfs diff=lfs merge=lfs -text
+*.mp3  filter=lfs diff=lfs merge=lfs -text
+*.ogg  filter=lfs diff=lfs merge=lfs -text
 *.mp4  filter=lfs diff=lfs merge=lfs -text
 *.mov  filter=lfs diff=lfs merge=lfs -text
-*.ttf  filter=lfs diff=lfs merge=lfs -text
-*.otf  filter=lfs diff=lfs merge=lfs -text
+*.webm filter=lfs diff=lfs merge=lfs -text
 *.fbx  filter=lfs diff=lfs merge=lfs -text
 *.blend filter=lfs diff=lfs merge=lfs -text
 *.dll  filter=lfs diff=lfs merge=lfs -text
 *.pdb  filter=lfs diff=lfs merge=lfs -text
+*.so   filter=lfs diff=lfs merge=lfs -text
+*.dylib filter=lfs diff=lfs merge=lfs -text
+*.bundle filter=lfs diff=lfs merge=lfs -text
 *.unitypackage filter=lfs diff=lfs merge=lfs -text
+
+# Deliberately NOT on LFS. Small enough that plain git handles them well, and
+# keeping them out of LFS means GitHub's web UI can still preview a sprite in a
+# pull request and a clone does not spend LFS bandwidth on pixel art. Declared
+# here rather than left to inherit from the root .gitattributes, so the whole
+# LFS boundary is readable in one file — and because .bmp and the fonts have no
+# root entry and would otherwise fall through to git's text=auto heuristic.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.bmp  binary
+*.ico  binary
+*.ttf  binary
+*.otf  binary

@@ -117,9 +117,16 @@ Implementer and never fabricate the outcome.
 - **Pinning the editor version and the render pipeline** (§20.5) — including whether the
   Mono-to-CoreCLR cutover at 6.8 is something to land on deliberately or to sit behind, and the
   Input System and base resolution/card-dimension choices §20.5 also names.
-- **The git and LFS setup before the first binary asset lands** (§20.3) — forcing text
-  serialization, committing `.meta` files, configuring LFS for art and audio, and taking Unity's
-  own `.gitignore`. Retrofitting LFS after sprites are in history is a rewrite of the repository.
+- **The git and LFS setup for the first binary asset landing** (§20.3) is settled, not
+  outstanding — decided on DLR-177, before any binary asset existed under `unity/`. Force Text
+  serialization and visible `.meta` files were already committed; Git LFS was narrowed to the large
+  source and media formats after the developer was asked, with small raster art and fonts left in
+  ordinary git. `unity/.gitattributes` owns the pattern list and `unity/README.md` explains the
+  line. What is still developer-owned is adding a genuinely new *kind* of asset — anything not
+  already covered by a pattern in `unity/.gitattributes` — because placing it on the wrong side of
+  the LFS line is only cheap to fix before it is committed. Retrofitting LFS after sprites are in
+  history is a rewrite of the repository, which is why the line has to be drawn correctly the first
+  time.
 
 Treat reaching one of these as a pause condition: stop dispatching, state precisely what the
 developer must do or decide, wait for their answer, then continue.
