@@ -55,6 +55,7 @@ This project is deliberately organised so each fact is stated once. When somethi
 | Jira label vocabulary — the closed layer set (`ui` / `engine` / `infra` / `design` / `spike`) and the `playable` marker | `.claude/skills/management-jira/SKILL.md` → its label-vocabulary section |
 | How to write React/TypeScript here — conventions, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
 | How a game screen is laid out and operated — viewport shell, zoning, interaction cost, navigating a collection of controls; and how feedback about a screen becomes a redesign | `.claude/skills/game-ux/SKILL.md` + its `references/full-viewport-layout.md` and `references/feedback-to-redesign.md` |
+| The game's name, and the fiction and myth-sourcing behind every other name in it | `.docs/design/tech-duinn-lore.md` |
 | Game design frameworks, designer research, the critique checklist | `.docs/design/design-principles.md` |
 | What the game's rules currently are, and which are still undecided | `.docs/game_rules/the-hunt.md` — see the three-doc split below |
 | How implemented code actually works — per-module mechanics, key types, enforced rules | `.claude/skills/implementation-doc-writer/SKILL.md`, output in `.docs/implementation/` |

@@ -43,6 +43,27 @@ room — needs no invention at all. It is what a wake *is*.
 **What the player is playing for.** Passage. You are newly arrived and you have not yet gone onward.
 Everyone at the table is in the same position, and the cards decide who moves.
 
+**The game is called *The Long Wake*** — decided 2026-09-04, and this document is where that fact is
+owned. Everywhere else cites it rather than restating the reasoning.
+
+The title works because all three senses of *wake* are true here at once and none of them needs
+explaining. A wake is the night spent with a body, which is the game's central image and the reason
+there are cards on the table at all. To wake is to come round, which is what the player has just done
+— newly dead, newly arrived. And a wake is the trail a boat leaves behind it, which is how you reach
+Tech Duinn: out past the last land, across water rather than up or down. *Long* is doing the run's
+work — twenty-five opponents on one health bar, in a place where Oisín's three years were three
+hundred. The wait is the shape of the game.
+
+**It is a plain English title and that is the point.** Every other name in this document asks the
+player to learn something; this one asks nothing and is still true. Rejected alongside it: *Tech
+Duinn*, which every English speaker reads as *technology* on sight; *The House of Donn*, which is
+pronounceable and opaque; and *Renege*, the Irish card term for legally refusing to follow suit —
+mechanically the sharpest fit, since it is exactly what a Cheat does, but it fails out loud, being
+said "ri-NEEG" and read as "ri-NEDGE".
+
+**What the title does not do is name the card game**, which is a real cost on a store page. The short
+description carries that job alone — see `.docs/marketing/steam-page.md`.
+
 ---
 
 ## 2. The three suits

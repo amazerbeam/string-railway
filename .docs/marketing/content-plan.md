@@ -46,6 +46,13 @@ first and most attentive part of the audience has been taught something false. S
 - When the developer settles the setting and commits it, that is its own content moment and a good
   one. It is not this week's.
 
+**The title is settled and the setting still is not — use the title, and stop there.** The game is
+called ***The Long Wake*** as of 2026-09-04 (`.docs/design/tech-duinn-lore.md` §1 owns it). It is safe
+to say on any channel: it carries a mood and names nothing. A wake is not specifically Irish, Tech
+Duinn is not in it, and no card, suit or opponent name is implied by it. So put it on the videos and
+in the Reddit flair — a project with a name reads as a real project — and keep every rule above about
+the setting exactly as written.
+
 **What can be said is what the game does**, and that is plenty: a trick-taking card game where a
 skull inverts a trick so that sometimes you are trying to lose, wrapped in a run of fights where
 your score compounds until you cash it out or lose the lot. None of that depends on a setting.

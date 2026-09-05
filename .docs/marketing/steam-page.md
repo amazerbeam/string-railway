@@ -1,5 +1,9 @@
 # Steam page
 
+**The game is called *The Long Wake*** (decided 2026-09-04). `.docs/design/tech-duinn-lore.md` §1 owns
+the name and why it was chosen; this page just uses it. The one thing to carry over here: **the title
+does not say "card game"**, so the short description has to, every time.
+
 Store page copy in progress, and the trailer beat sheet. **The page is not up yet** — the trigger is
 one honest-looking screen in the Unity build (`content-plan.md` §5). These drafts exist so that when
 the trigger fires the page goes up in a day, not a month.

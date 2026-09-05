@@ -1,0 +1,41 @@
+# Unity-generated folders. Anchored with a leading slash so they only match at
+# the root of unity/, never a folder of the same name inside Assets/.
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Asset meta data for a file that is itself ignored.
+/[Aa]ssets/AssetStoreTools*
+/[Aa]ssets/Plugins/Editor/JetBrains*
+
+# IDE and solution files Unity regenerates on demand. These patterns are
+# anchored too: the four hand-written .csproj files for the engine-free
+# assemblies live in subfolders and must stay tracked.
+/.vs/
+/.vscode/
+/.idea/
+/*.csproj
+/*.sln
+/*.slnx
+/*.unityproj
+/*.user
+/*.pidb
+/*.booproj
+/*.svd
+/*.pdb
+/*.mdb
+/*.opendb
+/*.VC.db
+
+# Build artefacts.
+*.apk
+*.aab
+*.unitypackage
+*.app
+/crashlytics-build.properties

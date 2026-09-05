@@ -11,7 +11,7 @@ metadata:
 
 Owns the game's outward-facing content: what gets posted, where, in what order, and why.
 It is a planning and drafting skill — it writes plans, scripts and copy into `.docs/marketing/`,
-and never touches `src/` or the `/fb-*` contract pipeline.
+and never touches `prototype/src/`, `unity/`, or the `/fb-*` contract pipeline.
 
 The developer is a solo dev, comfortable on camera, currently porting a working browser
 prototype to Unity. That is the premise the whole content strategy runs on, and it expires:
@@ -204,7 +204,7 @@ that requires them to edit a video has failed at its own purpose.
 
 ## Boundaries
 
-- This skill writes to `.docs/marketing/` only. Changes to `src/` go through `/fb-plan` →
+- This skill writes to `.docs/marketing/` only. Changes to `prototype/src/` or `unity/` go through `/fb-plan` →
   `/fb-apply` like everything else, with no exceptions for "it's just for a video".
 - It does not edit video — that is `video-editor`.
 - It does not publish, post, upload or send anything. It drafts; the developer posts.
@@ -239,4 +239,4 @@ that requires them to edit a video has failed at its own purpose.
   current design docs
 - Recommending an ad spend, a paid promotion, or a purchased service — that is the developer's
   money and their call to raise
-- Editing `src/`, `.claude/contract/`, or any pipeline file
+- Editing `prototype/src/`, `unity/`, `.claude/contract/`, or any pipeline file

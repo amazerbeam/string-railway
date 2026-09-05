@@ -330,7 +330,7 @@ Burned captions are shipped text. Two rules from `CLAUDE.md` apply to every word
 ## Boundaries
 
 - Writes to `.docs/marketing/edits/` and to the media folder outside the repo. Nothing else — never
-  `src/`, never the contract pipeline.
+  `prototype/src/` or `unity/`, never the contract pipeline.
 - Never modifies anything in `raw/`.
 - Does not post, upload or publish. Rendering is where this skill stops.
 - Does not decide pacing, tone or humour.

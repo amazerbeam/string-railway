@@ -1,0 +1,60 @@
+Okay, so the deck cards is comprised of tree suits, moves, keys, and bells.
+The numbers, again, the numbers range from 1 to 11, so a total of 33 cards.
+The game is essentially a trick-taking game, so when the opponent leads, you have to follow.
+And it's high card wins, so they dealt a 1, I play 4, I win the trick.
+When you win the trick, you get damage from the trick, so we have base damage here and one streak,
+so we can apply for 1. Or we can roll over the damage to plus 4,
+which I think is not working at the moment. It's actually broken, but that's fine.
+It should have rolled over for 4.
+So we can see the CPU's intention up here in the top left corner for what they're going to play.
+So we can see they're going to play a key, and we also know that the card is going to be a poison card.
+Again, so we can see in the top left corner which suit, again, so we can see in the top left corner
+which suit the CPU intends to play. Fuck! Again, we can see in the top left corner which suit the CPU intends to play.
+Right now the CPU is going to play keys, but this time the key will be a skull card.
+So the skull inverts that logic of a high card, low card.
+So because they play a 2, the only way I can win this one is to play a lower card and a 2 because it's a skull card.
+So I have a 1 here, so I can actually win this trick as well.
+So this is called a low victory, and a low victory is when you win low and still won.
+A high victory would be if I went high and shit.
+Again, fuck, I don't know how much of that I actually would have lost.
+So because I played 1 against their 2 and they played a skull, I win, and this is what's known as a low victory.
+The previous example of, fuck, I don't know how to say that, okay, let's just scrap all that.
+Again, so because they went low, fuck, again, so because they played a 2 and I played a 1 against a skull, I...
+Again, so because they played a 2 and I played a 1, I get what's known as a low victory.
+Again, so they played a 2 of skulls, again, so their 2 of keys had a skull on it, so that means I had to play low.
+And because I played the 1, I actually win this, I win this trump, and that's what's known as a low victory.
+And we can roll over again for another plus 9, which is also still broken.
+So each round, the player is, again, so at the start of a run, the player is dealt.
+Both cards, a random number of 21 buff cards, and they will do various different things.
+Bell high, which basically means go high on bells, which basically means...
+Again, so the player will be dealt both cards at the start of each run, and they can apply these both cards to their hand,
+which will increase damage or multiplier that they get from again.
+So the player can, again, the player will be dealt 21, at the moment it's 21 anyway,
+both cards that they can apply to their hand, and you have to match various conditions for these to matter.
+So I'm going to play bells this round, and actually now I'm going to play keys.
+I have no buff cards, so I'm going to play bells, and I'm going to say bell high, which will give me plus 1 damage.
+And I can also apply that from here, where I can say bell high blade, which means go high.
+So I'll win the trick basically, and because I...
+Fuck, I forgot to explain the part with the trump card at the start when I was explaining the cards.
+I need to do that now.
+I'm going to stop this.
+I'm going to go again, but this time I'm actually going to explain the...
+I'm going to explain how the trump card works, and that's for the area part.
+So let me go.
+Again, the trump card is up here, so what the trump card is basically when...
+Fuck, start over.
+Okay, I'm going to do that again, but this time I'm going to explain again what the trump card does.
+So when the opponent leads, or if I lead, the two of bells, I have to follow it.
+The decree card here is a key.
+So key is trumps.
+If I was able to play a key here, I would win because key is trumps, but because I have to follow, I have to play bells.
+Playing a high bell will win this hand, but also playing a high bell will win this hand.
+But also if I was able to play the key, so if I had no bells, I could be free to play any one of these cards.
+And if I played a low key, so if I played this one into this two, the one of keys into this two of bells,
+because keys is your trump, I would also win.
+But I'm not allowed to do that, so I'll play my tree, and that'll let me win the hand.
+Okay, explain what else.
+So if the player loses a trick, they will lose their multiplier, so I lost my damage streak, and I also take a chunk of them, a heart of it.
+So again, so if the player loses a trick, they will take one heart of damage, and they will also lose any banked damage they had stored.
+And this is the only way for the player to lose the game.
+The object of the game is for the player to do the damage against the CPU and kill them first.

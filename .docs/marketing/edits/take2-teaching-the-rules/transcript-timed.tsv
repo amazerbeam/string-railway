@@ -1,0 +1,61 @@
+start	end	text
+0	8980	Okay, so the deck cards is comprised of tree suits, moves, keys, and bells.
+14120	21200	The numbers, again, the numbers range from 1 to 11, so a total of 33 cards.
+30160	41860	The game is essentially a trick-taking game, so when the opponent leads, you have to follow.
+43800	49820	And it's high card wins, so they dealt a 1, I play 4, I win the trick.
+57260	63560	When you win the trick, you get damage from the trick, so we have base damage here and one streak,
+63620	69640	so we can apply for 1. Or we can roll over the damage to plus 4,
+69640	73660	which I think is not working at the moment. It's actually broken, but that's fine.
+74280	75560	It should have rolled over for 4.
+82140	88500	So we can see the CPU's intention up here in the top left corner for what they're going to play.
+89260	94980	So we can see they're going to play a key, and we also know that the card is going to be a poison card.
+94980	106180	Again, so we can see in the top left corner which suit, again, so we can see in the top left corner
+106180	118800	which suit the CPU intends to play. Fuck! Again, we can see in the top left corner which suit the CPU intends to play.
+122180	128500	Right now the CPU is going to play keys, but this time the key will be a skull card.
+129680	132880	So the skull inverts that logic of a high card, low card.
+134520	140060	So because they play a 2, the only way I can win this one is to play a lower card and a 2 because it's a skull card.
+140360	143000	So I have a 1 here, so I can actually win this trick as well.
+144080	149660	So this is called a low victory, and a low victory is when you win low and still won.
+149960	154600	A high victory would be if I went high and shit.
+155340	159980	Again, fuck, I don't know how much of that I actually would have lost.
+161880	169000	So because I played 1 against their 2 and they played a skull, I win, and this is what's known as a low victory.
+169900	174920	The previous example of, fuck, I don't know how to say that, okay, let's just scrap all that.
+175200	186660	Again, so because they went low, fuck, again, so because they played a 2 and I played a 1 against a skull, I...
+189280	194500	Again, so because they played a 2 and I played a 1, I get what's known as a low victory.
+197960	205720	Again, so they played a 2 of skulls, again, so their 2 of keys had a skull on it, so that means I had to play low.
+206380	211440	And because I played the 1, I actually win this, I win this trump, and that's what's known as a low victory.
+212160	216140	And we can roll over again for another plus 9, which is also still broken.
+246340	253920	So each round, the player is, again, so at the start of a run, the player is dealt.
+254500	260000	Both cards, a random number of 21 buff cards, and they will do various different things.
+260420	266280	Bell high, which basically means go high on bells, which basically means...
+266280	278580	Again, so the player will be dealt both cards at the start of each run, and they can apply these both cards to their hand,
+278580	286940	which will increase damage or multiplier that they get from again.
+288500	296740	So the player can, again, the player will be dealt 21, at the moment it's 21 anyway,
+297100	304000	both cards that they can apply to their hand, and you have to match various conditions for these to matter.
+304000	308260	So I'm going to play bells this round, and actually now I'm going to play keys.
+308780	313380	I have no buff cards, so I'm going to play bells, and I'm going to say bell high, which will give me plus 1 damage.
+314000	320500	And I can also apply that from here, where I can say bell high blade, which means go high.
+320500	326500	So I'll win the trick basically, and because I...
+335380	342620	Fuck, I forgot to explain the part with the trump card at the start when I was explaining the cards.
+342740	343560	I need to do that now.
+345320	346880	I'm going to stop this.
+348380	351360	I'm going to go again, but this time I'm actually going to explain the...
+351940	356800	I'm going to explain how the trump card works, and that's for the area part.
+357980	359160	So let me go.
+360500	367880	Again, the trump card is up here, so what the trump card is basically when...
+370020	371080	Fuck, start over.
+374420	379740	Okay, I'm going to do that again, but this time I'm going to explain again what the trump card does.
+382280	388960	So when the opponent leads, or if I lead, the two of bells, I have to follow it.
+391100	395160	The decree card here is a key.
+396060	397500	So key is trumps.
+397660	405080	If I was able to play a key here, I would win because key is trumps, but because I have to follow, I have to play bells.
+411220	421840	Playing a high bell will win this hand, but also playing a high bell will win this hand.
+421840	427740	But also if I was able to play the key, so if I had no bells, I could be free to play any one of these cards.
+428280	433860	And if I played a low key, so if I played this one into this two, the one of keys into this two of bells,
+434340	436720	because keys is your trump, I would also win.
+437140	442100	But I'm not allowed to do that, so I'll play my tree, and that'll let me win the hand.
+450940	453140	Okay, explain what else.
+489560	498860	So if the player loses a trick, they will lose their multiplier, so I lost my damage streak, and I also take a chunk of them, a heart of it.
+499380	514240	So again, so if the player loses a trick, they will take one heart of damage, and they will also lose any banked damage they had stored.
+515800	517680	And this is the only way for the player to lose the game.
+519000	524940	The object of the game is for the player to do the damage against the CPU and kill them first.
